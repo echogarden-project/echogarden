@@ -46,7 +46,7 @@
 	],
 	"scripts": {
 		"cli": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 ./dist/cli/CLI.js",
-		"test": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 --trace-uncaught ./dist/tests/test.js",
+		"test": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 --trace-uncaught ./dist/tests/Test.js",
 		"generate-options-schema": "npx ts-json-schema-generator --path ./src/api/APIOptions.ts --unstable --type APIOptions --tsconfig ./tsconfig.json --out ./data/schemas/options.json"
 	},
 	"bin": {
