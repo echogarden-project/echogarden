@@ -5,7 +5,6 @@ import { setupProgramTerminationListeners, setupUnhandledExceptionListeners } fr
 import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
 
 setupUnhandledExceptionListeners()
-setupProgramTerminationListeners()
 
 const cmd = process.argv[0]
 const scriptArgs = process.argv.slice(2)
@@ -25,4 +24,8 @@ const child = spawn(cmd, args, { stdio: "inherit" })
 
 child.on("close", code => {
 	process.exit(code as number)
+})
+
+setupProgramTerminationListeners(() => {
+	child.kill('SIGKILL')
 })

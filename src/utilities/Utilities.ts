@@ -302,10 +302,18 @@ export function setupUnhandledExceptionListeners() {
 	})
 }
 
-export function setupProgramTerminationListeners() {
-	process.on('SIGINT', () => process.exit(0))
-	process.on('SIGQUIT', () => process.exit(0))
-	process.on('SIGTERM', () => process.exit(0))
+export function setupProgramTerminationListeners(cleanupFunc?: () => void) {
+	function exitProcess(exitCode = 0) {
+		if (cleanupFunc) {
+			cleanupFunc()
+		}
+
+		process.exit(exitCode)
+	}
+
+	process.on('SIGINT', () => exitProcess(0))
+	process.on('SIGQUIT', () => exitProcess(0))
+	process.on('SIGTERM', () => exitProcess(0))
 
 	if (process.stdin.isTTY) {
 		readline.emitKeypressEvents(process.stdin)
@@ -314,11 +322,11 @@ export function setupProgramTerminationListeners() {
 
 		process.stdin.on('keypress', (str, key) => {
 			if (key.name == 'escape') {
-				process.exit(0)
+				exitProcess(0)
 			}
 
 			if (key.ctrl == true && key.name == 'c') {
-				process.exit(0)
+				exitProcess(0)
 			}
 		})
 	}

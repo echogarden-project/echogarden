@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { CLIArguments, parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, logToStderr, setupUnhandledExceptionListeners, stringifyAndFormatJson } from "../utilities/Utilities.js"
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, stringifyAndFormatJson } from "../utilities/Utilities.js"
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from "./CLIOptionsSchema.js"
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLIConfigFile.js"
 
@@ -25,6 +25,7 @@ const log = logToStderr
 
 export async function start() {
 	setupUnhandledExceptionListeners()
+	setupProgramTerminationListeners()
 
 	let args: CLIArguments
 
