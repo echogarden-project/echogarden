@@ -188,7 +188,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 			} else if (process.platform == 'linux' && await commandExists("aplay")) {
 				command = "aplay"
 			} else {
-				throw new Error(`Couldn't find an audio player for this platform.`)
+				throw new Error(`Couldn't find a supported audio player for this platform. Please install the SoX tool on your system path, for best results.`)
 			}
 
 			const player = spawn(command, [tempWaveFilePath],
