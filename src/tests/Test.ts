@@ -12,6 +12,6 @@ setupProgramTerminationListeners()
 
 //await testKirshenbaumPhonemization(testText)
 
-await makeTarballsForInstalledPackages(true)
+//await makeTarballsForInstalledPackages(true)
 
 process.exit(0)
