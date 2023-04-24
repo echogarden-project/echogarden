@@ -45,8 +45,8 @@
 		"LICENSE.md"
 	],
 	"scripts": {
-		"start": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 --trace-uncaught ./dist/tests/test.js",
 		"cli": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 ./dist/cli/CLI.js",
+		"test": "node --no-warnings --no-experimental-fetch --experimental-wasm-threads --experimental-wasi-unstable-preview1 --trace-uncaught ./dist/tests/test.js",
 		"generate-options-schema": "npx ts-json-schema-generator --path ./src/api/APIOptions.ts --unstable --type APIOptions --tsconfig ./tsconfig.json --out ./data/schemas/options.json"
 	},
 	"bin": {
