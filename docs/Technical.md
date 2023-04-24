@@ -1,9 +1,9 @@
 # Technical overview and Q&A
 
-* Echogarden is written in TypeScript and targets the Node.js platform
-* It uses ESM modules and latest ECMAScript and TypeScript features
+* Echogarden is written in TypeScript and targets the Node.js platform.
+* It uses ESM modules and latest ECMAScript and TypeScript features.
 * It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime (with some exceptions: the CLI does use executables, loaded from an expansion package, for the SoX tool [and `ffmpeg` as well], which is used only for audio playback and recording. This simplifies the installation and ensures a non-buggy version is used. Since SoX `v14.4.2` is broken on Windows, it bundles `v14.4.1`).
-* It does not depend on essential native modules requiring compilation with `node-gyp`. This greatly simplifies and ensures the success of the installation for end-users (the ONNX runtime bundles precompiled NAPI modules for all supported platforms - it doesn't require any compilation during installation)
+* It does not depend on essential native modules requiring compilation with `node-gyp`. This greatly simplifies and ensures the success of the installation for end-users (the ONNX runtime bundles precompiled NAPI modules for all supported platforms - it doesn't require any compilation during installation).
 
 ## Package system
 
@@ -16,11 +16,11 @@ Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
 
-By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 11.4GB (6.8GB compressed). Another advantage of using a data folder is that the data does not need to be re-downloaded when the program is updated.
+By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 12.8GB (8.29GB compressed). Another advantage of using a data folder is that the data does not need to be re-downloaded when the program is updated.
 
 ## Can the base install size be made smaller?
 
-The installed (uncompressed) size, including dependencies, is around 350MB. This is without any models or voices, which are downloaded as needed.
+The installed (uncompressed) size, including dependencies, is around 300MB. This is without any models or voices, which are downloaded as needed.
 
 Currently, the biggest contributors to the size are:
 
