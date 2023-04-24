@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process'
-import { resolve } from 'path'
 import { setupProgramTerminationListeners, setupUnhandledExceptionListeners } from '../utilities/Utilities.js'
+import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
 
 setupUnhandledExceptionListeners()
 setupProgramTerminationListeners()
@@ -10,7 +10,7 @@ setupProgramTerminationListeners()
 const cmd = process.argv[0]
 const scriptArgs = process.argv.slice(2)
 
-const cliScriptPath = resolve(process.cwd(), "dist/cli/CLIStarter.js")
+const cliScriptPath = resolveToModuleRootDir("dist/cli/CLIStarter.js")
 
 const args = [
 	"--no-warnings",
