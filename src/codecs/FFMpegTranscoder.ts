@@ -219,9 +219,7 @@ function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegO
 }
 
 async function getExecutablePath() {
-	if (await commandExists("ffmpeg")) {
-		return "ffmpeg"
-	} else if (process.platform == "win32") {
+	if (process.platform == "win32") {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-essentials-win64")
 
 		return path.join(ffmpegPackagePath, "ffmpeg.exe")
@@ -233,6 +231,8 @@ async function getExecutablePath() {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-linux-amd64")
 
 		return path.join(ffmpegPackagePath, "ffmpeg")
+	} else if (await commandExists("ffmpeg")) {
+		return "ffmpeg"
 	}
 
 	return undefined
