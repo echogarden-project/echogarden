@@ -91,7 +91,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionAssist, createAlignmentReferenceUsingEspeak, alignUsingDtw } = await import("../alignment/SpeechAlignment.js")
 
 	async function getAlignmentReference() {
-		logger.start("Create alignment reference with espeak")
+		logger.start("Create alignment reference with eSpeak")
 		let { rawAudio: referenceRawAudio, timeline: referenceTimeline } = await createAlignmentReferenceUsingEspeak(transcript, language, espeakVoice, true)
 
 		referenceRawAudio = await resampleAudioSpeex(referenceRawAudio, 16000)

@@ -33,7 +33,7 @@ export async function synthesize(text: string, ssmlEnabled: boolean) {
 	const sampleChunks: Float32Array[] = []
 	const allEvents: EspeakEvent[] = []
 
-	logger.start("Synthesize with espeak")
+	logger.start("Synthesize with eSpeak")
 
 	instance.synthesize(text, (samples: Int16Array, events: EspeakEvent[]) => {
 		if (samples && samples.length > 0) {
@@ -133,7 +133,7 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 		preprocessedFragments = fragments
 	}
 
-	logger.start("Synthesize preprocessed fragments with Espeak")
+	logger.start("Synthesize preprocessed fragments with eSpeak")
 
 	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakVoice, false)
 

@@ -94,7 +94,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 	}
 
 	// Synthesize the recognized transcript and get its timeline
-	logger.start("Synthesize recognized transcript with espeak")
+	logger.start("Synthesize recognized transcript with eSpeak")
 	const recognizedWords = recognitionTimeline.map(entry => entry.text)
 
 	const { rawAudio: synthesizedRecognizedTranscriptRawAudio, timeline: synthesizedRecognitionTimeline } = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakVoice)
@@ -325,7 +325,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 	progressLogger.start("Load espeak module")
 	const Espeak = await import("../synthesis/EspeakTTS.js")
 
-	progressLogger.start("Create alignment reference with Espeak")
+	progressLogger.start("Create alignment reference with eSpeak")
 
 	const result = await Espeak.synthesizeFragments(fragments, voice, insertSeparators, rate, pitch, pitchRange)
 
