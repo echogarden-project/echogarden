@@ -19,13 +19,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 	const audioChannels = rawAudio.audioChannels
 	const sampleRate = rawAudio.sampleRate
 
-	let Vosk: any
-
-	try {
-		Vosk = await import('@echogarden/vosk')
-	} catch (e) {
-		throw new Error(`vosk package, which is required for Vosk support, was not found. You can install it by running 'npm install @echogarden/vosk -g'.`)
-	}
+	let Vosk = await import('@echogarden/vosk')
 
 	Vosk.setLogLevel(-1)
 

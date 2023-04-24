@@ -75,6 +75,12 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 		case "vosk": {
 			const VoskSTT = await import("../recognition/VoskSTT.js")
 
+			try {
+				await import('@echogarden/vosk')
+			} catch (e) {
+				throw new Error(`vosk package, which is required for Vosk support, was not found. You can install it by running 'npm install @echogarden/vosk -g'.`)
+			}
+
 			const voskOptions = options.vosk!
 
 			const modelPath = voskOptions.modelPath
