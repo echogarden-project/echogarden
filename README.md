@@ -43,6 +43,12 @@ Additional tools:
 
 (hopefully in the future all platforms would be covered using expansion packages)
 
+## Updating to latest version
+
+```bash
+npm update echogarden -g
+```
+
 ## Next steps
 
 * [Using the command line interface](docs/CLI.md)
