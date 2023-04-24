@@ -4,7 +4,7 @@
 ## Text to speech
 
 **Offline**:
-* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis model. Currently available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Supports English (US, UK), Spanish, Brazilian Portuguese, Italian, French, German, Dutch, Norwegian, Danish, Finnish, Polish, Ukrainian, Catalan, Kazakh, Nepali, Vietnamese and Chinese. You can listen to audio examples of all voices and languages on [Piper's samples page](https://rhasspy.github.io/piper-samples/).
+* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Currently available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Supports English (US, UK), Spanish, Brazilian Portuguese, Italian, French, German, Dutch, Norwegian, Danish, Finnish, Polish, Ukrainian, Catalan, Kazakh, Nepali, Vietnamese and Chinese. You can listen to audio examples of all voices and languages on [Piper's samples page](https://rhasspy.github.io/piper-samples/).
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a diphone-based synthesizer. Supports English (US, UK), Spanish, Italian, French, and German.
 * [Flite](https://github.com/festvox/flite) (`flite`): a diphone-based synthesizer. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi.
 * [eSpeak-NG](https://github.com/espeak-ng/espeak-ng/) (`espeak`): a formant-based synthesizer. Supports 100+ languages.
@@ -41,7 +41,7 @@ These cloud-based engines connect to public-facing cloud APIs that are not offic
 
 **Offline**:
 * [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high accuracy transformer-based model. Supports 99 languages. There are several models of different sizes, some are multilingual, and some are English only (`.en`): `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large`, `large-v1` and `large-v2`. _Note_: large models are not currently auto-downloaded as Echogarden packages, but may become available in the future.
-* [Vosk](https://github.com/alphacep/vosk-api) (`vosk`): models available for [25+ languages](https://alphacephei.com/vosk/models). _Note_: Vosk is not included in the default installation, but you can add support for it using `npm install @echogarden/vosk -g`. You'll need to download a model yourself and specify its directory path via the `vosk.modelPath` option.
+* [Vosk](https://github.com/alphacep/vosk-api) (`vosk`): models available for 25+ languages. _Note_: Vosk is not included in the default installation, but you can add support for it using `npm install @echogarden/vosk -g`. You'll need to manually [download a model](https://alphacephei.com/vosk/models) and specify its directory path via the `vosk.modelPath` option.
 * [Silero](https://github.com/snakers4/silero-models) (`silero`): models available for English, Spanish, German and Ukrainian. For [non-commercial use only](https://github.com/snakers4/silero-models/blob/master/LICENSE).
 
 **Cloud based**:
