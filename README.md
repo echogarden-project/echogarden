@@ -21,7 +21,7 @@ An integrated speech toolbox designed with end-users in mind.
 * Internal package system to auto-download and install voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection and speech denoising
 
-## Planned, but not yet
+### Planned, but not yet
 
 * Real-time, streaming speech recognition
 * WebSocket server API
@@ -38,8 +38,8 @@ npm install echogarden -g
 ```
 
 Additional tools:
-* [`sox`](https://sourceforge.net/projects/sox/): used for playback and recording only. Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
-* [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and Linux. On ARM64 macOS, it is recommended to install it via platform package manager like `brew`, otherwise, much slower `ffmpeg-wasm` would be used.
+* [`sox`](https://sourceforge.net/projects/sox/): used for audio playback and recording only. Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
+* [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via platform package manager like `brew`, otherwise, much slower `ffmpeg-wasm` would be used.
 
 (hopefully in the future all platforms would be covered using expansion packages)
 
