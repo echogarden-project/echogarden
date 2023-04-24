@@ -6,8 +6,9 @@
 	"license": "GPL-3.0-only",
 	"keywords": [
 		"tts",
+		"text-to-speech",
 		"stt",
-		"speech",
+		"speech-to-text",
 		"speech processing",
 		"speech synthesis",
 		"speech recognition",
