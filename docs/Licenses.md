@@ -19,6 +19,7 @@
 * `compromise`: [MIT License](https://github.com/spencermountain/compromise/blob/master/LICENSE)
 * `cldr-segmentation`: [MIT License](https://github.com/camertron/cldr-segmentation.js/blob/master/LICENSE)
 * `jieba-wasm`: [MIT License](https://github.com/fengkx/jieba-wasm/blob/master/LICENSE)
+* `kuromoji`: [Apache License 2.0](https://github.com/takuyaa/kuromoji.js/blob/master/LICENSE-2.0.txt)
 
 ## Package repository
 
@@ -34,4 +35,4 @@ All are freely distributable, with varying licenses:
 
 Tool binary distributions:
 * FFMpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
-* SoX: [GPL v2 License]()
+* SoX: [GPL v2 License](https://github.com/chirlu/sox/blob/master/LICENSE.GPL)
