@@ -35,7 +35,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"main": "dist/API/API.js",
+	"main": "./dist/API/API.js",
 	"type": "module",
 	"files": [
 		"dist",
@@ -50,7 +50,7 @@
 		"generate-options-schema": "npx ts-json-schema-generator --path ./src/api/APIOptions.ts --unstable --type APIOptions --tsconfig ./tsconfig.json --out ./data/schemas/options.json"
 	},
 	"bin": {
-		"echogarden": "dist/cli/CLILauncher.js"
+		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
 		"@aws-sdk/client-polly": "^3.316.0",
