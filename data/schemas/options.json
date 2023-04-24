@@ -1,0 +1,1057 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/APIOptions",
+  "definitions": {
+    "APIOptions": {
+      "type": "object",
+      "properties": {
+        "VoiceListRequestOptions": {
+          "$ref": "#/definitions/VoiceListRequestOptions"
+        },
+        "SynthesisOptions": {
+          "$ref": "#/definitions/SynthesisOptions"
+        },
+        "RecognitionOptions": {
+          "$ref": "#/definitions/RecognitionOptions"
+        },
+        "AlignmentOptions": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "SpeechTranslationOptions": {
+          "$ref": "#/definitions/SpeechTranslationOptions"
+        },
+        "SpeechLanguageDetectionOptions": {
+          "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
+        "TextLanguageDetectionOptions": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "VADOptions": {
+          "$ref": "#/definitions/VADOptions"
+        },
+        "DenoisingOptions": {
+          "$ref": "#/definitions/DenoisingOptions"
+        }
+      },
+      "required": [
+        "VoiceListRequestOptions",
+        "SynthesisOptions",
+        "RecognitionOptions",
+        "AlignmentOptions",
+        "SpeechTranslationOptions",
+        "SpeechLanguageDetectionOptions",
+        "TextLanguageDetectionOptions",
+        "VADOptions",
+        "DenoisingOptions"
+      ],
+      "additionalProperties": false
+    },
+    "VoiceListRequestOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SynthesisEngine"
+        },
+        "language": {
+          "type": "string"
+        },
+        "voice": {
+          "type": "string"
+        },
+        "voiceGender": {
+          "$ref": "#/definitions/VoiceGender"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "pitchVariation": {
+          "type": "number"
+        },
+        "ssml": {
+          "type": "boolean"
+        },
+        "splitToSentences": {
+          "type": "boolean"
+        },
+        "segmentEndPause": {
+          "type": "number"
+        },
+        "sentenceEndPause": {
+          "type": "number"
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "postProcessing": {
+          "type": "object",
+          "properties": {
+            "normalizeAudio": {
+              "type": "boolean"
+            },
+            "targetPeakDb": {
+              "type": "number"
+            },
+            "maxIncreaseDb": {
+              "type": "number"
+            },
+            "speed": {
+              "type": "number"
+            },
+            "pitch": {
+              "type": "number"
+            },
+            "timePitchShiftingMethod": {
+              "$ref": "#/definitions/TimePitchShiftingMethod"
+            },
+            "rubberband": {
+              "$ref": "#/definitions/RubberbandOptions"
+            }
+          },
+          "additionalProperties": false
+        },
+        "vits": {
+          "type": "object",
+          "properties": {
+            "speakerId": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pico": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "flite": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "espeak": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            },
+            "pitch": {
+              "type": "number"
+            },
+            "pitchRange": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sam": {
+          "type": "object",
+          "properties": {
+            "pitch": {
+              "type": "number"
+            },
+            "speed": {
+              "type": "number"
+            },
+            "mouth": {
+              "type": "number"
+            },
+            "throat": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sapi": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "msspeech": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "coquiServer": {
+          "type": "object",
+          "properties": {
+            "serverUrl": {
+              "type": "string"
+            },
+            "speakerId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "googleCloud": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string"
+            },
+            "pitchDeltaSemitones": {
+              "type": "number"
+            },
+            "customVoice": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "reportedUsage": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "microsoftAzure": {
+          "type": "object",
+          "properties": {
+            "subscriptionKey": {
+              "type": "string"
+            },
+            "serviceRegion": {
+              "type": "string"
+            },
+            "pitchDeltaHz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "awsPolly": {
+          "type": "object",
+          "properties": {
+            "region": {
+              "type": "string"
+            },
+            "accessKeyId": {
+              "type": "string"
+            },
+            "secretAccessKey": {
+              "type": "string"
+            },
+            "pollyEngine": {
+              "type": "string",
+              "enum": [
+                "standard",
+                "neural"
+              ]
+            },
+            "lexiconNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "elevenlabs": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string"
+            },
+            "stability": {
+              "type": "number"
+            },
+            "similarityBoost": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "googleTranslate": {
+          "type": "object",
+          "properties": {
+            "tld": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "microsoftEdge": {
+          "type": "object",
+          "properties": {
+            "trustedClientToken": {
+              "type": "string"
+            },
+            "pitchDeltaHz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "streamlabsPolly": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "cache": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "duration": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SynthesisEngine": {
+      "type": "string",
+      "enum": [
+        "vits",
+        "pico",
+        "flite",
+        "espeak",
+        "sam",
+        "sapi",
+        "msspeech",
+        "coqui-server",
+        "google-cloud",
+        "microsoft-azure",
+        "amazon-polly",
+        "elevenlabs",
+        "google-translate",
+        "microsoft-edge",
+        "streamlabs-polly"
+      ]
+    },
+    "VoiceGender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "unknown"
+      ]
+    },
+    "AlignmentOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/AlignmentEngine"
+        },
+        "language": {
+          "type": "string"
+        },
+        "dtw": {
+          "type": "object",
+          "properties": {
+            "windowDuration": {
+              "type": "number"
+            },
+            "recognition": {
+              "$ref": "#/definitions/RecognitionOptions"
+            },
+            "phoneAlignmentMethod": {
+              "$ref": "#/definitions/PhoneAlignmentMethod"
+            }
+          },
+          "additionalProperties": false
+        },
+        "whisper": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "AlignmentEngine": {
+      "type": "string",
+      "enum": [
+        "dtw",
+        "dtw-ra",
+        "whisper"
+      ]
+    },
+    "RecognitionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/RecognitionEngine"
+        },
+        "language": {
+          "type": "string"
+        },
+        "maxAlternatives": {
+          "type": "number"
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "whisper": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            }
+          },
+          "additionalProperties": false
+        },
+        "vosk": {
+          "type": "object",
+          "properties": {
+            "modelPath": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "silero": {
+          "type": "object",
+          "properties": {
+            "modelPath": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "googleCloud": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string"
+            },
+            "alternativeLanguageCodes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "profanityFilter": {
+              "type": "boolean"
+            },
+            "autoPunctuation": {
+              "type": "boolean"
+            },
+            "useEnhancedModel": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "microsoftAzure": {
+          "type": "object",
+          "properties": {
+            "subscriptionKey": {
+              "type": "string"
+            },
+            "serviceRegion": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "amazonTranscribe": {
+          "type": "object",
+          "properties": {
+            "region": {
+              "type": "string"
+            },
+            "accessKeyId": {
+              "type": "string"
+            },
+            "secretAccessKey": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "RecognitionEngine": {
+      "type": "string",
+      "enum": [
+        "whisper",
+        "vosk",
+        "silero",
+        "google-cloud",
+        "microsoft-azure",
+        "amazon-transcribe"
+      ]
+    },
+    "WhisperModelName": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny.en",
+        "base",
+        "base.en",
+        "small",
+        "small.en",
+        "medium",
+        "medium.en",
+        "large",
+        "large-v1",
+        "large-v2"
+      ]
+    },
+    "PhoneAlignmentMethod": {
+      "type": "string",
+      "enum": [
+        "interpolation",
+        "dtw"
+      ]
+    },
+    "TimePitchShiftingMethod": {
+      "type": "string",
+      "enum": [
+        "sonic",
+        "rubberband"
+      ]
+    },
+    "RubberbandOptions": {
+      "type": "object",
+      "properties": {
+        "stretch": {
+          "type": "string",
+          "enum": [
+            "elastic",
+            "precise"
+          ]
+        },
+        "transients": {
+          "type": "string",
+          "enum": [
+            "crisp",
+            "mixed",
+            "smooth"
+          ]
+        },
+        "detector": {
+          "type": "string",
+          "enum": [
+            "compound",
+            "percussive",
+            "soft"
+          ]
+        },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "laminar",
+            "independent"
+          ]
+        },
+        "window": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "long",
+            "short"
+          ]
+        },
+        "smoothing": {
+          "type": "string",
+          "enum": [
+            "off",
+            "on"
+          ]
+        },
+        "formant": {
+          "type": "string",
+          "enum": [
+            "shited",
+            "preserved"
+          ]
+        },
+        "pitch": {
+          "type": "string",
+          "enum": [
+            "high-speed",
+            "high-quality",
+            "high-consistency"
+          ]
+        },
+        "channels": {
+          "type": "string",
+          "enum": [
+            "apart",
+            "together"
+          ]
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "faster",
+            "finer"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "SynthesisOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SynthesisEngine"
+        },
+        "language": {
+          "type": "string"
+        },
+        "voice": {
+          "type": "string"
+        },
+        "voiceGender": {
+          "$ref": "#/definitions/VoiceGender"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "pitchVariation": {
+          "type": "number"
+        },
+        "ssml": {
+          "type": "boolean"
+        },
+        "splitToSentences": {
+          "type": "boolean"
+        },
+        "segmentEndPause": {
+          "type": "number"
+        },
+        "sentenceEndPause": {
+          "type": "number"
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "postProcessing": {
+          "type": "object",
+          "properties": {
+            "normalizeAudio": {
+              "type": "boolean"
+            },
+            "targetPeakDb": {
+              "type": "number"
+            },
+            "maxIncreaseDb": {
+              "type": "number"
+            },
+            "speed": {
+              "type": "number"
+            },
+            "pitch": {
+              "type": "number"
+            },
+            "timePitchShiftingMethod": {
+              "$ref": "#/definitions/TimePitchShiftingMethod"
+            },
+            "rubberband": {
+              "$ref": "#/definitions/RubberbandOptions"
+            }
+          },
+          "additionalProperties": false
+        },
+        "vits": {
+          "type": "object",
+          "properties": {
+            "speakerId": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pico": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "flite": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "espeak": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            },
+            "pitch": {
+              "type": "number"
+            },
+            "pitchRange": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sam": {
+          "type": "object",
+          "properties": {
+            "pitch": {
+              "type": "number"
+            },
+            "speed": {
+              "type": "number"
+            },
+            "mouth": {
+              "type": "number"
+            },
+            "throat": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sapi": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "msspeech": {
+          "type": "object",
+          "properties": {
+            "rate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "coquiServer": {
+          "type": "object",
+          "properties": {
+            "serverUrl": {
+              "type": "string"
+            },
+            "speakerId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "googleCloud": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string"
+            },
+            "pitchDeltaSemitones": {
+              "type": "number"
+            },
+            "customVoice": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "reportedUsage": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "microsoftAzure": {
+          "type": "object",
+          "properties": {
+            "subscriptionKey": {
+              "type": "string"
+            },
+            "serviceRegion": {
+              "type": "string"
+            },
+            "pitchDeltaHz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "awsPolly": {
+          "type": "object",
+          "properties": {
+            "region": {
+              "type": "string"
+            },
+            "accessKeyId": {
+              "type": "string"
+            },
+            "secretAccessKey": {
+              "type": "string"
+            },
+            "pollyEngine": {
+              "type": "string",
+              "enum": [
+                "standard",
+                "neural"
+              ]
+            },
+            "lexiconNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "elevenlabs": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string"
+            },
+            "stability": {
+              "type": "number"
+            },
+            "similarityBoost": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "googleTranslate": {
+          "type": "object",
+          "properties": {
+            "tld": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "microsoftEdge": {
+          "type": "object",
+          "properties": {
+            "trustedClientToken": {
+              "type": "string"
+            },
+            "pitchDeltaHz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "streamlabsPolly": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpeechTranslationOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SpeechTranslationEngine"
+        },
+        "sourceLanguage": {
+          "type": "string"
+        },
+        "targetLanguage": {
+          "type": "string"
+        },
+        "whisper": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpeechTranslationEngine": {
+      "type": "string",
+      "const": "whisper"
+    },
+    "SpeechLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SpeechLanguageDetectionEngine"
+        },
+        "defaultLanguage": {
+          "type": "string"
+        },
+        "fallbackThresholdProbability": {
+          "type": "number"
+        },
+        "silero": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "whisper": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            }
+          },
+          "required": [
+            "model"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpeechLanguageDetectionEngine": {
+      "type": "string",
+      "enum": [
+        "silero",
+        "whisper"
+      ]
+    },
+    "TextLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TextLanguageDetectionEngine"
+        },
+        "defaultLanguage": {
+          "type": "string"
+        },
+        "fallbackThresholdProbability": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextLanguageDetectionEngine": {
+      "type": "string",
+      "enum": [
+        "tinyld",
+        "fasttext"
+      ]
+    },
+    "VADOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/VADEngine"
+        },
+        "activityThreshold": {
+          "type": "number"
+        },
+        "webrtc": {
+          "type": "object",
+          "properties": {
+            "frameDuration": {
+              "type": "number",
+              "enum": [
+                10,
+                20,
+                30
+              ]
+            },
+            "mode": {
+              "type": "number",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "silero": {
+          "type": "object",
+          "properties": {
+            "modelPath": {
+              "type": "string"
+            },
+            "frameDuration": {
+              "type": "number",
+              "enum": [
+                30,
+                60,
+                90
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "rnnoise": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "VADEngine": {
+      "type": "string",
+      "enum": [
+        "webrtc",
+        "silero",
+        "rnnoise"
+      ]
+    },
+    "DenoisingOptions": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "$ref": "#/definitions/DenoisingMethod"
+        },
+        "postProcessing": {
+          "type": "object",
+          "properties": {
+            "normalizeAudio": {
+              "type": "boolean"
+            },
+            "targetPeakDb": {
+              "type": "number"
+            },
+            "maxIncreaseDb": {
+              "type": "number"
+            },
+            "dryMixGainDb": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "normalizeAudio",
+            "targetPeakDb",
+            "maxIncreaseDb"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "DenoisingMethod": {
+      "type": "string",
+      "const": "rnnoise"
+    }
+  }
+}

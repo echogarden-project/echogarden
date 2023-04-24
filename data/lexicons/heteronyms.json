@@ -1,0 +1,674 @@
+{
+	"present": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ɪ z ˈɛ n t"
+				}
+			},
+			"example": "I will present the issue."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈɛ z ə n t"
+				}
+			},
+			"example": "I got you a present."
+		}
+	],
+	"read": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈiː d"
+				}
+			},
+			"example": "I will read the story."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ d"
+				}
+			},
+			"example": "I have read the story."
+		}
+	],
+	"use": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "j ˈuː z"
+				}
+			},
+			"example": "I will use the fork."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "j ˈuː s"
+				}
+			},
+			"example": "There's no use."
+		}
+	],
+	"live": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɪ v"
+				}
+			},
+			"example": "I will live well."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈaɪ v"
+				}
+			},
+			"example": "It is a live performance."
+		}
+	],
+	"lives": [
+		{
+			"pos": [
+				"VBZ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɪ v z"
+				}
+			},
+			"example": "She lives vigorously."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈaɪ v z"
+				}
+			},
+			"example": "Their lives are interesting."
+		}
+	],
+	"close": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k l ˈoʊ z"
+				}
+			},
+			"example": "I will close the door."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k l ˈoʊ s"
+				}
+			},
+			"example": "It is very close."
+		}
+	],
+	"subject": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ʌ b dʒ ˈɛ k t"
+				}
+			},
+			"example": "You must subject to the rules."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈʌ b dʒ ɛ k t"
+				}
+			},
+			"example": "I understand the subject."
+		}
+	],
+	"subjects": [
+		{
+			"pos": [
+				"VBZ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ʌ b dʒ ˈɛ k t s"
+				}
+			},
+			"example": "He subjects them to his silly ideas."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈʌ b dʒ ɛ k t s"
+				}
+			},
+			"example": "There are many subjects."
+		}
+	],
+	"object": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɑː b dʒ ˈɛ k t"
+				}
+			},
+			"example": "I will object to that ruling."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɑː b dʒ ɛ k t"
+				}
+			},
+			"example": "Here is an object."
+		}
+	],
+	"objects": [
+		{
+			"pos": [
+				"VBZ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɑː b dʒ ˈɛ k t s"
+				}
+			},
+			"example": "She objects to the idea."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɑː b dʒ ɛ k t s"
+				}
+			},
+			"example": "There are lots of objects here."
+		}
+	],
+	"wind": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈaɪ n d"
+				}
+			},
+			"example": "I know how to wind the engine."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈɪ n d"
+				}
+			},
+			"example": "The wind is very strong."
+		}
+	],
+	"tear": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ˈɛ ɹ"
+				}
+			},
+			"example": "He would tear it."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ˈɪ ɹ"
+				}
+			},
+			"example": "She has a tear in her eye."
+		}
+	],
+	"tears": [
+		{
+			"pos": [
+				"VBZ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ˈɛɹ z"
+				}
+			},
+			"example": "He always tears it apart."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ˈɪɹ z"
+				}
+			},
+			"example": "She has tears in her eyes."
+		}
+	],
+	"minute": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "m aɪ n j ˈu t"
+				}
+			},
+			"example": "There's a minute difference between the two."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "m ˈɪ n ɪ t"
+				}
+			},
+			"example": "Wait a minute."
+		}
+	],
+	"inside": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ n s aɪ d"
+				}
+			},
+			"example": "You can see it on the inside of the box."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɪ n s ˈaɪ d"
+				}
+			},
+			"example": "Please go inside."
+		}
+	],
+	"outside": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "aʊ t s ˈaɪ d"
+				}
+			},
+			"example": "This is the outside area."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "aʊ t s ˈaɪ d"
+				}
+			},
+			"example": "Let's go outside."
+		}
+	],
+	"perfect": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɚ f ˈɛ k t"
+				}
+			},
+			"example": "I will perfect my skills."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈɜː f ɛ k t"
+				}
+			},
+			"example": "This looks perfect."
+		}
+	],
+	"conduct": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n d ˈʌ k t"
+				}
+			},
+			"example": "I will conduct an experiment."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n d ʌ k t"
+				}
+			},
+			"example": "My conduct wasn't very good."
+		}
+	],
+	"desert": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ᵻ z ˈɜː t"
+				}
+			},
+			"example": "Please don't desert me."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˈɛ z ɚ t"
+				}
+			},
+			"example": "I like being in the desert."
+		}
+	],
+	"bow": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈaʊ"
+				}
+			},
+			"example": "Bow to the queen."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈoʊ"
+				}
+			},
+			"example": "I'm looking to buy a new bow for my cello."
+		}
+	],
+	"row": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈoʊ"
+				}
+			},
+			"example": "I ordered them in a row."
+		},
+		{
+			"pos": [
+				"NNP"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈoʊ"
+				}
+			},
+			"example": "Row the boat!"
+		},
+		{
+			"pos": [
+				"NNP"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈaʊ"
+				}
+			},
+			"example": "There was a row among those people."
+		}
+	],
+	"wound": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈaʊ n d"
+				}
+			},
+			"example": "I wound the clock several times."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈuː n d"
+				}
+			},
+			"example": "She got a wound."
+		}
+	],
+	"address": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɐ d ɹ ˈɛ s"
+				}
+			},
+			"example": "I will address the issue."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈæ d ɹ ɛ s"
+				}
+			},
+			"example": "What is your address?"
+		}
+	],
+	"entrance": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɛ n t ɹ ˈæ n s"
+				}
+			},
+			"example": "The music will entrance you."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ n t ɹ ə n s"
+				}
+			},
+			"example": "Please go to the entrance."
+		}
+	],
+	"produce": [
+		{
+			"pos": [
+				"NNP"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈoʊ d uː s"
+				}
+			},
+			"example": "I gave her all the produce."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə d ˈuː s"
+				}
+			},
+			"example": "I will try to produce more."
+		}
+	],
+	"supposed": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ə p ˈoʊ z ɪ d"
+				}
+			},
+			"example": "That is the supposed solution."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ə p ˈoʊ z d"
+				}
+			},
+			"example": "This was supposed to be somwhere there."
+		}
+	],
+	"learned": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɜː ɹ n ɪ d"
+				}
+			},
+			"example": "She is a very learned person."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɜː ɹ n d"
+				}
+			},
+			"example": "She learned it."
+		}
+	],
+	"blessed": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b l ˈɛ s ɪ d"
+				}
+			},
+			"example": "The saints are blessed."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b l ˈɛ s t"
+				}
+			},
+			"example": "He blessed her."
+		}
+	],
+	"excuse": [
+		{
+			"pos": [
+				"VB"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɛ k s k j ˈuː z"
+				}
+			},
+			"example": "Excuse me? Can you help me?"
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɛ k s k j ˈuː s"
+				}
+			},
+			"example": "There's no excuse for that."
+		}
+	],
+	"lead": [
+		{
+			"pos": [
+				"NNP"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɛ d"
+				}
+			},
+			"example": "Lead is a dangerous substance."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈiː d"
+				}
+			},
+			"example": "You should lead the way."
+		}
+	],
+	"nice": [
+		{
+			"pos": [
+				"NNP"
+			],
+			"case": "capitalized",
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈiː s"
+				}
+			},
+			"example": "I'm flying to Nice."
+		}
+	],
+	"reading": [
+		{
+			"pos": [
+				"NNP"
+			],
+			"case": "capitalized",
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ d ɪ ŋ"
+				}
+			},
+			"example": "I'm driving to Reading."
+		}
+	]
+}

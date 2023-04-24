@@ -1,0 +1,8 @@
+.eslintrc.json
+.vscode
+desktop.ini
+echogarden.config
+node_modules
+notes
+out
+dist

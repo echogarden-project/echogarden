@@ -1,0 +1,286 @@
+import { extendDeep } from "../utilities/ObjectUtilities.js"
+
+import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
+
+import { logToStderr } from "../utilities/Utilities.js"
+import { RawAudio, downmixToMonoAndNormalize, trimAudioEnd } from "../audio/AudioUtilities.js"
+import { Logger } from "../utilities/Logger.js"
+import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
+
+import * as API from "./API.js"
+import { Timeline } from "../utilities/Timeline.js"
+import type { WhisperModelName } from "../recognition/WhisperSTT.js"
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
+import { loadPackage } from "../utilities/PackageManager.js"
+
+const log = logToStderr
+
+export async function recognizeFile(filename: string, options: RecognitionOptions) {
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
+	return recognize(rawAudio, options)
+}
+
+export async function recognize(inputRawAudio: RawAudio, options: RecognitionOptions) {
+	const logger = new Logger()
+	const startTimestamp = logger.getTimestamp()
+
+	logger.start("Prepare for recognition")
+
+	options = extendDeep(defaultRecognitionOptions, options)
+
+	const engine = options.engine!
+
+	let sourceRawAudio = await resampleAudioSpeex(inputRawAudio, 16000)
+	sourceRawAudio = downmixToMonoAndNormalize(sourceRawAudio)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+
+	if (!options.language) { // && options.engine != "whisper") {
+		logger.start("No language provided. Detecting audio language")
+		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, { engine: "silero" })
+
+		logger.end()
+		logger.log(`Language detected: ${formatLanguageCodeWithName(detectedLanguage)}`)
+
+		options.language = detectedLanguage
+	}
+
+	let language = normalizeLanguageCode(options.language)
+
+	let transcript: string
+	let timeline: Timeline | undefined
+
+	logger.start(`Load ${engine} module`)
+
+	switch (engine) {
+		case "whisper": {
+			const WhisperSTT = await import("../recognition/WhisperSTT.js")
+
+			const whisperOptions = options.whisper!
+
+			const shortLanguageCode = getShortLanguageCode(language)
+
+			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortLanguageCode)
+
+			if (shortLanguageCode != "en" && modelName.endsWith(".en")) {
+				throw new Error(`The model '${modelName}' is English only and cannot transcribe language '${shortLanguageCode}'`)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language))
+
+			break
+		}
+
+		case "vosk": {
+			const VoskSTT = await import("../recognition/VoskSTT.js")
+
+			const voskOptions = options.vosk!
+
+			const modelPath = voskOptions.modelPath
+
+			if (!modelPath) {
+				throw new Error("Vosk models are not currently auto-downloaded. You'll need to download a model manually and set a model path in 'vosk.modelPath'.")
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await VoskSTT.recognize(sourceRawAudio, modelPath, true))
+
+			break
+		}
+
+		case "silero": {
+			const SileroSTT = await import("../recognition/SileroSTT.js")
+
+			const sileroOptions = options.silero!
+
+			let modelPath = sileroOptions.modelPath
+
+			if (!modelPath) {
+				const shortLanguageCode = getShortLanguageCode(language)
+				const packageName = SileroSTT.languageCodeToPackageName[shortLanguageCode]
+
+				if (!packageName) {
+					throw new Error(`Language '${shortLanguageCode}' is not supported by Silero`)
+				}
+
+				modelPath = await loadPackage(packageName)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await SileroSTT.recognize(sourceRawAudio, modelPath))
+
+			break
+		}
+
+		case "google-cloud": {
+			const GoogleCloudSTT = await import("../recognition/GoogleCloudSTT.js")
+
+			const apiKey = options.googleCloud!.apiKey
+
+			if (!apiKey) {
+				throw new Error(`No API key given`)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await GoogleCloudSTT.recognize(sourceRawAudio, apiKey, language))
+
+			break
+		}
+
+		case "microsoft-azure": {
+			const AzureCognitiveServicesSTT = await import("../recognition/AzureCognitiveServicesSTT.js")
+
+			const subscriptionKey = options.microsoftAzure!.subscriptionKey
+
+			if (!subscriptionKey) {
+				throw new Error(`No subscription key given`)
+			}
+
+			const serviceRegion = options.microsoftAzure!.serviceRegion
+
+			if (!serviceRegion) {
+				throw new Error(`No service region given`)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await AzureCognitiveServicesSTT.recognize(sourceRawAudio, subscriptionKey, serviceRegion, language))
+
+			break
+		}
+
+		case "amazon-transcribe": {
+			const AmazonTranscribeSTT = await import("../recognition/AmazonTranscribeSTT.js")
+
+			const region = options.amazonTranscribe!.region
+
+			if (!region) {
+				throw new Error(`No region given`)
+			}
+
+			const accessKeyId = options.amazonTranscribe!.accessKeyId
+
+			if (!accessKeyId) {
+				throw new Error(`No access key id given`)
+			}
+
+			const secretAccessKey = options.amazonTranscribe!.secretAccessKey
+
+			if (!secretAccessKey) {
+				throw new Error(`No secret access key given`)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await AmazonTranscribeSTT.recgonize(sourceRawAudio, language, region, accessKeyId, secretAccessKey))
+
+			break
+		}
+
+		default: {
+			throw new Error(`Engine '${options.engine}' is not supported`)
+		}
+	}
+
+	if (!timeline) {
+		logger.start(`Align audio to transcript`)
+		const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language: language })
+
+		const { wordTimeline } = await API.align(sourceRawAudio, transcript, alignmentOptions)
+
+		timeline = wordTimeline
+	}
+
+	logger.end()
+	logger.logDuration(`Total recognition time`, startTimestamp)
+
+	return { transcript, timeline, rawAudio: inputRawAudio, language }
+}
+
+export type RecognitionEngine = "whisper" | "vosk" | "silero" | "google-cloud" | "microsoft-azure" | "amazon-transcribe"
+
+export interface RecognitionOptions {
+	engine?: RecognitionEngine
+
+	language?: string
+
+	maxAlternatives?: number
+
+	alignment?: API.AlignmentOptions
+
+	whisper?: {
+		model?: WhisperModelName
+	}
+
+	vosk?: {
+		modelPath?: string
+	}
+
+	silero?: {
+		modelPath?: string
+	}
+
+	googleCloud?: {
+		apiKey?: string
+		alternativeLanguageCodes?: string[]
+		profanityFilter?: boolean
+		autoPunctuation?: boolean
+		useEnhancedModel?: boolean
+	}
+
+	microsoftAzure?: {
+		subscriptionKey?: string
+		serviceRegion?: string
+	}
+
+	amazonTranscribe?: {
+		region?: string
+		accessKeyId?: string
+		secretAccessKey?: string
+	}
+}
+
+export const defaultRecognitionOptions: RecognitionOptions = {
+	engine: "whisper",
+
+	language: undefined,
+
+	maxAlternatives: 1,
+
+	alignment: undefined,
+
+	whisper: {
+		model: undefined,
+	},
+
+	vosk: {
+		modelPath: undefined
+	},
+
+	silero: {
+		modelPath: undefined
+	},
+
+	googleCloud: {
+		apiKey: undefined,
+		alternativeLanguageCodes: [],
+		profanityFilter: false,
+		autoPunctuation: true,
+		useEnhancedModel: true,
+	},
+
+	microsoftAzure: {
+		subscriptionKey: undefined,
+		serviceRegion: undefined
+	},
+
+	amazonTranscribe: {
+		region: undefined,
+		accessKeyId: undefined,
+		secretAccessKey: undefined,
+	}
+}
