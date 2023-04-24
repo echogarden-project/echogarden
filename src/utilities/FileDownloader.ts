@@ -1,6 +1,6 @@
 import { GaxiosOptions, request } from "gaxios"
 import { Readable } from "stream"
-import { getRandomHexString } from "./Utilities.js"
+import { getRandomHexString, writeToStderr } from "./Utilities.js"
 import { OpenPromise } from "./OpenPromise.js"
 
 import { Timer } from "./Timer.js"
@@ -39,7 +39,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 }
 
 export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = "Downloading") {
-	const logger = new Logger()
+	const write = writeToStderr
 
 	const downloadPromise = new OpenPromise<void>()
 
@@ -51,7 +51,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 	const ttyOutput = process.stderr.isTTY === true
 
-	logger.write(`${prompt}.. `)
+	write(`\n${prompt}.. `)
 
 	const rateAveragingWindowSeconds = 5.0
 
@@ -107,8 +107,8 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 			}
 
 			if (newString != lastString) {
-				logger.write('\r')
-				logger.write(newString)
+				write('\r')
+				write(newString)
 			}
 
 			lastString = newString
@@ -121,15 +121,15 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 			const percentDisplay = `${(Math.floor(percent * 10) * 10).toString()}%`
 
 			if (lastString == prompt) {
-				logger.write(`(${totalMbytesStr}MB): `)
+				write(`(${totalMbytesStr}MB): `)
 			}
 
 			if (percentDisplay != lastString) {
-				logger.write(percentDisplay)
+				write(percentDisplay)
 				if (percent == 1.0) {
-					logger.write(` (${timer.elapsedTimeSeconds.toFixed(2)}s, ${cumulativeDownloadRateStr}MB/s)`)
+					write(` (${timer.elapsedTimeSeconds.toFixed(2)}s, ${cumulativeDownloadRateStr}MB/s)`)
 				} else {
-					logger.write(` `)
+					write(` `)
 				}
 
 				lastString = percentDisplay
@@ -173,7 +173,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			fileWriteStream.end()
 
-			logger.write("\n")
+			write("\n")
 
 			await move(partialFilePath, targetFilePath, { overwrite: true })
 
