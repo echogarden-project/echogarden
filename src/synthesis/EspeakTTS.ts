@@ -68,7 +68,7 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 	let preprocessedFragments: string[]
 	const phonemizedFragmentsSubstitutions = new Map<number, string[]>()
 
-	if (espeakVoice == "en-us") {
+	if (espeakVoice.startsWith("en")) {
 		fragments = []
 		preprocessedFragments = []
 
