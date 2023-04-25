@@ -6,7 +6,7 @@ import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLICon
 
 import chalk from 'chalk'
 import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normalizeAudioLevel, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
-import { SubtitlesConfig, subtitlesFileToText, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
+import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
 import { Logger } from "../utilities/Logger.js"
 import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
 import path, { parse as parsePath } from "node:path"
@@ -25,7 +25,7 @@ const log = logToStderr
 
 export async function start() {
 	setupUnhandledExceptionListeners()
-	setupProgramTerminationListeners()
+	//setupProgramTerminationListeners()
 
 	let args: CLIArguments
 
