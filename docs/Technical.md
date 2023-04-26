@@ -20,7 +20,7 @@ By using downloadable packages, the installed size is made significantly smaller
 
 ## Can the base install size be made smaller?
 
-The installed (uncompressed) size, including dependencies, is around 300MB. This is without any models or voices, which are downloaded as needed.
+The installed (uncompressed) size, including dependencies, is around 270MB. This is without any models or voices, which are downloaded as needed.
 
 Currently, the biggest contributors to the size are:
 
