@@ -65,7 +65,7 @@ export async function isFileIsUpToDate(filePath: string, timeRangeSeconds: numbe
 
 	const differenceInMilliseconds = currentTime - fileUpdateTime
 
-	const differenceInSeconds = differenceInMilliseconds / 60
+	const differenceInSeconds = differenceInMilliseconds / 1000
 
 	return differenceInSeconds <= timeRangeSeconds
 }
