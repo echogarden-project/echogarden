@@ -1387,7 +1387,7 @@ export const defaultVoiceListRequestOptions: VoiceListRequestOptions = {
 
 	cache: {
 		path: undefined,
-		duration: 60 * 60
+		duration: 60 * 5
 	},
 }
 
