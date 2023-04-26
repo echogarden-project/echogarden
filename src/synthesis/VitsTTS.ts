@@ -311,7 +311,7 @@ export const voiceList: SynthesisVoice[] = [
 
 	{
 		name: "fi-harri-low",
-		languages: ["fr"],
+		languages: ["fi"],
 		gender: "female",
 	},
 
