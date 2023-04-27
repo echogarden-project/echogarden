@@ -16,7 +16,9 @@ Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
 
-By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 12.8GB (8.29GB compressed). Another advantage of using a data folder is that the data does not need to be re-downloaded when the program is updated.
+By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 13GB (8.45GB compressed).
+
+Another advantage of using a data folder is that the data does not need to be re-downloaded when the program is updated.
 
 ## Can the base install size be made smaller?
 

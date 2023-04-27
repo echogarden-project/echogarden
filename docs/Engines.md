@@ -4,7 +4,7 @@
 ## Text to speech
 
 **Offline**:
-* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Currently available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Supports English (US, UK), Spanish, Brazilian Portuguese, Italian, French, German, Dutch, Norwegian, Danish, Finnish, Polish, Ukrainian, Catalan, Kazakh, Nepali, Vietnamese and Chinese. You can listen to audio examples of all voices and languages on [Piper's samples page](https://rhasspy.github.io/piper-samples/).
+* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Currently available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Supports English (US, UK), Spanish, Brazilian Portuguese, Italian, French, German, Dutch, Norwegian, Danish, Finnish, Polish, Greek, Ukrainian, Catalan, Kazakh, Nepali, Vietnamese and Chinese. You can listen to audio examples of all voices and languages on [Piper's samples page](https://rhasspy.github.io/piper-samples/).
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a diphone-based synthesizer. Supports English (US, UK), Spanish, Italian, French, and German.
 * [Flite](https://github.com/festvox/flite) (`flite`): a diphone-based synthesizer. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi.
 * [eSpeak-NG](https://github.com/espeak-ng/espeak-ng/) (`espeak`): a formant-based synthesizer. Supports 100+ languages.
