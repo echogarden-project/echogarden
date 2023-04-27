@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"description": "An integrated speech toolbox designed with end-users in mind.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
@@ -54,11 +54,11 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.319.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.319.0",
-		"@echogarden/espeak-ng-emscripten": "^0.1.1",
+		"@aws-sdk/client-polly": "^3.321.1",
+		"@aws-sdk/client-transcribe-streaming": "^3.321.1",
+		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
-		"@echogarden/flite-wasi": "^0.1.0",
+		"@echogarden/flite-wasi": "^0.1.1",
 		"@echogarden/fvad-wasm": "^0.1.2",
 		"@echogarden/kissfft-wasm": "^0.1.1",
 		"@echogarden/rnnoise-wasm": "^0.1.1",
