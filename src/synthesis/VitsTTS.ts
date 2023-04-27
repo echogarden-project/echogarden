@@ -227,6 +227,18 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["de"],
 		gender: "female",
 	},
+	{
+		name: "de-karlsson-low",
+		languages: ["de"],
+		gender: "male",
+	},
+
+	{
+		name: "el-gr-rapunzelina-low",
+		languages: ["el", "el-gr"],
+		gender: "female",
+	},
+
 
 	{
 		name: "en-gb-danny-low",
@@ -381,6 +393,11 @@ export const voiceList: SynthesisVoice[] = [
 		name: "nl-rdh-x-low",
 		languages: ["nl"],
 		gender: "male",
+	},
+	{
+		name: "nl-mls_5809-low",
+		languages: ["nl"],
+		gender: "female",
 	},
 	{
 		name: "nl-mls_7432-low",
