@@ -1,4 +1,3 @@
-
 # Using the command line interface
 
 All CLI command lines have the general structure:

@@ -21,10 +21,14 @@ An integrated speech toolbox designed with end-users in mind.
 * Internal package system to auto-download and install voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection and speech denoising
 
+### In development
+
+* Background worker
+* WebSocket server API
+
 ### Planned, but not yet
 
 * Real-time, streaming speech recognition
-* WebSocket server API
 * Web-based GUI frontend
 * Browser port for a subset of the API (in particular for the offline TTS models and their dependencies)
 
@@ -60,10 +64,12 @@ npm update echogarden -g
 
 ## Credits
 
-This project consolidates and builds upon the work of [many different individuals and companies](docs/Licenses.md).
+This project consolidates and builds upon the work of many different individuals and companies.
 
 Designed and developed by Rotem Dan.
 
 ## License
 
 GNU General Public License v3
+
+Licenses for components, models and other dependencies are detailed at [this page](docs/Licenses.md).
