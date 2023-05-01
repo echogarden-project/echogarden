@@ -266,6 +266,7 @@ export async function getVoiceList(trustedClientToken: string) {
 
 	return response.data as any[]
 }
+
 function getTimestampString() {
 	const timestampString = new Date(new Date().toLocaleString("en-US", { timeZone: "UTC" })).toString().replace(/GMT.*/, "GMT+0000 (Coordinated Universal Time)")
 	return timestampString

@@ -1,10 +1,10 @@
-import Onnx from 'onnxruntime-node'
+import type { InferenceSession } from 'onnxruntime-node'
 import { SynthesisVoice } from '../api/API.js'
 import { Logger } from "../utilities/Logger.js"
 import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
-import { readAndParseJsonFile, readFile } from "../utilities/FileSystem.js"
+import { readAndParseJsonFile } from "../utilities/FileSystem.js"
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 
@@ -29,7 +29,7 @@ export class VitsTTS {
 	voiceName: string
 	modelPath: string
 
-	modelSession?: Onnx.InferenceSession
+	modelSession?: InferenceSession
 	metadata?: any
 	phonemeMap?: Map<string, number[]>
 
@@ -42,11 +42,13 @@ export class VitsTTS {
 		const logger = new Logger()
 		await logger.startAsync("Initialize VITS ONNX synthesis model")
 
-		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
+		const onnxOptions: InferenceSession.SessionOptions = {
 			logSeverityLevel: 3
 		}
 
-		this.modelSession = await Onnx.InferenceSession.create(`${this.modelPath}/${this.voiceName}.onnx`, onnxOptions)
+		const { InferenceSession } = await import('onnxruntime-node')
+
+		this.modelSession = await InferenceSession.create(`${this.modelPath}/${this.voiceName}.onnx`, onnxOptions)
 		this.metadata = await readAndParseJsonFile(`${this.modelPath}/${this.voiceName}.onnx.json`)
 
 		this.phonemeMap = new Map<string, number[]>()
@@ -150,10 +152,12 @@ export class VitsTTS {
 		const bigIntIds = new BigInt64Array(ids.map(id => BigInt(id)))
 		const idLengths = new BigInt64Array([BigInt(bigIntIds.length)])
 
-		const inputTensor = new Onnx.Tensor('int64', bigIntIds, [1, bigIntIds.length])
-		const inputLengthsTensor = new Onnx.Tensor('int64', idLengths, [1])
-		const scalesTensor = new Onnx.Tensor('float32', [metadata.inference.noise_scale, lengthScale, metadata.inference.noise_w], [3])
-		const speakerIdTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
+		const { Tensor } = await import('onnxruntime-node')
+
+		const inputTensor = new Tensor('int64', bigIntIds, [1, bigIntIds.length])
+		const inputLengthsTensor = new Tensor('int64', idLengths, [1])
+		const scalesTensor = new Tensor('float32', [metadata.inference.noise_scale, lengthScale, metadata.inference.noise_w], [3])
+		const speakerIdTensor = new Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
 
 		const modelInputs = { input: inputTensor, input_lengths: inputLengthsTensor, scales: scalesTensor, sid: speakerIdTensor }
 
@@ -187,55 +191,55 @@ export class VitsTTS {
 export const voiceList: SynthesisVoice[] = [
 	{
 		name: "ca-upc_ona-x-low",
-		languages: ["ca"],
+		languages: ["ca-ES", "ca"],
 		gender: "female",
 	},
 	{
 		name: "ca-upc_pau-x-low",
-		languages: ["ca"],
+		languages: ["ca-ES", "ca"],
 		gender: "male",
 	},
 
 	{
 		name: "da-nst_talesyntese-medium",
-		languages: ["da"],
+		languages: ["da-DK", "da"],
 		gender: "male",
 	},
 
 	{
 		name: "de-thorsten-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "male",
 	},
 	{
 		name: "de-eva_k-x-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "female",
 	},
 	{
 		name: "de-ramona-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "female",
 	},
 	{
 		name: "de-pavoque-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "male",
 	},
 	{
 		name: "de-kerstin-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "female",
 	},
 	{
 		name: "de-karlsson-low",
-		languages: ["de"],
+		languages: ["de-DE", "de"],
 		gender: "male",
 	},
 
 	{
 		name: "el-gr-rapunzelina-low",
-		languages: ["el", "el-gr"],
+		languages: ["el-GR", "el"],
 		gender: "female",
 	},
 
@@ -276,13 +280,6 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["en-US", "en"],
 		gender: "female",
 	},
-	/*
-	{
-		name: "en-us-ljspeech-low",
-		languages: ["en-US", "en"],
-		gender: "female",
-	},
-	*/
 	{
 		name: "en-us-libritts-high",
 		languages: ["en-US", "en"],
@@ -307,113 +304,113 @@ export const voiceList: SynthesisVoice[] = [
 
 	{
 		name: "es-carlfm-x-low",
-		languages: ["es"],
+		languages: ["es-ES", "es"],
 		gender: "male",
 	},
 	{
 		name: "es-mls_9972-low",
-		languages: ["es"],
+		languages: ["es-ES", "es"],
 		gender: "male",
 	},
 	{
 		name: "es-mls_10246-low",
-		languages: ["es"],
+		languages: ["es-ES", "es"],
 		gender: "male",
 	},
 
 	{
 		name: "fi-harri-low",
-		languages: ["fi"],
+		languages: ["fi-FI", "fi"],
 		gender: "female",
 	},
 
 	{
 		name: "fr-siwis-low",
-		languages: ["fr"],
+		languages: ["fr-FR", "fr"],
 		gender: "female",
 	},
 	{
 		name: "fr-siwis-medium",
-		languages: ["fr"],
+		languages: ["fr-FR", "fr"],
 		gender: "female",
 	},
 	{
 		name: "fr-mls_1840-low",
-		languages: ["fr"],
+		languages: ["fr-FR", "fr"],
 		gender: "male",
 	},
 
 	{
 		name: "it-riccardo_fasol-x-low",
-		languages: ["it"],
+		languages: ["it-IT", "it"],
 		gender: "male",
 	},
 
 	{
 		name: "kk-iseke-x-low",
-		languages: ["kk"],
+		languages: ["kk-KZ", "kk"],
 		gender: "unknown",
 		speakerCount: 6,
 	},
 	{
 		name: "kk-raya-x-low",
-		languages: ["kk"],
+		languages: ["kk-KZ", "kk"],
 		gender: "male",
 	},
 	{
 		name: "kk-issai-high",
-		languages: ["kk"],
+		languages: ["kk-KZ", "kk"],
 		gender: "male",
 	},
 
 	{
 		name: "ne-google-medium",
-		languages: ["ne"],
+		languages: ["ne-NP", "ne"],
 		gender: "female",
 		speakerCount: 18,
 	},
 	{
 		name: "ne-google-x-low",
-		languages: ["ne"],
+		languages: ["ne-NP", "ne"],
 		gender: "female",
 		speakerCount: 18,
 	},
 
 	{
 		name: "nl-nathalie-x-low",
-		languages: ["nl"],
+		languages: ["nl-NL", "nl"],
 		gender: "female",
 	},
 	{
 		name: "nl-rdh-medium",
-		languages: ["nl"],
+		languages: ["nl-NL", "nl"],
 		gender: "male",
 	},
 	{
 		name: "nl-rdh-x-low",
-		languages: ["nl"],
+		languages: ["nl-NL", "nl"],
 		gender: "male",
 	},
 	{
 		name: "nl-mls_5809-low",
-		languages: ["nl"],
+		languages: ["nl-NL", "nl"],
 		gender: "female",
 	},
 	{
 		name: "nl-mls_7432-low",
-		languages: ["nl"],
+		languages: ["nl-NL", "nl"],
 		gender: "female",
 	},
 
 	{
 		name: "no-talesyntese-medium",
-		languages: ["no"],
+		languages: ["no-NO", "no"],
 		gender: "male",
 	},
 
 	{
 		name: "pl-mls_6892-low",
-		languages: ["pl"],
+		languages: ["pl-PL", "pl"],
 		gender: "male",
 	},
 
@@ -425,19 +422,19 @@ export const voiceList: SynthesisVoice[] = [
 
 	{
 		name: "uk-lada-x-low",
-		languages: ["uk"],
+		languages: ["uk-UA", "uk"],
 		gender: "female",
 	},
 
 	{
 		name: "vi-vivos-x-low",
-		languages: ["vi"],
+		languages: ["vi-VN", "vi"],
 		gender: "unknown",
 		speakerCount: 65,
 	},
 	{
 		name: "vi-25hours-single-low",
-		languages: ["vi"],
+		languages: ["vi-VN", "vi"],
 		gender: "female",
 	},
 

@@ -24,7 +24,7 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Synthesis
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent) {
+export async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesizeSegmentsResult> {
 	const logger = new Logger()
 	options = extendDeep(defaultSynthesisOptions, options)
 
@@ -43,7 +43,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 			throw new Error(`Voice '${options.voice}' was specified but no engine was specified.`)
 		}
 
-		options.engine = selectBestOfflineEngineForLanguage(options.language!)
+		options.engine = await selectBestOfflineEngineForLanguage(options.language!)
 
 		logger.log(`No engine specified, setting engine to '${options.engine}'`)
 	}
@@ -206,6 +206,13 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 		segmentsAudio,
 		segmentsTimelines,
 	}
+}
+
+export interface SynthesizeSegmentsResult {
+	synthesizedAudio: RawAudio
+	timeline: Timeline
+	segmentsAudio: RawAudio[]
+	segmentsTimelines: Timeline[]
 }
 
 async function synthesizeSegment(text: string, options: SynthesisOptions) {
@@ -1020,7 +1027,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Voice list request
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function requestVoiceList(options: VoiceListRequestOptions) {
+export async function requestVoiceList(options: VoiceListRequestOptions): Promise<RequestVoiceListResult> {
 	options = extendDeep(defaultVoiceListRequestOptions, options)
 
 	const cacheOptions = options.cache!
@@ -1069,7 +1076,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions) {
 			case "flite": {
 				const FliteTTS = await import("../synthesis/FliteTTS.js")
 
-				voiceList = deepClone(FliteTTS.voices)
+				voiceList = deepClone(FliteTTS.voiceList)
 
 				break
 			}
@@ -1351,28 +1358,57 @@ export async function requestVoiceList(options: VoiceListRequestOptions) {
 	return { voiceList, bestMatchingVoice }
 }
 
-export function selectBestOfflineEngineForLanguage(language: string): SynthesisEngine {
+export interface RequestVoiceListResult {
+	voiceList: API.SynthesisVoice[]
+	bestMatchingVoice: API.SynthesisVoice
+}
+
+export async function selectBestOfflineEngineForLanguage(language: string): Promise<SynthesisEngine> {
 	language = normalizeLanguageCode(language)
 
-	const vitsLanguages = ["ca", "da", "de", "en", "en-US", "en-GB", "es", "fi", "fr", "it", "kk", "ne", "nl", "no", "pl", "pt-BR", "uk", "vi", "zh", "zh-CN"]
+	const VitsTTS = await import("../synthesis/VitsTTS.js")
+
+	const vitsLanguages = getAllLangCodesFromVoiceList(VitsTTS.voiceList)
 
 	if (vitsLanguages.includes(language)) {
 		return "vits"
 	}
 
-	const fliteLanguages = ["en-US", "be", "bn", "gu", "hi", /*"ka"*/, "mr", "pa", "te"]
+	const FliteTTS = await import("../synthesis/FliteTTS.js")
+
+	const fliteLanguages = getAllLangCodesFromVoiceList(FliteTTS.voiceList)
 
 	if (fliteLanguages.includes(language)) {
 		return "flite"
 	}
 
-	const picoLanguages = ["en-US", "en-GB", "de", "es", "fr", "it"]
+	const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
+
+	const picoLanguages = getAllLangCodesFromVoiceList(SvoxPicoTTS.voiceList)
 
 	if (picoLanguages.includes(language)) {
 		return "pico"
 	}
 
 	return "espeak"
+}
+
+export function getAllLangCodesFromVoiceList(voiceList: SynthesisVoice[]) {
+	const languageCodes = new Set<string>()
+	const langList: string[] = []
+
+	for (const voice of voiceList) {
+		for (const langCode of voice.languages) {
+			if (languageCodes.has(langCode)) {
+				continue
+			}
+
+			langList.push(langCode)
+			languageCodes.add(langCode)
+		}
+	}
+
+	return langList
 }
 
 export interface VoiceListRequestOptions extends SynthesisOptions {

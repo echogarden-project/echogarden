@@ -1,4 +1,3 @@
-import { WASI } from 'wasi'
 import { SynthesisVoice } from "../api/API.js"
 import { decodeWaveBuffer } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
@@ -54,6 +53,8 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 	if (voiceDir != undefined) {
 		preopens['./voices'] = voiceDir
 	}
+
+	const { WASI } = await import('wasi')
 
 	const wasi = new WASI({
 		env: {
@@ -170,7 +171,7 @@ export type FliteEvent = {
 	endTime: number
 }
 
-export const voices: SynthesisVoice[] = [
+export const voiceList: SynthesisVoice[] = [
 	// Built-in voices
 	{
 		name: "slt",

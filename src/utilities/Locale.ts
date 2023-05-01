@@ -85,5 +85,6 @@ export const shortLanguageCodeToLong: { [lang: string]: string } = {
 	"fr": "fr-FR",
 	"de": "de-DE",
 	"pt": "pt-BR",
-	"es": "es-ES"
+	"es": "es-ES",
+	"nl": "nl-NL"
 }
