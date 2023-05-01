@@ -1,4 +1,5 @@
 import * as API from "./API.js"
+import type { ServerOptions } from "../server/Server.js"
 
 export type APIOptions = {
 	VoiceListRequestOptions: API.VoiceListRequestOptions,
@@ -9,5 +10,6 @@ export type APIOptions = {
 	SpeechLanguageDetectionOptions: API.SpeechLanguageDetectionOptions,
 	TextLanguageDetectionOptions: API.TextLanguageDetectionOptions,
 	VADOptions: API.VADOptions,
-	DenoisingOptions: API.DenoisingOptions
+	DenoisingOptions: API.DenoisingOptions,
+	ServerOptions: ServerOptions
 }

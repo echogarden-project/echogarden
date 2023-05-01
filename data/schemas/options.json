@@ -31,6 +31,9 @@
         },
         "DenoisingOptions": {
           "$ref": "#/definitions/DenoisingOptions"
+        },
+        "ServerOptions": {
+          "$ref": "#/definitions/ServerOptions"
         }
       },
       "required": [
@@ -42,7 +45,8 @@
         "SpeechLanguageDetectionOptions",
         "TextLanguageDetectionOptions",
         "VADOptions",
-        "DenoisingOptions"
+        "DenoisingOptions",
+        "ServerOptions"
       ],
       "additionalProperties": false
     },
@@ -1052,6 +1056,30 @@
     "DenoisingMethod": {
       "type": "string",
       "const": "rnnoise"
+    },
+    "ServerOptions": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": "number"
+        },
+        "secure": {
+          "type": "boolean"
+        },
+        "certPath": {
+          "type": "string"
+        },
+        "keyPath": {
+          "type": "string"
+        },
+        "deflate": {
+          "type": "boolean"
+        },
+        "maxPayload": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

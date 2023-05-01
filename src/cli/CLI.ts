@@ -20,7 +20,7 @@ import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, loadPackage } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
-import { startWebSocketServer } from '../server/Server.js'
+import { ServerOptions, startWebSocketServer } from '../server/Server.js'
 import { runClientTest } from '../server/Client.js'
 
 const log = logToStderr
@@ -796,9 +796,6 @@ async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, 
 }
 
 async function listPackages(commandArgs: string[], cliOptions: Map<string, string>) {
-	if (commandArgs.length > 0) {
-	}
-
 	const packagesDir = await ensureAndGetPackagesDir()
 
 	const packageNames = await readdir(packagesDir)
@@ -810,15 +807,15 @@ async function listPackages(commandArgs: string[], cliOptions: Map<string, strin
 	log(packageNames.join("\n"))
 }
 
-async function startServer(commandArgs: string[], options: Map<string, string>) {
-	const port = 4000
+async function startServer(commandArgs: string[], cliOptions: Map<string, string>) {
+	const options: ServerOptions = await cliOptionsMapToOptionsObject(cliOptions, "ServerOptions")
 
-	const serverPromise = startWebSocketServer(port)
+	async function onServerStarted(serverOptions: ServerOptions) {
+		// Run a test routine (early development)
+		await runClientTest(serverOptions.port!, serverOptions.secure!)
+	}
 
-	// Run a test routine (early development)
-	await runClientTest(port)
-
-	await serverPromise
+	await startWebSocketServer(options, onServerStarted)
 }
 
 async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, optionsRoot: keyof APIOptions, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>) {

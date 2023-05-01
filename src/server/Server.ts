@@ -1,14 +1,45 @@
-import { WebSocketServer, WebSocket } from 'ws'
+import { WebSocketServer, WebSocket, ServerOptions as WsServerOptions } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
 import { Worker } from 'node:worker_threads'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
+import { resolveToModuleRootDir, readFile, existsSync } from '../utilities/FileSystem.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 const log = logToStderr
 
-export async function startWebSocketServer(serverPort = 4000) {
-	const serverPromise = new OpenPromise<void>()
+export async function startWebSocketServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void) {
+	serverOptions = extendDeep(defaultServerOptions, serverOptions)
+
+	const wsServerOptions: WsServerOptions = {
+		perMessageDeflate: serverOptions.deflate,
+		maxPayload: serverOptions.maxPayload
+	}
+
+	if (serverOptions.secure) {
+		if (!serverOptions.certPath || !existsSync(serverOptions.certPath)) {
+			throw new Error(`No valid certificate file path was given`)
+		}
+
+		if (!serverOptions.keyPath || !existsSync(serverOptions.keyPath)) {
+			throw new Error(`No valid key file path was given`)
+		}
+
+		const { createServer } = await import('https')
+
+		const httpsServer = createServer({
+			cert: await readFile(serverOptions.certPath!),
+			key: await readFile(serverOptions.keyPath!)
+		})
+
+		httpsServer.listen(serverOptions.port!)
+
+		wsServerOptions.server = httpsServer
+	} else {
+		wsServerOptions.port = serverOptions.port!
+	}
+
+	const wss = new WebSocketServer(wsServerOptions)
 
 	const requestIdToWebSocket = new Map<string, WebSocket>()
 
@@ -30,9 +61,16 @@ export async function startWebSocketServer(serverPort = 4000) {
 		ws.send(encodedWorkerMessage)
 	})
 
-	const wss = new WebSocketServer({ port: serverPort })
+	const serverOpenPromise = new OpenPromise<void>
 
-	log(`Started Echogarden WebSocket server on port ${serverPort}`)
+	wss.on("listening", () => {
+		log(`Started Echogarden WebSocket server on port ${serverOptions.port}`)
+		onStarted(serverOptions)
+	})
+
+	wss.on("close", () => {
+		serverOpenPromise.resolve()
+	})
 
 	wss.on('connection', async (ws, req) => {
 		log(`Accepted incoming connection from ${req.socket.remoteAddress}`)
@@ -47,7 +85,7 @@ export async function startWebSocketServer(serverPort = 4000) {
 
 			try {
 				incomingMessage = decodeMsgPack(messageData as Buffer)
-			} catch(e) {
+			} catch (e) {
 				log(`Failed to decode binary WebSocket message. Reason: ${e}`)
 				return
 			}
@@ -83,5 +121,23 @@ export async function startWebSocketServer(serverPort = 4000) {
 		})
 	})
 
-	return serverPromise.promise
+	return serverOpenPromise.promise
+}
+
+export interface ServerOptions {
+	port?: number
+	secure?: boolean
+	certPath?: string
+	keyPath?: string
+	deflate?: boolean
+	maxPayload?: number
+}
+
+export const defaultServerOptions: ServerOptions = {
+	port: 4000,
+	secure: false,
+	certPath: undefined,
+	keyPath: undefined,
+	deflate: true,
+	maxPayload: 1000 * 1000000 // 1GB
 }

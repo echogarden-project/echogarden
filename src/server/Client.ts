@@ -111,8 +111,10 @@ export class Client {
 	}
 }
 
-export async function runClientTest(serverPort: number) {
-	const ws = new WebSocket(`ws://localhost:${serverPort}`)
+export async function runClientTest(serverPort: number, secure: boolean) {
+	const ws = new WebSocket(`${secure ? "wss" : "ws" }://localhost:${serverPort}`, {
+		rejectUnauthorized: false
+	})
 
 	ws.on("open", async () => {
 		const client = new Client(ws)
@@ -126,10 +128,10 @@ export async function runClientTest(serverPort: number) {
 		client.synthesizeSegments(
 			["Hello world! How are you?", "Want to play a game?"],
 			{},
-			async () => {
+			async (eventData) => {
 				log("onSegment (call 1)")
 			},
-			async () => {
+			async (eventData) => {
 				log("onSentence (call 1)")
 			})
 
@@ -138,10 +140,10 @@ export async function runClientTest(serverPort: number) {
 		client.synthesizeSegments(
 			["Hey! What's up?", "See ya."],
 			{},
-			async () => {
+			async (eventData) => {
 				log("onSegment (call 2)")
 			},
-			async () => {
+			async (eventData) => {
 				log("onSentence (call 2)")
 			})
 
