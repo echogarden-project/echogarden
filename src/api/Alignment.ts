@@ -48,7 +48,7 @@ export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: T
 	return timeline
 }
 
-export async function align(inputRawAudio: RawAudio, transcript: string, options: AlignmentOptions) {
+export async function align(inputRawAudio: RawAudio, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -175,6 +175,13 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		transcript,
 		language
 	}
+}
+
+export interface AlignmentResult {
+	wordTimeline: Timeline,
+	rawAudio: RawAudio,
+	transcript: string
+	language: string
 }
 
 export type AlignmentEngine = "dtw" | "dtw-ra" | "whisper"

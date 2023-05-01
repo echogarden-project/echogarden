@@ -20,7 +20,7 @@ export async function recognizeFile(filename: string, options: RecognitionOption
 	return recognize(rawAudio, options)
 }
 
-export async function recognize(inputRawAudio: RawAudio, options: RecognitionOptions) {
+export async function recognize(inputRawAudio: RawAudio, options: RecognitionOptions): Promise<RecognitionResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
 
@@ -205,6 +205,13 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 	logger.logDuration(`Total recognition time`, startTimestamp)
 
 	return { transcript, timeline, rawAudio: inputRawAudio, language }
+}
+
+export interface RecognitionResult {
+	transcript: string
+	timeline: Timeline
+	rawAudio: RawAudio
+	language: string
 }
 
 export type RecognitionEngine = "whisper" | "vosk" | "silero" | "google-cloud" | "microsoft-azure" | "amazon-transcribe"

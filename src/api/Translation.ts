@@ -7,7 +7,6 @@ import { RawAudio, downmixToMonoAndNormalize, trimAudioEnd } from "../audio/Audi
 import { Logger } from "../utilities/Logger.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
-import * as API from "./API.js"
 import { Timeline } from "../utilities/Timeline.js"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
 import { getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
@@ -22,7 +21,7 @@ export async function translateSpeechFile(filename: string, options: SpeechTrans
 	return translateSpeech(rawAudio, options)
 }
 
-export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTranslationOptions) {
+export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
 
@@ -86,6 +85,13 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	logger.logDuration(`Total speech translation time`, startTimestamp)
 
 	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage }
+}
+
+export interface SpeechTranslationResult {
+	transcript: string
+	timeline: Timeline
+	rawAudio: RawAudio
+	sourceLanguage: string
 }
 
 export type SpeechTranslationEngine = "whisper"
