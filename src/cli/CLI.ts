@@ -20,6 +20,8 @@ import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, loadPackage } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
+import { startWebSocketServer } from '../server/Server.js'
+import { runClientTest } from '../server/Client.js'
 
 const log = logToStderr
 
@@ -208,6 +210,11 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 
 		case 'list-packages': {
 			await listPackages(parsedArgs.commandArgs, parsedArgs.options)
+			break
+		}
+
+		case 'serve': {
+			await startServer(parsedArgs.commandArgs, parsedArgs.options)
 			break
 		}
 
@@ -801,6 +808,17 @@ async function listPackages(commandArgs: string[], cliOptions: Map<string, strin
 	log(`Total of ${packageNames.length} packages installed in '${packagesDir}'\n`)
 
 	log(packageNames.join("\n"))
+}
+
+async function startServer(commandArgs: string[], options: Map<string, string>) {
+	const port = 4000
+
+	const serverPromise = startWebSocketServer(port)
+
+	// Run a test routine (early development)
+	await runClientTest(port)
+
+	await serverPromise
 }
 
 async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, optionsRoot: keyof APIOptions, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>) {
