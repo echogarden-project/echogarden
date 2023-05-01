@@ -46,9 +46,9 @@ export class VitsTTS {
 			logSeverityLevel: 3
 		}
 
-		const { InferenceSession } = await import('onnxruntime-node')
+		const { default: Onnx } = await import('onnxruntime-node')
 
-		this.modelSession = await InferenceSession.create(`${this.modelPath}/${this.voiceName}.onnx`, onnxOptions)
+		this.modelSession = await Onnx.InferenceSession.create(`${this.modelPath}/${this.voiceName}.onnx`, onnxOptions)
 		this.metadata = await readAndParseJsonFile(`${this.modelPath}/${this.voiceName}.onnx.json`)
 
 		this.phonemeMap = new Map<string, number[]>()
@@ -152,12 +152,12 @@ export class VitsTTS {
 		const bigIntIds = new BigInt64Array(ids.map(id => BigInt(id)))
 		const idLengths = new BigInt64Array([BigInt(bigIntIds.length)])
 
-		const { Tensor } = await import('onnxruntime-node')
+		const { default: Onnx } = await import('onnxruntime-node')
 
-		const inputTensor = new Tensor('int64', bigIntIds, [1, bigIntIds.length])
-		const inputLengthsTensor = new Tensor('int64', idLengths, [1])
-		const scalesTensor = new Tensor('float32', [metadata.inference.noise_scale, lengthScale, metadata.inference.noise_w], [3])
-		const speakerIdTensor = new Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
+		const inputTensor = new Onnx.Tensor('int64', bigIntIds, [1, bigIntIds.length])
+		const inputLengthsTensor = new Onnx.Tensor('int64', idLengths, [1])
+		const scalesTensor = new Onnx.Tensor('float32', [metadata.inference.noise_scale, lengthScale, metadata.inference.noise_w], [3])
+		const speakerIdTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
 
 		const modelInputs = { input: inputTensor, input_lengths: inputLengthsTensor, scales: scalesTensor, sid: speakerIdTensor }
 
