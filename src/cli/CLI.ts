@@ -21,7 +21,7 @@ import { ensureAndGetPackagesDir, loadPackage } from '../utilities/PackageManage
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
-import { runClientTest } from '../server/Client.js'
+import { runClientWebSocketTest } from '../server/Client.js'
 
 const log = logToStderr
 
@@ -812,7 +812,7 @@ async function startServer(commandArgs: string[], cliOptions: Map<string, string
 
 	async function onServerStarted(serverOptions: ServerOptions) {
 		// Run a test routine (early development)
-		await runClientTest(serverOptions.port!, serverOptions.secure!)
+		await runClientWebSocketTest(serverOptions.port!, serverOptions.secure!)
 	}
 
 	await startWebSocketServer(options, onServerStarted)

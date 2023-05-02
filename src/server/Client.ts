@@ -8,33 +8,57 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 import { AlignmentOptions, AlignmentResult } from '../api/Alignment.js'
 import { RecognitionOptions, RecognitionResult } from '../api/Recognition.js'
 import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Translation.js'
+import { Worker as WorkerThread } from 'node:worker_threads'
+import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
+import { playAudioWithTimeline } from '../audio/AudioPlayer.js'
 
 const log = logToStderr
 
 export class Client {
-	ws: WebSocket
+	sendMessage: (message: any) => void
+
 	responseListeners = new Map<string, (message: string) => void>()
 
-	constructor(ws: WebSocket) {
-		this.ws = ws
+	constructor(sourceChannel: WebSocket | WorkerThread) {
+		if (sourceChannel instanceof WebSocket) {
+			sourceChannel.on("message", (messageData, isBinary) => {
+				if (!isBinary) {
+					log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)
+					return
+				}
 
-		this.ws.on("message", (messageData, isBinary) => {
-			if (!isBinary) {
-				log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)
-				return
+				let incomingMessage: any
+
+				try {
+					incomingMessage = decodeMsgPack(messageData as Buffer)
+				} catch (e) {
+					log(`Failed to decode incoming message. Reason: ${e}`)
+					return
+				}
+
+				this.onMessage(incomingMessage)
+			})
+
+			this.sendMessage = (outgoingMessage) => {
+				const encodedMessage = encodeMsgPack(outgoingMessage)
+
+				sourceChannel.send(encodedMessage)
 			}
+		} else if (sourceChannel instanceof WorkerThread) {
+			sourceChannel.on("message", (message) => {
+				this.onMessage(message)
+			})
 
-			let incomingMessage: any
+			sourceChannel.on("error", (e) => {
+				throw e
+			})
 
-			try {
-				incomingMessage = decodeMsgPack(messageData as Buffer)
-			} catch (e) {
-				log(`Failed to decode incoming message. Reason: ${e}`)
-				return
+			this.sendMessage = (outgoingMessage) => {
+				sourceChannel.postMessage(outgoingMessage)
 			}
-
-			this.onMessage(incomingMessage)
-		})
+		} else {
+			throw new Error(`Invalid source: not a WebSocket or WorkerThread object`)
+		}
 	}
 
 	async synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesizeSegmentsResult> {
@@ -182,11 +206,13 @@ export class Client {
 
 	sendRequest(request: any, onResponse: (message: any) => void, onErrorResponse: (error: any) => void) {
 		const requestId = getRandomHexString(16)
-		request = { requestId, ...request }
 
-		const encodedRequest = encodeMsgPack(request)
+		request = {
+			requestId,
+			...request
+		}
 
-		this.ws.send(encodedRequest)
+		this.sendMessage(request)
 
 		function onResponseMessage(message: any) {
 			if (message.messageType == "Error") {
@@ -215,7 +241,7 @@ export class Client {
 	}
 }
 
-export async function runClientTest(serverPort: number, secure: boolean) {
+export async function runClientWebSocketTest(serverPort: number, secure: boolean) {
 	const ws = new WebSocket(`${secure ? "wss" : "ws" }://localhost:${serverPort}`, {
 		rejectUnauthorized: false
 	})
@@ -229,8 +255,8 @@ export async function runClientTest(serverPort: number, secure: boolean) {
 
 		log(voiceListResult)
 
-		client.synthesizeSegments(
-			["Hello world! How are you?", "Want to play a game?"],
+		const synthesisResult1 = await client.synthesizeSegments(
+			["Hello world! How are you?", "Do you like turtles?"],
 			{},
 			async (eventData) => {
 				log("onSegment (call 1)")
@@ -239,9 +265,13 @@ export async function runClientTest(serverPort: number, secure: boolean) {
 				log("onSentence (call 1)")
 			})
 
-		//log(synthesisResult1)
+		//log(synthesisResult1.timeline)
 
-		client.synthesizeSegments(
+		const wordTimeline = synthesisResult1.timeline.flatMap(segmentEntry => segmentEntry.timeline!).flatMap(sentenceEntry => sentenceEntry.timeline!)
+		const transcript = synthesisResult1.timeline.map(segmenEntry => segmenEntry.text).join("\n\n")
+		await playAudioWithTimeline(synthesisResult1.synthesizedAudio, wordTimeline, transcript)
+
+		await client.synthesizeSegments(
 			["Hey! What's up?", "See ya."],
 			{},
 			async (eventData) => {
@@ -255,4 +285,37 @@ export async function runClientTest(serverPort: number, secure: boolean) {
 
 		//ws.close()
 	})
+}
+
+export async function runClientWorkerThreadTest() {
+	const worker = new WorkerThread(resolveToModuleRootDir("dist/server/Worker.js"))
+	const client = new Client(worker)
+
+	const voiceListResult = await client.requestVoiceList({
+		engine: "pico"
+	})
+
+	log(voiceListResult)
+
+	await client.synthesizeSegments(
+		["Hello world! How are you?", "Do you like turtles?"],
+		{ },
+		async (eventData) => {
+			log("onSegment (call 1)")
+		},
+		async (eventData) => {
+			log("onSentence (call 1)")
+		})
+
+	//log(synthesisResult1)
+
+	await client.synthesizeSegments(
+		["Hey! What's up?", "See ya."],
+		{},
+		async (eventData) => {
+			log("onSegment (call 2)")
+		},
+		async (eventData) => {
+			log("onSentence (call 2)")
+		})
 }

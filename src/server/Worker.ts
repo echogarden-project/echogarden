@@ -38,12 +38,12 @@ function startIfInWorkerThread() {
 			try {
 				await processMessage(incomingMessage, postMessage)
 			} catch (e) {
-				log(e)
+				log(`${e}`)
 
 				parentPort?.postMessage({
 					requestId,
 					messageType: "Error",
-					error: `${e}`
+					error: e
 				})
 			}
 		}
