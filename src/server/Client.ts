@@ -56,10 +56,14 @@ export class Client {
 			}
 		}
 
-		try {
-			this.sendRequest(requestMessage, onResponse)
-		} catch (e) {
+		function onError(e: any) {
 			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
 		}
 
 		return requestOpenPromise.promise
@@ -79,10 +83,14 @@ export class Client {
 			}
 		}
 
-		try {
-			this.sendRequest(requestMessage, onResponse)
-		} catch (e) {
+		function onError(e: any) {
 			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
 		}
 
 		return requestOpenPromise.promise
@@ -103,12 +111,15 @@ export class Client {
 			}
 		}
 
-		try {
-			this.sendRequest(requestMessage, onResponse)
-		} catch (e) {
+		function onError(e: any) {
 			requestOpenPromise.reject(e)
 		}
 
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
+		}
 		return requestOpenPromise.promise
 	}
 
@@ -128,10 +139,14 @@ export class Client {
 			}
 		}
 
-		try {
-			this.sendRequest(requestMessage, onResponse)
-		} catch (e) {
+		function onError(e: any) {
 			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
 		}
 
 		return requestOpenPromise.promise
@@ -152,16 +167,20 @@ export class Client {
 			}
 		}
 
-		try {
-			this.sendRequest(requestMessage, onResponse)
-		} catch (e) {
+		function onError(e: any) {
 			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
 		}
 
 		return requestOpenPromise.promise
 	}
 
-	sendRequest(request: any, onResponse: (message: any) => void) {
+	sendRequest(request: any, onResponse: (message: any) => void, onErrorResponse: (error: any) => void) {
 		const requestId = getRandomHexString(16)
 		request = { requestId, ...request }
 
@@ -169,7 +188,15 @@ export class Client {
 
 		this.ws.send(encodedRequest)
 
-		this.responseListeners.set(requestId, onResponse)
+		function onResponseMessage(message: any) {
+			if (message.messageType == "Error") {
+				onErrorResponse(message.error)
+			} else {
+				onResponse(message)
+			}
+		}
+
+		this.responseListeners.set(requestId, onResponseMessage)
 	}
 
 	onMessage(incomingMessage: any) {
