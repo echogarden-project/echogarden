@@ -133,9 +133,7 @@ async function processVoiceListRequest(message: VoiceListRequestMessage, postMes
 	postMessage(responseMessage)
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
 // Synthesis message types
-///////////////////////////////////////////////////////////////////////////////////////////////
 export interface SynthesizeSegmentsRequestMessage extends WorkerMessageBase {
 	messageType: "SynthesizeSegmentsRequest"
 	segments: string[]
