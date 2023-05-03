@@ -175,12 +175,6 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 				resolve()
 			})
 		} else {
-			const waveAudio = encodeWaveBuffer(rawAudio)
-
-			const tempDir = getAppTempDir(appName)
-			const tempWaveFilePath = path.join(tempDir, getRandomHexString(16) + ".wav")
-			await writeFile(tempWaveFilePath, waveAudio)
-
 			let command = ""
 
 			if (process.platform == 'darwin' && await commandExists("afplay")) {
@@ -190,6 +184,12 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 			} else {
 				throw new Error(`Couldn't find a supported audio player for this platform. Please install the SoX tool on your system path, for best results.`)
 			}
+
+			const waveAudio = encodeWaveBuffer(rawAudio)
+
+			const tempDir = getAppTempDir(appName)
+			const tempWaveFilePath = path.join(tempDir, getRandomHexString(16) + ".wav")
+			await writeFile(tempWaveFilePath, waveAudio)
 
 			const player = spawn(command, [tempWaveFilePath],
 				{ stdio: "ignore" }
