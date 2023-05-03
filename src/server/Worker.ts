@@ -122,17 +122,6 @@ async function processSynthesizeSegmentsRequest(message: SynthesizeSegmentsReque
 	postMessage(responseMessage)
 }
 
-async function processVoiceListRequest(message: VoiceListRequestMessage, postMessage: PostMessageFunc) {
-	const result = await requestVoiceList(message.options)
-
-	const responseMessage: VoiceListResponseMessage = {
-		messageType: "VoiceListResponse",
-		...result
-	}
-
-	postMessage(responseMessage)
-}
-
 // Synthesis message types
 export interface SynthesizeSegmentsRequestMessage extends WorkerMessageBase {
 	messageType: "SynthesizeSegmentsRequest"
@@ -150,6 +139,17 @@ export interface SynthesisSegmentEventMessage extends WorkerMessageBase, Synthes
 
 export interface SynthesisSentenceEventMessage extends WorkerMessageBase, SynthesisSegmentEventData {
 	messageType: "SynthesisSentenceEvent"
+}
+
+async function processVoiceListRequest(message: VoiceListRequestMessage, postMessage: PostMessageFunc) {
+	const result = await requestVoiceList(message.options)
+
+	const responseMessage: VoiceListResponseMessage = {
+		messageType: "VoiceListResponse",
+		...result
+	}
+
+	postMessage(responseMessage)
 }
 
 // Voice list message types
