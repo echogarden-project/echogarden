@@ -92,14 +92,12 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 
 				if (substitutionPhonemes) {
 					phonemizedFragmentsSubstitutions.set(fragments.length, substitutionPhonemes)
-					const referenceIPA = (await textToPhonemes(term.text, espeakVoice, true)).replaceAll("_", " ")
-					const referenceKirshenbaum = (await textToPhonemes(term.text, espeakVoice, false)).replaceAll("_", "")
-
-					logger.log(`\nSubstitution references: Target IPA: ${substitutionPhonemes.join(" ")}, IPA: ${referenceIPA}, Kirshenbaum: ${referenceKirshenbaum}`)
+					const referenceIPA = (await textToPhonemes(termText, espeakVoice, true)).replaceAll("_", " ")
+					const referenceKirshenbaum = (await textToPhonemes(termText, espeakVoice, false)).replaceAll("_", "")
 
 					const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
 
-					logger.log(`Kirshenbaum conversion result: ${kirshenbaumPhonemes}`)
+					logger.log(`\nLexicon substitution for '${termText}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
 
 					const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
 
