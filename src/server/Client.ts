@@ -205,7 +205,7 @@ export class Client {
 	}
 
 	sendRequest(request: any, onResponse: (message: any) => void, onErrorResponse: (error: any) => void) {
-		const requestId = getRandomHexString(16)
+		const requestId = getRandomHexString()
 
 		request = {
 			requestId,

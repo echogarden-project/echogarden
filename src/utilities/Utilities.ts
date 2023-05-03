@@ -3,6 +3,7 @@ import { IncomingMessage } from 'node:http'
 import { inspect } from 'node:util'
 
 import { RandomGenerator } from './RandomGenerator.js'
+import { randomUUID, randomBytes } from 'node:crypto'
 
 const log = logToStderr
 
@@ -96,21 +97,24 @@ export function objToString(obj: any) {
 	return formattedString
 }
 
-
-export function getRandomHexString(charCount: number, upperCase = false) {
-	const letters = "0123456789abcdef"
-
-	let result = ""
-
-	for (let i = 0; i < charCount; i++) {
-		result += letters[Math.floor(Math.random() * letters.length)]
-	}
+export function getRandomHexString(charCount = 32, upperCase = false) {
+	let hex = randomBytes(charCount / 2).toString("hex")
 
 	if (upperCase) {
-		result = result.toUpperCase()
+		hex = hex.toUpperCase()
 	}
 
-	return result
+	return hex
+}
+
+export function getRandomUUID(dashes = true) {
+	let uuid = randomUUID() as string
+
+	if (dashes == false) {
+		uuid = uuid.replaceAll("-", "")
+	}
+
+	return uuid
 }
 
 export function sumArray<T>(arr: Array<T>, valueGetter: (item: T) => number) {

@@ -3,14 +3,13 @@ import WebSocket from "ws"
 
 import { escape } from 'html-escaper'
 
-import { randomUUID } from "crypto"
 import splitBuffer from "buffer-split"
 
 import * as AzureCognitiveServicesTTS from "./AzureCognitiveServicesTTS.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
 import { OpenPromise } from "../utilities/OpenPromise.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { getRandomUUID, logToStderr } from "../utilities/Utilities.js"
 import { getRawAudioDuration } from "../audio/AudioUtilities.js"
 
 const traceEnabled = false
@@ -52,7 +51,7 @@ async function requestSynthesis(
 
 	const synthesisOpenPromise = new OpenPromise<SynthesisRequestResult>()
 
-	const requestId = getRandomID()
+	const requestId = getRandomUUID(false)
 
 	const webSocket = await initializeWebsocketConnection(trustedClientToken)
 
@@ -164,7 +163,7 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		existingWebSocketConnection = undefined
 	}
 
-	const connectionId = getRandomID()
+	const connectionId = getRandomUUID(false)
 
 	const requestURL = "wss://speech.platform.bing.com/" +
 		"consumer/speech/synthesize/readaloud/edge/v1" +
@@ -270,10 +269,6 @@ export async function getVoiceList(trustedClientToken: string) {
 function getTimestampString() {
 	const timestampString = new Date(new Date().toLocaleString("en-US", { timeZone: "UTC" })).toString().replace(/GMT.*/, "GMT+0000 (Coordinated Universal Time)")
 	return timestampString
-}
-
-function getRandomID() {
-	return randomUUID().replace(/-/g, "")
 }
 
 function parseHeaderString(headerString: string) {
