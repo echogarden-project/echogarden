@@ -20,7 +20,7 @@
 			"example": "I got you a present."
 		}
 	],
-	"read": [
+	"read [disabled]": [
 		{
 			"pos": [
 				"VB"
