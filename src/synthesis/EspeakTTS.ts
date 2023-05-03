@@ -11,7 +11,6 @@ import { splitToWords } from "../nlp/Segmentation.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import { phonemizeSentence } from "../nlp/EspeakPhonemizer.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
-import { readFile } from "../utilities/FileSystem.js"
 
 const log = logToStderr
 
@@ -72,8 +71,9 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 		fragments = []
 		preprocessedFragments = []
 
-		const parsedSentences = await CompromiseNLP.parse(sentence)
-		const terms = parsedSentences.flatMap(s => s)
+		const parsedSentence = await CompromiseNLP.parse(sentence)
+		log(parsedSentence)
+		const terms = parsedSentence.flatMap(s => s)
 
 		const normalizationMap = getNormalizationMapForSpeech(terms, espeakVoice)
 
