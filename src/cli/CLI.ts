@@ -275,7 +275,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	} else if (command == "speak-url") {
 		const url = mainArg
 
-		if (!url.startsWith("http://") || !url.startsWith("https://")) {
+		if (!url.startsWith("http://") && !url.startsWith("https://")) {
 			throw new Error(`'${url}' is not a valid URL. Only 'http://' and 'https://' protocols are supported`)
 		}
 
