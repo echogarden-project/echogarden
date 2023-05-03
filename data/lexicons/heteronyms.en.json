@@ -377,6 +377,27 @@
 			"example": "My conduct wasn't very good."
 		}
 	],
+	"content": [
+		{
+			"pos": [
+				"JJ"
+			],
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n t ˈɛ n t"
+				}
+			},
+			"example": "I feel content about this."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n t ɛ n t"
+				}
+			},
+			"example": "The website has a lof of content."
+		}
+	],
 	"desert": [
 		{
 			"pos": [

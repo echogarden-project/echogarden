@@ -10,7 +10,7 @@ import { Logger } from "../utilities/Logger.js"
 
 import { splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
-import { loadLexiconFile } from "../nlp/Lexicon.js"
+import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
 
 import * as API from "./API.js"
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from "../utilities/Timeline.js"
@@ -287,8 +287,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				}
 			}
 
-			const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.json"))
-			const lexicons = [heteronymsLexicon]
+			const lexicons: Lexicon[] = []
+
+			if (getShortLanguageCode(language) == "en") {
+				const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.en.json"))
+				lexicons.push(heteronymsLexicon)
+			}
 
 			const modelPath = voicePackagePath!
 
