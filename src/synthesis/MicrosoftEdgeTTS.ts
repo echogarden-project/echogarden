@@ -9,7 +9,7 @@ import * as AzureCognitiveServicesTTS from "./AzureCognitiveServicesTTS.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
 import { OpenPromise } from "../utilities/OpenPromise.js"
-import { getRandomUUID, logToStderr } from "../utilities/Utilities.js"
+import { getRandomHexString, logToStderr } from "../utilities/Utilities.js"
 import { getRawAudioDuration } from "../audio/AudioUtilities.js"
 
 const traceEnabled = false
@@ -44,14 +44,14 @@ type SynthesisRequestResult = { audioData: Buffer, events: any[] }
 async function requestSynthesis(
 	text: string,
 	trustedClientToken: string,
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, ChristopherNeural)",
+	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)",
 	ssmlPitchString = "+0Hz",
 	ssmlRateString = "+0%",
 	ssmlVolumeString = "+0%") {
 
 	const synthesisOpenPromise = new OpenPromise<SynthesisRequestResult>()
 
-	const requestId = getRandomUUID(false)
+	const requestId = getRandomHexString()
 
 	const webSocket = await initializeWebsocketConnection(trustedClientToken)
 
@@ -163,7 +163,7 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		existingWebSocketConnection = undefined
 	}
 
-	const connectionId = getRandomUUID(false)
+	const connectionId = getRandomHexString()
 
 	const requestURL = "wss://speech.platform.bing.com/" +
 		"consumer/speech/synthesize/readaloud/edge/v1" +

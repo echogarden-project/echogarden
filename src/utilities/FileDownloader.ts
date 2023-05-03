@@ -8,7 +8,6 @@ import { Logger } from "./Logger.js"
 import path from "node:path"
 import { extractTarball } from "./Compression.js"
 import { createWriteStream, move, remove, readdir, ensureDir } from "./FileSystem.js"
-import { Agent } from "https"
 
 export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = "archive") {
 	const logger = new Logger()
