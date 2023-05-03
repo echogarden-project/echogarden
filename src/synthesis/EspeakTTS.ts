@@ -72,7 +72,6 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 		preprocessedFragments = []
 
 		const parsedSentence = await CompromiseNLP.parse(sentence)
-		log(parsedSentence)
 		const terms = parsedSentence.flatMap(s => s)
 
 		const normalizationMap = getNormalizationMapForSpeech(terms, espeakVoice)
