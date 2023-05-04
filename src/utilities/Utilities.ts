@@ -98,6 +98,10 @@ export function objToString(obj: any) {
 }
 
 export function getRandomHexString(charCount = 32, upperCase = false) {
+	if (charCount % 2 !== 0) {
+		throw new Error(`'charCount' must be an even number`)
+	}
+
 	let hex = randomBytes(charCount / 2).toString("hex")
 
 	if (upperCase) {
