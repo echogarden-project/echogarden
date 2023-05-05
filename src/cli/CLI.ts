@@ -8,6 +8,7 @@ import chalk from 'chalk'
 import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normalizeAudioLevel, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
 import { Logger } from "../utilities/Logger.js"
+import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
 import path, { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
@@ -25,14 +26,18 @@ import { runClientWebSocketTest } from '../server/Client.js'
 
 const log = logToStderr
 
-export async function start() {
-	setupUnhandledExceptionListeners()
-	//setupProgramTerminationListeners()
+function startIfInWorkerThread() {
+	if (isMainThread || !parentPort) {
+		return
+	}
 
+	start(process.argv.slice(2))
+}
+
+export async function start(processArgs: string[]) {
 	let args: CLIArguments
 
 	try {
-		const processArgs = process.argv.slice(2)
 		const command = processArgs[0]
 
 		if (!command) {
@@ -140,7 +145,7 @@ const commandHelp = [
 	`${executableName} ${chalk.magentaBright('uninstall')} [package names...] [options...]`,
 	`    Uninstall one or more Echogarden packages\n`,
 	`${executableName} ${chalk.magentaBright('list-packages')} [package names...] [options...]`,
-	`    List installed Echogarden packages`,
+	`    List installed Echogarden packages\n`,
 ]
 
 async function startWithArgs(parsedArgs: CLIArguments) {
@@ -1102,3 +1107,5 @@ const supportedSubtitleFileExtensions = ['srt', 'vtt']
 const supportedOutputMediaFileExtensions = ["wav", "mp3", "opus", "m4a", "ogg", "flac"]
 
 const segmentFilenamePattern = /\[(.*)\]\.(.*)$/
+
+startIfInWorkerThread()

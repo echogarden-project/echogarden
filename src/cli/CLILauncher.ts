@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process'
-import { logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
+import { setupUnhandledExceptionListeners } from '../utilities/Utilities.js'
 import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
 
 setupUnhandledExceptionListeners()
@@ -24,9 +24,4 @@ const child = spawn(cmd, args, { stdio: "inherit" })
 
 child.on("close", code => {
 	process.exit(code as number)
-})
-
-setupProgramTerminationListeners(() => {
-	child.kill('SIGKILL')
-	writeToStderr('\n')
 })

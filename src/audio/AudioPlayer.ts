@@ -1,3 +1,5 @@
+import { parentPort } from 'node:worker_threads'
+
 import { spawn } from 'child_process'
 import path from 'path'
 
@@ -14,6 +16,7 @@ import { Timeline } from '../utilities/Timeline.js'
 import { getAppTempDir, readAndParseJsonFile, readFile, remove, writeFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { appName } from '../api/Globals.js'
+import { SignalChannel } from '../utilities/SignalChannel.js'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string) {
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)
@@ -72,7 +75,19 @@ export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeli
 
 	writeToStderr("\n")
 
-	await playAudioSamples(rawAudio, onTimePosition)
+	const signalChannel = new SignalChannel()
+
+	function keypressHandler(message: any) {
+		if (message.name == "keypress" && message.key.name == 'return') {
+			signalChannel.send("abort")
+		}
+	}
+
+	parentPort?.on('message', keypressHandler)
+
+	await playAudioSamples(rawAudio, onTimePosition, signalChannel)
+
+	parentPort?.off('message', keypressHandler)
 
 	writeToStderr("\n")
 }
@@ -130,7 +145,7 @@ export async function playAudioPairWithTimelineInterleaved(rawAudio1: RawAudio, 
 	writeToStderr("\n")
 }
 
-export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, microFadeInOut = true) {
+export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, signalChannel?: SignalChannel, microFadeInOut = true) {
 	return new Promise<void>(async (resolve, reject) => {
 		if (microFadeInOut) {
 			rawAudio = fadeAudioInOut(rawAudio, 0.0025)
@@ -145,6 +160,8 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 		const soxPath = await tryResolvingSoxPath()
 
+		let aborted = false
+
 		if (soxPath) {
 			const audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
 
@@ -154,6 +171,13 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 				{}
 			)
 
+			if (signalChannel) {
+				signalChannel.on("abort", () => {
+					aborted = true
+					player.kill('SIGKILL')
+				})
+			}
+
 			// Required to work around SoX bug:
 			player.stderr.on("data", (data) => {
 				//logErr(data.toString('utf-8'))
@@ -162,6 +186,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 			player.once("spawn", () => {
 				player.stdin!.write(audioBuffer)
 				player.stdin!.end()
+				player.stdin!.on("error", () => { })
 
 				playerSpawnedOpenPromise.resolve(null)
 			})
@@ -195,6 +220,13 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 				{ stdio: "ignore" }
 			)
 
+			if (signalChannel) {
+				signalChannel.on("abort", () => {
+					aborted = true
+					player.kill('SIGKILL')
+				})
+			}
+
 			player.once("spawn", () => {
 				playerSpawnedOpenPromise.resolve(null)
 			})
@@ -215,7 +247,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 		const timer = new Timer()
 
-		while (true) {
+		while (!aborted) {
 			const elapsedTime = timer.elapsedTimeSeconds
 
 			if (onTimePosition) {
