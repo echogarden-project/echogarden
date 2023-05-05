@@ -64,8 +64,8 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 			//'-ssml',
 			'-psdur',
 			...optionArgs,
-			//escape(text),
-			text,
+			//` ${escape(text)} `,
+			` ${text} `,
 			outFileName
 		],
 
