@@ -1,5 +1,5 @@
 import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
-import { setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
+import { delay, setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
 import { Worker } from 'node:worker_threads'
 
 setupUnhandledExceptionListeners()
@@ -15,7 +15,7 @@ const worker = new Worker(resolveToModuleRootDir("dist/cli/cli.js"), {
 worker.postMessage({
 	name: 'init',
 	stdErrIsTTY: process.stderr.isTTY,
-	stdErrHasColors: process.stderr.hasColors()
+	stdErrHasColors: process.stderr.hasColors === undefined ? undefined : process.stderr.hasColors()
 })
 
 process.stdin.on('keypress', (str, key) => {
