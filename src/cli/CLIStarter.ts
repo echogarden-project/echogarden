@@ -1,6 +1,6 @@
 import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
-import { delay, setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
-import { Worker } from 'node:worker_threads'
+import { setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
+import { Worker, SHARE_ENV } from 'node:worker_threads'
 
 setupUnhandledExceptionListeners()
 
@@ -9,7 +9,8 @@ setupProgramTerminationListeners(() => {
 })
 
 const worker = new Worker(resolveToModuleRootDir("dist/cli/cli.js"), {
-	argv: process.argv.slice(2)
+	argv: process.argv.slice(2),
+	env: SHARE_ENV
 })
 
 worker.postMessage({
