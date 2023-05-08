@@ -55,8 +55,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.325.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.325.0",
+		"@aws-sdk/client-polly": "^3.328.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.328.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -76,7 +76,7 @@
 		"chalk": "^5.2.0",
 		"cldr-segmentation": "^2.2.0",
 		"command-exists": "^1.2.9",
-		"compromise": "^14.8.2",
+		"compromise": "^14.9.0",
 		"compromise-dates": "^3.4.1",
 		"fs-extra": "^11.1.1",
 		"gaxios": "^5.1.0",
@@ -123,13 +123,13 @@
 		"@types/msgpack-lite": "^0.1.8",
 		"@types/ndarray": "^1.0.11",
 		"@types/ndarray-ops": "^1.2.4",
-		"@types/node": "^18.16.3",
+		"@types/node": "^20.1.0",
 		"@types/recursive-readdir": "^2.2.1",
 		"@types/tar": "^6.1.4",
 		"@types/ws": "^8.5.4",
 		"@typescript-eslint/eslint-plugin": "^5.59.2",
 		"@typescript-eslint/parser": "^5.59.2",
-		"eslint": "^8.39.0",
+		"eslint": "^8.40.0",
 		"ts-json-schema-generator": "^1.2.0",
 		"typescript": "^5.0.4"
 	}
