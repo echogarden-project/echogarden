@@ -152,6 +152,8 @@ export class VitsTTS {
 		const bigIntIds = new BigInt64Array(ids.map(id => BigInt(id)))
 		const idLengths = new BigInt64Array([BigInt(bigIntIds.length)])
 
+		await logger.startAsync("Generate audio using synthesis model")
+		
 		const { default: Onnx } = await import('onnxruntime-node')
 
 		const inputTensor = new Onnx.Tensor('int64', bigIntIds, [1, bigIntIds.length])
@@ -160,8 +162,6 @@ export class VitsTTS {
 		const speakerIdTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
 
 		const modelInputs = { input: inputTensor, input_lengths: inputLengthsTensor, scales: scalesTensor, sid: speakerIdTensor }
-
-		await logger.startAsync("Generate audio using synthesis model")
 
 		const modelResults = await this.modelSession.run(modelInputs)
 		const modelOutput = modelResults["output"]
