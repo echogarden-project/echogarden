@@ -23,13 +23,32 @@ import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
 import { runClientWebSocketTest } from '../server/Client.js'
+import { OpenPromise } from '../utilities/OpenPromise.js'
 
 const log = logToStderr
 
-function startIfInWorkerThread() {
+async function startIfInWorkerThread() {
 	if (isMainThread || !parentPort) {
 		return
 	}
+
+	const initOpenPromise = new OpenPromise<void>()
+
+	process.stderr.write = (text) => {
+		parentPort!.postMessage({ name: 'writeToStdErr', text })
+		return true
+	}
+
+	parentPort.once("message", (message) => {
+		if (message.name == 'init') {
+			process.stderr.isTTY = message.stdErrIsTTY
+			process.stderr.hasColors = () => message.hasColors
+
+			initOpenPromise.resolve()
+		}
+	})
+
+	await initOpenPromise.promise
 
 	start(process.argv.slice(2))
 }
