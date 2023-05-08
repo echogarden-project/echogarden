@@ -125,6 +125,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			if (percentDisplay != lastString) {
 				write(percentDisplay)
+				
 				if (percent == 1.0) {
 					write(` (${timer.elapsedTimeSeconds.toFixed(2)}s, ${cumulativeDownloadRateStr}MB/s)`)
 				} else {
