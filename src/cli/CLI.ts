@@ -16,7 +16,7 @@ import { playAudioSamples, playAudioWithTimeline } from "../audio/AudioPlayer.js
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 import { Timeline, addTimeOffsetToTimeline, roundTimelineTimestamps, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { ensureDir, existsSync, getFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
-import { formatLanguageCodeWithName } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, loadPackage } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
@@ -316,7 +316,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			cliOptions.set("language", language)
 		}
 
-		textSegments = await parseWikipediaArticle(mainArg, language)
+		textSegments = await parseWikipediaArticle(mainArg, getShortLanguageCode(language))
 	} else {
 		throw new Error("Invalid command")
 	}
