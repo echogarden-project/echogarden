@@ -15,7 +15,7 @@ const worker = new Worker(resolveToModuleRootDir("dist/cli/cli.js"), {
 worker.postMessage({
 	name: 'init',
 	stdErrIsTTY: process.stderr.isTTY,
-	stdErrHasColors: process.stderr.hasColors === undefined ? undefined : process.stderr.hasColors()
+	stdErrHasColors: process.stderr.hasColors ? process.stderr.hasColors() : false
 })
 
 process.stdin.on('keypress', (str, key) => {

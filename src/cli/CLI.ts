@@ -37,7 +37,7 @@ async function startIfInWorkerThread() {
 	parentPort.once("message", (message) => {
 		if (message.name == 'init') {
 			process.stderr.isTTY = message.stdErrIsTTY
-			process.stderr.hasColors = message.hasColors === undefined ? undefined as any : () => message.hasColors
+			process.stderr.hasColors = () => message.hasColors
 
 			process.stderr.write = (text) => {
 				parentPort!.postMessage({ name: 'writeToStdErr', text })
