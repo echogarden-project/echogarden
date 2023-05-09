@@ -79,7 +79,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 				await import('@echogarden/vosk')
 			} catch (e) {
 				log(e)
-				throw new Error(`The vosk np package, which is required for Vosk support, was not found, or had an error loading. If missing, you can install it by running 'npm install @echogarden/vosk -g'.`)
+				throw new Error(`The vosk npm package, which is required for Vosk support, was not found, or had an error loading. If missing, you can install it by running 'npm install @echogarden/vosk -g'.`)
 			}
 
 			const voskOptions = options.vosk!
