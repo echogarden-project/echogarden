@@ -8,7 +8,7 @@ setupProgramTerminationListeners(() => {
 	writeToStderr('\n')
 })
 
-const worker = new Worker(resolveToModuleRootDir("dist/cli/cli.js"), {
+const worker = new Worker(resolveToModuleRootDir("dist/cli/CLI.js"), {
 	argv: process.argv.slice(2),
 	env: SHARE_ENV
 })
