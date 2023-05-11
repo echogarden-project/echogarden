@@ -32,6 +32,8 @@ async function startIfInWorkerThread() {
 		return
 	}
 
+	setupUnhandledExceptionListeners()
+
 	const initOpenPromise = new OpenPromise<void>()
 
 	parentPort.once("message", (message) => {
