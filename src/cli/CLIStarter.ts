@@ -24,7 +24,8 @@ process.stdin.on('keypress', (str, key) => {
 	worker.postMessage({
 		name: 'keypress',
 		str,
-		key
+		key,
+		timestamp: Date.now()
 	})
 })
 

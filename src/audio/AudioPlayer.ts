@@ -77,8 +77,13 @@ export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeli
 
 	const signalChannel = new SignalChannel()
 
+	const keypressListenerStartTimestamp = Date.now()
+
 	function keypressHandler(message: any) {
-		if (message.name == "keypress" && message.key.name == 'return') {
+		if (message.name == "keypress" &&
+			message.key.name == 'return' &&
+			message.timestamp >= keypressListenerStartTimestamp) {
+
 			signalChannel.send("abort")
 		}
 	}
