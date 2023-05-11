@@ -6,6 +6,7 @@ setupUnhandledExceptionListeners()
 
 setupProgramTerminationListeners(() => {
 	writeToStderr('\n')
+	process.kill(process.pid, 'SIGKILL')
 })
 
 const worker = new Worker(resolveToModuleRootDir("dist/cli/CLI.js"), {
