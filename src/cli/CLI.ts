@@ -59,6 +59,10 @@ export async function start(processArgs: string[]) {
 	let args: CLIArguments
 
 	try {
+		const packageData = await readAndParseJsonFile(resolveToModuleRootDir("package.json"))
+
+		log(`Echogarden v${packageData.version}\n`)
+
 		const command = processArgs[0]
 
 		if (!command) {
@@ -142,30 +146,30 @@ const commandHelp = [
 	`${executableName} ${chalk.magentaBright('speak-file')} inputFile [output files...] [options...]`,
 	`    Speak the given text file\n`,
 	`${executableName} ${chalk.magentaBright('speak-url')} url [output files...] [options...]`,
-	`    Speak the given URL\n`,
+	`    Speak the HTML document on the given URL\n`,
 	`${executableName} ${chalk.magentaBright('speak-wikipedia')} articleName [output files...] [options...]`,
-	`    Speak the given wikipedia article, language edition can be specified by --language=lang\n`,
+	`    Speak the given wikipedia article, language edition can be specified by --language=<langCode>\n`,
 	`${executableName} ${chalk.magentaBright('transcribe')} audioFile [output files...] [options...]`,
 	`    Transcribe audio file\n`,
 	`${executableName} ${chalk.magentaBright('align')} audioFile referenceFile [output files...] [options...]`,
-	`    Align audio file to transcript\n`,
+	`    Align audio file to the reference transcript file\n`,
 	`${executableName} ${chalk.magentaBright('translate-speech')} inputFile [output files...] [options...]`,
-	`    Translate audio file\n`,
-	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [options...]`,
+	`    Transcribe audio file directly to a different language\n`,
+	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [output files...] [options...]`,
 	`    Detect language of audio file\n`,
-	`${executableName} ${chalk.magentaBright('detect-text-language')} inputFile [options...]`,
+	`${executableName} ${chalk.magentaBright('detect-text-language')} inputFile [output files...] [options...]`,
 	`    Detect language of textual file\n`,
 	`${executableName} ${chalk.magentaBright('detect-voice-activity')} audioFile [output files...] [options...]`,
 	`    Detect voice activity in audio file\n`,
 	`${executableName} ${chalk.magentaBright('denoise')} audioFile [output files...] [options...]`,
 	`    Denoise audio file\n`,
-	`${executableName} ${chalk.magentaBright('list-voices')} tts-engine [options...]`,
-	`    List voices for specified TTS engine\n`,
+	`${executableName} ${chalk.magentaBright('list-voices')} tts-engine [output files...] [options...]`,
+	`    List available voices for the specified TTS engine\n`,
 	`${executableName} ${chalk.magentaBright('install')} [package names...] [options...]`,
 	`    Install one or more Echogarden packages\n`,
 	`${executableName} ${chalk.magentaBright('uninstall')} [package names...] [options...]`,
 	`    Uninstall one or more Echogarden packages\n`,
-	`${executableName} ${chalk.magentaBright('list-packages')} [package names...] [options...]`,
+	`${executableName} ${chalk.magentaBright('list-packages')} [options...]`,
 	`    List installed Echogarden packages\n`,
 ]
 
