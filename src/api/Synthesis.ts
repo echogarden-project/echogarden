@@ -184,7 +184,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 		}
 	}
 
-	logger.start(`Merge and postprocess segments`)
+	logger.start(`\nMerge and postprocess segments`)
 	let resultAudio: RawAudio
 
 	if (segmentsAudio.length > 0) {
