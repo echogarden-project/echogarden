@@ -8,7 +8,7 @@ import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, st
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { splitToSentences } from "../nlp/Segmentation.js"
+import { isWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
 
@@ -754,7 +754,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	}
 
 	if (timeline) {
-		timeline = timeline.filter(entry => entry.text.trim() != "")
+		timeline = timeline.filter(entry => isWord(entry.text))
 	}
 
 	logger.end()
