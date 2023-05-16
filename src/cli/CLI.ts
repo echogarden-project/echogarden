@@ -842,7 +842,7 @@ async function startServer(commandArgs: string[], cliOptions: Map<string, string
 
 	async function onServerStarted(serverOptions: ServerOptions) {
 		// Run a test routine (early development)
-		await runClientWebSocketTest(serverOptions.port!, serverOptions.secure!)
+		//await runClientWebSocketTest(serverOptions.port!, serverOptions.secure!)
 	}
 
 	await startWebSocketServer(options, onServerStarted)
