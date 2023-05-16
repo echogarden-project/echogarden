@@ -50,7 +50,7 @@ export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeli
 				return
 			}
 
-			const wordStartOffset = transcript!.indexOf(entry.text.toLocaleLowerCase(), transcriptOffset)
+			const wordStartOffset = transcript!.indexOf(entry.text, transcriptOffset)
 
 			if (wordStartOffset == -1) {
 				continue
