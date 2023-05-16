@@ -32,8 +32,6 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 }
 
 export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
-	const lowerCaseTranscript = transcript?.toLocaleLowerCase()
-
 	timeline = timeline.filter(entry => isWord(entry.text))
 
 	let timelineEntryIndex = 0
@@ -52,7 +50,7 @@ export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeli
 				return
 			}
 
-			const wordStartOffset = lowerCaseTranscript!.indexOf(entry.text.toLocaleLowerCase(), transcriptOffset)
+			const wordStartOffset = transcript!.indexOf(entry.text.toLocaleLowerCase(), transcriptOffset)
 
 			if (wordStartOffset == -1) {
 				continue
