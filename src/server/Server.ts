@@ -1,10 +1,10 @@
 import { WebSocketServer, WebSocket, ServerOptions as WsServerOptions } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
-import { Worker } from 'node:worker_threads'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { resolveToModuleRootDir, readFile, existsSync } from '../utilities/FileSystem.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { sendMessageToWorker, addListenerToWorkerMessages } from './Worker.js'
 
 const log = logToStderr
 
@@ -43,9 +43,9 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 
 	const requestIdToWebSocket = new Map<string, WebSocket>()
 
-	const worker = new Worker(resolveToModuleRootDir("dist/server/Worker.js"))
+	//const worker = new Worker(resolveToModuleRootDir("dist/server/WorkerStarter.js"))
 
-	worker.on("message", (message: any) => {
+	addListenerToWorkerMessages((message: any) => {
 		if (!message.requestId) {
 			throw new Error("Worker message doesn't have a request ID")
 		}
@@ -99,7 +99,7 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 
 			requestIdToWebSocket.set(requestId, ws)
 
-			worker.postMessage(incomingMessage)
+			sendMessageToWorker(incomingMessage)
 		})
 
 		ws.on('error', (e) => {

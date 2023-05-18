@@ -1,6 +1,5 @@
 import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEventData, SynthesizeSegmentsResult, VoiceListRequestOptions, requestVoiceList, synthesizeSegments } from "../api/Synthesis.js"
 import { Queue } from "../utilities/Queue.js"
-import { isMainThread, parentPort } from 'node:worker_threads'
 import { logToStderr } from "../utilities/Utilities.js"
 import { RawAudio } from "../audio/AudioUtilities.js"
 import { RecognitionOptions, RecognitionResult, recognize } from "../api/Recognition.js"
@@ -9,78 +8,80 @@ import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } fr
 
 const log = logToStderr
 
-function startIfInWorkerThread() {
-	if (isMainThread || !parentPort) {
+const messageChannel = new MessageChannel()
+messageChannel.port1.start()
+messageChannel.port2.start()
+
+addListenerToClientMessages((message) => {
+	enqueueAndProcessIfIdle(message)
+})
+
+const messageQueue = new Queue<any>()
+let isProcessing = false
+
+function enqueueAndProcessIfIdle(message: any) {
+	messageQueue.enqueue(message)
+	processQueueIfIdle()
+}
+
+async function processQueueIfIdle() {
+	if (isProcessing) {
 		return
 	}
 
-	const messageQueue = new Queue<any>()
-	let isProcessing = false
+	isProcessing = true
 
-	async function processQueueIfIdle() {
-		if (isProcessing) {
-			return
+	while (!messageQueue.isEmpty) {
+		const incomingMessage = messageQueue.dequeue()
+		const requestId = incomingMessage.requestId
+
+		function sendMessage(outgoingMessage: any) {
+			sendMessageToClient({
+				requestId,
+				...outgoingMessage,
+			})
 		}
 
-		isProcessing = true
+		try {
+			await processMessage(incomingMessage, sendMessage)
+		} catch (e) {
+			log(`${e}`)
 
-		while (!messageQueue.isEmpty) {
-			const incomingMessage = messageQueue.dequeue()
-			const requestId = incomingMessage.requestId
-
-			function postMessage(outgoingMessage: any) {
-				parentPort?.postMessage({
-					requestId,
-					...outgoingMessage,
-				})
-			}
-
-			try {
-				await processMessage(incomingMessage, postMessage)
-			} catch (e) {
-				log(`${e}`)
-
-				parentPort?.postMessage({
-					requestId,
-					messageType: "Error",
-					error: e
-				})
-			}
+			sendMessageToClient({
+				requestId,
+				messageType: "Error",
+				error: e
+			})
 		}
-
-		isProcessing = false
 	}
 
-	parentPort.on("message", (message: any) => {
-		messageQueue.enqueue(message)
-		processQueueIfIdle()
-	})
+	isProcessing = false
 }
 
-export async function processMessage(message: WorkerRequestMessage, postMessage: PostMessageFunc) {
+export async function processMessage(message: WorkerRequestMessage, sendMessage: MessageFunc) {
 	switch (message.messageType) {
 		case "SynthesizeSegmentsRequest": {
-			await processSynthesizeSegmentsRequest(message, postMessage)
+			await processSynthesizeSegmentsRequest(message, sendMessage)
 			break
 		}
 
 		case "VoiceListRequest": {
-			await processVoiceListRequest(message, postMessage)
+			await processVoiceListRequest(message, sendMessage)
 			break
 		}
 
 		case "RecognitionRequest": {
-			await processRecognitionRequest(message, postMessage)
+			await processRecognitionRequest(message, sendMessage)
 			break
 		}
 
 		case "AlignmentRequest": {
-			await processAlignmentRequest(message, postMessage)
+			await processAlignmentRequest(message, sendMessage)
 			break
 		}
 
 		case "SpeechTranslationRequest": {
-			await processSpeechTranslationRequest(message, postMessage)
+			await processSpeechTranslationRequest(message, sendMessage)
 			break
 		}
 
@@ -93,14 +94,14 @@ export async function processMessage(message: WorkerRequestMessage, postMessage:
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Synthesis operations
 ///////////////////////////////////////////////////////////////////////////////////////////////
-async function processSynthesizeSegmentsRequest(message: SynthesizeSegmentsRequestMessage, postMessage: PostMessageFunc) {
+async function processSynthesizeSegmentsRequest(message: SynthesizeSegmentsRequestMessage, sendMessage: MessageFunc) {
 	async function onSegment(eventData: SynthesisSegmentEventData) {
 		const responseMessage: SynthesisSegmentEventMessage = {
 			messageType: "SynthesisSegmentEvent",
 			...eventData
 		}
 
-		postMessage(responseMessage)
+		sendMessage(responseMessage)
 	}
 
 	async function onSentence(eventData: SynthesisSegmentEventData) {
@@ -109,7 +110,7 @@ async function processSynthesizeSegmentsRequest(message: SynthesizeSegmentsReque
 			...eventData
 		}
 
-		postMessage(responseMessage)
+		sendMessage(responseMessage)
 	}
 
 	const result = await synthesizeSegments(message.segments, message.options, onSegment, onSentence)
@@ -119,7 +120,7 @@ async function processSynthesizeSegmentsRequest(message: SynthesizeSegmentsReque
 		...result
 	}
 
-	postMessage(responseMessage)
+	sendMessage(responseMessage)
 }
 
 // Synthesis message types
@@ -141,7 +142,7 @@ export interface SynthesisSentenceEventMessage extends WorkerMessageBase, Synthe
 	messageType: "SynthesisSentenceEvent"
 }
 
-async function processVoiceListRequest(message: VoiceListRequestMessage, postMessage: PostMessageFunc) {
+async function processVoiceListRequest(message: VoiceListRequestMessage, sendMessage: MessageFunc) {
 	const result = await requestVoiceList(message.options)
 
 	const responseMessage: VoiceListResponseMessage = {
@@ -149,7 +150,7 @@ async function processVoiceListRequest(message: VoiceListRequestMessage, postMes
 		...result
 	}
 
-	postMessage(responseMessage)
+	sendMessage(responseMessage)
 }
 
 // Voice list message types
@@ -165,7 +166,7 @@ export interface VoiceListResponseMessage extends WorkerMessageBase, RequestVoic
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Recognition operations
 ///////////////////////////////////////////////////////////////////////////////////////////////
-async function processRecognitionRequest(message: RecognitionRequestMessage, postMessage: PostMessageFunc) {
+async function processRecognitionRequest(message: RecognitionRequestMessage, sendMessage: MessageFunc) {
 	const result = await recognize(message.inputRawAudio, message.options)
 
 	const responseMessage: RecognitionResponseMessage = {
@@ -173,7 +174,7 @@ async function processRecognitionRequest(message: RecognitionRequestMessage, pos
 		...result
 	}
 
-	postMessage(responseMessage)
+	sendMessage(responseMessage)
 }
 
 // Recognition message types
@@ -190,7 +191,7 @@ export interface RecognitionResponseMessage extends WorkerMessageBase, Recogniti
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Alignment operations
 ///////////////////////////////////////////////////////////////////////////////////////////////
-async function processAlignmentRequest(message: AlignmentRequestMessage, postMessage: PostMessageFunc) {
+async function processAlignmentRequest(message: AlignmentRequestMessage, sendMessage: MessageFunc) {
 	const result = await align(message.inputRawAudio, message.transcript, message.options)
 
 	const responseMessage: AlignmentResponseMessage = {
@@ -198,7 +199,7 @@ async function processAlignmentRequest(message: AlignmentRequestMessage, postMes
 		...result
 	}
 
-	postMessage(responseMessage)
+	sendMessage(responseMessage)
 }
 
 // Alignment message types
@@ -216,7 +217,7 @@ export interface AlignmentResponseMessage extends WorkerMessageBase, AlignmentRe
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Speech translation operations
 ///////////////////////////////////////////////////////////////////////////////////////////////
-async function processSpeechTranslationRequest(message: SpeechTranslationRequestMessage, postMessage: PostMessageFunc) {
+async function processSpeechTranslationRequest(message: SpeechTranslationRequestMessage, sendMessage: MessageFunc) {
 	const result = await translateSpeech(message.inputRawAudio, message.options)
 
 	const responseMessage: SpeechTranslationResponseMessage = {
@@ -224,7 +225,7 @@ async function processSpeechTranslationRequest(message: SpeechTranslationRequest
 		...result
 	}
 
-	postMessage(responseMessage)
+	sendMessage(responseMessage)
 }
 
 // Speech translation message types
@@ -239,6 +240,29 @@ export interface SpeechTranslationResponseMessage extends WorkerMessageBase, Spe
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+// Messaging methods
+///////////////////////////////////////////////////////////////////////////////////////////////
+export function sendMessageToWorker(message: any) {
+	messageChannel.port1.postMessage(message)
+}
+
+export function addListenerToWorkerMessages(handler: MessageFunc) {
+	messageChannel.port1.addEventListener('message', (event) => {
+		handler(event.data)
+	})
+}
+
+function sendMessageToClient(message: any) {
+	messageChannel.port2.postMessage(message)
+}
+
+function addListenerToClientMessages(handler: MessageFunc) {
+	messageChannel.port2.addEventListener('message', (event) => {
+		handler(event.data)
+	})
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 // Base message types
 ///////////////////////////////////////////////////////////////////////////////////////////////
 export type WorkerRequestMessage = SynthesizeSegmentsRequestMessage | VoiceListRequestMessage | RecognitionRequestMessage | AlignmentRequestMessage | SpeechTranslationRequestMessage
@@ -247,7 +271,5 @@ export interface WorkerMessageBase {
 	messageType: string
 }
 
-export type PostMessageFunc = (response: any) => void
+export type MessageFunc = (message: any) => void
 
-// Start worker if running in worker thread
-startIfInWorkerThread()

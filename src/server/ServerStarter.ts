@@ -9,5 +9,4 @@ setupProgramTerminationListeners(() => {
 	log('')
 })
 
-await startWebSocketServer({}, (options) => {
-})
+await startWebSocketServer({}, (options) => { })
