@@ -153,7 +153,7 @@ export class VitsTTS {
 		const idLengths = new BigInt64Array([BigInt(bigIntIds.length)])
 
 		await logger.startAsync("Generate audio using synthesis model")
-		
+
 		const { default: Onnx } = await import('onnxruntime-node')
 
 		const inputTensor = new Onnx.Tensor('int64', bigIntIds, [1, bigIntIds.length])
@@ -341,6 +341,27 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "is-ugla-medium",
+		languages: ["is-IS", "is"],
+		gender: "female",
+	},
+	{
+		name: "is-steinn-medium",
+		languages: ["is-IS", "is"],
+		gender: "male",
+	},
+	{
+		name: "is-salka-medium",
+		languages: ["is-IS", "is"],
+		gender: "female",
+	},
+	{
+		name: "is-bui-medium",
+		languages: ["is-IS", "is"],
+		gender: "male",
+	},
+
+	{
 		name: "it-riccardo_fasol-x-low",
 		languages: ["it-IT", "it"],
 		gender: "male",
@@ -421,6 +442,18 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "ru-irinia-medium",
+		languages: ["ru-RU", "ru"],
+		gender: "female",
+	},
+
+	{
+		name: "sv-se-nst-medium",
+		languages: ["sv-SE", "sv"],
+		gender: "male",
+	},
+
+	{
 		name: "uk-lada-x-low",
 		languages: ["uk-UA", "uk"],
 		gender: "female",
@@ -440,6 +473,11 @@ export const voiceList: SynthesisVoice[] = [
 
 	{
 		name: "zh-cn-huayan-x-low",
+		languages: ["zh-CN", "zh"],
+		gender: "female",
+	},
+	{
+		name: "zh-cn-huayan-medium",
 		languages: ["zh-CN", "zh"],
 		gender: "female",
 	},
