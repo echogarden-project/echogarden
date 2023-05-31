@@ -61,3 +61,7 @@ export class Logger {
 		return Timer.currentTime
 	}
 }
+
+export function resetActiveLogger() {
+	currentActiveLogger = null
+}

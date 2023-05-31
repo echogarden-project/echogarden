@@ -5,6 +5,7 @@ import { RawAudio } from "../audio/AudioUtilities.js"
 import { RecognitionOptions, RecognitionResult, recognize } from "../api/Recognition.js"
 import { AlignmentOptions, AlignmentResult, align } from "../api/Alignment.js"
 import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from "../api/Translation.js"
+import { resetActiveLogger } from "../utilities/Logger.js"
 
 const log = logToStderr
 
@@ -52,6 +53,8 @@ async function processQueueIfIdle() {
 				messageType: "Error",
 				error: e
 			})
+		} finally {
+			resetActiveLogger()
 		}
 	}
 
