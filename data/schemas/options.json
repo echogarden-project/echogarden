@@ -1077,6 +1077,9 @@
         },
         "maxPayload": {
           "type": "number"
+        },
+        "useWorkerThread": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
