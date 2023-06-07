@@ -2,7 +2,7 @@ import Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from "../dsp/MelSpectogram.js"
-import { clip, delay,  roundToDigits, splitFloat32Array } from '../utilities/Utilities.js'
+import { clip, roundToDigits, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logSoftmax, logSumExp, meanOfVector, medianFilter, softMax, stdDeviationOfVector } from '../math/VectorMath.js'
 import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 
@@ -491,7 +491,7 @@ export class Whisper {
 				addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
 			}
 
-			await delay(0)
+			await yieldToEventLoop()
 		}
 
 		if (timestampsSeenCount >= 2 && !isFinalPart) {
