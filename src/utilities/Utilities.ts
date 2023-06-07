@@ -168,6 +168,12 @@ export function delay(timeMs: number) {
 	})
 }
 
+export function yieldToEventLoop() {
+	return new Promise((resolve) => {
+		setImmediate(resolve)
+	})
+}
+
 export function printMatrix(matrix: Float32Array[]) {
 	const rowCount = matrix.length
 
