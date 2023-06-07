@@ -1,5 +1,5 @@
 import { Timer } from "./Timer.js"
-import { delay, logToStderr, roundToDigits, writeToStderr } from "./Utilities.js"
+import { logToStderr, roundToDigits, writeToStderr, yieldToEventLoop } from "./Utilities.js"
 
 let currentActiveLogger: Logger | null = null
 
@@ -11,15 +11,15 @@ export class Logger {
 		this.startAsync(title, false)
 	}
 
-	async startAsync(title: string, wait = true) {
+	async startAsync(title: string, yieldBeforeStart = true) {
 		if (currentActiveLogger != null && currentActiveLogger != this) {
 			return
 		}
 
 		this.end()
 
-		if (wait) {
-			await delay(0)
+		if (yieldBeforeStart) {
+			await yieldToEventLoop()
 		}
 
 		writeToStderr(`${title}.. `)
