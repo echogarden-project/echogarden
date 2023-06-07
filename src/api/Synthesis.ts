@@ -4,7 +4,7 @@ import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr } from "../utilities/Utilities.js"
+import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, delay, yieldToEventLoop } from "../utilities/Utilities.js"
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
@@ -18,6 +18,7 @@ import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJso
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, shortLanguageCodeToLong } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import { appName } from "./Globals.js"
+import { shouldCancelCurrentTask } from "../server/Worker.js"
 
 const log = logToStderr
 
@@ -75,9 +76,10 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	let timeOffset = 0
 
 	for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
-		logger.log(`\nSynthesizing segment ${segmentIndex + 1}/${segments.length}..`)
-
 		const segmentText = segments[segmentIndex].trim()
+
+		logger.log(`\nSynthesizing segment ${segmentIndex + 1}/${segments.length}: "${segmentText}"`)
+
 		const segmentStartTime = timeOffset
 
 		const segmentEntry: TimelineEntry = {
@@ -100,9 +102,17 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 		const sentencesTimelines: Timeline[] = []
 
 		for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
-			logger.log(`\nSynthesizing sentence ${sentenceIndex + 1}/${sentences.length}..`)
+			await yieldToEventLoop()
+
+			if (shouldCancelCurrentTask()) {
+				//log("\n\n\n\n\nCANCELED\n\n\n\n")
+				throw new Error("Canceled")
+			}
 
 			const sentenceText = sentences[sentenceIndex].trim()
+
+			logger.log(`\nSynthesizing sentence ${sentenceIndex + 1}/${sentences.length}: "${sentenceText}"`)
+
 			const sentenceStartTime = timeOffset
 
 			let sentencetSynthesisOptions: SynthesisOptions = { postProcessing: { normalizeAudio: false } }
