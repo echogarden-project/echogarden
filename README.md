@@ -25,6 +25,7 @@ An integrated speech toolbox designed with end-users in mind.
 
 * Background worker
 * WebSocket server API
+* Browser extension. Integration with the Web Speech API
 
 ### Planned, but not yet
 
