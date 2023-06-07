@@ -17,6 +17,7 @@ export async function synthesizeSentence(text: string, voiceName: string, modelP
 		vitsTTS = new VitsTTS(voiceName, modelPath)
 		await vitsTTS.initialize()
 
+		cachedInstanceLookup.clear()
 		cachedInstanceLookup.set(cacheLookupKey, vitsTTS)
 	}
 
