@@ -1,11 +1,14 @@
 import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEventData, SynthesizeSegmentsResult, VoiceListRequestOptions, requestVoiceList, synthesizeSegments } from "../api/Synthesis.js"
 import { Queue } from "../utilities/Queue.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
 import { RawAudio } from "../audio/AudioUtilities.js"
 import { RecognitionOptions, RecognitionResult, recognize } from "../api/Recognition.js"
 import { AlignmentOptions, AlignmentResult, align } from "../api/Alignment.js"
 import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from "../api/Translation.js"
 import { resetActiveLogger } from "../utilities/Logger.js"
+import { writeToStderr } from '../utilities/Utilities.js'
+import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
+import { Worker, SHARE_ENV } from 'node:worker_threads'
 
 const log = logToStderr
 
@@ -13,7 +16,20 @@ const messageChannel = new MessageChannel()
 messageChannel.port1.start()
 messageChannel.port2.start()
 
+const canceledRequests = new Set<string>()
+let cancelCurrentTask = false
+
+export function shouldCancelCurrentTask() {
+	return cancelCurrentTask
+}
+
 addListenerToClientMessages((message) => {
+	if (message.messageType == "Cancel") {
+		//log(`CANCEL REQUESTED FOR ${message.requestId}`)
+		canceledRequests.add(message.requestId)
+		return
+	}
+
 	enqueueAndProcessIfIdle(message)
 })
 
@@ -43,7 +59,24 @@ async function processQueueIfIdle() {
 			})
 		}
 
+		function setCancelationFlagIfNeeded() {
+			if (canceledRequests.has(requestId)) {
+				cancelCurrentTask = true
+				canceledRequests.delete(requestId)
+			}
+		}
+
+		await yieldToEventLoop()
+
+		setCancelationFlagIfNeeded()
+		const cancelationFlagSetterInterval = setInterval(setCancelationFlagIfNeeded, 20)
+
 		try {
+			if (cancelCurrentTask) {
+				//log(`******* CANCELED BEFORE START: ${requestId} *******`)
+				throw new Error("Canceled")
+			}
+
 			await processMessage(incomingMessage, sendMessage)
 		} catch (e) {
 			log(`${e}`)
@@ -55,6 +88,9 @@ async function processQueueIfIdle() {
 			})
 		} finally {
 			resetActiveLogger()
+
+			clearInterval(cancelationFlagSetterInterval)
+			cancelCurrentTask = false
 		}
 	}
 
@@ -263,6 +299,30 @@ function addListenerToClientMessages(handler: MessageFunc) {
 	messageChannel.port2.addEventListener('message', (event) => {
 		handler(event.data)
 	})
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Worker thread methods
+///////////////////////////////////////////////////////////////////////////////////////////////
+export async function startNewWorkerThread() {
+	const workerThread = new Worker(resolveToModuleRootDir('dist/server/WorkerStarter.js'), {
+		argv: process.argv.slice(2),
+		env: SHARE_ENV
+	})
+
+	workerThread.on("message", (message) => {
+		if (message.name == "writeToStdErr") {
+			writeToStderr(message.text)
+		}
+	})
+
+	workerThread.postMessage({
+		name: 'init',
+		stdErrIsTTY: process.stderr.isTTY,
+		stdErrHasColors: process.stderr.hasColors ? process.stderr.hasColors() : false
+	})
+
+	return workerThread
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

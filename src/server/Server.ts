@@ -2,9 +2,10 @@ import { WebSocketServer, WebSocket, ServerOptions as WsServerOptions } from 'ws
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { resolveToModuleRootDir, readFile, existsSync } from '../utilities/FileSystem.js'
+import { readFile, existsSync } from '../utilities/FileSystem.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { sendMessageToWorker, addListenerToWorkerMessages } from './Worker.js'
+import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread } from './Worker.js'
+import { Worker } from 'node:worker_threads'
 
 const log = logToStderr
 
@@ -43,9 +44,11 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 
 	const requestIdToWebSocket = new Map<string, WebSocket>()
 
-	//const worker = new Worker(resolveToModuleRootDir("dist/server/WorkerStarter.js"))
+	function onWorkerMessage(message: any) {
+		if (message.name == "writeToStdErr") {
+			return
+		}
 
-	addListenerToWorkerMessages((message: any) => {
 		if (!message.requestId) {
 			throw new Error("Worker message doesn't have a request ID")
 		}
@@ -59,7 +62,16 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 		const encodedWorkerMessage = encodeMsgPack(message)
 
 		ws.send(encodedWorkerMessage)
-	})
+	}
+
+	let workerThread: Worker | undefined
+
+	if (serverOptions.useWorkerThread) {
+		workerThread = await startNewWorkerThread()
+		workerThread.on('message', onWorkerMessage)
+	} else {
+		addListenerToWorkerMessages(onWorkerMessage)
+	}
 
 	const serverOpenPromise = new OpenPromise<void>
 
@@ -99,7 +111,11 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 
 			requestIdToWebSocket.set(requestId, ws)
 
-			sendMessageToWorker(incomingMessage)
+			if (workerThread) {
+				workerThread.postMessage(incomingMessage)
+			} else {
+				sendMessageToWorker(incomingMessage)
+			}
 		})
 
 		ws.on('error', (e) => {
@@ -131,6 +147,7 @@ export interface ServerOptions {
 	keyPath?: string
 	deflate?: boolean
 	maxPayload?: number
+	useWorkerThread?: boolean
 }
 
 export const defaultServerOptions: ServerOptions = {
@@ -139,5 +156,6 @@ export const defaultServerOptions: ServerOptions = {
 	certPath: undefined,
 	keyPath: undefined,
 	deflate: true,
-	maxPayload: 1000 * 1000000 // 1GB
+	maxPayload: 1000 * 1000000, // 1GB
+	useWorkerThread: true
 }
