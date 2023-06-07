@@ -55,8 +55,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.341.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.341.0",
+		"@aws-sdk/client-polly": "^3.347.1",
+		"@aws-sdk/client-transcribe-streaming": "^3.347.1",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -87,7 +87,7 @@
 		"jieba-wasm": "^0.0.2",
 		"jsdom": "^22.1.0",
 		"kuromoji": "^0.1.2",
-		"microsoft-cognitiveservices-speech-sdk": "^1.28.0",
+		"microsoft-cognitiveservices-speech-sdk": "^1.29.0",
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
 		"ndarray": "^1.0.19",
@@ -127,10 +127,10 @@
 		"@types/recursive-readdir": "^2.2.1",
 		"@types/tar": "^6.1.5",
 		"@types/ws": "^8.5.4",
-		"@typescript-eslint/eslint-plugin": "^5.59.7",
-		"@typescript-eslint/parser": "^5.59.7",
-		"eslint": "^8.41.0",
+		"@typescript-eslint/eslint-plugin": "^5.59.9",
+		"@typescript-eslint/parser": "^5.59.9",
+		"eslint": "^8.42.0",
 		"ts-json-schema-generator": "^1.2.0",
-		"typescript": "^5.0.4"
+		"typescript": "^5.1.3"
 	}
 }
