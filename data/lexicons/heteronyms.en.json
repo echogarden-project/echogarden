@@ -1,5 +1,5 @@
 {
-	"present": [
+	"present [disabled]": [
 		{
 			"pos": [
 				"VB"
@@ -664,7 +664,7 @@
 			"example": "You should lead the way."
 		}
 	],
-	"nice": [
+	"nice [disabled]": [
 		{
 			"pos": [
 				"NNP"
@@ -678,7 +678,7 @@
 			"example": "I'm flying to Nice."
 		}
 	],
-	"reading": [
+	"reading [disabled]": [
 		{
 			"pos": [
 				"NNP"
