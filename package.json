@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.2.8",
+	"version": "0.2.9",
 	"description": "An integrated speech toolbox designed with end-users in mind.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
@@ -97,8 +97,7 @@
 		"tar": "^6.1.15",
 		"tinyld": "^1.3.4",
 		"ws": "^8.13.0",
-		"wtf_wikipedia": "^10.1.5",
-		"xregexp": "^5.1.1"
+		"wtf_wikipedia": "^10.1.5"
 	},
 	"peerDependencies": {
 		"@echogarden/vosk": "^0.3.39-patched.1",

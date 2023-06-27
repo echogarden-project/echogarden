@@ -1,5 +1,3 @@
-import XRegExp from 'xregexp'
-
 import * as CldrSegmentation from 'cldr-segmentation'
 import { splitChineseTextToWords_Jieba } from './ChineseSegmentation.js'
 
@@ -9,7 +7,7 @@ import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
 
 const log = logToStderr
 
-export const wordCharacterPattern = XRegExp('[\\p{Letter}\\p{Number}]')
+export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
 export const phraseSeparators = [",", ";", ":"]
 export const sentenceSeparators = [".", "?", "!"]
 export const symbolWords = ["$", "%", "&", "@", "+", "/", "*", "="]
