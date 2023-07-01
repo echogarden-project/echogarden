@@ -16,7 +16,7 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 
 	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
 
-	const yearPrecedingWords = [
+	const wordsPrecedingAYear = [
 		"in", "since", "©",
 		"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
 		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
@@ -24,13 +24,13 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 
 	for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
 		const word = words[wordIndex]
-		const lowerCaseTermText = word.toLocaleLowerCase()
+		const lowerCaseWord = word.toLocaleLowerCase()
 
 		const nextWords = words.slice(wordIndex + 1)
 		const nextWord = nextWords[0]
 
 		if (
-			yearPrecedingWords.includes(lowerCaseTermText) &&
+			wordsPrecedingAYear.includes(lowerCaseWord) &&
 			fourDigitYearPattern.test(nextWord)) {
 			const normalizedString = normalizeFourDigitYearString(nextWord)
 
@@ -38,7 +38,7 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 
 			wordIndex += 1
 		} else if (
-			lowerCaseTermText == "the" &&
+			lowerCaseWord == "the" &&
 			fourDigitDecadePattern.test(nextWord)) {
 
 			const normalizedString = normalizeFourDigitDecadeString(nextWord)
@@ -77,12 +77,12 @@ export function normalizeFourDigitYearString(yearString: string) {
 }
 
 export function normalizeFourDigitDecadeString(decadeString: string) {
-	const firstTwoDigitsValue = parseFloat(decadeString.substring(0, 2))
-	const secondTwoDigitsValue = parseFloat(decadeString.substring(2, 4))
+	const firstTwoDigitsValue = parseInt(decadeString.substring(0, 2))
+	const secondTwoDigitsValue = parseInt(decadeString.substring(2, 4))
 
 	let normalizedString: string
 
-	if (firstTwoDigitsValue >= 10 && firstTwoDigitsValue % 10 != 0) {
+	if (firstTwoDigitsValue >= 10 && firstTwoDigitsValue >= 10) {
 		normalizedString = `${firstTwoDigitsValue} ${secondTwoDigitsValue}s`
 	} else {
 		normalizedString = decadeString
