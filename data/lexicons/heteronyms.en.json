@@ -1,14 +1,76 @@
 {
-	"present [disabled]": [
+	"read": [
 		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ d"
+				}
+			},
+
 			"pos": [
 				"VB"
 			],
+
+			"precededBy": [
+				"he", "she", "it", "it's", "who", "have", "be", "is", "are", "isn't", "was", "were",
+				"has", "had", "hadn't", "i've", "we've", "you've", "would've", "might've", "as", "widely", "recently", "haven't", "having", "well", "being", "letter", "story", "statement", "message", "line", "caption", "book", "ruling", "tweet", "student", "which", "that"
+			],
+
+			"notPrecededBy": [
+				"to"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+				"was", "wasn't"
+			],
+
+			"example": "I read this book a while ago."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈiː d"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"example": "I will read the story."
+		}
+	],
+	"present": [
+		{
 			"pronunciation": {
 				"espeak": {
 					"en-us": "p ɹ ɪ z ˈɛ n t"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"will", "would", "we", "they", "i", "you", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "people"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "some", "at", "be", "were", "was", "are", "our", "of", "its", "this", "been"
+			],
+
+			"succeededBy": [
+				"a", "an", "the", "your", "their", "it", "its", "his", "her", "our", "this", "their", "them", "some", "himself", "herself", "themselves"
+			],
+
+			"notSucceededBy": [
+				"day", "moment", "time"
+			],
+
 			"example": "I will present the issue."
 		},
 		{
@@ -17,40 +79,78 @@
 					"en-us": "p ɹ ˈɛ z ə n t"
 				}
 			},
+
 			"example": "I got you a present."
 		}
 	],
-	"read [disabled]": [
+	"presents": [
 		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ɪ z ˈɛ n t s"
+				}
+			},
+
 			"pos": [
 				"VB"
 			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɹ ˈiː d"
-				}
-			},
-			"example": "I will read the story."
+
+			"precededBy": [
+				"he", "she", "it", "who", "this", "opportunity", "still", "situation", "often", "research"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "those", "my", "your", "these", "those", "more", "some", "of", "are", "few", "some", "many"
+			],
+
+			"succeededBy": [
+				"itself", "us", "opportunities", "them", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various"
+			],
+
+			"notSucceededBy": [
+
+			],
+
+			"example": "He presents his argument."
 		},
 		{
 			"pronunciation": {
 				"espeak": {
-					"en-us": "ɹ ˈɛ d"
+					"en-us": "p ɹ ˈɛ z ə n t s"
 				}
 			},
-			"example": "I have read the story."
+
+			"example": "She gave him a lot of presents."
 		}
 	],
 	"use": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "j ˈuː z"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"we", "you", "they", "who", "i", "will", "also", "people", "don't", "didn't", "not", "doesn't", "please", "never", "ever", "often", "frequently", "rarely", "commonly", "players", "we'll", "would", "wouldn't", "instead", "probably", "should", "shouldn't", "must", "mustn't", "can", "can't", "may", "might", "could", "couldn't", "actually", "always", "sometimes"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "for", "no", "in", "emergency", "of", "make", "its", "single", "drug", "substance", "land", "their", "good", "making", "mask", "public", "police", "future", "day", "marijuana", "efficient", "tobacco", "mandatory", "full", "own", "first", "her", "his", "its", "our", "your", "any", "mixed", "personal"
+			],
+
+			"succeededBy": [
+				"the", "a", "an", "their", "it", "this", "them", "his", "our", "your", "its", "these", "all", "him", "her", "my", "any", "those", "some", "authorization", "one", "more", "social", "public", "hand", "force", "every", "up", "technology", "data", "other"
+			],
+
+			"notSucceededBy": [
+				"of", "for"
+			],
+
 			"example": "I will use the fork."
 		},
 		{
@@ -59,20 +159,38 @@
 					"en-us": "j ˈuː s"
 				}
 			},
+
 			"example": "There's no use."
 		}
 	],
 	"live": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "l ˈɪ v"
 				}
 			},
-			"example": "I will live well."
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "who", "we", "and", "i", "they", "cannot", "don't", "not", "can't", "doesn't", "will", "would", "won't", "wouldn't", "please", "never", "humans", "rather"
+			],
+
+			"notPrecededBy": [
+				"a", "the", "of", "be", "no", "broadcast", "for", "on", "with", "went", "in", "streamed", "is", "going", "our", "it"
+			],
+
+			"succeededBy": [
+				"their", "her", "his", "your", "my", "it", "our", "this", "that", "all", "away", "up", "a", "the", "of", "as", "well", "carefully", "longer"
+			],
+
+			"notSucceededBy": [
+				"action", "stream", "streaming", "streamed", "audience", "performance", "performances", "work", "video", "event", "events", "show", "shows", "tv", "television"
+			],
+
+			"example": "I can live well."
 		},
 		{
 			"pronunciation": {
@@ -80,19 +198,38 @@
 					"en-us": "l ˈaɪ v"
 				}
 			},
+
 			"example": "It is a live performance."
 		}
 	],
 	"lives": [
 		{
-			"pos": [
-				"VBZ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "l ˈɪ v z"
 				}
 			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who", "now", "currently", "still"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many"
+			],
+
+			"succeededBy": [
+				"a", "an"
+			],
+
+			"notSucceededBy": [
+				"public", "have"
+			],
+
 			"example": "She lives vigorously."
 		},
 		{
@@ -101,19 +238,38 @@
 					"en-us": "l ˈaɪ v z"
 				}
 			},
+
 			"example": "Their lives are interesting."
 		}
 	],
 	"close": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "k l ˈoʊ z"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "will", "doesn't", "won't", "should", "shouldn't", "may", "might", "could", "couldn't", "must", "can", "you", "i", "we", "don't", "won't", "don't", "doesn't", "please", "mustn't"
+			],
+
+			"notPrecededBy": [
+				"very", "quite", "fairly", "a", "is", "are"
+			],
+
+			"succeededBy": [
+				"the", "down", "their", "its", "out", "all", "a", "an", "his", "her", "this", "our", "my", "off"
+			],
+
+			"notSucceededBy":[
+				"contact", "friend", "friends"
+			],
+
 			"example": "I will close the door."
 		},
 		{
@@ -122,19 +278,116 @@
 					"en-us": "k l ˈoʊ s"
 				}
 			},
+
 			"example": "It is very close."
+		}
+	],
+	"project": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə dʒ ˈɛ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "wouldn't", "may", "might", "could", "couldn't", "must", "mustn't", "won't", "don't", "does", "doesn't", "did", "didn't"
+			],
+
+			"notPrecededBy": [
+				"the", "be", "are", "is", "be", "a", "this", "that", "was", "were", "any", "his", "her", "their", "its","every", "each", "its", "one", "pilot", "new", "research", "housing", "million", "development", "construction", "next", "rail"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+				"of", "in"
+			],
+
+			"example": "I will project the image."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈɑː dʒ ɛ k t"
+				}
+			},
+
+			"example": "This is a big project."
+		}
+	],
+	"projects": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə dʒ ˈɛ k t s"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "these", "those", "whose", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "pilot", "new", "research", "housing", "development", "construction", "next", "rail"
+			],
+
+			"succeededBy": [
+				"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy":[
+				"were", "on", "whose", "are"
+			],
+
+			"example": "He projects higher margins."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈɑː dʒ ɛ k t s"
+				}
+			},
+
+			"example": "There are several projects."
 		}
 	],
 	"subject": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "s ʌ b dʒ ˈɛ k t"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "may", "might","could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
+			],
+
+			"notPrecededBy": [
+				"the", "be", "are", "is", "be", "a", "this", "was", "were", "been", "that", "being", "any", "his", "her", "its", "their", "every", "of", "years", "each", "sensetive", "its", "one"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+				"matter", "matters", "of", "in"
+			],
+
 			"example": "You must subject to the rules."
 		},
 		{
@@ -143,19 +396,38 @@
 					"en-us": "s ˈʌ b dʒ ɛ k t"
 				}
 			},
+
 			"example": "I understand the subject."
 		}
 	],
 	"subjects": [
 		{
-			"pos": [
-				"VBZ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "s ʌ b dʒ ˈɛ k t s"
 				}
 			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "their", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "such"
+			],
+
+			"succeededBy": [
+				"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy":[
+				"was", "were", "on", "whose"
+			],
+
 			"example": "He subjects them to his silly ideas."
 		},
 		{
@@ -164,19 +436,38 @@
 					"en-us": "s ˈʌ b dʒ ɛ k t s"
 				}
 			},
+
 			"example": "There are many subjects."
 		}
 	],
 	"object": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "ɑː b dʒ ˈɛ k t"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "could", "couldn't", "would", "wouldn't", "won't", "don't", "not", "strongly", "weakly", "did", "didn't"
+			],
+
+			"notPrecededBy": [
+				"the", "an", "one", "some", "sharp", "this", "every", "foreign", "small", "shiny", "metal", "any", "immovable", "moving", "that", "large", "earth", "new", "blunt", "shared", "mystical", "another", "single", "different", "shaped", "unwanted", "use", "suspicious", "celestial", "integral", "your", "hot", "invisible", "shared", "mystical"
+			],
+
+			"succeededBy": [
+				"to", "themselves", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an", "the"
+			],
+
+			"notSucceededBy": [
+				"of", "in", "was", "like", "is", "oriented", "which", "made", "be", "looks", "made"
+			],
+
 			"example": "I will object to that ruling."
 		},
 		{
@@ -185,19 +476,37 @@
 					"en-us": "ˈɑː b dʒ ɛ k t"
 				}
 			},
+
 			"example": "Here is an object."
 		}
 	],
 	"objects": [
 		{
-			"pos": [
-				"VBZ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "ɑː b dʒ ˈɛ k t s"
 				}
 			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "some", "more", "many", "some", "their", "these", "those", "of", "any", "in", "sharp", "large", "small", "other", "falling", "varied", "different", "unusual", "unwanted"
+			],
+
+			"succeededBy": [
+				"to", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+			],
+
 			"example": "She objects to the idea."
 		},
 		{
@@ -206,7 +515,162 @@
 					"en-us": "ˈɑː b dʒ ɛ k t s"
 				}
 			},
+
 			"example": "There are lots of objects here."
+		}
+	],
+	"increase": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɪ ŋ k ɹ ˈiː s"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
+			],
+
+			"notPrecededBy": [
+				"the", "an", "this", "that", "any", "his", "her", "its", "their", "every", "each", "one", "percent", "cent", "significant", "tax", "sharp", "daily", "price", "small", "slight", "minor", "major"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I will increase the speed."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ ŋ k ɹ iː s"
+				}
+			},
+
+			"example": "There was an increase in the number of migrating birds."
+		}
+	],
+	"decrease": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d iː k ɹ ˈiː s"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
+			],
+
+			"notPrecededBy": [
+				"a", "the", "this", "that", "any", "his", "her", "its", "their", "every", "each", "one", "percent", "cent", "significant", "tax", "sharp", "daily", "price", "small", "slight", "minor", "major"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I will decrease the speed."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˈiː k ɹ iː s"
+				}
+			},
+
+			"example": "There was a decrease in the number of migrating birds."
+		}
+	],
+	"contract": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n t ɹ ˈæ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "this", "that", "any", "his", "her", "its", "their", "whose", "every", "each", "one", "year", "new", "of", "under", "current"
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I don't want to contract pneumonia."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n t ɹ æ k t"
+				}
+			},
+
+			"example": "I signed the contract."
+		}
+	],
+	"contracts": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n t ɹ ˈæ k t s"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "two", "three", "four", "usual", "no"
+			],
+
+			"succeededBy": [
+				"it", "his", "her", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"were", "on", "whose", "are", "who"
+			],
+
+			"example": "He contracts the disease."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n t ɹ æ k t s"
+				}
+			},
+
+			"example": "All contracts were signed."
 		}
 	],
 	"wind": [
@@ -214,12 +678,30 @@
 			"pos": [
 				"VB"
 			],
+
 			"pronunciation": {
 				"espeak": {
 					"en-us": "w ˈaɪ n d"
 				}
 			},
-			"example": "I know how to wind the engine."
+
+			"precededBy": [
+				"to", "will", "they", "i", "we", "you", "may", "might", "could", "couldn't", "we'll", "i'll", "would", "wouldn't", "won't", "couldn't"
+			],
+
+			"notPrecededBy": [
+				"high", "low", "strong"
+			],
+
+			"succeededBy": [
+				"up", "down", "out", "the", "my", "his", "her", "our"
+			],
+
+			"notSucceededBy": [
+				"gust", "gusts"
+			],
+
+			"example": "I don't know how to wind the engine."
 		},
 		{
 			"pronunciation": {
@@ -227,19 +709,117 @@
 					"en-us": "w ˈɪ n d"
 				}
 			},
+
 			"example": "The wind is very strong."
+		}
+	],
+	"winds": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈaɪ n d z"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "usual", "no"
+			],
+
+			"succeededBy": [
+				"it", "his", "her", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"were", "on", "whose", "are"
+			],
+
+			"example": "He winds the clock."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈɪ n d z"
+				}
+			},
+
+			"example": "The winds were strong."
+		}
+	],
+	"wound": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈaʊ n d"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "he", "she", "it", "who", "be", "being", "we", "they", "has", "have", "slowly", "quickly"
+			],
+
+			"notPrecededBy": [
+				"deep", "her", "his", "its", "my", "their", "open", "closed", "gunshot"
+			],
+
+			"succeededBy": [
+				"up", "down"
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I wound the clock several times."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈuː n d"
+				}
+			},
+
+			"example": "She got a wound."
 		}
 	],
 	"tear": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "t ˈɛ ɹ"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "and", "will", "would", "wouldn't", "won't", "did", "didn't", "we'll", "i'll", "could", "couldn't", "may", "might", "did", "didn't", "not"
+			],
+
+			"notPrecededBy": [
+				"the", "with", "a", "one"
+			],
+
+			"succeededBy": [
+				"down", "up", "through", "the", "it", "each", "a", "an", "you", "me", "us", "them", "your", "their", "his", "her", "herself", "himself", "itself", "everybody", "our"
+			],
+
+			"notSucceededBy": [
+				"gas", "shedding", "jerking"
+			],
+
 			"example": "He would tear it."
 		},
 		{
@@ -248,19 +828,38 @@
 					"en-us": "t ˈɪ ɹ"
 				}
 			},
+
 			"example": "She has a tear in her eye."
 		}
 	],
 	"tears": [
 		{
-			"pos": [
-				"VBZ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "t ˈɛɹ z"
 				}
 			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "some", "in", "into", "to", "with", "shed", "through", "my", "no", "brought", "any", "these", "those", "our", "only", "cause", "make", "shed", "shedding", "crocodile", "back", "more", "saw", "cause", "whose"
+			],
+
+			"succeededBy": [
+				"to", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"of", "in", "after", "flowed"
+			],
+
 			"example": "He always tears it apart."
 		},
 		{
@@ -269,19 +868,624 @@
 					"en-us": "t ˈɪɹ z"
 				}
 			},
+
 			"example": "She has tears in her eyes."
+		}
+	],
+	"suspect": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ə s p ˈɛ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"i", "we", "they", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "but"
+			],
+
+			"notPrecededBy": [
+				"a", "the"
+			],
+
+			"succeededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "me", "you", "us"
+			],
+
+			"notSucceededBy": [
+				"was", "had"
+			],
+
+			"example": "I suspect it didn't really happen."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈʌ s p ɛ k t"
+				}
+			},
+			"example": "We found the suspect."
+		}
+	],
+	"suspects": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ə s p ˈɛ k t s"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "new", "two", "three", "four", "usual", "no"
+			],
+
+			"succeededBy": [
+				"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"were", "on", "whose", "are", "who"
+			],
+
+			"example": "He suspects there was something stolen."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈʌ s p ɛ k t s"
+				}
+			},
+
+			"example": "The suspects were taken to custody."
+		}
+	],
+	"record": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ᵻ k ˈoːɹ d"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"i", "we", "they", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+			],
+
+			"notPrecededBy": [
+				"a", "the", "new", "of", "track", "on", "his", "her", "our", "its", "their", "some", "same", "world", "previous", "personal", "this", "that", "criminal", "another", "in", "daily", "day", "time", "school", "public", "no", "historical", "winning"
+			],
+
+			"succeededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "your", "me", "you", "us", "button"
+			],
+
+			"notSucceededBy": [
+				"i", "we", "was", "has", "had", "will", "not",  "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "of", "number"
+			],
+
+			"example": "Did you record that TV show?"
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ k ɚ d"
+				}
+			},
+			"example": "However, the record has since been beaten again."
+		}
+	],
+	"records": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ᵻ k ˈoːɹ d z"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"the", "to", "his", "her", "our", "your", "their", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "two", "three", "four", "no", "medical", "criminal", "since", "financial", "tax", "own", "state", "jail", "track", "break", "broke", "broken", "health"
+			],
+
+			"succeededBy": [
+				"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"were", "on", "whose", "are"
+			],
+
+			"example": "She records the show."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ k ɚ d z"
+				}
+			},
+
+			"example": "I collected a lot of records."
+		}
+	],
+	"conflict": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n f l ˈɪ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"i", "we", "they", "to", "not", "doesn't", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+			],
+
+			"notPrecededBy": [
+				"a", "the", "new", "of", "on", "his", "her", "our", "its", "their", "some", "same", "previous", "this", "that", "another", "in", "no", "historical"
+			],
+
+			"succeededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "your"
+			],
+
+			"notSucceededBy": [
+				"i", "we", "was", "has", "had", "will", "not", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "of"
+			],
+
+			"example": "We conflict in our views."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n f l ɪ k t"
+				}
+			},
+			"example": "There’s a conflict between them."
+		}
+	],
+	"conflicts": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n f l ˈɪ k t s"
+				}
+			},
+
+			"pos": [
+				"VBZ"
+			],
+
+			"precededBy": [
+				"he", "she", "it", "who"
+			],
+
+			"notPrecededBy": [
+				"to", "the", "his", "her", "our", "your", "their", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "no", "since"
+			],
+
+			"succeededBy": [
+				"with", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"were", "on", "whose", "are"
+			],
+
+			"example": "She conflicts with him."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n f l ɪ k t s"
+				}
+			},
+
+			"example": "There are many conflicts that need to be resolved."
+		}
+	],
+	"inside": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ n s aɪ d"
+				}
+			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+				"the", "an"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+				"out"
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "You can see it on the inside of the box."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɪ n s ˈaɪ d"
+				}
+			},
+
+			"example": "Please go inside."
+		}
+	],
+	"outside": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈaʊ t s aɪ d"
+				}
+			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+				"the", "an", "of"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "This is the outside area."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "aʊ t s ˈaɪ d"
+				}
+			},
+
+			"example": "Let's go outside."
+		}
+	],
+	"content": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n t ˈɛ n t"
+				}
+			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+				"be", "is", "was", "are", "they're", "were", "very", "heart's", "isn't", "aren't", "wasn't", "weren't", "not", "very", "somewhat"
+			],
+
+			"notPrecededBy": [
+				"misleading", "such", "course", "streaming", "most", "free", "original"
+			],
+
+			"succeededBy": [
+
+			],
+
+			"notSucceededBy": [
+				"creators", "rules"
+			],
+
+			"example": "I feel content about this."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n t ɛ n t"
+				}
+			},
+
+			"example": "The website has a lof of content."
+		}
+	],
+	"conduct": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n d ˈʌ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "did", "didn't", "then"
+			],
+
+			"notPrecededBy": [
+				"of", "for", "this", "similar", "with", "criminal", "dangerous", "ethical", "unethical", "good", "future", "disorderly"
+			],
+
+			"succeededBy": [
+				"it", "her", "his", "our", "my", "your", "their", "a", "an", "tests", "exams", "classes", "surveys", "ongoing"
+			],
+
+			"notSucceededBy": [
+				"of", "authority"
+			],
+
+			"example": "I will conduct an experiment."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n d ʌ k t"
+				}
+			},
+
+			"example": "My conduct wasn't very good."
+		}
+	],
+	"perfect": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɚ f ˈɛ k t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "did", "didn't"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "is", "be", "was", "are", "makes", "picture", "with", "via", "so", "isn't", "from"
+			],
+
+			"succeededBy": [
+				"its", "her", "his", "our", "my", "your", "their", "a", "an"
+			],
+
+			"notSucceededBy": [
+				"time", "but", "storm", "opportunity", "fit", "example", "way", "match", "sense", "place", "world", "solution", "as", "record", "gift", "game", "partner", "balance", "in", "day", "choice", "combination", "spot", "score", "recipe", "person", "union", "season", "timing", "home", "size", "candidate", "of", "start", "amount", "soundtrack", "blend", "marriage", "setting", "thing"
+			],
+
+			"example": "I will perfect my skills."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈɜː f ɛ k t"
+				}
+			},
+
+			"example": "This looks perfect."
+		}
+	],
+	"address": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɐ d ɹ ˈɛ s"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "will", "help", "can", "we", "not", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "directly", "does", "they", "adequately", "you", "really", "actually", "effectively", "can't", "leaders", "properly", "i", "specifically", "still", "please", "may", "did", "potentially", "cannot", "meaningfully", "finally", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "itself", "therefore"
+			],
+
+			"notPrecededBy": [
+				"keynote", "public"
+			],
+
+			"succeededBy": [
+				"the", "this", "these", "their", "it", "issues", "any", "some", "those", "all", "them", "concerns", "how", "our", "what", "a", "an", "its", "his", "her", "various", "specific", "ongoing", "whether", "your", "every", "critical"
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I will address the issue."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈæ d ɹ ɛ s"
+				}
+			},
+
+			"example": "What is your address?"
+		}
+	],
+	"progress": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə ɡ ɹ ˈɛ s"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "will", "would", "wouldn't", "won't", "help", "can", "we", "should", "must", "does", "doesn't", "they", "didn't", "you", "really", "could", "actually", "effectively", "can't", "i", "still", "may", "did", "potentially", "cannot", "meaningfully", "finally", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "continuously"
+			],
+
+			"notPrecededBy": [
+				"the", "in", "of", "made", "good", "its", "significant", "some", "little", "their", "his", "her", "my"
+			],
+
+			"succeededBy": [
+
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I will progres into the darkness."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈɑː ɡ ɹ ɛ s"
+				}
+			},
+
+			"example": "I made some progress."
+		}
+	],
+	"produce": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈoʊ d uː s"
+				}
+			},
+
+			"pos": [
+				"NNP"
+			],
+
+			"precededBy": [
+				"fresh", "their", "the", "a", "farm", "agricultural", "local", "quality", "grown", "finest", "excess", "quality", "grown", "your", "his", "her", "its", "combined", "organic", "bought", "own", "city's", "amazing", "good", "great", "bad", "worst", "seasonal", "southern", "homegrown", "damaged", "new", "smoked"
+			],
+
+			"notPrecededBy": [
+				"to", "i", "we", "they", "can", "could"
+			],
+
+			"succeededBy": [
+				"worth"
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "I gave her all the produce."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə d ˈuː s"
+				}
+			},
+
+			"example": "I will try to produce more."
+		}
+	],
+	"desert": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ᵻ z ˈɜː t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"i", "we", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "with", "semi", "harsh"
+			],
+
+			"succeededBy": [
+				"me", "us", "your", "our", "his", "her", "its"
+			],
+
+			"notSucceededBy": [
+			],
+
+			"example": "Please don't desert me."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˈɛ z ɚ t"
+				}
+			},
+
+			"example": "I like being in the desert."
 		}
 	],
 	"minute": [
 		{
-			"pos": [
-				"JJ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "m aɪ n j ˈu t"
 				}
 			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+
+			],
+
+			"notPrecededBy":[
+			],
+
+			"succeededBy": [
+				"detail", "details", "difference", "differences", "variation", "variations", "change", "changes"
+			],
+
+			"notSucceededBy":[
+			],
+
 			"example": "There's a minute difference between the two."
 		},
 		{
@@ -293,303 +1497,72 @@
 			"example": "Wait a minute."
 		}
 	],
-	"inside": [
-		{
-			"pos": [
-				"JJ"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ˈɪ n s aɪ d"
-				}
-			},
-			"example": "You can see it on the inside of the box."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɪ n s ˈaɪ d"
-				}
-			},
-			"example": "Please go inside."
-		}
-	],
-	"outside": [
-		{
-			"pos": [
-				"JJ"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "aʊ t s ˈaɪ d"
-				}
-			},
-			"example": "This is the outside area."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "aʊ t s ˈaɪ d"
-				}
-			},
-			"example": "Let's go outside."
-		}
-	],
-	"perfect": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "p ɚ f ˈɛ k t"
-				}
-			},
-			"example": "I will perfect my skills."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "p ˈɜː f ɛ k t"
-				}
-			},
-			"example": "This looks perfect."
-		}
-	],
-	"conduct": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "k ə n d ˈʌ k t"
-				}
-			},
-			"example": "I will conduct an experiment."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "k ˈɑː n d ʌ k t"
-				}
-			},
-			"example": "My conduct wasn't very good."
-		}
-	],
-	"content [disabled]": [
-		{
-			"pos": [
-				"JJ"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "k ə n t ˈɛ n t"
-				}
-			},
-			"example": "I feel content about this."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "k ˈɑː n t ɛ n t"
-				}
-			},
-			"example": "The website has a lof of content."
-		}
-	],
-	"desert": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "d ᵻ z ˈɜː t"
-				}
-			},
-			"example": "Please don't desert me."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "d ˈɛ z ɚ t"
-				}
-			},
-			"example": "I like being in the desert."
-		}
-	],
-	"bow": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "b ˈaʊ"
-				}
-			},
-			"example": "Bow to the queen."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "b ˈoʊ"
-				}
-			},
-			"example": "I'm looking to buy a new bow for my cello."
-		}
-	],
-	"row": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɹ ˈoʊ"
-				}
-			},
-			"example": "I ordered them in a row."
-		},
-		{
-			"pos": [
-				"NNP"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɹ ˈoʊ"
-				}
-			},
-			"example": "Row the boat!"
-		},
-		{
-			"pos": [
-				"NNP"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɹ ˈaʊ"
-				}
-			},
-			"example": "There was a row among those people."
-		}
-	],
-	"wound": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "w ˈaʊ n d"
-				}
-			},
-			"example": "I wound the clock several times."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "w ˈuː n d"
-				}
-			},
-			"example": "She got a wound."
-		}
-	],
-	"address": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɐ d ɹ ˈɛ s"
-				}
-			},
-			"example": "I will address the issue."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ˈæ d ɹ ɛ s"
-				}
-			},
-			"example": "What is your address?"
-		}
-	],
-	"entrance": [
-		{
-			"pos": [
-				"VB"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɛ n t ɹ ˈæ n s"
-				}
-			},
-			"example": "The music will entrance you."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ˈɛ n t ɹ ə n s"
-				}
-			},
-			"example": "Please go to the entrance."
-		}
-	],
-	"produce": [
-		{
-			"pos": [
-				"NNP"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "p ɹ ˈoʊ d uː s"
-				}
-			},
-			"example": "I gave her all the produce."
-		},
-		{
-			"pronunciation": {
-				"espeak": {
-					"en-us": "p ɹ ə d ˈuː s"
-				}
-			},
-			"example": "I will try to produce more."
-		}
-	],
 	"supposed": [
-		{
-			"pos": [
-				"JJ"
-			],
-			"pronunciation": {
-				"espeak": {
-					"en-us": "s ə p ˈoʊ z ɪ d"
-				}
-			},
-			"example": "That is the supposed solution."
-		},
 		{
 			"pronunciation": {
 				"espeak": {
 					"en-us": "s ə p ˈoʊ z d"
 				}
 			},
-			"example": "This was supposed to be somwhere there."
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"is", "are", "was", "were", "not", "i", "we", "they", "it's", "we're", "wasn't", "weren't"
+			],
+
+			"notPrecededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "your", "their"
+			],
+
+			"succeededBy": [
+				"to", "that", "anything"
+			],
+
+			"notSucceededBy": [
+				"source", "right", "goal", "murder", "concern", "evidence", "solution"
+			],
+
+			"example": "This was supposed to be somewhere there."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ə p ˈoʊ z ɪ d"
+				}
+			},
+
+			"example": "That is the supposed solution."
 		}
 	],
 	"learned": [
 		{
-			"pos": [
-				"JJ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "l ˈɜː ɹ n ɪ d"
 				}
 			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "be", "very"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+				"person", "individual", "man", "woman"
+			],
+
+			"notSucceededBy":[
+			],
+
 			"example": "She is a very learned person."
 		},
 		{
@@ -603,14 +1576,31 @@
 	],
 	"blessed": [
 		{
-			"pos": [
-				"JJ"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "b l ˈɛ s ɪ d"
 				}
 			},
+
+			"pos": [
+				"JJ"
+			],
+
+			"precededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "be", "very"
+			],
+
+			"notPrecededBy": [
+				"i'm"
+			],
+
+			"succeededBy": [
+				"person", "individual", "man", "woman"
+			],
+
+			"notSucceededBy": [
+			],
+
 			"example": "The saints are blessed."
 		},
 		{
@@ -619,19 +1609,116 @@
 					"en-us": "b l ˈɛ s t"
 				}
 			},
+
 			"example": "He blessed her."
+		}
+	],
+	"separate": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈɛ p ɚ ɹ ˌeɪ t"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+			],
+
+			"notPrecededBy": [
+				"a", "two", "in", "three", "four", "is", "the", "their", "his", "her"
+			],
+
+			"succeededBy": [
+				"it", "the", "a", "an", "all", "some"
+			],
+
+			"notSucceededBy": [
+				"parts"
+			],
+
+			"example": "I will separate the two parts."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈɛ p ɹ ə t"
+				}
+			},
+
+			"example": "We go on separate ways."
+		}
+	],
+	"research": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ᵻ s ˈɜː tʃ"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+			],
+
+			"notPrecededBy": [
+				"a", "in", "is", "the", "this", "these", "their", "his", "her", "its", "your", "our", "my", "any", "of", "new", "for", "medical", "scientific", "several", "one", "more", "recent", "related", "extensive", "clinical", "own", "good", "bad", "great", "useful"
+			],
+
+			"succeededBy": [
+				"it", "the", "a", "an", "all", "some", "into", "these"
+			],
+
+			"notSucceededBy": [
+				"report", "note"
+			],
+
+			"example": "I will research the subject."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈi s ˌɜː tʃ"
+				}
+			},
+
+			"example": "This looks like a great research opportunity."
 		}
 	],
 	"excuse": [
 		{
-			"pos": [
-				"VB"
-			],
 			"pronunciation": {
 				"espeak": {
 					"en-us": "ɛ k s k j ˈuː z"
 				}
 			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "not", "doesn't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+				"the", "a", "all", "his", "her", "its", "our", "me", "you", "us"
+			],
+
+			"notSucceededBy":[
+			],
+
 			"example": "Excuse me? Can you help me?"
 		},
 		{
@@ -640,19 +1727,211 @@
 					"en-us": "ɛ k s k j ˈuː s"
 				}
 			},
+
 			"example": "There's no excuse for that."
 		}
 	],
-	"lead": [
+	"bow": [
 		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈaʊ"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"precededBy": [
+				"to", "i", "will", "would", "they", "we", "don't", "doesn't", "wouldn't", "may", "might", "did", "didn't", "could", "couldn't"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+				"to", "our", "my", "down"
+			],
+
+			"notSucceededBy":[
+			],
+
+			"example": "Bow to the queen."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈoʊ"
+				}
+			},
+
+			"example": "I'm looking to buy a new bow for my cello."
+		}
+	],
+	"resume": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ z uː m ˌeɪ"
+				}
+			},
+
 			"pos": [
 				"NNP"
 			],
+
+			"precededBy": [
+				"a", "his", "her", "my", "their", "your", "our", "whose", "long", "short", "great", "lengthy", "impressive", "incredible", "professional"
+			],
+
+			"notPrecededBy": [
+			],
+
+			"succeededBy": [
+			],
+
+			"notSucceededBy":[
+			],
+
+			"example": "I've sent my resume."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈeɪ s uː m"
+				}
+			},
+
+			"example": "Wait until they resume the game."
+		}
+	],
+	"row [disabled]": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈoʊ"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"example": "I ordered them in a row."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈoʊ"
+				}
+			},
+
+			"pos": [
+				"NNP"
+			],
+
+			"example": "Row the boat!"
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈaʊ"
+				}
+			},
+
+			"pos": [
+				"NNP"
+			],
+
+			"example": "There was a row among those people."
+		}
+	],
+	"entrance [disabled]": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɛ n t ɹ ˈæ n s"
+				}
+			},
+
+			"pos": [
+				"VB"
+			],
+
+			"example": "The music will entrance you."
+		},
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ n t ɹ ə n s"
+				}
+			},
+
+			"example": "Please go to the entrance."
+		}
+	],
+	"nice [disabled]": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈiː s"
+				}
+			},
+
+			"pos": [
+				"NNP"
+			],
+
+			"case": "capitalized",
+
+			"example": "I'm flying to Nice."
+		}
+	],
+	"reading [disabled]": [
+		{
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ d ɪ ŋ"
+				}
+			},
+
+			"pos": [
+				"NNP"
+			],
+
+			"case": "capitalized",
+
+			"example": "I'm driving to Reading."
+		}
+	],
+	"lead [disabled]": [
+		{
 			"pronunciation": {
 				"espeak": {
 					"en-us": "l ˈɛ d"
 				}
 			},
+			"pos": [
+				"NNP"
+			],
+
+			"precededBy": [
+
+			],
+
+			"notPrecededBy": [
+
+			],
+
+			"succeededBy": [
+
+			],
+
+			"notSucceededBy": [
+
+			],
+
 			"example": "Lead is a dangerous substance."
 		},
 		{
@@ -662,34 +1941,6 @@
 				}
 			},
 			"example": "You should lead the way."
-		}
-	],
-	"nice [disabled]": [
-		{
-			"pos": [
-				"NNP"
-			],
-			"case": "capitalized",
-			"pronunciation": {
-				"espeak": {
-					"en-us": "n ˈiː s"
-				}
-			},
-			"example": "I'm flying to Nice."
-		}
-	],
-	"reading [disabled]": [
-		{
-			"pos": [
-				"NNP"
-			],
-			"case": "capitalized",
-			"pronunciation": {
-				"espeak": {
-					"en-us": "ɹ ˈɛ d ɪ ŋ"
-				}
-			},
-			"example": "I'm driving to Reading."
 		}
 	]
 }

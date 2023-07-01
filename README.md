@@ -17,7 +17,7 @@ An integrated speech toolbox designed with end-users in mind.
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
 * Can transcribe speech in any one of 98 languages, translated directly to English, and produce near word-level synchronized subtitles
-* Uses NLP for improving TTS pronunciation accuracy on a few engines and languages: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on POS tagging) and user-customizable phonetic lexicons
+* Attempts to improve TTS pronunciation accuracy on a few engines and languages: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a rule-based model) and user-customizable phonetic lexicons
 * Internal package system to auto-download and install voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection and speech denoising
 

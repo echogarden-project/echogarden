@@ -1,7 +1,6 @@
 import { getShortLanguageCode } from "../utilities/Locale.js"
-import { CompromiseParsedSentence } from "./CompromiseNLP.js"
 
-export function getNormalizationMapForSpeech(terms: CompromiseParsedSentence, language: string) {
+export function getNormalizationMapForSpeech(words: string[], language: string) {
 	language = getShortLanguageCode(language)
 
 	const normalizationMap = new Map<number, string>()
@@ -17,42 +16,43 @@ export function getNormalizationMapForSpeech(terms: CompromiseParsedSentence, la
 
 	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
 
-	for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-		const term = terms[termIndex]
-		const termText = term.text
-		const lowerCaseTermText = termText.toLocaleLowerCase()
+	const yearPrecedingWords = [
+		"in", "since", "©",
+		"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
+	]
 
-		const nextTerms = terms.slice(termIndex + 1)
-		const nextTerm = nextTerms[0]
-		const nextTermText = nextTerm?.text
+	for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+		const word = words[wordIndex]
+		const lowerCaseTermText = word.toLocaleLowerCase()
+
+		const nextWords = words.slice(wordIndex + 1)
+		const nextWord = nextWords[0]
 
 		if (
-			lowerCaseTermText == "in" &&
-			term.postText.length > 0 && term.postText.trim() == "" &&
-			fourDigitYearPattern.test(nextTermText)) {
+			yearPrecedingWords.includes(lowerCaseTermText) &&
+			fourDigitYearPattern.test(nextWord)) {
+			const normalizedString = normalizeFourDigitYearString(nextWord)
 
-			const normalizedString = normalizeFourDigitYearString(nextTermText)
+			normalizationMap.set(wordIndex + 1, normalizedString)
 
-			normalizationMap.set(termIndex + 1, normalizedString)
-
-			termIndex += 1
+			wordIndex += 1
 		} else if (
 			lowerCaseTermText == "the" &&
-			term.postText.length > 0 && term.postText.trim() == "" &&
-			fourDigitDecadePattern.test(nextTermText)) {
+			fourDigitDecadePattern.test(nextWord)) {
 
-			const normalizedString = normalizeFourDigitDecadeString(nextTermText)
+			const normalizedString = normalizeFourDigitDecadeString(nextWord)
 
-			normalizationMap.set(termIndex + 1, normalizedString)
+			normalizationMap.set(wordIndex + 1, normalizedString)
 
-			termIndex += 1
-		} else if (fourDigitYearRangePattern.test(termText)) {
-			const startYearString = normalizeFourDigitYearString(termText.substring(0, 4))
-			const endYearString = normalizeFourDigitYearString(termText.substring(5, 9))
+			wordIndex += 1
+		} else if (fourDigitYearRangePattern.test(word)) {
+			const startYearString = normalizeFourDigitYearString(word.substring(0, 4))
+			const endYearString = normalizeFourDigitYearString(word.substring(5, 9))
 
 			const normalizedString = `${startYearString} to ${endYearString}`
 
-			normalizationMap.set(termIndex, normalizedString)
+			normalizationMap.set(wordIndex, normalizedString)
 		}
 	}
 

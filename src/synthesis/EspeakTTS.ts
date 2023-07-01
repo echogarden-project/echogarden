@@ -1,14 +1,13 @@
-import { concatFloat32Arrays, logToStderr, objToString } from "../utilities/Utilities.js"
+import { concatFloat32Arrays, logToStderr, objToString, simplifyPunctuationCharacters } from "../utilities/Utilities.js"
 import { int16PcmToFloat32 } from "../audio/AudioBufferConversion.js"
 import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
 import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
 import { playAudioWithTimelinePhones } from "../audio/AudioPlayer.js"
-import * as CompromiseNLP from "../nlp/CompromiseNLP.js"
 import { getNormalizationMapForSpeech } from "../nlp/TextNormalizer.js"
 import { ipaPhoneToKirshenbaum } from "../nlp/PhoneConversion.js"
 import { splitToWords } from "../nlp/Segmentation.js"
-import { Lexicon } from "../nlp/Lexicon.js"
+import { Lexicon, tryGetFirstLexiconSubstitution } from "../nlp/Lexicon.js"
 import { phonemizeSentence } from "../nlp/EspeakPhonemizer.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
 
@@ -58,7 +57,7 @@ export async function synthesize(text: string, ssmlEnabled: boolean) {
 	return { rawAudio, events: allEvents }
 }
 
-export async function preprocessAndSynthesizeSentence(sentence: string, espeakVoice: string, lexicons: Lexicon[] = [], normalize = true, rate = 150, pitch = 50, pitchRange = 50) {
+export async function preprocessAndSynthesizeSentence(sentence: string, espeakVoice: string, lexicons: Lexicon[] = [], normalizeText = true, rate?: number, pitch?: number, pitchRange?: number) {
 	const logger = new Logger()
 
 	await logger.startAsync("Tokenize and analyze text")
@@ -71,59 +70,43 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 		fragments = []
 		preprocessedFragments = []
 
-		const parsedSentence = await CompromiseNLP.parse(sentence)
-		const terms = parsedSentence.flatMap(s => s)
+		const words = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
+		const simplifiedWords = words.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 
-		const normalizationMap = getNormalizationMapForSpeech(terms, espeakVoice)
+		const normalizationMap = getNormalizationMapForSpeech(simplifiedWords, espeakVoice)
 
-		for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-			const term = terms[termIndex]
+		for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+			const word = words[wordIndex]
 
-			const trimmedPreText = term.preText.trim()
-			if (trimmedPreText != "") {
-				fragments.push(trimmedPreText)
-				preprocessedFragments.push(trimmedPreText)
-			}
+			const substitutionPhonemes = tryGetFirstLexiconSubstitution(simplifiedWords, wordIndex, lexicons, espeakVoice)
 
-			const termText = term.text
+			if (substitutionPhonemes) {
+				phonemizedFragmentsSubstitutions.set(fragments.length, substitutionPhonemes)
+				const referenceIPA = (await textToPhonemes(word, espeakVoice, true)).replaceAll("_", " ")
+				const referenceKirshenbaum = (await textToPhonemes(word, espeakVoice, false)).replaceAll("_", "")
 
-			if (termText != "") {
-				const substitutionPhonemes = CompromiseNLP.tryMatchInLexicons(term, lexicons, espeakVoice)
+				const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
 
-				if (substitutionPhonemes) {
-					phonemizedFragmentsSubstitutions.set(fragments.length, substitutionPhonemes)
-					const referenceIPA = (await textToPhonemes(termText, espeakVoice, true)).replaceAll("_", " ")
-					const referenceKirshenbaum = (await textToPhonemes(termText, espeakVoice, false)).replaceAll("_", "")
+				logger.log(`\nLexicon substitution for '${word}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
 
-					const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
+				const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
 
-					logger.log(`\nLexicon substitution for '${termText}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
+				preprocessedFragments.push(substitutionPhonemesFragment)
+			} else {
+				let normalizedFragment: string | undefined = undefined
 
-					const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
-
-					preprocessedFragments.push(substitutionPhonemesFragment)
-				} else {
-					let normalizedFragment: string | undefined = undefined
-
-					if (normalize) {
-						normalizedFragment = normalizationMap.get(termIndex)
-					}
-
-					if (normalizedFragment) {
-						preprocessedFragments.push(normalizedFragment)
-					} else {
-						preprocessedFragments.push(termText)
-					}
+				if (normalizeText) {
+					normalizedFragment = normalizationMap.get(wordIndex)
 				}
 
-				fragments.push(termText)
+				if (normalizedFragment) {
+					preprocessedFragments.push(normalizedFragment)
+				} else {
+					preprocessedFragments.push(word)
+				}
 			}
 
-			const trimmedPostText = term.postText.trim()
-			if (trimmedPostText != "") {
-				fragments.push(trimmedPostText)
-				preprocessedFragments.push(trimmedPostText)
-			}
+			fragments.push(word)
 		}
 	} else {
 		fragments = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
@@ -132,7 +115,7 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 
 	logger.start("Synthesize preprocessed fragments with eSpeak")
 
-	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakVoice, false)
+	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakVoice, false, rate, pitch, pitchRange)
 
 	await logger.startAsync("Build phonemized tokens")
 
