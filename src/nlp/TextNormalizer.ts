@@ -38,7 +38,7 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 
 			wordIndex += 1
 		} else if (
-			lowerCaseWord == "the" &&
+			['the', 'in'].includes(lowerCaseWord) &&
 			fourDigitDecadePattern.test(nextWord)) {
 
 			const normalizedString = normalizeFourDigitDecadeString(nextWord)
