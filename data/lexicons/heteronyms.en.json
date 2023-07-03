@@ -24,7 +24,7 @@
 			],
 
 			"notSucceededBy": [
-				"was", "wasn't"
+				"is", "isn't", "was", "wasn't", "will", "would"
 			],
 
 			"example": "I read this book a while ago."
@@ -35,10 +35,6 @@
 					"en-us": "ɹ ˈiː d"
 				}
 			},
-
-			"pos": [
-				"VB"
-			],
 
 			"example": "I will read the story."
 		}
@@ -56,7 +52,7 @@
 			],
 
 			"precededBy": [
-				"will", "would", "we", "they", "i", "you", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "people"
+				"will", "would", "we", "they", "i", "you", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "shall", "people"
 			],
 
 			"notPrecededBy": [
@@ -136,11 +132,11 @@
 			],
 
 			"precededBy": [
-				"we", "you", "they", "who", "i", "will", "also", "people", "don't", "didn't", "not", "doesn't", "please", "never", "ever", "often", "frequently", "rarely", "commonly", "players", "we'll", "would", "wouldn't", "instead", "probably", "should", "shouldn't", "must", "mustn't", "can", "can't", "may", "might", "could", "couldn't", "actually", "always", "sometimes"
+				"we", "you", "they", "who", "i", "will", "also", "don't", "didn't", "not", "doesn't", "please", "never", "ever", "often", "frequently", "rarely", "commonly", "we'll", "would", "wouldn't", "instead", "probably", "should", "shouldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "could", "couldn't", "actually", "always", "sometimes", "typically", "still", "nobody", "everybody", "everyone", "someone", "somebody", "people", "players", "customers"
 			],
 
 			"notPrecededBy": [
-				"the", "a", "for", "no", "in", "emergency", "of", "make", "its", "single", "drug", "substance", "land", "their", "good", "making", "mask", "public", "police", "future", "day", "marijuana", "efficient", "tobacco", "mandatory", "full", "own", "first", "her", "his", "its", "our", "your", "any", "mixed", "personal"
+				"the", "a", "for", "no", "in", "emergency", "of", "make", "its", "single", "drug", "substance", "land", "their", "good", "making", "mask", "public", "police", "future", "day", "marijuana", "efficient", "tobacco", "mandatory", "full", "own", "first", "her", "his", "its", "our", "your", "my", "any", "mixed", "personal"
 			],
 
 			"succeededBy": [
@@ -175,7 +171,7 @@
 			],
 
 			"precededBy": [
-				"to", "who", "we", "and", "i", "they", "cannot", "don't", "not", "can't", "doesn't", "will", "would", "won't", "wouldn't", "please", "never", "humans", "rather"
+				"to", "who", "we", "and", "i", "they", "cannot", "don't", "not", "can't", "doesn't", "will", "would", "won't", "wouldn't", "please", "never", "humans", "rather", "happily"
 			],
 
 			"notPrecededBy": [
@@ -223,7 +219,7 @@
 			],
 
 			"succeededBy": [
-				"a", "an"
+				"a", "an", "here", "there"
 			],
 
 			"notSucceededBy": [
@@ -255,11 +251,11 @@
 			],
 
 			"precededBy": [
-				"to", "will", "doesn't", "won't", "should", "shouldn't", "may", "might", "could", "couldn't", "must", "can", "you", "i", "we", "don't", "won't", "don't", "doesn't", "please", "mustn't"
+				"to", "will", "doesn't", "won't", "should", "shouldn't", "may", "might", "could", "couldn't", "must", "can", "you", "i", "we", "don't", "won't", "don't", "doesn't", "please", "mustn't", "shall"
 			],
 
 			"notPrecededBy": [
-				"very", "quite", "fairly", "a", "is", "are"
+				"very", "quite", "fairly", "somewhat", "a", "is", "are"
 			],
 
 			"succeededBy": [
@@ -267,7 +263,7 @@
 			],
 
 			"notSucceededBy":[
-				"contact", "friend", "friends"
+				"contact", "friend", "friends", "to"
 			],
 
 			"example": "I will close the door."
@@ -295,7 +291,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "would", "wouldn't", "may", "might", "could", "couldn't", "must", "mustn't", "won't", "don't", "does", "doesn't", "did", "didn't"
+				"to", "i", "they", "we", "you", "will", "would", "wouldn't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "won't", "don't", "does", "doesn't", "did", "didn't"
 			],
 
 			"notPrecededBy": [
@@ -374,7 +370,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "would", "may", "might","could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
+				"to", "i", "they", "we", "you", "will", "would", "may", "might","could", "couldn't", "must", "mustn't", "shall", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
 			],
 
 			"notPrecededBy": [
@@ -532,7 +528,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
+				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
 			],
 
 			"notPrecededBy": [
@@ -570,7 +566,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
+				"to", "i", "they", "we", "you", "will", "not", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't", "help"
 			],
 
 			"notPrecededBy": [
@@ -608,7 +604,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "would", "may", "might", "could", "couldn't", "must", "mustn't", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "would", "wouldn't", "won't", "don't", "doesn't", "did", "didn't"
 			],
 
 			"notPrecededBy": [
@@ -885,7 +881,7 @@
 			],
 
 			"precededBy": [
-				"i", "we", "they", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "but"
+				"i", "we", "they", "you", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall"
 			],
 
 			"notPrecededBy": [
@@ -964,7 +960,7 @@
 			],
 
 			"precededBy": [
-				"i", "we", "they", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+				"i", "we", "they", "to", "not", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall"
 			],
 
 			"notPrecededBy": [
@@ -976,7 +972,7 @@
 			],
 
 			"notSucceededBy": [
-				"i", "we", "was", "has", "had", "will", "not",  "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "of", "number"
+				"i", "we", "was", "has", "had", "will", "not",  "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "of", "number"
 			],
 
 			"example": "Did you record that TV show?"
@@ -1043,7 +1039,7 @@
 			],
 
 			"precededBy": [
-				"i", "we", "they", "to", "not", "doesn't", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+				"i", "we", "they", "to", "not", "doesn't", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall"
 			],
 
 			"notPrecededBy": [
@@ -1055,7 +1051,7 @@
 			],
 
 			"notSucceededBy": [
-				"i", "we", "was", "has", "had", "will", "not", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "of"
+				"i", "we", "was", "has", "had", "will", "not", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "of"
 			],
 
 			"example": "We conflict in our views."
@@ -1197,11 +1193,11 @@
 			],
 
 			"precededBy": [
-				"be", "is", "was", "are", "they're", "were", "very", "heart's", "isn't", "aren't", "wasn't", "weren't", "not", "very", "somewhat"
+				"be", "is", "was", "are", "they're", "were", "very", "heart's", "isn't", "aren't", "wasn't", "weren't", "very", "somewhat", "quite", "slightly", "largely", "truly"
 			],
 
 			"notPrecededBy": [
-				"misleading", "such", "course", "streaming", "most", "free", "original"
+				"misleading", "such", "course", "streaming", "most", "free", "original", "whatever", "which", "that", "the", "of"
 			],
 
 			"succeededBy": [
@@ -1209,7 +1205,7 @@
 			],
 
 			"notSucceededBy": [
-				"creators", "rules"
+				"creators", "rules", "which", "to", "on", "is", "was", "from", "as", "at", "moderation", "officer", "creation", "which", "will", "would", "won't", "wouldn't", "may", "might", "must", "mustn't", "including"
 			],
 
 			"example": "I feel content about this."
@@ -1237,7 +1233,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "did", "didn't", "then"
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "did", "didn't", "then"
 			],
 
 			"notPrecededBy": [
@@ -1277,7 +1273,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "did", "didn't"
+				"to", "i", "they", "we", "you", "will", "would", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "did", "didn't"
 			],
 
 			"notPrecededBy": [
@@ -1317,7 +1313,7 @@
 			],
 
 			"precededBy": [
-				"to", "will", "help", "can", "we", "not", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "directly", "does", "they", "adequately", "you", "really", "actually", "effectively", "can't", "leaders", "properly", "i", "specifically", "still", "please", "may", "did", "potentially", "cannot", "meaningfully", "finally", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "itself", "therefore"
+				"to", "will", "help", "can", "we", "not", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "may", "might", "did", "didn't", "directly", "does", "they", "adequately", "you", "really", "actually", "effectively", "can't", "leaders", "properly", "i", "specifically", "still", "please", "may", "did", "potentially", "cannot", "meaningfully", "finally", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "itself", "therefore"
 			],
 
 			"notPrecededBy": [
@@ -1434,7 +1430,7 @@
 			],
 
 			"precededBy": [
-				"i", "we", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+				"i", "we", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "may", "might", "did", "didn't", "does", "doesn't"
 			],
 
 			"notPrecededBy": [
@@ -1514,7 +1510,7 @@
 			],
 
 			"notPrecededBy": [
-				"the", "a", "all", "his", "her", "its", "our", "your", "their"
+				"the", "a", "all", "his", "her", "its", "our", "your", "their", "my"
 			],
 
 			"succeededBy": [
@@ -1626,7 +1622,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "may", "might", "did", "didn't", "does", "doesn't"
 			],
 
 			"notPrecededBy": [
@@ -1666,7 +1662,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "may", "might", "did", "didn't", "does", "doesn't"
+				"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "may", "might", "did", "didn't", "does", "doesn't"
 			],
 
 			"notPrecededBy": [
@@ -1706,7 +1702,7 @@
 			],
 
 			"precededBy": [
-				"to", "not", "doesn't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't"
+				"to", "not", "doesn't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall"
 			],
 
 			"notPrecededBy": [
