@@ -12,8 +12,7 @@
 			],
 
 			"precededBy": [
-				"he", "she", "it", "it's", "who", "have", "be", "is", "are", "isn't", "was", "were",
-				"has", "had", "hadn't", "i've", "we've", "you've", "would've", "might've", "as", "widely", "recently", "haven't", "having", "well", "being", "letter", "story", "statement", "message", "line", "caption", "book", "ruling", "tweet", "student", "which", "that"
+				"he", "she", "it", "it's", "who", "have", "be", "is", "are", "isn't", "was", "were", "has", "had", "hadn't", "i've", "we've", "you've", "would've", "might've", "as", "widely", "recently", "haven't", "having", "well", "being", "letter", "story", "statement", "message", "line", "caption", "book", "ruling", "tweet", "student", "which", "that"
 			],
 
 			"notPrecededBy": [
@@ -1686,7 +1685,7 @@
 		{
 			"pronunciation": {
 				"espeak": {
-					"en-us": "ɹ ˈi s ˌɜː tʃ"
+					"en-us": "ɹ ˈi s ɜː tʃ"
 				}
 			},
 
