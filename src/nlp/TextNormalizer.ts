@@ -22,6 +22,10 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
 	]
 
+	const wordsPrecedingADecade = [
+		"the", "in", "early", "mid", "late"
+	]
+
 	for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
 		const word = words[wordIndex]
 		const lowerCaseWord = word.toLocaleLowerCase()
@@ -38,7 +42,7 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 
 			wordIndex += 1
 		} else if (
-			['the', 'in'].includes(lowerCaseWord) &&
+			wordsPrecedingADecade.includes(lowerCaseWord) &&
 			fourDigitDecadePattern.test(nextWord)) {
 
 			const normalizedString = normalizeFourDigitDecadeString(nextWord)
