@@ -94,6 +94,11 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 		if (options.splitToSentences || options.engine == "vits") {
 			sentences = splitToSentences(segmentText, options.language!)
+			sentences = sentences.filter(sentence => sentence.trim() != "")
+
+			if (sentences.length == 0) {
+				sentences = [""]
+			}
 		} else {
 			sentences = [segmentText]
 		}
