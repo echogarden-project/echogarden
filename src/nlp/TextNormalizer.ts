@@ -1,12 +1,10 @@
 import { getShortLanguageCode } from "../utilities/Locale.js"
 
-export function getNormalizationMapForSpeech(words: string[], language: string) {
+export function getNormalizedFragmentsForSpeech(words: string[], language: string) {
 	language = getShortLanguageCode(language)
 
-	const normalizationMap = new Map<number, string>()
-
 	if (language != "en") {
-		return normalizationMap
+		return { normalizedFragments: [...words], referenceFragments: [...words] }
 	}
 
 	const numberPattern = /^[0-9][0-9\,\.]*$/
@@ -17,7 +15,7 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
 
 	const wordsPrecedingAYear = [
-		"in", "since", "©",
+		"in", "since", "during", "©",
 		"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
 		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
 	]
@@ -26,41 +24,99 @@ export function getNormalizationMapForSpeech(words: string[], language: string) 
 		"the", "in", "early", "mid", "late"
 	]
 
+	const symbolsPrecedingACurrency = [
+		"$", "€", "£", "¥"
+	]
+
+	const symbolsPrecedingACurrencyAsWords = [
+		"dollars", "euros", "pounds", "yen"
+	]
+
+	const wordsSucceedingACurrency = [
+		"million", "billion", "trillion"
+	]
+
+	const normalizedFragments: string[] = []
+	const referenceFragments: string[] = []
+
 	for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
 		const word = words[wordIndex]
-		const lowerCaseWord = word.toLocaleLowerCase()
+		const lowerCaseWord = word.toLowerCase()
 
 		const nextWords = words.slice(wordIndex + 1)
 		const nextWord = nextWords[0]
 
-		if (
+		if ( // Normalize a four digit year pattern, e.g. "in 1995".
 			wordsPrecedingAYear.includes(lowerCaseWord) &&
 			fourDigitYearPattern.test(nextWord)) {
+
 			const normalizedString = normalizeFourDigitYearString(nextWord)
 
-			normalizationMap.set(wordIndex + 1, normalizedString)
+			normalizedFragments.push(word)
+			referenceFragments.push(word)
+
+			normalizedFragments.push(normalizedString)
+			referenceFragments.push(nextWord)
 
 			wordIndex += 1
-		} else if (
+		} else if ( // Normalize a four digit decade pattern, e.g. "the 1980s".
 			wordsPrecedingADecade.includes(lowerCaseWord) &&
 			fourDigitDecadePattern.test(nextWord)) {
 
 			const normalizedString = normalizeFourDigitDecadeString(nextWord)
 
-			normalizationMap.set(wordIndex + 1, normalizedString)
+			normalizedFragments.push(word)
+			referenceFragments.push(word)
+
+			normalizedFragments.push(normalizedString)
+			referenceFragments.push(nextWord)
 
 			wordIndex += 1
-		} else if (fourDigitYearRangePattern.test(word)) {
-			const startYearString = normalizeFourDigitYearString(word.substring(0, 4))
-			const endYearString = normalizeFourDigitYearString(word.substring(5, 9))
+		} else if ( // Normalize a year range pattern, e.g. "1835-1896"
+			fourDigitYearRangePattern.test(words.slice(wordIndex, wordIndex + 3).join(""))) {
 
-			const normalizedString = `${startYearString} to ${endYearString}`
+			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex]))
+			referenceFragments.push(words[wordIndex])
 
-			normalizationMap.set(wordIndex, normalizedString)
+			normalizedFragments.push("to")
+			referenceFragments.push(words[wordIndex + 1])
+
+			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex + 2]))
+			referenceFragments.push(words[wordIndex + 2])
+
+			wordIndex += 2
+		} else if ( // Normalize a currency pattern, e.g. "$53.1 million", "€3.53"
+			symbolsPrecedingACurrency.includes(lowerCaseWord) &&
+			numberPattern.test(nextWord)) {
+
+			let currencyWord = symbolsPrecedingACurrencyAsWords[symbolsPrecedingACurrency.indexOf(lowerCaseWord)]
+
+			if (wordsSucceedingACurrency.includes(nextWords[1].toLowerCase())) {
+				const normalizedString = `${nextWord} ${nextWords[1]} ${currencyWord}`
+
+				normalizedFragments.push(normalizedString)
+
+				const referenceString = `${word}${nextWord} ${nextWords[1]}`
+				referenceFragments.push(referenceString)
+
+				wordIndex += 2
+			} else {
+				const normalizedString = `${nextWord} ${currencyWord}`
+
+				normalizedFragments.push(normalizedString)
+
+				const referenceString = `${word}${nextWord}`
+				referenceFragments.push(referenceString)
+
+				wordIndex += 1
+			}
+		} else {
+			normalizedFragments.push(word)
+			referenceFragments.push(word)
 		}
 	}
 
-	return normalizationMap
+	return { normalizedFragments, referenceFragments }
 }
 
 export function normalizeFourDigitYearString(yearString: string) {

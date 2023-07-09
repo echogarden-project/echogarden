@@ -4,7 +4,7 @@ import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
 import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
 import { playAudioWithTimelinePhones } from "../audio/AudioPlayer.js"
-import { getNormalizationMapForSpeech } from "../nlp/TextNormalizer.js"
+import { getNormalizedFragmentsForSpeech } from "../nlp/TextNormalizer.js"
 import { ipaPhoneToKirshenbaum } from "../nlp/PhoneConversion.js"
 import { splitToWords } from "../nlp/Segmentation.js"
 import { Lexicon, tryGetFirstLexiconSubstitution } from "../nlp/Lexicon.js"
@@ -71,43 +71,35 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 		preprocessedFragments = []
 
 		const words = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
-		const simplifiedWords = words.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 
-		const normalizationMap = getNormalizationMapForSpeech(simplifiedWords, espeakVoice)
+		const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, espeakVoice)
 
-		for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-			const word = words[wordIndex]
+		const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 
-			const substitutionPhonemes = tryGetFirstLexiconSubstitution(simplifiedWords, wordIndex, lexicons, espeakVoice)
+		for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
+			const fragment = normalizedFragments[fragmentIndex]
 
-			if (substitutionPhonemes) {
-				phonemizedFragmentsSubstitutions.set(fragments.length, substitutionPhonemes)
-				const referenceIPA = (await textToPhonemes(word, espeakVoice, true)).replaceAll("_", " ")
-				const referenceKirshenbaum = (await textToPhonemes(word, espeakVoice, false)).replaceAll("_", "")
+			const substitutionPhonemes = tryGetFirstLexiconSubstitution(simplifiedFragments, fragmentIndex, lexicons, espeakVoice)
 
-				const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
-
-				logger.log(`\nLexicon substitution for '${word}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
-
-				const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
-
-				preprocessedFragments.push(substitutionPhonemesFragment)
-			} else {
-				let normalizedFragment: string | undefined = undefined
-
-				if (normalizeText) {
-					normalizedFragment = normalizationMap.get(wordIndex)
-				}
-
-				if (normalizedFragment) {
-					preprocessedFragments.push(normalizedFragment)
-				} else {
-					preprocessedFragments.push(word)
-				}
+			if (!substitutionPhonemes) {
+				continue
 			}
 
-			fragments.push(word)
+			phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
+			const referenceIPA = (await textToPhonemes(fragment, espeakVoice, true)).replaceAll("_", " ")
+			const referenceKirshenbaum = (await textToPhonemes(fragment, espeakVoice, false)).replaceAll("_", "")
+
+			const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
+
+			logger.log(`\nLexicon substitution for '${fragment}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
+
+			const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
+
+			normalizedFragments[fragmentIndex] = substitutionPhonemesFragment
 		}
+
+		fragments = referenceFragments
+		preprocessedFragments = normalizedFragments
 	} else {
 		fragments = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
 		preprocessedFragments = fragments
@@ -177,7 +169,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		return {
 			rawAudio: getEmptyRawAudio(1, sampleRate),
 			timeline: [] as Timeline,
-			events : [] as EspeakEvent[]
+			events: [] as EspeakEvent[]
 		}
 	}
 
