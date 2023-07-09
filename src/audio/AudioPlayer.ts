@@ -165,86 +165,50 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 		let aborted = false
 
-		if (soxPath) {
-			const audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
+		if (!soxPath) {
+			throw new Error(`Couldn't find or install the SoX utility. Please install the SoX utility on your system path to enable audio playback.`)
+		}
 
-			const player = spawn(
-				soxPath,
-				['-t', 'raw', '-r', `${rawAudio.sampleRate}`, '-e', 'signed', '-b', '16', '-c', channelCount.toString(), '-', '-d'],
-				{}
-			)
+		const audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
 
-			if (signalChannel) {
-				signalChannel.on("abort", () => {
-					aborted = true
-					player.kill('SIGKILL')
-				})
-			}
+		const player = spawn(
+			soxPath,
+			['-t', 'raw', '-r', `${rawAudio.sampleRate}`, '-e', 'signed', '-b', '16', '-c', channelCount.toString(), '-', '-d'],
+			{}
+		)
 
-			// Required to work around SoX bug:
-			player.stderr.on("data", (data) => {
-				//logErr(data.toString('utf-8'))
-			})
-
-			player.once("spawn", () => {
-				player.stdin!.write(audioBuffer)
-				player.stdin!.end()
-				player.stdin!.on("error", () => { })
-
-				playerSpawnedOpenPromise.resolve(null)
-			})
-
-			player.once("error", (e) => {
-				reject(e)
-			})
-
-			player.once('close', () => {
-				playerProcessClosed = true
-				resolve()
-			})
-		} else {
-			let command = ""
-
-			if (process.platform == 'darwin' && await commandExists("afplay")) {
-				command = "afplay"
-			} else if (process.platform == 'linux' && await commandExists("aplay")) {
-				command = "aplay"
-			} else {
-				throw new Error(`Couldn't find a supported audio player for this platform. Please install the SoX tool on your system path, for best results.`)
-			}
-
-			const waveAudio = encodeWaveBuffer(rawAudio)
-
-			const tempDir = getAppTempDir(appName)
-			const tempWaveFilePath = path.join(tempDir, getRandomHexString(16) + ".wav")
-			await writeFile(tempWaveFilePath, waveAudio)
-
-			const player = spawn(command, [tempWaveFilePath],
-				{ stdio: "ignore" }
-			)
-
-			if (signalChannel) {
-				signalChannel.on("abort", () => {
-					aborted = true
-					player.kill('SIGKILL')
-				})
-			}
-
-			player.once("spawn", () => {
-				playerSpawnedOpenPromise.resolve(null)
-			})
-
-			player.once("error", async (e) => {
-				await remove(tempWaveFilePath)
-				reject(e)
-			})
-
-			player.once('close', async () => {
-				playerProcessClosed = true
-				await remove(tempWaveFilePath)
-				resolve()
+		if (signalChannel) {
+			signalChannel.on("abort", () => {
+				aborted = true
+				player.kill('SIGKILL')
 			})
 		}
+
+		// Required to work around SoX bug:
+		player.stderr.on("data", (data) => {
+			//writeToStderr(data.toString('utf-8'))
+		})
+
+		player.stdout.on("data", (data) => {
+			//writeToStderr(data.toString('utf-8'))
+		})
+
+		player.once("spawn", () => {
+			player.stdin!.write(audioBuffer)
+			player.stdin!.end()
+			player.stdin!.on("error", () => { })
+
+			playerSpawnedOpenPromise.resolve(null)
+		})
+
+		player.once("error", (e) => {
+			reject(e)
+		})
+
+		player.once('close', () => {
+			playerProcessClosed = true
+			resolve()
+		})
 
 		await playerSpawnedOpenPromise.promise
 
