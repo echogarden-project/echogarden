@@ -214,7 +214,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 		const timer = new Timer()
 
-		while (!aborted) {
+		while (!playerProcessClosed && !aborted) {
 			const elapsedTime = timer.elapsedTimeSeconds
 
 			if (onTimePosition) {
