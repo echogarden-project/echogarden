@@ -15,7 +15,8 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
 
 	const wordsPrecedingAYear = [
-		"in", "since", "during", "©",
+		"in", "the", "a", "to", "of", "since", "from", "between", "by", "until", "around", "before", "after",
+		"his", "her", "year", "years", "during", "copyright", "©", "early", "mid", "late",
 		"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
 		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
 	]
