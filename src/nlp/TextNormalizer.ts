@@ -143,8 +143,15 @@ export function normalizeFourDigitDecadeString(decadeString: string) {
 
 	let normalizedString: string
 
-	if (firstTwoDigitsValue >= 10 && firstTwoDigitsValue >= 10) {
-		normalizedString = `${firstTwoDigitsValue} ${secondTwoDigitsValue}s`
+	const isBeforeSecondMillenium = firstTwoDigitsValue < 10
+	const isMilleniumDecade =  firstTwoDigitsValue % 10 == 0 && secondTwoDigitsValue == 0
+
+	if (!isBeforeSecondMillenium && !isMilleniumDecade) {
+		if (secondTwoDigitsValue != 0) {
+			normalizedString = `${firstTwoDigitsValue} ${secondTwoDigitsValue}s`
+		} else {
+			normalizedString = `${firstTwoDigitsValue} hundreds`
+		}
 	} else {
 		normalizedString = decadeString
 	}
