@@ -62,7 +62,7 @@
 			],
 
 			"succeededBy": [
-				"a", "an", "the", "your", "their", "it", "its", "his", "her", "our", "this", "their", "them", "some", "himself", "herself", "themselves"
+				"a", "an", "the", "your", "their", "it", "its", "his", "her", "our", "this", "their", "them", "some", "himself", "herself", "themselves", "unique", "special", "great", "excellent", "nice"
 			],
 
 			"notSucceededBy": [
@@ -104,7 +104,7 @@
 			],
 
 			"succeededBy": [
-				"itself", "us", "opportunities", "them", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other"
+				"itself", "us", "opportunities", "them", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice"
 			],
 
 			"notSucceededBy": [
