@@ -28,7 +28,7 @@ A large variety of voices, models and binaries are served from the repository.
 All are freely distributable, with varying licenses:
 * Flite voices (`flite-`): [BSD License](https://github.com/festvox/flite/blob/master/COPYING)
 * SVOX Pico resources (`pico-`): [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
-* Silero VAD (`silero-vad`) and Silero language classifier  (`silero-lang-classifier-95`): [MIT License](https://github.com/snakers4/silero-vad/blob/master/LICENSE)
+* Silero VAD (`silero-vad`) and Silero language classifier (`silero-lang-classifier-95`): [MIT License](https://github.com/snakers4/silero-vad/blob/master/LICENSE)
 * Silero speech recognition models (`silero-en-`, `silero-de-`, `silero-es-`, `silero-ua-`): [BY-NC-SA](https://github.com/snakers4/silero-models/blob/master/LICENSE)
 * VITS pre-trained models (`vits-`): licensed under various creative commons licenses: [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/), [CC-BY](https://creativecommons.org/licenses/by/4.0/) and [BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/), and few are public domain (you can view the individual license for each model in the model cards on the [samples page](https://rhasspy.github.io/piper-samples/)). The [Piper system](https://github.com/rhasspy/piper) itself is published under the [MIT License](https://github.com/rhasspy/piper/blob/master/LICENSE.md)
 * Whisper pre-trained models (`whisper-`): [MIT License](https://github.com/openai/whisper/blob/main/LICENSE)

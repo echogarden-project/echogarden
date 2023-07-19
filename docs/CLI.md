@@ -8,7 +8,7 @@ echogarden [command] [one or more inputs..] [one or more outputs...] [options...
 
 Here's a quick tour of the main operations available via the CLI.
 
-Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the options can be found [here](Options.md).
+Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the available options can be found [here](Options.md).
 
 ## Text to speech
 
@@ -19,24 +19,34 @@ This would synthesize "Hello World" and play the result in the terminal:
 echogarden speak "Hello world!"
 ```
 
-You can add a file output instead, which would cause the resulting audio to be written to `result.mp3`:
+If no language is specified, it would attempt to detect it. This usually works better for longer texts, and may misidentify shorter ones. To ensure the right language is selected, you can specify the language explicitly:
 ```bash
-echogarden speak "Hello world!" result.mp3
+echogarden speak "Hello world!" --language=en
 ```
 
-This would synthesize a text file `text.txt`, and have the resulting audio written to `result.mp3`. The `--engine=pico` would set the synthesis engine to `pico` (SVOX Pico):
+This would save the resulting audio to `result.mp3`:
 ```bash
-echogarden speak-file text.txt result.mp3 --engine=google-translate
+echogarden speak "Hello world!" result.mp3 --language=en
 ```
 
-This would synthesize a text file, and have the result stored in both `result.mp3` and `result.wav`, as well as a subtitle file in `result.srt`:
+`speak-file` synthesizes text loaded from a textual file, which can be either `.txt`, `.html`, `.srt`, `.vtt`:
+```bash
+echogarden speak-file text.txt result.mp3 --language=en
+```
+
+You can specify an engine using the `--engine` option (a full list of engines can be found [here](Engines.md)). This would set the synthesis engine to `pico` (SVOX Pico):
+ ```bash
+ echogarden speak-file text.txt result.mp3 --language=en --engine=pico
+ ```
+
+The CLI supports multiple output files. This would synthesize a text file, and save the resulting audio in both `result.mp3` and `result.wav`, as well as subtitles in `result.srt`:
 ```bash
 echogarden speak-file text.txt result.mp3 result.wav result.srt --engine=vits --speed=1.1
 ```
 
 Synthesize a web page (will try to extract its main article parts and omit the rest):
 ```bash
-echogarden speak-url http://example.com/hola
+echogarden speak-url https://example.com/hola
 ```
 
 Synthesize a Wikipedia article in any of its language editions:
@@ -44,7 +54,7 @@ Synthesize a Wikipedia article in any of its language editions:
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
 
-By default, the audio is not played when an output file is specified, you can override this behavior by specifying `--play`
+By default, audio isn't played in the terminal when an output file is specified, you can override this behavior by adding `--play`
 
 ```bash
 echogarden speak-file text.txt result.mp3 --engine=vits --play
@@ -91,7 +101,7 @@ Echogarden can split the audio to multiple parts based on the segment boundaries
 echogarden speak text.txt parts/[segment].opus
 ```
 
-The `[segment]` pattern would cause multiple files to be created, one for each text segment (segments would be determined according to paragraph or line breaks, in this case). The pattern would be replaced by the index and initial text of the segment. For example by `parts/01 Hello world how are you doing ... .opus`.
+The `[segment]` placeholder would cause multiple files to be created, one for each text segment (segments would be determined according to paragraph or line breaks, in this case). The placeholder would be replaced by the index and initial text of the segment, producing an output file with a name like `parts/001 Hello world how are you doing ... .opus`.
 
 Templates can also be used in multiple outputs. For instance, the following would align `speech.mp3` with `transcript.txt` and then split the audio according to the segments found in the transcript, and store separate audio and timeline files for each part.
 
@@ -225,13 +235,13 @@ echogarden denoise speech.mp3 denoised-speech.mp3
 
 #### `list-tts-voices`
 
-Shows a list of TTS voices for a given engine:
+Shows a list of available TTS voices for a given engine:
 
 ```bash
 echogarden list-tts-voices google-cloud
 ```
 
-Stores the voice list in a JSON file:
+Saves the voice list in a JSON file:
 ```bash
 echogarden list-tts-voices google-cloud google-cloud-voices.json
 ```

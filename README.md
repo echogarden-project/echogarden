@@ -18,15 +18,15 @@ A fully open-source speech system designed with end-users in mind.
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
 * Can transcribe speech in any one of 98 languages, translated directly to English, and produce near word-level synchronized subtitles for the translated transcript
 * Attempts to improve TTS pronunciation accuracy for a few engines and languages (currently only implemented for English dialects): adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a custom rule-based model) and user-customizable pronunciation lexicons
-* Internal package system to auto-download and install voices, models and other resources, as needed
-* Other features include: language detection (both for audio and text), voice activity detection and speech denoising
+* Internal package system that auto-downloads and installs voices, models and other resources, as needed
+* Other features include: language detection (both for audio and text), voice activity detection, and speech denoising
 
 ### In development
 
 * Background worker
 * WebSocket-based server and API
 * Browser extension (for TTS only), including integration with the Web Speech API, and an advanced page reader enabling real-time narration of any page content, with live word highlighting
-* New, high-accuracy text language classification model (own work)
+* New, high-accuracy text language identification model (own work)
 
 ### Planned, but not yet
 
@@ -78,4 +78,4 @@ Designed and developed by Rotem Dan.
 
 GNU General Public License v3
 
-Licenses for components, models and other dependencies are detailed at [this page](docs/Licenses.md).
+Licenses for components, models and other dependencies are detailed on [this page](docs/Licenses.md).
