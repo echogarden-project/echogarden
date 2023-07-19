@@ -70,7 +70,7 @@ npm update echogarden -g
 
 ## Credits
 
-This project consolidates, and builds upon the work of many different individuals and companies, as well as contributing a number of original works.
+This project consolidates, and builds upon the effort of many different individuals and companies, as well as contributing a number of original works.
 
 Designed and developed by Rotem Dan.
 
