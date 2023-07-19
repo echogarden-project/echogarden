@@ -18,7 +18,7 @@ import { Timeline, addTimeOffsetToTimeline, roundTimelineTimestamps, wordTimelin
 import { ensureDir, existsSync, getFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
-import { ensureAndGetPackagesDir, loadPackage } from '../utilities/PackageManager.js'
+import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
@@ -348,7 +348,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		progressLogger.end()
 
 		if ((options as any).play) {
-			const audioWithAddedGain = applyGainDecibels(segmentData.audio, -3 - segmentData.peakDecibelsSoFar)
+			let gainAmount = -3 - segmentData.peakDecibelsSoFar
+			//gainAmount = Math.min(gainAmount, 0)
+
+			const audioWithAddedGain = applyGainDecibels(segmentData.audio, gainAmount)
 			const segmentWordTimeline = segmentData.timeline.flatMap(sentenceTimeline => sentenceTimeline.timeline!)
 
 			await playAudioWithTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript)
@@ -828,13 +831,31 @@ async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, 
 async function listPackages(commandArgs: string[], cliOptions: Map<string, string>) {
 	const packagesDir = await ensureAndGetPackagesDir()
 
-	const packageNames = await readdir(packagesDir)
+	const installedPackageNames = await readdir(packagesDir)
 
-	packageNames.sort()
+	const installedPackageNamesFormatted = installedPackageNames.map(packageName => {
+		const versionTag = getVersionTagFromPackageName(packageName)
 
-	log(`Total of ${packageNames.length} packages installed in '${packagesDir}'\n`)
+		let unversionedPackageName = packageName
 
-	log(packageNames.join("\n"))
+		if (versionTag) {
+			unversionedPackageName = packageName.substring(0, packageName.length - versionTag.length - 1)
+		}
+
+		const resolvedVersionTag = resolveVersionTagForUnversionedPackageName(unversionedPackageName)
+
+		if (resolvedVersionTag == versionTag) {
+			return packageName
+		} else {
+			return `${packageName} (unused)`
+		}
+	})
+
+	installedPackageNamesFormatted.sort()
+
+	log(`Total of ${installedPackageNamesFormatted.length} packages installed in '${packagesDir}'\n`)
+
+	log(installedPackageNamesFormatted.join("\n"))
 }
 
 async function startServer(commandArgs: string[], cliOptions: Map<string, string>) {
