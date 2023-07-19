@@ -9,7 +9,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 General:
 * `engine`: identifier of the synthesis engine to use, such as `espeak` or `vits`.
 * `language`: language code, like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
-* `voice`: name of the voice to use. Optional
+* `voice`: name of the voice to use. Can be a search string. Optional
 * `voiceGender`: gender of the voice to use. Optional
 * `speed`: speech rate factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitch`: pitch factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
@@ -75,7 +75,7 @@ Elevenlabs:
 * `elevenLabs.similarityBoost`: similarity boost
 
 Google Translate:
-* `googleTranslate.tld`: top level domain to to connect to. Can change the dialect of the voices for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
+* `googleTranslate.tld`: top level domain to to connect to. Can change the dialect for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
 
 Microsoft Edge:
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service

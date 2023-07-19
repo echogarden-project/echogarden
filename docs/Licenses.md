@@ -23,7 +23,7 @@
 
 ## Package repository
 
-There is a variety of voices, models and binaries served from the repository.
+A large variety of voices, models and binaries are served from the repository.
 
 All are freely distributable, with varying licenses:
 * Flite voices (`flite-`): [BSD License](https://github.com/festvox/flite/blob/master/COPYING)

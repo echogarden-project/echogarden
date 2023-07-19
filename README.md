@@ -1,12 +1,12 @@
 # Echogarden
 
-An integrated speech toolbox designed with end-users in mind.
+A fully open-source speech system designed with end-users in mind.
 
-* Written in TypeScript, for the Node.js platform
+* Written in TypeScript, for the Node.js runtime
 * Easy to install, run and update
 * Runs on Windows (x64), macOS (x64, ARM64) and Linux (x64)
-* Does not require Python, Docker, or any other system-level dependencies
-* No essential platform-specific binary executables. Engines are ported via WebAssembly or the [ONNX runtime](https://onnxruntime.ai/)
+* Doesn't require Python, Docker, or similar system-level dependencies
+* Doesn't rely on any essential platform-specific binaries. Engines are either ported via WebAssembly, imported using the [ONNX runtime](https://onnxruntime.ai/), or written in pure JavaScript
 
 ## Feature highlights
 
@@ -16,21 +16,26 @@ An integrated speech toolbox designed with end-users in mind.
 * Word-level timestamps for all synthesis and recognition outputs
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
-* Can transcribe speech in any one of 98 languages, translated directly to English, and produce near word-level synchronized subtitles
-* Attempts to improve TTS pronunciation accuracy on a few engines and languages: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a rule-based model) and user-customizable phonetic lexicons
+* Can transcribe speech in any one of 98 languages, translated directly to English, and produce near word-level synchronized subtitles for the translated transcript
+* Attempts to improve TTS pronunciation accuracy for a few engines and languages (currently only implemented for English dialects): adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a custom rule-based model) and user-customizable pronunciation lexicons
 * Internal package system to auto-download and install voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection and speech denoising
 
 ### In development
 
 * Background worker
-* WebSocket server API
-* Browser extension. Integration with the Web Speech API
+* WebSocket-based server and API
+* Browser extension (for TTS only), including integration with the Web Speech API, and an advanced page reader enabling real-time narration of any page content, with live word highlighting
+* New, high-accuracy text language classification model (own work)
 
 ### Planned, but not yet
 
+* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
+* Web-based UI
 * Real-time, streaming speech recognition
-* Web-based GUI frontend
+
+### Maybe
+
 * Browser port for a subset of the API (in particular for the offline TTS models and their dependencies)
 
 ## Installation
@@ -43,7 +48,7 @@ npm install echogarden -g
 ```
 
 Additional tools:
-* [`sox`](https://sourceforge.net/projects/sox/): used for audio playback and recording only. Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
+* [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording (only). Auto-installed via a package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
 * [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via platform package manager like `brew`, otherwise, much slower `ffmpeg-wasm` would be used.
 
 (hopefully in the future all platforms would be covered using expansion packages)
@@ -65,7 +70,7 @@ npm update echogarden -g
 
 ## Credits
 
-This project consolidates and builds upon the work of many different individuals and companies.
+This project consolidates, and builds upon the work of many different individuals and companies, as well as contributing a number of original works.
 
 Designed and developed by Rotem Dan.
 

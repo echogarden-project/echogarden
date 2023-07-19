@@ -8,26 +8,25 @@ echogarden [command] [one or more inputs..] [one or more outputs...] [options...
 
 Here's a quick tour of the main operations available via the CLI.
 
-Each command accepts many options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the options can be found [here](Options.md).
+Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the options can be found [here](Options.md).
 
 ## Text to speech
 
 **Task**: given a text file, synthesize spoken audio for it.
-
 
 This would synthesize "Hello World" and play the result in the terminal:
 ```bash
 echogarden speak "Hello world!"
 ```
 
-You can add a file output instead, which would cause the audio to be stored in `result.mp3`:
+You can add a file output instead, which would cause the resulting audio to be written to `result.mp3`:
 ```bash
 echogarden speak "Hello world!" result.mp3
 ```
 
-This would synthesize a text file `text.txt`, and have the resulting audio stored in `result.mp3`. The `--engine=pico` would set the synthesis engine to `pico` (SVOX Pico):
+This would synthesize a text file `text.txt`, and have the resulting audio written to `result.mp3`. The `--engine=pico` would set the synthesis engine to `pico` (SVOX Pico):
 ```bash
-echogarden speak-file text.txt result.mp3 --engine=pico
+echogarden speak-file text.txt result.mp3 --engine=google-translate
 ```
 
 This would synthesize a text file, and have the result stored in both `result.mp3` and `result.wav`, as well as a subtitle file in `result.srt`:
@@ -45,9 +44,20 @@ Synthesize a Wikipedia article in any of its language editions:
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
 
+By default, the audio is not played when an output file is specified, you can override this behavior by specifying `--play`
+
+```bash
+echogarden speak-file text.txt result.mp3 --engine=vits --play
+```
+
+Or similarly prevent playback using `--no-play`:
+```bash
+echogarden speak "Hello world!" --language=en --no-play
+```
+
 ## Speech to text
 
-**Task**: given an audio recording containing speech, find a text transcription that best matches it.
+**Task**: given an audio recording containing speech, find a textual transcription that best matches it.
 
 This would transcribe the audio file `speech.mp3`, and then play the audio, along with the recognized text, in the terminal:
 ```bash
@@ -83,7 +93,7 @@ echogarden speak text.txt parts/[segment].opus
 
 The `[segment]` pattern would cause multiple files to be created, one for each text segment (segments would be determined according to paragraph or line breaks, in this case). The pattern would be replaced by the index and initial text of the segment. For example by `parts/01 Hello world how are you doing ... .opus`.
 
-Templates can also be used in multiple outputs. For instance, the following would align `speech.mp3` with `transcript.txt` and then split the audio by the segments found in the transcript, and store separate audio and timeline files for each part.
+Templates can also be used in multiple outputs. For instance, the following would align `speech.mp3` with `transcript.txt` and then split the audio according to the segments found in the transcript, and store separate audio and timeline files for each part.
 
 ```bash
 echogarden align speech.mp3 transcript.txt parts/[segment].m4a parts/[segment].json
@@ -227,6 +237,8 @@ echogarden list-tts-voices google-cloud google-cloud-voices.json
 ```
 
 #### `install`, `uninstall` and `list-packages`
+
+Manage the Echogarden packages that are locally installed:
 
 * `install`: install one or more expansion packages
 * `uninstall`: uninstall one or more expansion packages
