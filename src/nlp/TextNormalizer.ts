@@ -22,7 +22,7 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 	]
 
 	const wordsPrecedingADecade = [
-		"the", "in", "early", "mid", "late"
+		"the", "in", "early", "mid", "late", "a"
 	]
 
 	const symbolsPrecedingACurrency = [
