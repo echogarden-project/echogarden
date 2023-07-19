@@ -1,6 +1,6 @@
 # Echogarden
 
-A fully open-source speech system designed with end-users in mind.
+Echogarden is a versatile speech processing system that attempts to address the needs of end-users:
 
 * Written in TypeScript, for the Node.js runtime
 * Easy to install, run and update
@@ -21,23 +21,6 @@ A fully open-source speech system designed with end-users in mind.
 * Internal package system that auto-downloads and installs voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection, and speech denoising
 
-### In development
-
-* Background worker
-* WebSocket-based server and API
-* Browser extension (for TTS only), including integration with the Web Speech API, and an advanced page reader enabling real-time narration of any page content, with live word highlighting
-* New, high-accuracy text language identification model (own work)
-
-### Planned, but not yet
-
-* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
-* Web-based UI
-* Real-time, streaming speech recognition
-
-### Maybe
-
-* Browser port for a subset of the API (in particular for the offline TTS models and their dependencies)
-
 ## Installation
 
 Ensure you have [Node.js](https://nodejs.org/) `v16.0.0` or later installed.
@@ -48,7 +31,7 @@ npm install echogarden -g
 ```
 
 Additional tools:
-* [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording (only). Auto-installed via a package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
+* [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording (only). Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
 * [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via platform package manager like `brew`, otherwise, much slower `ffmpeg-wasm` would be used.
 
 (hopefully in the future all platforms would be covered using expansion packages)
@@ -59,13 +42,41 @@ Additional tools:
 npm update echogarden -g
 ```
 
-## Next steps
+## Interfacing with the system
 
-* [Using the command line interface](docs/CLI.md)
+Currently, the software is operated mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
+
+Development of more graphical and interactive tooling is currently ongoing. A general roadmap is shown next.
+
+## Development roadmap
+
+_(For much more detailed information, see the [developer task list](docs/Tasklist.md))_.
+
+### In development
+
+* (**90**%) Background worker
+* (**90**%) WebSocket-based server and API
+* (**70**%) Browser extension, acting as a bridge to a local or self-hosted server. Also including integration with the Web Speech API, and real-time narration of page content, with live word highlighting
+* (**60**%) New, high-accuracy text language identification model (own work)
+
+### Planned, but not yet started
+
+* Web-based UI frontend
+* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
+* Real-time, streaming speech recognition
+* Official developer API (it's currently possible to import the `echogarden` npm package as a library, but the official API has not been published yet)
+
+### Future (maybe)
+
+* Browser port for a subset of the API (in particular for the offline TTS models and their dependencies)
+
+## Guides and resource pages
+
+* [Using the command-line interface](docs/CLI.md)
 * [Options reference](docs/Options.md)
 * [Full list of supported engines](docs/Engines.md)
 * [Technical overview and Q&A](docs/Technical.md)
-* [Roadmap](docs/Roadmap.md)
+* [Developer's task list](docs/Tasklist.md)
 * [How to help](docs/Development.md)
 
 ## Credits

@@ -10,6 +10,8 @@ Here's a quick tour of the main operations available via the CLI.
 
 Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the available options can be found [here](Options.md).
 
+While the program is running, you can press `esc` to immediately exit, or, during audio playback, `enter` to skip it.
+
 ## Text to speech
 
 **Task**: given a text file, synthesize spoken audio for it.

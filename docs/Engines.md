@@ -59,8 +59,8 @@ These are commercial services that require a subscription and an API key to use:
 
 These engines' goal is to match (or "align") a given spoken recording with a given transcript as closely as possible. They will annotate each word in the transcript with approximate start and end timestamps:
 
-* Dynamic Time Warping (`dtw`): transcript is first synthesized using the `espeak` engine, then [DTW](https://en.wikipedia.org/wiki/Dynamic_time_warping) is applied to find the best mapping between the synthesized audio and the original audio.
-* Dynamic Time Warping with Recognition Assist (`dtw-ra`): recognition is applied to the audio (any recognition engine can be used), then both the ground-truth transcript and the recognized transcript are synthesized using `espeak`. Then, the best mapping is found between the two synthesized audio sequences, and the result is mapped back to the original audio using the timing information produced by the recognizer.
+* Dynamic Time Warping (`dtw`): transcript is first synthesized using the eSpeak engine, then [DTW](https://en.wikipedia.org/wiki/Dynamic_time_warping) is applied to find the best mapping between the synthesized audio and the original audio.
+* Dynamic Time Warping with Recognition Assist (`dtw-ra`): recognition is applied to the audio (any recognition engine can be used), then both the ground-truth transcript and the recognized transcript are synthesized using eSpeak. Then, the best mapping is found between the two synthesized audio sequences, and the result is mapped back to the original audio using the timing information produced by the recognizer.
 * Whisper-based alignment (`whisper`): transcript is tokenized and decoded along with the audio using the Whisper model, then timestamps are extracted from the internal state of the model (_note_: currently, only supports audio inputs that are 30 seconds or less).
 
 ## Speech translation
@@ -70,8 +70,8 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 ## Language detection
 
 **Spoken language detection**:
-* [Whisper](https://github.com/openai/whisper) (`whisper`): uses the language token produced by the `whisper` speech recognition model to generate a set of probabilities for the 99 languages it has been trained on.
 * [Silero Language Classifier](https://github.com/snakers4/silero-vad/wiki/Other-Models) (`silero`): a speech language classification model by Silero.
+* [Whisper](https://github.com/openai/whisper) (`whisper`): uses the language token produced by the `whisper` speech recognition model to generate a set of probabilities for the 99 languages it has been trained on (_note_: currently only uses the first 30 seconds of the audio).
 
 **Text language detection**:
 * [TinyLD](https://www.npmjs.com/package/tinyld) (`tinyld`): a simple language detection library.
