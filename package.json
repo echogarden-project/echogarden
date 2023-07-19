@@ -5,17 +5,15 @@
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
 	"keywords": [
-		"tts",
 		"text-to-speech",
-		"stt",
-		"speech-to-text",
-		"speech processing",
 		"speech synthesis",
+		"speech-to-text",
 		"speech recognition",
+		"speech processing",
 		"speech alignment",
 		"forced alignment",
 		"speech translation",
-		"language recognition",
+		"language identification",
 		"language detection"
 	],
 	"repository": {
