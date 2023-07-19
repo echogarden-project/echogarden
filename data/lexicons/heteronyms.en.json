@@ -13,7 +13,7 @@
 			],
 
 			"precededBy": [
-				"i", "we", "he", "she", "it", "it's", "who", "have", "be", "is", "are", "isn't", "was", "were", "has", "had", "hadn't", "i've", "we've", "you've", "would've", "might've", "as", "widely", "recently", "haven't", "having", "well", "being", "gotten", "letter", "story", "statement", "message", "line", "caption", "book", "ruling", "tweet", "email", "recipe", "instructions", "list", "menu", "poster", "passage", "chapter", "paragraph", "sentence", "which", "that", "once", "already", "previously", "formerly", "ever"
+				"i", "we", "he", "she", "it", "it's", "who", "have", "be", "been", "is", "are", "isn't", "was", "were", "has", "had", "hadn't", "i've", "we've", "you've", "would've", "might've", "as", "widely", "recently", "haven't", "having", "well", "being", "gotten", "letter", "story", "statement", "message", "line", "caption", "book", "ruling", "tweet", "email", "recipe", "instructions", "list", "menu", "poster", "passage", "chapter", "paragraph", "sentence", "which", "that", "once", "already", "previously", "formerly", "ever"
 			],
 
 			"notPrecededBy": [
@@ -179,15 +179,15 @@
 			],
 
 			"precededBy": [
-				"to", "who", "we", "and", "i", "me", "they", "cannot", "don't", "not", "can't", "doesn't", "will", "would", "won't", "wouldn't", "please", "never", "humans", "rather", "happily"
+				"to", "who", "we", "i", "me", "they", "don't", "not", "can", "cannot", "should", "shouldn't", "can't", "does", "doesn't", "will", "would", "wouldn't", "won't", "may", "might", "must", "mustn't", "please", "never", "humans", "rather", "happily"
 			],
 
 			"notPrecededBy": [
-				"a", "the", "of", "be", "no", "broadcast", "for", "on", "with", "went", "in", "streamed", "is", "going", "our", "it"
+				"a", "the", "of", "be", "no", "broadcast", "for", "on", "with", "went", "in", "streamed", "is", "going", "my", "our", "it", "been", "was", "were"
 			],
 
 			"succeededBy": [
-				"their", "her", "his", "your", "my", "it", "our", "this", "that", "all", "away", "up", "a", "the", "of", "as", "well", "carefully", "long", "longer", "anywhere", "together", "alone", "near", "forever", "close", "far", "further", "nearby", "right", "happily", "alongside", "independently", "away"
+				"their", "her", "his", "your", "my", "it", "our", "this", "that", "all", "away", "up", "a", "the", "of", "as", "well", "carefully", "long", "longer", "anywhere", "together", "alone", "near", "forever", "close", "far", "further", "nearby", "right", "happily", "peacefully", "alongside", "independently", "away", "with", "without"
 			],
 
 			"notSucceededBy": [
@@ -225,7 +225,7 @@
 			],
 
 			"notPrecededBy": [
-				"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many"
+				"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many", "innocent"
 			],
 
 			"succeededBy": [
@@ -233,7 +233,7 @@
 			],
 
 			"notSucceededBy": [
-				"public", "have"
+				"public", "have", "be"
 			],
 
 			"example": "She lives vigorously."
@@ -433,7 +433,7 @@
 			],
 
 			"notPrecededBy": [
-				"the", "to", "his", "her", "our", "your", "their", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "such"
+				"the", "to", "his", "her", "our", "your", "their", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "such", "other", "are", "were"
 			],
 
 			"succeededBy": [
@@ -720,7 +720,7 @@
 			},
 
 			"precededBy": [
-				"to", "will", "they", "i", "me", "we", "you", "can", "can't", "may", "might", "could", "couldn't", "we'll", "i'll", "would", "wouldn't", "won't", "couldn't"
+				"to", "will", "they", "i", "me", "we", "you", "can", "can't", "may", "might", "could", "couldn't", "we'll", "i'll", "would", "wouldn't", "won't", "couldn't", "been"
 			],
 
 			"notPrecededBy": [
@@ -804,7 +804,7 @@
 			],
 
 			"precededBy": [
-				"to", "i", "he", "she", "it", "who", "be", "being", "we", "they", "has", "have", "slowly", "quickly"
+				"to", "i", "he", "she", "it", "who", "be", "been", "being", "we", "they", "has", "have", "was", "were", "wasn't", "weren't", "had", "hadn't", "slowly", "quickly"
 			],
 
 			"notPrecededBy": [
@@ -933,7 +933,7 @@
 			],
 
 			"notPrecededBy": [
-				"a", "the"
+				"a", "the", "been"
 			],
 
 			"succeededBy": [
@@ -974,7 +974,7 @@
 			],
 
 			"notPrecededBy": [
-				"the", "to", "his", "her", "our", "your", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "new", "two", "three", "four", "usual", "no"
+				"the", "to", "his", "her", "our", "were", "your", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "new", "two", "three", "four", "usual", "no", "identifying", "find", "gather", "interview", "finding", "gathering", "interviewing"
 			],
 
 			"succeededBy": [
@@ -1257,7 +1257,7 @@
 			],
 
 			"precededBy": [
-				"be", "is", "isn't", "he's", "she's", "it's", "am", "i'm", "was", "are", "aren't", "they're", "were", "very", "heart's", "wasn't", "weren't", "very", "somewhat", "quite", "slightly", "largely", "truly", "feel"
+				"be", "been", "is", "isn't", "he's", "she's", "it's", "am", "i'm", "was", "are", "aren't", "they're", "were", "very", "heart's", "wasn't", "weren't", "very", "somewhat", "quite", "slightly", "largely", "truly", "feel"
 			],
 
 			"notPrecededBy": [
@@ -1345,7 +1345,7 @@
 			],
 
 			"notPrecededBy": [
-				"the", "a", "is", "be", "was", "are", "makes", "picture", "with", "via", "so", "isn't", "from"
+				"the", "a", "is", "be", "been", "was", "were", "weren't", "are", "makes", "picture", "with", "via", "so", "isn't", "from"
 			],
 
 			"succeededBy": [
