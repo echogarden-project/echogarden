@@ -6,3 +6,4 @@ node_modules
 notes
 out
 dist
+package-lock.json
