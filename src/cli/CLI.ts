@@ -311,6 +311,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		const sourceFileExtension = getFileExtension(sourceFile)
 		const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 
+		if (options.ssml && sourceFileExtension != "xml" && sourceFileExtension != "ssml") {
+			throw new Error(`SSML option is set but source file doesn't have an 'xml' or 'ssml' extension`)
+		}
+
 		if (sourceFileExtension == "txt") {
 			textSegments = splitToParagraphs(fileContent, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
 		} else if (sourceFileExtension == "html" || sourceFileExtension == "htm") {
