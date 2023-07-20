@@ -7,7 +7,7 @@ export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
 		.split(/\r?\n/g)
 		.map(line => line.trim())
 
-	const sectionRegExp = /\s*\[(.*)\]\s*$/
+	const sectionRegExp = /^\s*\[(.*)\]\s*$/
 
 	const sectionMap = new Map<string, Map<string, string>>()
 
@@ -67,8 +67,13 @@ export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFil
 
 				const propertyPath = pathPrefix == "" ? propertyName : `${pathPrefix}.${propertyName}`
 
+
 				if (typeof propertyValue == "object") {
-					addFromObject(propertyValue, propertyPath)
+					if (Array.isArray(propertyValue)) {
+						commandMap.set(propertyPath, JSON.stringify(propertyValue))
+					} else {
+						addFromObject(propertyValue, propertyPath)
+					}
 				} else {
 					commandMap.set(propertyPath, propertyValue)
 				}
