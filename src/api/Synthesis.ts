@@ -92,7 +92,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 		let sentences: string[]
 
-		if (options.splitToSentences || options.engine == "vits") {
+		if ((options.splitToSentences || options.engine == "vits") && !options.ssml) {
 			sentences = splitToSentences(segmentText, options.language!)
 			sentences = sentences.filter(sentence => sentence.trim() != "")
 
@@ -267,7 +267,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	const speed = clip(options.speed!, 0.1, 10.0)
 	const pitch = clip(options.pitch!, 0.1, 10.0)
 
-	const ssmlEnabled = options.ssml!
+	const isSSML = options.ssml!
 
 	let synthesizedAudio: RawAudio
 
@@ -278,6 +278,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	switch (engine) {
 		case "vits": {
+			if (isSSML) {
+				throw new Error(`The VITS engine doesn't currently support SSML inputs`)
+			}
+
 			let vitsLanguage = language
 
 			if (vitsLanguage == "en") {
@@ -312,7 +316,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			if (engineOptions.customLexiconPaths && engineOptions.customLexiconPaths.length > 0) {
 				for (const customLexicon of engineOptions.customLexiconPaths) {
 					const customLexiconObject = await loadLexiconFile(customLexicon)
-					
+
 					lexicons.push(customLexiconObject)
 				}
 			}
@@ -334,6 +338,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "pico": {
+			if (isSSML) {
+				throw new Error(`The Svox Pico engine doesn't currently support SSML inputs`)
+			}
+
 			const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
 
 			const picoSpeed = Math.round(speed * 1.0 * 100)
@@ -357,6 +365,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "flite": {
+			if (isSSML) {
+				throw new Error(`The Flite engine doesn't currently support SSML inputs`)
+			}
+
 			const FliteTTS = await import("../synthesis/FliteTTS.js")
 
 			logger.end()
@@ -382,7 +394,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, events } = await EspeakTTS.synthesize(simplifiedText, ssmlEnabled)
+			const { rawAudio, events } = await EspeakTTS.synthesize(simplifiedText, isSSML)
 
 			synthesizedAudio = rawAudio
 
@@ -390,6 +402,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "sam": {
+			if (isSSML) {
+				throw new Error(`The SAM engine doesn't support SSML inputs`)
+			}
+
 			const SamTTS = await import("../synthesis/SamTTS.js")
 
 			const engineOptions = options.sam!
@@ -409,6 +425,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "sapi": {
+			if (isSSML) {
+				throw new Error(`The SAPI engine doesn't currently support SSML inputs`)
+			}
+
 			const SapiTTS = await import("../synthesis/SapiTTS.js")
 
 			await SapiTTS.AssertSAPIAvailable(false)
@@ -431,6 +451,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "msspeech": {
+			if (isSSML) {
+				throw new Error(`The MSSpeech engine doesn't currently support SSML inputs`)
+			}
+
 			const SapiTTS = await import("../synthesis/SapiTTS.js")
 
 			await SapiTTS.AssertSAPIAvailable(true)
@@ -453,6 +477,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "coqui-server": {
+			if (isSSML) {
+				throw new Error(`The Coqui Server engine doesn't support SSML inputs`)
+			}
+
 			const CoquiServerTTS = await import("../synthesis/CoquiServerTTS.js")
 
 			const engineOptions = options.coquiServer!
@@ -501,7 +529,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { audioData, timepoints } = await GoogleCloudTTS.synthesize(simplifiedText, apiKey, language, voice, speed, pitchDeltaSemitones, 0, ssmlEnabled)
+			const { audioData, timepoints } = await GoogleCloudTTS.synthesize(simplifiedText, apiKey, language, voice, speed, pitchDeltaSemitones, 0, isSSML)
 			const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData)
 
 			synthesizedAudio = rawAudio
@@ -542,7 +570,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await AzureCognitiveServicesTTS.synthesize(text, subscriptionKey, serviceRegion, language, voice, ssmlEnabled, ssmlPitch, ssmlRate)
+			const { rawAudio, timeline: outTimeline } = await AzureCognitiveServicesTTS.synthesize(text, subscriptionKey, serviceRegion, language, voice, isSSML, ssmlPitch, ssmlRate)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -578,7 +606,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await AwsPollyTTS.synthesize(simplifiedText, undefined, voice, region, accessKeyId, secretAccessKey, pollyEngine, ssmlEnabled, lexiconNames)
+			const { rawAudio } = await AwsPollyTTS.synthesize(simplifiedText, undefined, voice, region, accessKeyId, secretAccessKey, pollyEngine, isSSML, lexiconNames)
 
 			synthesizedAudio = rawAudio
 
@@ -589,6 +617,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "elevenlabs": {
+			if (isSSML) {
+				throw new Error(`The Elevenlabs engine doesn't support SSML inputs`)
+			}
+
 			const ElevenLabsTTS = await import("../synthesis/ElevenLabsTTS.js")
 
 			const engineOptions = options.elevenlabs!
@@ -616,6 +648,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "google-translate": {
+			if (isSSML) {
+				throw new Error(`The Google Translate engine doesn't support SSML inputs`)
+			}
+
 			const GoogleTranslateTTS = await import("../synthesis/GoogleTranslateTTS.js")
 
 			logger.end()
@@ -636,6 +672,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "microsoft-edge": {
+			if (isSSML) {
+				throw new Error(`The Microsoft Engine engine doesn't support SSML inputs`)
+			}
+
 			const MicrosoftEdgeTTS = await import("../synthesis/MicrosoftEdgeTTS.js")
 
 			const engineOptions = options.microsoftEdge!
@@ -675,6 +715,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 
 		case "streamlabs-polly": {
+			if (isSSML) {
+				throw new Error(`The Streamlabs Polly Engine engine doesn't support SSML inputs`)
+			}
+
 			const StreamlabsPollyTTS = await import("../synthesis/StreamlabsPollyTTS.js")
 
 			logger.end()
@@ -721,7 +765,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 		let plainText = text
 
-		if (ssmlEnabled) {
+		if (isSSML) {
 			plainText = await convertHtmlToText(text)
 		}
 

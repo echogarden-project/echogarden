@@ -296,7 +296,11 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	const plainTextPreserveLineBreaks = options.plainText?.preserveLineBreaks || false
 
 	if (command == "speak") {
-		textSegments = splitToParagraphs(mainArg, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
+		if (options.ssml) {
+			textSegments = [mainArg]
+		} else {
+			textSegments = splitToParagraphs(mainArg, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
+		}
 	} else if (command == "speak-file") {
 		const sourceFile = mainArg
 
@@ -315,8 +319,11 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		} else if (sourceFileExtension == "srt" || sourceFileExtension == "vtt") {
 			const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 			textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
+		} else if (sourceFileExtension == "xml" || sourceFileExtension == "ssml") {
+			options.ssml = true
+			textSegments = [fileContent]
 		} else {
-			throw new Error(`'speak-file' only supports inputs with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+			throw new Error(`'speak-file' only supports inputs with extensions 'txt', 'html', 'htm', 'xml', 'ssml', 'srt', 'vtt'`)
 		}
 	} else if (command == "speak-url") {
 		const url = mainArg
