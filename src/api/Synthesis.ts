@@ -673,7 +673,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 		case "microsoft-edge": {
 			if (isSSML) {
-				throw new Error(`The Microsoft Engine engine doesn't support SSML inputs`)
+				throw new Error(`The Microsoft Edge engine doesn't support SSML inputs`)
 			}
 
 			const MicrosoftEdgeTTS = await import("../synthesis/MicrosoftEdgeTTS.js")
