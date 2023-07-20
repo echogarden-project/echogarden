@@ -8,7 +8,7 @@ import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, st
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { isWord, splitToSentences } from "../nlp/Segmentation.js"
+import { ParagraphBreakType, isWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
 
@@ -307,6 +307,14 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			if (getShortLanguageCode(language) == "en") {
 				const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.en.json"))
 				lexicons.push(heteronymsLexicon)
+			}
+
+			if (engineOptions.customLexiconPaths && engineOptions.customLexiconPaths.length > 0) {
+				for (const customLexicon of engineOptions.customLexiconPaths) {
+					const customLexiconObject = await loadLexiconFile(customLexicon)
+					
+					lexicons.push(customLexiconObject)
+				}
 			}
 
 			const modelPath = voicePackagePath!
@@ -836,6 +844,11 @@ export interface SynthesisOptions {
 
 	alignment?: API.AlignmentOptions
 
+	plainText?: {
+		paragraphBreaks?: ParagraphBreakType
+		preserveLineBreaks?: boolean
+	}
+
 	postProcessing?: {
 		normalizeAudio?: boolean
 		targetPeakDb?: number
@@ -850,6 +863,7 @@ export interface SynthesisOptions {
 
 	vits?: {
 		speakerId?: number
+		customLexiconPaths?: string[]
 	}
 
 	pico?: {
@@ -943,6 +957,11 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	splitToSentences: true,
 
+	plainText: {
+		paragraphBreaks: 'double',
+		preserveLineBreaks: false,
+	},
+
 	segmentEndPause: 1.0,
 	sentenceEndPause: 0.75,
 
@@ -965,6 +984,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	vits: {
 		speakerId: undefined,
+		customLexiconPaths: undefined,
 	},
 
 	pico: {

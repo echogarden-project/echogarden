@@ -1,13 +1,18 @@
 import { readAndParseJsonFile, readFile } from "../utilities/FileSystem.js"
+import { getShortLanguageCode } from "../utilities/Locale.js"
 
 export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], espeakVoice: string) {
-	for (const lexicon of lexicons) {
+	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons
+
+	for (const lexicon of reversedLexicons) {
 		const match = tryGetLexiconSubstitution(sentenceWords, wordIndex, lexicon, espeakVoice)
 
 		if (match) {
 			return match
 		}
 	}
+
+	return undefined
 }
 
 export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicon: Lexicon, espeakVoice: string) {
@@ -17,11 +22,18 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 		return
 	}
 
-	if (!(word in lexicon)) {
+	const shortLanguageCode = getShortLanguageCode(espeakVoice)
+	const lexiconForLanguage = lexicon[shortLanguageCode]
+
+	if (!lexiconForLanguage) {
 		return
 	}
 
-	const lexiconEntry = lexicon[word]
+	const lexiconEntry = lexiconForLanguage[word]
+
+	if (!lexiconEntry) {
+		return
+	}
 
 	for (let i = 0; i < lexiconEntry.length; i++) {
 		const substitutionEntry = lexiconEntry[i]
@@ -58,15 +70,21 @@ export async function loadLexiconFile(jsonFilePath: string): Promise<Lexicon> {
 	return parsedLexicon
 }
 
-export type Lexicon = { [word: string]: LexiconEntry[] }
+export type Lexicon = {
+	[shortLanguageCode: string]: LexiconForLanguage
+}
+
+export type LexiconForLanguage = {
+	[word: string]: LexiconEntry[]
+}
 
 export type LexiconEntry = {
 	pos?: string[]
 	case?: LexiconWordCase
 
 	pronunciation?: {
-		espeak?: LexiconPronunciationForLanguages
-		sapi?: LexiconPronunciationForLanguages
+		espeak?: LexiconPronunciationForLanguageCodes
+		sapi?: LexiconPronunciationForLanguageCodes
 	},
 
 	precededBy?: string[]
@@ -79,4 +97,4 @@ export type LexiconEntry = {
 }
 
 export type LexiconWordCase = "any" | "capitalized" | "uppercase" | "lowercase" | "titlecase" | "camelcase" | "pascalcase"
-export type LexiconPronunciationForLanguages = { [language: string]: string }
+export type LexiconPronunciationForLanguageCodes = { [languageCode: string]: string }

@@ -1,3 +1,4 @@
+import { getShortLanguageCode } from '../utilities/Locale.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { Lexicon } from './Lexicon.js'
 
@@ -53,7 +54,9 @@ export async function parse(text: string): Promise<CompromiseParsedDocument> {
 }
 
 export function tryMatchInLexicons(term: CompromiseParsedTerm, lexicons: Lexicon[], espeakVoice: string) {
-	for (const lexicon of lexicons) {
+	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons
+
+	for (const lexicon of reversedLexicons) {
 		const match = tryMatchInLexicon(term, lexicon, espeakVoice)
 
 		if (match) {
@@ -63,24 +66,36 @@ export function tryMatchInLexicons(term: CompromiseParsedTerm, lexicons: Lexicon
 }
 
 export function tryMatchInLexicon(term: CompromiseParsedTerm, lexicon: Lexicon, espeakVoice: string) {
+	const shortLanguageCode = getShortLanguageCode(espeakVoice)
+
+	const lexiconForLanguage = lexicon[shortLanguageCode]
+
+	if (!lexiconForLanguage) {
+		return undefined
+	}
+
 	const termText = term.text
 	const lowerCaseTermText = termText.toLocaleLowerCase()
 
-	if (lowerCaseTermText in lexicon) {
-		const entry = lexicon[lowerCaseTermText]
+	const entry = lexiconForLanguage[lowerCaseTermText]
 
-		for (const substitutionEntry of entry) {
-			if (!substitutionEntry.pos || substitutionEntry.pos.includes(term.pos)) {
-				const substitutionPhonemesText = substitutionEntry?.pronunciation?.espeak?.[espeakVoice]
+	if (!entry) {
+		return undefined
+	}
 
-				if (substitutionPhonemesText) {
-					const substitutionPhonemes = substitutionPhonemesText.split(/ +/g)
+	for (const substitutionEntry of entry) {
+		if (!substitutionEntry.pos || substitutionEntry.pos.includes(term.pos)) {
+			const substitutionPhonemesText = substitutionEntry?.pronunciation?.espeak?.[espeakVoice]
 
-					return substitutionPhonemes
-				}
+			if (substitutionPhonemesText) {
+				const substitutionPhonemes = substitutionPhonemesText.split(/ +/g)
+
+				return substitutionPhonemes
 			}
 		}
 	}
+
+	return undefined
 }
 
 export type CompromiseParsedDocument = CompromiseParsedSentence[]

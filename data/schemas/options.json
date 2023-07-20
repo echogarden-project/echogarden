@@ -89,6 +89,18 @@
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
         },
+        "plainText": {
+          "type": "object",
+          "properties": {
+            "paragraphBreaks": {
+              "$ref": "#/definitions/ParagraphBreakType"
+            },
+            "preserveLineBreaks": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
         "postProcessing": {
           "type": "object",
           "properties": {
@@ -121,6 +133,12 @@
           "properties": {
             "speakerId": {
               "type": "number"
+            },
+            "customLexiconPaths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           "additionalProperties": false
@@ -523,6 +541,13 @@
         "dtw"
       ]
     },
+    "ParagraphBreakType": {
+      "type": "string",
+      "enum": [
+        "single",
+        "double"
+      ]
+    },
     "TimePitchShiftingMethod": {
       "type": "string",
       "enum": [
@@ -649,6 +674,18 @@
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
         },
+        "plainText": {
+          "type": "object",
+          "properties": {
+            "paragraphBreaks": {
+              "$ref": "#/definitions/ParagraphBreakType"
+            },
+            "preserveLineBreaks": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
         "postProcessing": {
           "type": "object",
           "properties": {
@@ -681,6 +718,12 @@
           "properties": {
             "speakerId": {
               "type": "number"
+            },
+            "customLexiconPaths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           "additionalProperties": false
