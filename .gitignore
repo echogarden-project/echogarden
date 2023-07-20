@@ -2,6 +2,7 @@
 .vscode
 desktop.ini
 echogarden.config
+echogarden.config.json
 node_modules
 notes
 out
