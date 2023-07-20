@@ -58,12 +58,12 @@ export function roundTimelineTimestamps(targetTimeline: Timeline, decimalDigits 
 }
 
 export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string) {
-	const paragraphs = await splitToParagraphs(transcript)
+	const paragraphs = await splitToParagraphs(transcript, "double", false)
 
 	const segments = paragraphs
 			.map(segment =>
 				splitToSentences(segment, language).map(sentence =>
-					sentence.trim() + " "))
+					sentence.trim()))
 
 	let text = ""
 	const charIndexToSentenceEntryMapping: TimelineEntry[] = []
@@ -90,7 +90,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 				timeline: []
 			}
 
-			for (const char of sentence) {
+			for (const char of sentence + " ") {
 				text += char
 				charIndexToSentenceEntryMapping.push(sentenceEntry)
 			}
@@ -141,7 +141,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 			sentenceEntry.endTime = wordTimeline[wordTimeline.length - 1].endTime
 		}
 
-		segmentEntry.text = sentenceTimeline.map(sentenceEntry => sentenceEntry.text).join("")
+		segmentEntry.text = sentenceTimeline.map(sentenceEntry => sentenceEntry.text).join(" ")
 
 		segmentEntry.startTime = sentenceTimeline[0].startTime
 		segmentEntry.endTime = sentenceTimeline[sentenceTimeline.length - 1].endTime

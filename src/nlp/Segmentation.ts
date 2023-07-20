@@ -209,6 +209,24 @@ export async function splitToWords(text: string, langCode: string): Promise<stri
 	}
 }
 
-export function splitToParagraphs(text: string) {
-	return text.split(/(\r?\n)+/g).map(p => p.trim()).filter(p => p.length > 0)
+export function splitToParagraphs(text: string, paragraphBreakType: ParagraphBreakType, preserveLineBreaks: boolean) {
+	let paragraphs: string[] = []
+
+	if (paragraphBreakType == 'single') {
+		paragraphs = text.split(/(\r?\n)+/g)
+	} else if (paragraphBreakType == 'double') {
+		paragraphs = text.split(/(\r?\n)(\r?\n)+/g)
+	} else {
+		throw new Error(`Invalid paragraph break type: ${paragraphBreakType}`)
+	}
+
+	if (!preserveLineBreaks) {
+		paragraphs = paragraphs.map(p => p.replaceAll(/\r?\n/g, " "))
+	}
+
+	paragraphs = paragraphs.map(p => p.trim()).filter(p => p.length > 0)
+
+	return paragraphs
 }
+
+export type ParagraphBreakType = 'single' | 'double'

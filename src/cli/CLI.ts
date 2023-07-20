@@ -10,7 +10,7 @@ import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtit
 import { Logger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
-import path, { parse as parsePath } from "node:path"
+import { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
@@ -22,7 +22,6 @@ import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, res
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Globals.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
-import { runClientWebSocketTest } from '../server/Client.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 
 const log = logToStderr
@@ -277,10 +276,22 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		return
 	}
 
+	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
+	additionalOptionsSchema.set('play', { type: 'boolean' })
+
+	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
+		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	}
+
+	const options: API.SynthesisOptions = await cliOptionsMapToOptionsObject(cliOptions, "SynthesisOptions", additionalOptionsSchema)
+
 	let textSegments: string[]
 
+	const plainTextParagraphBreakType = options.plainText?.paragraphBreaks || 'double'
+	const plainTextPreserveLineBreaks = options.plainText?.preserveLineBreaks || false
+
 	if (command == "speak") {
-		textSegments = splitToParagraphs(mainArg)
+		textSegments = splitToParagraphs(mainArg, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
 	} else if (command == "speak-file") {
 		const sourceFile = mainArg
 
@@ -292,10 +303,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 
 		if (sourceFileExtension == "txt") {
-			textSegments = splitToParagraphs(fileContent)
+			textSegments = splitToParagraphs(fileContent, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
 		} else if (sourceFileExtension == "html" || sourceFileExtension == "htm") {
 			const textContent = await convertHtmlToText(fileContent)
-			textSegments = splitToParagraphs(textContent)
+			textSegments = splitToParagraphs(textContent, 'single', true)
 		} else if (sourceFileExtension == "srt" || sourceFileExtension == "vtt") {
 			const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 			textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
@@ -310,33 +321,21 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		}
 
 		const { fetchDocumentText } = await import("../utilities/WebReader.js")
-		const urlTextContent = await fetchDocumentText(url)
+		const textContent = await fetchDocumentText(url)
 
-		textSegments = splitToParagraphs(urlTextContent)
+		textSegments = splitToParagraphs(textContent, 'single', true)
 	} else if (command == "speak-wikipedia") {
 		const { parseWikipediaArticle } = await import("../utilities/WikipediaReader.js")
-		let language = cliOptions.get("language")
-
-		if (!language) {
-			language = "en"
-			cliOptions.set("language", language)
+		if (!options.language) {
+			options.language = "en"
 		}
 
-		textSegments = await parseWikipediaArticle(mainArg, getShortLanguageCode(language))
+		textSegments = await parseWikipediaArticle(mainArg, getShortLanguageCode(options.language))
 	} else {
 		throw new Error("Invalid command")
 	}
 
 	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
-
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
-	}
-
-	const options: API.SynthesisOptions = await cliOptionsMapToOptionsObject(cliOptions, "SynthesisOptions", additionalOptionsSchema)
 
 	async function onSegment(segmentData: API.SynthesisSegmentEventData) {
 		if (includesPartPattern) {
@@ -936,6 +935,12 @@ async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, 
 
 			if (isNaN(parsedValue)) {
 				throw new Error(`The property '${key}' is a number. '${value}' cannot be parsed as a number.`)
+			}
+		} else if (optionType == 'array' || optionType == 'object') {
+			try {
+				parsedValue = JSON.parse(value)
+			} catch (e) {
+				parsedValue = value
 			}
 		} else {
 			parsedValue = value

@@ -24,10 +24,7 @@ export async function parseWikipediaArticle(articleName: string, language: strin
 			sectionsText.push(sectionTitle)
 		}
 
-		//sectionsText.push()
-
-		//const sectionParagraphs = section.paragraphs()
-		const sectionParagraphs = splitToParagraphs(section.text())
+		const sectionParagraphs = splitToParagraphs(section.text(), 'single', true)
 
 		for (const paragraph of sectionParagraphs) {
 			const paragraphText = paragraph
