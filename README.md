@@ -12,7 +12,7 @@ Echogarden is an integrated speech system that provides a range of speech genera
 
 * Fast, high-quality offline text-to-speech voices based on the [VITS](https://github.com/jaywalnut310/vits) neural architecture
 * Accurate offline speech recognition using [OpenAI Whisper](https://openai.com/research/whisper) models
-* Supports synthesis and recognition via a [variety of offline and cloud engines](docs/Engines.md), including Google, Microsoft and Amazon
+* Provides synthesis and recognition via a [variety of offline and cloud engines](docs/Engines.md), including services by Google, Microsoft, Amazon and others
 * Word-level timestamps for all synthesis and recognition outputs
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods
 * Advanced subtitle generation, accounting for sentence and phrase boundaries

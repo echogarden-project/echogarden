@@ -48,26 +48,24 @@
 * Support more operations
 
 ### CLI
-* Don't show an error when `--help` option is given, instead suggest to type `echogarden` or `echogarden help` to get help
 * Find a way to ensure that a user who typed `align audio.mp3 transcript.txt` and then changed to `transcribe audio.mp3 transcript.txt` won't accidently overwrite their transcript file. Simple solution, but possibly not the best solution: `align audio.mp3 --reference=transcript.txt`. Other solution: on `transcribe` and `translate-speech`, ask if output file already exist or require an `--overwrite` flag to ensure that the user intended to overwrite the existing file.
-* Restrict input media file extensions to a set list to avoid cases where a media file would be overwritten due to user error
+* Restrict input media file extensions to a set list to avoid cases where an output media file would be overwritten due to user error
+* Mode to print IPA words when speaking
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
 * Option to set audio output codec options
 * Option to set audio output device
 * Print available synthesis voices when no voice matches (or suggest near matches)
-* `transcribe` can also accept `http://` and `https://` URLs
+* `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
 * Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
-* Consider adding the text offset to each segment, sentence and word in the resulting timeline with respect to the original file (even if it is, say, HTML or captions file)
+* Consider adding the input text offset to each segment, sentence and word in the resulting timeline with respect to the original file (even if it is, say, an HTML or captions file)
 * Add phone playback support
 * More fine-grained intermediate progress report for operations
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
-* Support comments in JSON configuration file
+* Support comments in the JSON configuration file
 * Generate JSON configuration file schema
 * Make enum options case-insensitive if possible
-* Mode to print IPA words when speaking
-* Support list-typed properties configuration files (already supported in JSON)
 
 ### CLI / `speak-wikipedia`
 * Correctly detect language when a Wikipedia URL is passed instead of an article name
@@ -79,11 +77,7 @@
 ### CLI / `list-packages`
 * Support filters
 
-### CLI / Configuration file
-* Support arrays
-
 ### CLI / New commands
-* `help`: Show help for a particular command, like `help transcribe`
 * `list-engines`: List available engines for a particular command, like `list-engines speak`
 * `play-with-captions`: Preview captions in terminal
 * `play-with-timeline`: Preview timeline in terminal
@@ -92,14 +86,13 @@
 * `text-to-ipa`, `arpabet-to-ipa`, `ipa-to-arpabet`
 * `phonemize-text`
 * `normalize-text`
-* `pos-tag-text`
 * `remove-nonspeech`
 * `speak-youtube`: To speak the transcript of a YouTube video
 
 ### API
 * Option to control logging verbosity
+* Accept full language names as language identifiers
 * Add support to accept caption options in API and CLI
-* Support full language names as inputs
 * Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
 * Time/pitch shifting for recognition and alignment results
@@ -111,7 +104,6 @@
 * When using Whisper for language detection of speech, apply it to the entire audio, not just the first 30 seconds
 
 ### Segmentation
-* Option to split segment on single line break as well as double line break (when splitting on double line breaks, there might be cases where a single line break should be seen as a sentence boundary - a line in song lyrics). Maybe a better approach is to optionally preprocess the text and merge subsequent lines than are intended to be a part of the same paragraph. In this way, paragraph breaks would always be single line breaks, and there's no need to carry settings for this detail within the program.
 * Split long words
 * See if it's possible to reliably use eSpeak as a segmentation engine
 * Path to `kuromoji` dictionaries can be found more reliably than current
@@ -129,35 +121,33 @@
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add phrasing breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (why doesn't `cldr` treat it as a word? Maybe it's not getting the right parameters, or it's not included in the list?) and "C#"
-* Use preprocessed eSpeak in places other than VITS
-* Way to manually reset voice list cache
+* Find way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Log full language of selected voice (it may have a different dialect than expected)
 * Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible.
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
 * Decide whether asterisk `*` should be spoken when using `speak-url` or `speak-wikipedia`
 * Decide what to do with `«` and `»` punctuation characters (guillemets) when parsing and playing
-* Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
 * Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`.
 * eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically).
 * Investigate if `espeak` can be made to correctly support phonemizing and pronouncing the dot character like in `object.key`
 * Speaker-specific voice option
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
 * Option to disable alignment
+* Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
 
 ### Synthesis / preprocessing
-* Extend the heteronyms JSON document with more words
-* Full date normalization (e.g. `21 August 2023`)
-* Support custom lexicons. For example, a lexicon for general pronunciation corrections (for example `ee-lon` instead of `eh-lon`)
-* Add support for capitalized only rules, and possibly also all uppercase / all lowercase rules.
+* Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
+* Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`)
+* Use preprocessed eSpeak in places other than VITS
+* Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules.
 * Support normalizing to graphemes, not only phonemes
+* Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
-* Add support for user-defined lexicons for VITS synthesis (or any other one that supports preprocessing)
-* Add support for text normalization preprocessing for all engines that can benefit from it (possibly including cloud engines).
+* Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines).
 * Add SAPI pronunciation to lexicons (the information is already there for `en_US` and `en_GB`)
 * Try to use entity recognition to detect years, dates, currencies etc., which would disambiguate cases where it is not clear, like "in 1993" in "She was born in 1993" and "It searched in 1993 websites"
 * Option to add POS tags to timeline, if available
-* Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for now since the existing one is relatively small)
 
 ### VITS
 * Allow to limit how many models are cached in memory
@@ -192,6 +182,7 @@
 * Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, an which cannot?
 * Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag to all of them and rebuild them. Support for node.js was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915), so maybe wait a little bit until it is stable.
 * Remove built-in voices from `flite` to reduce size?
+* Slim down `kuromoji` package to the reduce base install size
 
 ## External bugs
 
@@ -228,9 +219,6 @@
 ### Text enhancement
 * Add capitalization and punctuation when to recognition outputs (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
 
-### Synthesis / preprocessing
-* Extend preprocessing to other language versions of `compromise`. There are versions for French, German, Italian and Spanish
-
 ### Recognition
 * Low latency recognition mode. Make the partial transcription available as fast as possible
 * Live input / microphone recognition
@@ -247,6 +235,7 @@
 * Align audio file to audio file
 * Alignment with speech translation assistance, which would enable multilingual subtitle replacement for translated captions
 * Make `dtw` mode work with more speech synthesizers to produce its reference
+* Predict timing for individual letters (graphemes) based on phoneme timestamps
 
 ## Documentation
 
@@ -286,4 +275,4 @@
 * Special method to use time stretching to project between different utterances of the same text
 * Is it possible to combine the Silero speech recognizer and a language model and try to perform Viterbi decoding to find alignments?
 * Voice replacement
-* Predict timing for individual letters (graphemes) based on phoneme timestamps
+

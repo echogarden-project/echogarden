@@ -33,7 +33,7 @@ This would save the resulting audio to `result.mp3`:
 echogarden speak "Hello world!" result.mp3 --language=en
 ```
 
-`speak-file` synthesizes text loaded from a textual file, which can be either `.txt`, `.html`, `.srt`, `.vtt`:
+`speak-file` synthesizes text loaded from a textual file, which can have the extensions `txt`, `html`, `xml`, `ssml`, `srt`, `vtt`:
 ```bash
 echogarden speak-file text.txt result.mp3 --language=en
 ```
@@ -130,6 +130,9 @@ engine = sapi
 # Voice for synthesis (case-insensitive, can be a search pattern):
 voice = zira
 
+# VITS custom lexicon paths:
+vits.customLexiconPaths = ["lexicon1.json", "lexicon2.json"]
+
 [transcribe]
 
 # Engine for recognition:
@@ -148,7 +151,10 @@ Name your file `echogarden.config.json`:
 {
 	"speak": {
 		"engine": "sapi",
-		"voice": "zira"
+		"voice": "zira",
+		"vits": {
+			"customLexiconPaths": ["lexicon1.json", "lexicon2.json"]
+		}
 	},
 
 	"transcribe": {

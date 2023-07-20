@@ -2,9 +2,9 @@
 
 Here is a detailed reference for the options accepted by the Echogarden API and CLI.
 
-Related resources you may need:
+Related resources:
 * [A comprehensive list of all supported engines](Engines.md)
-* [A guide on how to use the command line interface](CLI.md)
+* [A quick guide for using the command line interface](CLI.md)
 
 ## Synthesis
 
@@ -20,19 +20,24 @@ General:
 * `pitchVariation`: pitch variation factor. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
-* `segmentEndPause` pause duration (seconds) at end of segment. Defaults to `1.0`
+* `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
+
+Plain text preprocessing:
+* `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
+* `plainText.preserveLineBreaks`: preserve line breaks within paragraphs. Defaults to `false`
 
 Post-processing:
-* `postProcessing.normalizeAudio` should normalize output audio. Defaults to `true`
-* `postProcessing.targetPeakDb` target peak (decibels) for normalization. Defaults to `-3`
-* `postProcessing.maxIncreaseDb` max gain increase (decibels) when performing normalization. Defaults to `30`
+* `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `true`
+* `postProcessing.targetPeakDb`: target peak (decibels) for normalization. Defaults to `-3`
+* `postProcessing.maxIncreaseDb`: max gain increase (decibels) when performing normalization. Defaults to `30`
 * `postProcessing.speed`: target speed for time stretching. Defaults to `1.0`
 * `postProcessing.pitch`: target pitch for pitch shifting. Defaults to `1.0`
-* `postProcessing.timePitchShiftingMethod` method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
+* `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
 
 VITS:
-* `vits.speakerId`: speaker ID, for VITS models that support multiple speakers
+* `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
+* `vits.customLexiconPaths`: an array of custom lexicon file paths. Optional
 
 eSpeak-ng:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
@@ -182,10 +187,10 @@ General:
 * `engine`: can only be `rnnoise`
 
 Postprocessing:
-* `postProcessing.normalizeAudio` should normalize output audio. Defaults to `false`
-* `postProcessing.targetPeakDb` target peak (decibels) for normalization. Defaults to `-3`
-* `postProcessing.maxIncreaseDb` max gain increase (decibels) when performing normalization. Defaults to `30`
-* `postProcessing.dryMixGainDb` gain (decibels) of dry (original) signal to mix back to the denoised output. Defaults to `-20`
+* `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `false`
+* `postProcessing.targetPeakDb`: target peak (decibels) for normalization. Defaults to `-3`
+* `postProcessing.maxIncreaseDb`: max gain increase (decibels) when performing normalization. Defaults to `30`
+* `postProcessing.dryMixGainDb`: gain (decibels) of dry (original) signal to mix back to the denoised output. Defaults to `-20`
 
 ## Voice list request
 
