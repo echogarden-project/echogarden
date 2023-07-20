@@ -290,7 +290,7 @@ export const voiceList: SynthesisVoice[] = [
 	{
 		name: "en_GB-aru-medium",
 		languages: ["en-GB", "en"],
-		gender: "female",
+		gender: "unknown",
 		speakerCount: 12,
 	},
 	{
@@ -379,13 +379,13 @@ export const voiceList: SynthesisVoice[] = [
 	{
 		name: "en_US-arctic-medium",
 		languages: ["en-US", "en"],
-		gender: "male",
+		gender: "unknown",
 		speakerCount: 18
 	},
 	{
 		name: "en_US-l2arctic-medium",
 		languages: ["en-US", "en"],
-		gender: "male",
+		gender: "unknown",
 		speakerCount: 24
 	},
 
@@ -397,7 +397,7 @@ export const voiceList: SynthesisVoice[] = [
 	{
 		name: "es_ES-sharvard-medium",
 		languages: ["es-ES", "es"],
-		gender: "male",
+		gender: "unknown",
 		speakerCount: 2
 	},
 	{

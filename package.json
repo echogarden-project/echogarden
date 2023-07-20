@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.6.0",
+	"version": "0.6.1",
 	"description": "An integrated speech system, providing a range of speech generation, recognition and processing tools designed to be directly usable by end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
