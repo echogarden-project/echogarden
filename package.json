@@ -1,15 +1,15 @@
 {
 	"name": "echogarden",
-	"version": "0.5.2",
-	"description": "A fully open-source speech system designed with end-users in mind.",
+	"version": "0.6.0",
+	"description": "An integrated speech system, providing a range of speech generation, recognition and processing tools designed to be directly usable by end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
 	"keywords": [
+		"speech",
 		"text-to-speech",
 		"speech synthesis",
 		"speech-to-text",
 		"speech recognition",
-		"speech processing",
 		"speech alignment",
 		"forced alignment",
 		"speech translation",
