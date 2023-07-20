@@ -64,8 +64,13 @@ export async function start(processArgs: string[]) {
 
 		const command = processArgs[0]
 
-		if (!command) {
+		if (!command || command == "help") {
 			log(`Supported operations:\n\n${commandHelp.join("\n")}`)
+			process.exit(0)
+		}
+
+		if (command == "--help") {
+			log(`There's no command called '--help'. Did you mean to run 'echogarden help'?`)
 			process.exit(0)
 		}
 
