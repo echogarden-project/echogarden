@@ -8,7 +8,7 @@ echogarden [command] [one or more inputs..] [one or more outputs...] [options...
 
 Here's a quick tour of the main operations available via the CLI.
 
-Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the available options can be found [here](Options.md).
+Each command can accept one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the available options can be found [here](Options.md).
 
 **Keyboard shortcuts**:
 * While the program is running, you can press `esc` to exit immediately
