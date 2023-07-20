@@ -39,6 +39,7 @@
 * Button or keyboard shortcut to show and hide handles
 * Show blinking placeholder when synthesis is loading for a particular text node
 * Navigate paragraphs or sentences with keyboard shortcuts
+* Minimum size when iterating text nodes to get handle
 
 ### Worker
 * Optionally omit unnecessary data from the response (decoded input, segment data, etc.)

@@ -1,6 +1,6 @@
 # Echogarden
 
-Echogarden is a versatile speech processing system that attempts to address the needs of end-users:
+Echogarden is an integrated speech system that provides a range of speech generation, recognition and processing tools that are designed to be directly usable by end-users:
 
 * Written in TypeScript, for the Node.js runtime
 * Easy to install, run and update
@@ -12,11 +12,11 @@ Echogarden is a versatile speech processing system that attempts to address the 
 
 * Fast, high-quality offline text-to-speech voices based on the [VITS](https://github.com/jaywalnut310/vits) neural architecture
 * Accurate offline speech recognition using [OpenAI Whisper](https://openai.com/research/whisper) models
-* Supports synthesis and recognition via major cloud providers, including Google, Microsoft and Amazon
+* Supports synthesis and recognition via a [variety of offline and cloud engines](docs/Engines.md), including Google, Microsoft and Amazon
 * Word-level timestamps for all synthesis and recognition outputs
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
-* Can transcribe speech in any one of 98 languages, translated directly to English, and produce near word-level synchronized subtitles for the translated transcript
+* Can translate speech in any one of 98 languages, transcribe it directly to English, and produce near word-level synchronized subtitles for the translated transcript
 * Attempts to improve TTS pronunciation accuracy for a few engines and languages (currently only implemented for English dialects): adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a custom rule-based model) and user-customizable pronunciation lexicons
 * Internal package system that auto-downloads and installs voices, models and other resources, as needed
 * Other features include: language detection (both for audio and text), voice activity detection, and speech denoising
@@ -46,7 +46,16 @@ npm update echogarden -g
 
 Currently, the software is operated mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
 
-Development of more graphical and interactive tooling is currently ongoing. A general roadmap is shown next.
+Development of more graphical and interactive tooling is currently ongoing. A general roadmap is shown further down below.
+
+## Guides and resource pages
+
+* [Using the command-line interface](docs/CLI.md)
+* [Options reference](docs/Options.md)
+* [Full list of supported engines](docs/Engines.md)
+* [Technical overview and Q&A](docs/Technical.md)
+* [Developer's task list](docs/Tasklist.md)
+* [How to help](docs/Development.md)
 
 ## Development roadmap
 
@@ -56,7 +65,7 @@ _(For much more detailed information, see the [developer task list](docs/Tasklis
 
 * (**90**%) Background worker
 * (**90**%) WebSocket-based server and API
-* (**70**%) Browser extension, acting as a bridge to a local or self-hosted server. Also including integration with the Web Speech API, and real-time narration of page content, with live word highlighting
+* (**70**%) Browser extension, acting as a bridge to a local or self-hosted server. Includes integration with the Web Speech API, and real-time narration of page content, with live word highlighting
 * (**60**%) New, high-accuracy text language identification model (own work)
 
 ### Planned, but not yet started
@@ -69,15 +78,6 @@ _(For much more detailed information, see the [developer task list](docs/Tasklis
 ### Future (maybe)
 
 * Browser port for a subset of the API (in particular for the offline TTS models and their dependencies)
-
-## Guides and resource pages
-
-* [Using the command-line interface](docs/CLI.md)
-* [Options reference](docs/Options.md)
-* [Full list of supported engines](docs/Engines.md)
-* [Technical overview and Q&A](docs/Technical.md)
-* [Developer's task list](docs/Tasklist.md)
-* [How to help](docs/Development.md)
 
 ## Credits
 

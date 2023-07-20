@@ -10,7 +10,9 @@ Here's a quick tour of the main operations available via the CLI.
 
 Each command can accepts one or more options, in the form `--[optionName]=[value]` (The `=` is required). A detailed reference of all the available options can be found [here](Options.md).
 
-While the program is running, you can press `esc` to immediately exit, or, during audio playback, `enter` to skip it.
+**Keyboard shortcuts**:
+* While the program is running, you can press `esc` to exit immediately
+* When audio is playing, you can press `enter` to skip it
 
 ## Text to speech
 
@@ -46,12 +48,12 @@ The CLI supports multiple output files. This would synthesize a text file, and s
 echogarden speak-file text.txt result.mp3 result.wav result.srt --engine=vits --speed=1.1
 ```
 
-Synthesize a web page (will try to extract its main article parts and omit the rest):
+Synthesize a web page (it will try to extract its main article parts and omit the rest):
 ```bash
 echogarden speak-url https://example.com/hola
 ```
 
-Synthesize a Wikipedia article in any of its language editions:
+Synthesize a Wikipedia article, in any of its language editions:
 ```bash
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
@@ -200,7 +202,7 @@ Try to identify the language of a text file, and print the probabilities to the 
 echogarden detect-text-language story.txt
 ```
 
-Try to identify the language of a text file, and store the probabilities in a JSON file:
+Try to identify the language of a text file, and store the detailed probabilities in a JSON file:
 ```bash
 echogarden detect-text-language story.txt detection-results.json
 ```

@@ -1,6 +1,10 @@
 # Configuration options reference
 
-For a comprehensive list of all supported engines: see [this page](Engines.md).
+Here is a detailed reference for the options accepted by the Echogarden API and CLI.
+
+Related resources you may need:
+* [A comprehensive list of all supported engines](Engines.md)
+* [A guide on how to use the command line interface](CLI.md)
 
 ## Synthesis
 

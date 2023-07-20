@@ -2,7 +2,7 @@
 
 * Echogarden is written in TypeScript and targets the Node.js platform.
 * It uses ESM modules and latest ECMAScript and TypeScript features.
-* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime (with some exceptions: the CLI does invoke a few binary executables, loaded from expansion packages, for the `SoX` and `ffmpeg` tools.Using expansion packages simplifies the installation and ensures non-buggy version are used. Since SoX `v14.4.2` is broken on Windows, it bundles `v14.4.1`).
+* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime, with some exceptions: the CLI does invoke a few binary executables, loaded from expansion packages, for the `SoX` and `ffmpeg` tools. Using expansion packages simplifies the installation and ensures non-buggy version are used. Since SoX `v14.4.2` is broken on Windows, it bundles `v14.4.1`.
 * It does not depend on essential native node.js modules requiring compilation with `node-gyp`. This greatly simplifies the installation experience for end-users (the ONNX runtime bundles precompiled NAPI modules for all supported platforms - it doesn't require any compilation during its installation).
 
 ## Package system
@@ -34,7 +34,7 @@ Currently, the biggest contributors to the size are:
 
 `onnxruntime-node` is big because it bundles pre-compiled binaries for multiple platforms. `kuromoji` is large because of its dictionary files and some unessential test code it bundles. The other three packages include large WASM binaries.
 
-So, yes, in the future it may be possible to reduce the core installed size by dynamically installing some of these dependencies, or using modified, "slimmed-down" custom versions.
+So, yes, in the future it may be possible to reduce the core installed size by dynamically installing some of these dependencies, or using modified, "slimmed-down" versions of some packages.
 
 ## Since the code is almost all JavaScript and WASM, why can't it just run in a web browser?
 
