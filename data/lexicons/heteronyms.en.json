@@ -104,7 +104,7 @@
 			],
 
 			"succeededBy": [
-				"itself", "us", "opportunities", "them", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice"
+				"itself", "us", "opportunities", "them", "a", "an", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice"
 			],
 
 			"notSucceededBy": [
