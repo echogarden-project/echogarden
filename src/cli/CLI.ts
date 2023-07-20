@@ -330,6 +330,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			throw new Error(`'speak-file' only supports inputs with extensions 'txt', 'html', 'htm', 'xml', 'ssml', 'srt', 'vtt'`)
 		}
 	} else if (command == "speak-url") {
+		if (options.ssml) {
+			throw new Error(`speak-url doesn't provide SSML inputs`)
+		}
+
 		const url = mainArg
 
 		if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -341,6 +345,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 		textSegments = splitToParagraphs(textContent, 'single', true)
 	} else if (command == "speak-wikipedia") {
+		if (options.ssml) {
+			throw new Error(`speak-wikipedia doesn't support provide SSML inputs`)
+		}
+
 		const { parseWikipediaArticle } = await import("../utilities/WikipediaReader.js")
 		if (!options.language) {
 			options.language = "en"
