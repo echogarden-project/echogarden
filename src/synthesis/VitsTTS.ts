@@ -624,7 +624,7 @@ export const voiceList: SynthesisVoice[] = [
 	{
 		name: "uk_UA-ukrainian_tts-medium",
 		languages: ["uk-UA", "uk"],
-		gender: "female",
+		gender: "unknown",
 		speakerCount: 3,
 	},
 	{
