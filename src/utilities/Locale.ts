@@ -10,7 +10,6 @@ export function languageCodeToName(languageCode: string) {
 	} catch (e) {
 	}
 
-
 	return translatedLanguageName || "Unknown"
 }
 
@@ -29,6 +28,8 @@ export function getShortLanguageCode(langCode: string) {
 }
 
 export function normalizeLanguageCode(langCode: string) {
+	langCode = langCode.trim()
+
 	const parts = langCode.split("-")
 
 	const result = [parts[0].toLowerCase()]
@@ -42,6 +43,7 @@ export function normalizeLanguageCode(langCode: string) {
 
 const isoToLcidLookup = new Map<string, number>()
 const lcidToIsoLookup = new Map<number, string[]>()
+const lcidEntries: LCIDEntry[] = []
 
 export async function isoToLcidLanguageCode(iso: string) {
 	await loadLcidLookupIfNeeded()
@@ -56,14 +58,17 @@ export async function lcidToIsoLanguageCode(lcid: number) {
 }
 
 async function loadLcidLookupIfNeeded() {
-	if (isoToLcidLookup.size > 0) {
-		return
+	if (lcidEntries.length > 0) {
+		return lcidEntries
 	}
 
-	const lcidLookup = await readAndParseJsonFile(resolveToModuleRootDir("data/tables/lcid-table.json"))
+	const lcidLookup: LCIDLookup = await readAndParseJsonFile(resolveToModuleRootDir("data/tables/lcid-table.json"))
 
 	for (const isoName in lcidLookup) {
-		const lcidValue: number = lcidLookup[isoName].LCID
+		const lcidEntry = lcidLookup[isoName]
+		lcidEntries.push(lcidEntry)
+
+		const lcidValue = lcidEntry.LCID
 
 		isoToLcidLookup.set(isoName, lcidValue)
 
@@ -76,6 +81,8 @@ async function loadLcidLookupIfNeeded() {
 
 		entry.push(isoName)
 	}
+
+	return lcidEntries
 }
 
 export const shortLanguageCodeToLong: { [lang: string]: string } = {
@@ -87,4 +94,16 @@ export const shortLanguageCodeToLong: { [lang: string]: string } = {
 	"pt": "pt-BR",
 	"es": "es-ES",
 	"nl": "nl-NL"
+}
+
+type LCIDLookup = { [isoLangCode: string]: LCIDEntry }
+
+export interface LCIDEntry {
+	"LCID": number
+	"Name": string
+	"TwoLetterISOLanguageName": string,
+	"ThreeLetterISOLanguageName": string,
+	"ThreeLetterWindowsLanguageName": string,
+	"EnglishName": string
+	"ANSICodePage": string
 }
