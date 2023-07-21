@@ -84,8 +84,8 @@ Amazon Polly:
 
 Elevenlabs:
 * `elevenLabs.apiKey`: API key (required)
-* `elevenLabs.stability`: stability. Defaults to `0.0`
-* `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.0`
+* `elevenLabs.stability`: stability. Defaults to `0.5`
+* `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
 * `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 
 Google Translate:

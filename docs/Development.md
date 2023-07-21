@@ -20,8 +20,8 @@ In any case, please let me know if you get any unexpected error message or surpr
 
 When you encounter an odd pronunciation in a VITS voice, there are several possible causes:
 
-1. An incorrect phonemization produced by the eSpeak engine. Fortunately, it can be overridden by adding a corrected pronunciation to an Echogarden lexicon. You can pass one or more custom lexicons files to the VITS engine in `vits.customLexiconPaths` and see if it solves the problem. The lexicon format is the same as in [this file](https://github.com/echogarden-project/echogarden/blob/main/data/lexicons/heteronyms.en.json) - you can use it as a reference.
-1. This word has multiple different pronunciations based on context (a heteronym). In that case, it may be possible resolve the pronunciations based on context, by using the preceding and succeeding words as indicators. This is supported by the Echogarden lexicon.
+1. An incorrect phonemization produced by the eSpeak engine. Fortunately, it can be overridden by adding a corrected pronunciation to an Echogarden lexicon. You can pass one or more custom lexicons files to the VITS engine via `vits.customLexiconPaths` and see if it solves the problem. The lexicon format is the same as in [this file](https://github.com/echogarden-project/echogarden/blob/main/data/lexicons/heteronyms.en.json) - you can use it as a reference.
+1. This word has multiple different pronunciations based on context (a heteronym). In that case, it may be possible resolve the pronunciations based on context, by using the preceding and succeeding words as indicators. This is supported by the lexicon in the `precededBy`, `notPrecededBy`, `succeededBy`, `notSucceededBy` properties.
 1. An issue with model training, which may need to be forwarded to the original authors.
 
 If the problem is serious, you can report it and we'll see what we can do.

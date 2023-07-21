@@ -78,6 +78,9 @@
 ### CLI / `speak-url`
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
 
+### CLI / `list-voices`
+* When given a configuration file, see if you can fall back to take options from from `speak` options, for example, API keys that are required for the both the voice list request and synthesis request
+
 ### CLI / `list-packages`
 * Support filters
 
@@ -156,7 +159,8 @@
 ### VITS
 * Allow to limit how many models are cached in memory
 * Custom model paths (decide how to implement)
-* Pull voice list from JSON file based on URL? Is that a good idea?
+* Pull voice list from JSON file, or based on URL? Is that a good idea?
+* Add speaker names to voice list somehow
 
 ### Recognition
 * Add confidence to each recognized word, if available
@@ -164,7 +168,7 @@
 * Look for good split points using VAD before performing recognition
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
-### Whisper
+### Recognition / Whisper
 * When using `dtw-ra` alignment, pass the transcript as a prompt. Remove some of the initial transcript based on what has been detected (try to find the best matching initial segment between the transcript and recognized text, and remove it at each recognition window).
 * During language detection, if file is more than 30s, run the detection over all the segments and average the resulting probability distributions, consider how to handle very short segments
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
@@ -173,6 +177,10 @@
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segment files, otherwise it is possible to try to guess using the pause lengths or voice activity detection
 * Way to specify model size, such that the English-only/multilingual would be auto selection for sizes other than `tiny`?
+* Accept custom prompt as through an option
+
+### Alignment
+* Warn when input is larger than DTW window (this can also happen when synthesizing SSML, which can't be split to segments)
 
 ### Postprocessing
 * When `normalize` is set to false, should obvious clipping still be prevented?
@@ -202,6 +210,7 @@
 ## Things to test
 
 * Test that SSML works where it should
+* Test that alignment works correctly when the input is SSML
 * Test synthesis, recognition and alignment with empty input. Do they still work?
 * Test everything's fine on macOS
 * Test that cloud services all still work correctly, especially with SSML inputs
