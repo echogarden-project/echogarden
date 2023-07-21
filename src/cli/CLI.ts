@@ -346,7 +346,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		textSegments = splitToParagraphs(textContent, 'single', true)
 	} else if (command == "speak-wikipedia") {
 		if (options.ssml) {
-			throw new Error(`speak-wikipedia doesn't support provide SSML inputs`)
+			throw new Error(`speak-wikipedia doesn't provide SSML inputs`)
 		}
 
 		const { parseWikipediaArticle } = await import("../utilities/WikipediaReader.js")
