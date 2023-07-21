@@ -74,10 +74,10 @@
         "pitchVariation": {
           "type": "number"
         },
-        "ssml": {
+        "splitToSentences": {
           "type": "boolean"
         },
-        "splitToSentences": {
+        "ssml": {
           "type": "boolean"
         },
         "segmentEndPause": {
@@ -687,10 +687,10 @@
         "pitchVariation": {
           "type": "number"
         },
-        "ssml": {
+        "splitToSentences": {
           "type": "boolean"
         },
-        "splitToSentences": {
+        "ssml": {
           "type": "boolean"
         },
         "segmentEndPause": {

@@ -1109,8 +1109,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	elevenlabs: {
 		apiKey: undefined,
 		modelId: "eleven_monolingual_v1",
-		stability: 0,
-		similarityBoost: 0,
+		stability: 0.5,
+		similarityBoost: 0.5,
 	},
 
 	googleTranslate: {
