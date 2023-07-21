@@ -1,6 +1,6 @@
 # Echogarden
 
-Echogarden is an integrated speech system that provides a range of speech generation, recognition and processing tools that are designed to be directly usable by end-users:
+Echogarden is an integrated speech system that provides a range of synthesis, recognition and other processing tools, designed to be directly accessible to end-users:
 
 * Written in TypeScript, for the Node.js runtime
 * Easy to install, run and update
@@ -17,9 +17,9 @@ Echogarden is an integrated speech system that provides a range of speech genera
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
 * Can translate speech in any one of 98 languages, transcribe it directly to English, and produce near word-level synchronized subtitles for the translated transcript
-* Attempts to improve TTS pronunciation accuracy for a few engines and languages (currently only implemented for English dialects): adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a custom rule-based model) and user-customizable pronunciation lexicons
+* Attempts to improve TTS pronunciation accuracy: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a rule-based model) and user-customizable pronunciation lexicons (_note_: normalization, as well as a built-in heteronym lexicon are currently only available for English dialects)
 * Internal package system that auto-downloads and installs voices, models and other resources, as needed
-* Other features include: language detection (both for audio and text), voice activity detection, and speech denoising
+* Other features include: language detection (for both audio and text), voice activity detection, and speech denoising
 
 ## Installation
 
@@ -71,9 +71,9 @@ _(For much more detailed information, see the [developer task list](docs/Tasklis
 ### Planned, but not yet started
 
 * Web-based UI frontend
-* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
 * Real-time, streaming speech recognition
 * Official developer API (it's currently possible to import the `echogarden` npm package as a library, but the official API has not been published yet)
+* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
 
 ### Future (maybe)
 

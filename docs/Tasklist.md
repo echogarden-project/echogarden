@@ -48,6 +48,7 @@
 * Support more operations
 
 ### CLI
+* Colors in log messages
 * Find a way to ensure that a user who typed `align audio.mp3 transcript.txt` and then changed to `transcribe audio.mp3 transcript.txt` won't accidently overwrite their transcript file. Simple solution, but possibly not the best solution: `align audio.mp3 --reference=transcript.txt`. Other solution: on `transcribe` and `translate-speech`, ask if output file already exist or require an `--overwrite` flag to ensure that the user intended to overwrite the existing file.
 * Restrict input media file extensions to a set list to avoid cases where an output media file would be overwritten due to user error
 * Mode to print IPA words when speaking
@@ -67,9 +68,12 @@
 * Generate JSON configuration file schema
 * Make enum options case-insensitive if possible
 
+### CLI / `speak`
+* Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
+
 ### CLI / `speak-wikipedia`
 * Correctly detect language when a Wikipedia URL is passed instead of an article name
-* Add option to set language edition separately from language, since they use different language codes in some cases
+* Add option to set language edition separately from language, since Wikipedia language editions has its own code system that is different from the standard one in some cases
 
 ### CLI / `speak-url`
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
@@ -87,7 +91,7 @@
 * `phonemize-text`
 * `normalize-text`
 * `remove-nonspeech`
-* `speak-youtube`: To speak the transcript of a YouTube video
+* `speak-youtube`: To speak the subtitles of a YouTube video
 
 ### API
 * Option to control logging verbosity
@@ -145,7 +149,7 @@
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
 * Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines).
-* Add SAPI pronunciation to lexicons (the information is already there for `en_US` and `en_GB`)
+* Add SAPI pronunciation to lexicons (you already have the pronunciations for `en_US` and `en_GB`)
 * Try to use entity recognition to detect years, dates, currencies etc., which would disambiguate cases where it is not clear, like "in 1993" in "She was born in 1993" and "It searched in 1993 websites"
 * Option to add POS tags to timeline, if available
 
@@ -199,6 +203,8 @@
 
 * Test that SSML works where it should
 * Test synthesis, recognition and alignment with empty input. Do they still work?
+* Test everything's fine on macOS
+* Test that cloud services all still work correctly, especially with SSML inputs
 
 ## Future features and enhancements
 

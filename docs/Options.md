@@ -35,6 +35,9 @@ Post-processing:
 * `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
 
+Language detection:
+* `languageDetection`: prefix to provide custom options for language detection. Same options as detailed for text language detection, down below
+
 VITS:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
 * `vits.customLexiconPaths`: an array of custom lexicon file paths. Optional
@@ -45,8 +48,8 @@ eSpeak-ng:
 * `espeak.pitchRange`: pitch range, in eSpeak units. Overrides `pitchVariation` when set
 
 SAM:
-* `sam.pitch`: pitch value, between `0`..`255`, optional. Overrides `pitch` when set
-* `sam.speed`: speed value, between `0`..`255`, optional. Overrides `speed` when set
+* `sam.pitch`: pitch value, between `0`..`255`. Overrides `pitch` when set
+* `sam.speed`: speed value, between `0`..`255`. Overrides `speed` when set
 * `sam.mouth`: mouth value, between `0`..`255` (defaults to `128`)
 * `sam.throat`: throat value, between `0`..`255` (defaults to `128`)
 
@@ -54,7 +57,7 @@ SAPI:
 * `sapi.rate`: SAPI speech rate, in its native units. An integer number between `-10` and `10`. Setting `speed` would apply time stretching instead. The two options can be used together
 
 Microsoft Speech Platform:
-* `msspeech.rate`: equivalent units and effect to the SAPI speech rate
+* `msspeech.rate`: same  units and effects as the SAPI speech rate
 
 Coqui Server:
 * `coquiServer.serverUrl`: server URL
@@ -76,7 +79,7 @@ Amazon Polly:
 * `amazonPolly.accessKeyId`: access key ID (required)
 * `amazonPolly.secretAccessKey`: secret access key (required)
 * `amazonPolly.pollyEngine`: Amazon Polly engine kind, can be `standard` or `neural`. Defaults to `neural`
-* `amazonPolly.lexiconNames`: TODO
+* `amazonPolly.lexiconNames`: An array of lexicon names. Optional
 
 Elevenlabs:
 * `elevenLabs.apiKey`: API key (required)
@@ -109,7 +112,7 @@ Silero:
 
 Google Cloud:
 * `googleCloud.apiKey`: Google Cloud API key (required)
-* `googleCloud.alternativeLanguageCodes`: TODO
+* `googleCloud.alternativeLanguageCodes`: An array of alternative language codes. Optional
 * `googleCloud.profanityFilter`: censor profanity. Defaults to `false`
 * `googleCloud.autoPunctuation`: add punctuation automatically. Defaults to `true`
 * `googleCloud.useEnhancedModel`: use enhanced model. Defaults to `true`
@@ -151,18 +154,20 @@ Whisper:
 ## Language detection
 
 
-### Spoken language detection
+### Speech language detection
 
 Applicable to CLI command: `detect-speech-langauge`.
 
 * `engine`: `silero` or `whisper`. Defaults to `silero`
 * `whisper`: whisper options prefix, can be used like `whisper.model = base` to set options for the Whisper engine. See Whisper options on the recognition section
 
-### Written language detection
+### Text language detection
 
 Applicable to CLI command: `detect-text-langauge`.
 
 * `engine`: `tinyld` or `fasttext`. Defaults to `tinyld`
+* `defaultLanguage`: language to fall back to when confidence is low. Defaults to `en`
+* `fallbackThresholdProbability`: confidence threshold to cause fallback. Defaults to `0.05`
 
 ## Voice activity detection
 
