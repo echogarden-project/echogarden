@@ -128,6 +128,9 @@
           },
           "additionalProperties": false
         },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
         "vits": {
           "type": "object",
           "properties": {
@@ -256,7 +259,7 @@
           },
           "additionalProperties": false
         },
-        "awsPolly": {
+        "amazonPolly": {
           "type": "object",
           "properties": {
             "region": {
@@ -635,6 +638,28 @@
       },
       "additionalProperties": false
     },
+    "TextLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TextLanguageDetectionEngine"
+        },
+        "defaultLanguage": {
+          "type": "string"
+        },
+        "fallbackThresholdProbability": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextLanguageDetectionEngine": {
+      "type": "string",
+      "enum": [
+        "tinyld",
+        "fasttext"
+      ]
+    },
     "SynthesisOptions": {
       "type": "object",
       "properties": {
@@ -712,6 +737,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
         "vits": {
           "type": "object",
@@ -841,7 +869,7 @@
           },
           "additionalProperties": false
         },
-        "awsPolly": {
+        "amazonPolly": {
           "type": "object",
           "properties": {
             "region": {
@@ -976,28 +1004,6 @@
       "enum": [
         "silero",
         "whisper"
-      ]
-    },
-    "TextLanguageDetectionOptions": {
-      "type": "object",
-      "properties": {
-        "engine": {
-          "$ref": "#/definitions/TextLanguageDetectionEngine"
-        },
-        "defaultLanguage": {
-          "type": "string"
-        },
-        "fallbackThresholdProbability": {
-          "type": "number"
-        }
-      },
-      "additionalProperties": false
-    },
-    "TextLanguageDetectionEngine": {
-      "type": "string",
-      "enum": [
-        "tinyld",
-        "fasttext"
       ]
     },
     "VADOptions": {

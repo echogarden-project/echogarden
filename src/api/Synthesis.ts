@@ -31,7 +31,20 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 	if (!options.language && !options.voice) {
 		logger.start("No language or voice specified. Detecting language")
-		const { detectedLanguage } = await API.detectTextLanguage(segments.join("\n"), {})
+
+		let segmentsPlainText = segments
+
+		if (options.ssml) {
+			segmentsPlainText= []
+
+			for (const segment of segments) {
+				segmentsPlainText.push(await convertHtmlToText(segment))
+			}
+		}
+
+		const languageDetectionOptions = options.languageDetection || {}
+
+		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join("\n\n"), languageDetectionOptions)
 
 		options.language = detectedLanguage
 
@@ -581,7 +594,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		case "amazon-polly": {
 			const AwsPollyTTS = await import("../synthesis/AwsPollyTTS.js")
 
-			const engineOptions = options.awsPolly!
+			const engineOptions = options.amazonPolly!
 
 			const region = engineOptions.region
 
@@ -905,6 +918,8 @@ export interface SynthesisOptions {
 		rubberband?: RubberbandOptions
 	}
 
+	languageDetection?: API.TextLanguageDetectionOptions
+
 	vits?: {
 		speakerId?: number
 		customLexiconPaths?: string[]
@@ -958,7 +973,7 @@ export interface SynthesisOptions {
 		pitchDeltaHz?: number
 	}
 
-	awsPolly?: {
+	amazonPolly?: {
 		region?: string
 		accessKeyId?: string
 		secretAccessKey?: string
@@ -1026,6 +1041,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		}
 	},
 
+	languageDetection: undefined,
+
 	vits: {
 		speakerId: undefined,
 		customLexiconPaths: undefined,
@@ -1079,7 +1096,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		pitchDeltaHz: undefined
 	},
 
-	awsPolly: {
+	amazonPolly: {
 		region: undefined,
 		accessKeyId: undefined,
 		secretAccessKey: undefined,
@@ -1273,19 +1290,19 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 			case "amazon-polly": {
 				const AwsPollyTTS = await import("../synthesis/AwsPollyTTS.js")
 
-				const region = options.awsPolly!.region
+				const region = options.amazonPolly!.region
 
 				if (!region) {
 					throw new Error(`No region given`)
 				}
 
-				const accessKeyId = options.awsPolly!.accessKeyId
+				const accessKeyId = options.amazonPolly!.accessKeyId
 
 				if (!accessKeyId) {
 					throw new Error(`No access key id given`)
 				}
 
-				const secretAccessKey = options.awsPolly!.secretAccessKey
+				const secretAccessKey = options.amazonPolly!.secretAccessKey
 
 				if (!secretAccessKey) {
 					throw new Error(`No secret access key given`)
