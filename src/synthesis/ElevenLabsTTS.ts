@@ -1,4 +1,4 @@
-import { request } from "gaxios"
+import { GaxiosResponse, request } from "gaxios"
 import { SynthesisVoice } from "../api/API.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
@@ -6,31 +6,50 @@ import { logToStderr } from "../utilities/Utilities.js"
 
 const log = logToStderr
 
-export async function synthesize(text: string, voiceId: string, apiKey: string, stability = 0, similarityBoost = 0) {
+export async function synthesize(text: string, voiceId: string, apiKey: string, modelId: string, stability = 0, similarityBoost = 0) {
 	const logger = new Logger()
 	logger.start("Request synthesis from ElevenLabs")
 
-	const response = await request<any>({
-		url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+	let response: GaxiosResponse<any>
 
-		method: "POST",
+	try {
+		response = await request<any>({
+			url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
 
-		data: {
-			text,
+			method: "POST",
 
-			voice_setting: {
-				stability,
-				similarity_boost: similarityBoost
+			headers: {
+				"accept": "audio/mpeg",
+				"xi-api-key": apiKey,
+			},
+
+			data: {
+				text,
+
+				model_id: modelId,
+
+				voice_setting: {
+					stability,
+					similarity_boost: similarityBoost
+				}
+			},
+
+			responseType: "arraybuffer"
+		})
+	} catch (e: any) {
+		const response = e.response
+
+		if (response) {
+			logger.log(`Request failed with status code ${response.status}`)
+
+			if (response.data) {
+				logger.log(`Server responded with:`)
+				logger.log(response.data)
 			}
-		},
+		}
 
-		headers: {
-			"dnt": "1",
-			"xi-api-key": apiKey,
-		},
-
-		responseType: "arraybuffer"
-	})
+		throw e
+	}
 
 	logger.start("Decode synthesized audio")
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(Buffer.from(response.data))
@@ -40,13 +59,15 @@ export async function synthesize(text: string, voiceId: string, apiKey: string, 
 	return { rawAudio }
 }
 
-export async function getVoiceList() {
+export async function getVoiceList(apiKey: string) {
 	const response = await request<any>({
 		method: "GET",
 
 		url: "https://api.elevenlabs.io/v1/voices",
+
 		headers: {
-			"dnt": "1",
+			"accept": "accept: application/json",
+			"xi-api-key": apiKey
 		},
 
 		responseType: "json"

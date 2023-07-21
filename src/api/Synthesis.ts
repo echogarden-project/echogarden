@@ -645,12 +645,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			}
 
 			const voiceId = (selectedVoice as any)["elevenLabsVoiceId"]
+			const modelId = engineOptions.modelId!
 			const stability = engineOptions.stability!
 			const similarityBoost = engineOptions.similarityBoost!
 
 			logger.end()
 
-			const { rawAudio } = await ElevenLabsTTS.synthesize(simplifiedText, voiceId, apiKey, stability, similarityBoost)
+			const { rawAudio } = await ElevenLabsTTS.synthesize(simplifiedText, voiceId, apiKey, modelId, stability, similarityBoost)
 
 			synthesizedAudio = rawAudio
 
@@ -892,9 +893,9 @@ export interface SynthesisOptions {
 	pitch?: number
 	pitchVariation?: number
 
-	ssml?: boolean
-
 	splitToSentences?: boolean
+
+	ssml?: boolean
 
 	segmentEndPause?: number
 	sentenceEndPause?: number
@@ -983,6 +984,7 @@ export interface SynthesisOptions {
 
 	elevenlabs?: {
 		apiKey?: string
+		modelId?: string
 		stability?: number
 		similarityBoost?: number
 	},
@@ -1105,9 +1107,10 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	},
 
 	elevenlabs: {
+		apiKey: undefined,
+		modelId: "eleven_monolingual_v1",
 		stability: 0,
 		similarityBoost: 0,
-		apiKey: undefined
 	},
 
 	googleTranslate: {
@@ -1335,7 +1338,16 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 			case "elevenlabs": {
 				const ElevenLabsTTS = await import("../synthesis/ElevenLabsTTS.js")
-				voiceList = await ElevenLabsTTS.getVoiceList()
+
+				const engineOptions = options.elevenlabs!
+
+				const apiKey = engineOptions.apiKey
+
+				if (!apiKey) {
+					throw new Error(`No Elevenlabs API key given`)
+				}
+
+				voiceList = await ElevenLabsTTS.getVoiceList(apiKey)
 
 				break
 			}
