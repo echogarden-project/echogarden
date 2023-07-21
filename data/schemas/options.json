@@ -293,6 +293,9 @@
             "apiKey": {
               "type": "string"
             },
+            "modelId": {
+              "type": "string"
+            },
             "stability": {
               "type": "number"
             },
@@ -901,6 +904,9 @@
           "type": "object",
           "properties": {
             "apiKey": {
+              "type": "string"
+            },
+            "modelId": {
               "type": "string"
             },
             "stability": {
