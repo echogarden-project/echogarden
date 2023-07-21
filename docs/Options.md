@@ -18,6 +18,7 @@ General:
 * `speed`: speech rate factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitch`: pitch factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitchVariation`: pitch variation factor. In the range `0.1`..`10.0`. Defaults to `1.0`
+* `splitToSentences`: split text to sentences before synthesis. Default to `true`
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
@@ -83,8 +84,9 @@ Amazon Polly:
 
 Elevenlabs:
 * `elevenLabs.apiKey`: API key (required)
-* `elevenLabs.stability`: stability
-* `elevenLabs.similarityBoost`: similarity boost
+* `elevenLabs.stability`: stability. Defaults to `0.0`
+* `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.0`
+* `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 
 Google Translate:
 * `googleTranslate.tld`: top level domain to to connect to. Can change the dialect for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
