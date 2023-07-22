@@ -13,8 +13,12 @@ export function languageCodeToName(languageCode: string) {
 	return translatedLanguageName || "Unknown"
 }
 
-export function formatLanguageCodeWithName(languageCode: string) {
-	return `${languageCodeToName(languageCode)} (${languageCode})`
+export function formatLanguageCodeWithName(languageCode: string, styleId: 1 | 2 = 1) {
+	if (styleId == 1) {
+		return `${languageCodeToName(languageCode)} (${languageCode})`
+	} else {
+		return `${languageCode}, ${languageCodeToName(languageCode)}`
+	}
 }
 
 export function getShortLanguageCode(langCode: string) {

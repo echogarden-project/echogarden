@@ -4,7 +4,7 @@ import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, delay, yieldToEventLoop } from "../utilities/Utilities.js"
+import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
@@ -14,7 +14,7 @@ import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
 
 import * as API from "./API.js"
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from "../utilities/Timeline.js"
-import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, readFile, resolveToModuleRootDir, writeFileSafe } from "../utilities/FileSystem.js"
+import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, resolveToModuleRootDir, writeFileSafe } from "../utilities/FileSystem.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, shortLanguageCodeToLong } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata, appName } from "./Globals.js"
@@ -77,7 +77,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	}
 
 	logger.end()
-	logger.log(`Selected voice: '${options.voice}'`)
+	logger.log(`Selected voice: '${options.voice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
 
 	const segmentsAudio: RawAudio[] = []
 	const segmentsTimelines: Timeline[] = []
