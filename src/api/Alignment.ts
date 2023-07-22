@@ -218,3 +218,24 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 		model: undefined
 	}
 }
+
+export const alignmentEngines: API.EngineMetadata[] = [
+	{
+		id: 'dtw',
+		name: 'Dynamic Time Warping',
+		description: 'Makes use of synthesis to find the best mapping between the original audio and its transcript.',
+		type: 'local'
+	},
+	{
+		id: 'dtw-ra',
+		name: 'Dynamic Time Warping with Recognition Assist',
+		description: 'Makes use of both synthesis and recognition to find the best mapping between the original audio and its transcript.',
+		type: 'local'
+	},
+	{
+		id: 'whisper',
+		name: 'OpenAI Whisper',
+		description: 'Extracts timestamps from the internal state of the Whisper recognition model.',
+		type: 'local'
+	}
+]

@@ -17,7 +17,7 @@ import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFac
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, readFile, resolveToModuleRootDir, writeFileSafe } from "../utilities/FileSystem.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, shortLanguageCodeToLong } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
-import { appName } from "./Globals.js"
+import { EngineMetadata, appName } from "./Globals.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
 
 const log = logToStderr
@@ -1560,3 +1560,86 @@ export interface SynthesisVoice {
 }
 
 export type VoiceGender = "male" | "female" | "unknown"
+
+
+export const synthesisEngines: EngineMetadata[] = [
+	{
+		id: 'vits',
+		name: 'VITS',
+		description: 'A high-quality end-to-end neural speech synthesis architecture.',
+		type: 'local'
+	},
+	{
+		id: 'pico',
+		name: 'SVox Pico',
+		description: 'A legacy diphone-based synthesis engine.',
+		type: 'local'
+	},
+	{
+		id: 'espeak',
+		name: 'eSpeak NG',
+		description: 'A lightweight "robot" sounding formant-based synthesizer.',
+		type: 'local'
+	},
+	{
+		id: 'sam',
+		name: 'SAM (Software Automatic Mouth)',
+		description: 'a classic "robot" speech synthesizer from 1982.',
+		type: 'local'
+	},
+	{
+		id: 'sapi',
+		name: 'SAPI',
+		description: 'Microsoft Speech API (Windows only).',
+		type: 'local'
+	},
+	{
+		id: 'msspeech',
+		name: 'Microsoft Speech Platform',
+		description: 'Microsoft Server Speech API (Windows only).',
+		type: 'local'
+	},
+	{
+		id: 'google-cloud',
+		name: 'Google Cloud',
+		description: 'Google Cloud text-to-speech service.',
+		type: 'cloud'
+	},
+	{
+		id: 'microsoft-azure',
+		name: 'Azure Cognitive Services',
+		description: 'Microsoft Azure cloud text-to-speech service.',
+		type: 'cloud'
+	},
+	{
+		id: 'amazon-polly',
+		name: 'Amazon Polly',
+		description: 'Amazon Polly (also called AWS Polly) cloud text-to-speech.',
+		type: 'cloud'
+	},
+	{
+		id: 'elevenlabs',
+		name: 'Elevenlabs',
+		description: 'A generative AI text-to-speech cloud service.',
+		type: 'cloud'
+	},
+	{
+		id: 'google-translate',
+		name: 'Google Translate',
+		description: 'Unoffical text-to-speech API used by Google Translate web interface.',
+		type: 'cloud'
+	},
+	{
+		id: 'microsoft-edge',
+		name: 'Microsoft Edge',
+		description: 'Unoffical text-to-speech API used by the Microsoft Edge browser.',
+		type: 'cloud'
+	},
+	{
+		id: 'streamlabs-polly',
+		name: 'Streamlabs Polly',
+		description: 'Unoffical text-to-speech API provided by Streamlabs.',
+		type: 'cloud'
+	},
+]
+

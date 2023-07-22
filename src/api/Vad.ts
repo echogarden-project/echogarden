@@ -10,6 +10,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { Timeline } from "../utilities/Timeline.js"
 import path from "path"
 import { loadPackage } from "../utilities/PackageManager.js"
+import { EngineMetadata } from "./Globals.js"
 
 const log = logToStderr
 
@@ -146,3 +147,24 @@ export const defaultVADOptions: VADOptions = {
 	rnnoise: {
 	}
 }
+
+export const vadEngines: EngineMetadata[] = [
+	{
+		id: 'webrtc',
+		name: 'WebRTC VAD',
+		description: 'A voice activity detector from the Chromium browser sources.',
+		type: 'local'
+	},
+	{
+		id: 'silero',
+		name: 'Silero VAD',
+		description: 'A voice activity detection model by Silero.',
+		type: 'local'
+	},
+	{
+		id: 'rnnoise',
+		name: 'RNNoise',
+		description: "Uses RNNoise's speech probabilities as VAD metrics.",
+		type: 'local'
+	}
+]

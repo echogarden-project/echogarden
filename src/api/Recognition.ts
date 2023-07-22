@@ -298,3 +298,42 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 		secretAccessKey: undefined,
 	}
 }
+
+export const recognitionEngines: API.EngineMetadata[] = [
+	{
+		id: 'whisper',
+		name: 'OpenAI Whisper',
+		description: 'A high accuracy transformer-based architecture by OpenAI.',
+		type: 'local'
+	},
+	{
+		id: 'vosk',
+		name: 'Vosk',
+		description: 'A speech recognition toolkit.',
+		type: 'local'
+	},
+	{
+		id: 'silero',
+		name: 'Silero',
+		description: 'Speech recognition models.',
+		type: 'local'
+	},
+	{
+		id: 'google-cloud',
+		name: 'Google Cloud',
+		description: 'Google Cloud speech-to-text service.',
+		type: 'cloud'
+	},
+	{
+		id: 'microsoft-azure',
+		name: 'Azure Cognitive Services',
+		description: 'Microsoft Azure speech-to-text service.',
+		type: 'cloud'
+	},
+	{
+		id: 'amazon-transcribe',
+		name: 'Amazon Transcribe',
+		description: 'Amazon cloud speech-to-text service.',
+		type: 'cloud'
+	},
+]

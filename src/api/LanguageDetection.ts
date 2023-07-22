@@ -205,3 +205,32 @@ export const defaultTextLanguageDetectionOptions: TextLanguageDetectionOptions =
 	fallbackThresholdProbability: 0.05
 }
 
+export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
+	{
+		id: 'silero',
+		name: 'Silero',
+		description: 'A speech language classification model by Silero.',
+		type: 'local'
+	},
+	{
+		id: 'whisper',
+		name: 'OpenAI Whisper',
+		description: 'Uses the language token produced by the Whisper model to guess the language of the speech (first 30 seconds only).',
+		type: 'local'
+	},
+]
+
+export const textLanguageDetectionEngines: API.EngineMetadata[] = [
+	{
+		id: 'tinyld',
+		name: 'TinyLD',
+		description: 'A simple language detection library.',
+		type: 'local'
+	},
+	{
+		id: 'fasttext',
+		name: 'FastText',
+		description: 'a library for word representations and sentence classification by Facebook research.',
+		type: 'local'
+	},
+]

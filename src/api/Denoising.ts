@@ -2,12 +2,12 @@ import { extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { playAudioSamples } from "../audio/AudioPlayer.js"
 import { RawAudio, applyGainDecibels, downmixToMonoAndNormalize, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
 import { logToStderr } from "../utilities/Utilities.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
+import { EngineMetadata } from "./Globals.js"
 
 const log = logToStderr
 
@@ -104,3 +104,12 @@ export const defaultDenoisingOptions: DenoisingOptions = {
 		dryMixGainDb: -20,
 	}
 }
+
+export const denoisingEngines: EngineMetadata[] = [
+	{
+		id: 'rnnoise',
+		name: 'RNNoise',
+		description: 'A noise suppression library based on a recurrent neural network.',
+		type: 'local'
+	}
+]

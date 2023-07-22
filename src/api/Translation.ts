@@ -10,6 +10,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { Timeline } from "../utilities/Timeline.js"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
 import { getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
+import { EngineMetadata } from "./Globals.js"
 
 const log = logToStderr
 
@@ -117,3 +118,12 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 		model: "tiny",
 	},
 }
+
+export const speechTranslationEngines: EngineMetadata[] = [
+	{
+		id: 'whisper',
+		name: 'OpenAI Whisper',
+		description: "Uses Whisper's speech translation capability to produce an English transcript from speech in a different language.",
+		type: 'local'
+	}
+]

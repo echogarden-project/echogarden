@@ -167,6 +167,8 @@ const commandHelp = [
 	`    Detect voice activity in audio file\n`,
 	`${executableName} ${chalk.magentaBright('denoise')} audioFile [output files...] [options...]`,
 	`    Denoise audio file\n`,
+	`${executableName} ${chalk.magentaBright('list-engines')} operation`,
+	`    List available engines for the specified operation\n`,
 	`${executableName} ${chalk.magentaBright('list-voices')} tts-engine [output files...] [options...]`,
 	`    List available voices for the specified TTS engine\n`,
 	`${executableName} ${chalk.magentaBright('install')} [package names...] [options...]`,
@@ -224,6 +226,11 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 
 		case 'denoise': {
 			await denoise(parsedArgs.commandArgs, parsedArgs.options)
+			break
+		}
+
+		case 'list-engines': {
+			await listEngines(parsedArgs.commandArgs, parsedArgs.options)
 			break
 		}
 
@@ -776,13 +783,112 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 	progressLogger.end()
 }
 
+async function listEngines(commandArgs: string[], cliOptions: Map<string, string>) {
+	const progressLogger = new Logger()
+
+	const targetOperation = commandArgs[0]
+
+	if (!targetOperation) {
+		throw new Error(`The 'list-engines' command requires an argument specifying the operation to list engines for, like 'echogarden list-engines transcribe'.`)
+	}
+
+	let engines: API.EngineMetadata[]
+
+	switch (targetOperation) {
+		case 'speak':
+		case 'speak-file':
+		case 'speak-url':
+		case 'speak-wikipedia': {
+			engines = API.synthesisEngines
+
+			break
+		}
+
+		case 'transcribe': {
+			engines = API.recognitionEngines
+
+			break
+		}
+
+		case 'align': {
+			engines = API.alignmentEngines
+
+			break
+		}
+
+		case 'translate-speech': {
+			engines = API.speechTranslationEngines
+
+			break
+		}
+
+		case 'detect-language': {
+			engines = [...API.speechLanguageDetectionEngines, ...API.textLanguageDetectionEngines]
+
+			break
+		}
+
+		case 'detect-speech-language': {
+			engines = API.speechLanguageDetectionEngines
+
+			break
+		}
+
+		case 'detect-text-language': {
+			engines = API.textLanguageDetectionEngines
+
+			break
+		}
+
+		case 'detect-voice-activity': {
+			engines = API.vadEngines
+
+			break
+		}
+
+		case 'denoise': {
+			engines = API.denoisingEngines
+
+			break
+		}
+
+		case 'list-voices': {
+			engines = API.synthesisEngines
+
+			break
+		}
+
+		case 'list-engines':
+		case 'install':
+		case 'uninstall':
+		case 'list-packages': {
+			throw new Error(`The operation '${targetOperation}' is not associated with a list of engines.`)
+		}
+
+		default: {
+			throw new Error(`Unrecognized operation: '${targetOperation}'`)
+		}
+	}
+
+	for (const [index, engine] of engines.entries()) {
+		log(`${chalk.cyanBright('Identifier')}: ${chalk.magentaBright(engine.id)}`)
+		log(`${chalk.cyanBright('Name')}: ${engine.name}`)
+		log(`${chalk.cyanBright('Description')}: ${engine.description}`)
+		log(`${chalk.cyanBright('Type')}: ${engine.type}`)
+
+		if (index < engines.length - 1) {
+			log("")
+		}
+	}
+}
+
 async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, string>) {
 	const progressLogger = new Logger()
 
 	const targetEngine = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
 
-	if (targetEngine == undefined) {
+	if (!targetEngine) {
 		const optionsSchema = await getOptionsSchema()
 		const { enum: ttsEnginesEnum } = getOptionTypeFromSchema(["VoiceListRequestOptions", "engine"], optionsSchema)
 
@@ -806,12 +912,12 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 		const languagesNamesText = entry.languages.map(language => formatLanguageCodeWithName(language)).join(", ")
 		const genderText = entry.gender
 
-		let entryText = `Name: ${nameText}\nLanguages: ${languagesNamesText}\nGender: ${genderText}`
+		let entryText = `${chalk.cyanBright('Identifier')}: ${chalk.magentaBright(nameText)}\n${chalk.cyanBright('Languages')}: ${languagesNamesText}\n${chalk.cyanBright('Gender')}: ${genderText}`
 
 		const speakerCount = entry.speakerCount
 
 		if (speakerCount) {
-			entryText += `\nSpeaker count: ${speakerCount}`
+			entryText += `\n${chalk.cyanBright('Speaker count')}: ${speakerCount}`
 		}
 
 		return entryText
@@ -823,7 +929,10 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 		for (const filename of outputFilenames) {
 			const fileSaver = getFileSaver(filename)
 
-			await fileSaver(getEmptyRawAudio(0, 0), voiceList as any, voiceListText)
+			const { default: stripAnsi } = await import('strip-ansi')
+			const voiceListTextWithoutColors = stripAnsi(voiceListText)
+
+			await fileSaver(getEmptyRawAudio(0, 0), voiceList as any, voiceListTextWithoutColors)
 		}
 	} else {
 		log(voiceListText)
