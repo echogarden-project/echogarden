@@ -352,7 +352,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 		case "pico": {
 			if (isSSML) {
-				throw new Error(`The Svox Pico engine doesn't currently support SSML inputs`)
+				throw new Error(`The SVOX Pico engine doesn't currently support SSML inputs`)
 			}
 
 			const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
@@ -1571,7 +1571,13 @@ export const synthesisEngines: EngineMetadata[] = [
 	},
 	{
 		id: 'pico',
-		name: 'SVox Pico',
+		name: 'SVOX Pico',
+		description: 'A legacy diphone-based synthesis engine.',
+		type: 'local'
+	},
+	{
+		id: 'flite',
+		name: 'Flite',
 		description: 'A legacy diphone-based synthesis engine.',
 		type: 'local'
 	},
@@ -1584,7 +1590,7 @@ export const synthesisEngines: EngineMetadata[] = [
 	{
 		id: 'sam',
 		name: 'SAM (Software Automatic Mouth)',
-		description: 'a classic "robot" speech synthesizer from 1982.',
+		description: 'A classic "robot" speech synthesizer from 1982.',
 		type: 'local'
 	},
 	{
@@ -1614,7 +1620,7 @@ export const synthesisEngines: EngineMetadata[] = [
 	{
 		id: 'amazon-polly',
 		name: 'Amazon Polly',
-		description: 'Amazon Polly (also called AWS Polly) cloud text-to-speech.',
+		description: 'Amazon Polly (also: AWS Polly) cloud text-to-speech.',
 		type: 'cloud'
 	},
 	{
