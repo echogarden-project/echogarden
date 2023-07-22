@@ -12,20 +12,20 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 
 General:
 * `engine`: identifier of the synthesis engine to use, such as `espeak` or `vits`.
-* `language`: language code, like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
+* `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Optional
 * `voiceGender`: gender of the voice to use. Optional
 * `speed`: speech rate factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitch`: pitch factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitchVariation`: pitch variation factor. In the range `0.1`..`10.0`. Defaults to `1.0`
-* `splitToSentences`: split text to sentences before synthesis. Default to `true`
+* `splitToSentences`: split text to sentences before synthesis. Defaults to `true`
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
 
-Plain text preprocessing:
+Plain text processing:
 * `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
-* `plainText.preserveLineBreaks`: preserve line breaks within paragraphs. Defaults to `false`
+* `plainText.whitespace`: determines how to process whitespace within paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
 
 Post-processing:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `true`
@@ -84,9 +84,9 @@ Amazon Polly:
 
 Elevenlabs:
 * `elevenLabs.apiKey`: API key (required)
+* `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 * `elevenLabs.stability`: stability. Defaults to `0.5`
 * `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
-* `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 
 Google Translate:
 * `googleTranslate.tld`: top level domain to to connect to. Can change the dialect for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
@@ -101,7 +101,7 @@ Applicable to CLI command: `transcribe`.
 
 General:
 * `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk`
-* `language`: language code for the audio, like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
+* `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 
 Whisper:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
@@ -137,7 +137,7 @@ General:
 * `language`: language code for the audio and transcript, like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
 
 DTW:
-* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (ten minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater.
+* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater.
 
 DTW-RA only:
 * `dtw.recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `dtw.recognition.engine = silero`
@@ -149,9 +149,11 @@ Applicable to CLI command: `translate-speech`.
 
 General:
 * `engine`: only `whisper` supported
+* `sourceLanguage`: the source language of the input speech. Auto-detected if not set
+* `targetLanguage`: the target language of the output speech. Only `en` supported at this time.
 
 Whisper:
-* `whisper.engine`: Whisper engine to use (multilingual engines only). Defaults to `tiny`
+* `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`
 
 ## Language detection
 
@@ -168,7 +170,7 @@ Applicable to CLI command: `detect-speech-langauge`.
 Applicable to CLI command: `detect-text-langauge`.
 
 * `engine`: `tinyld` or `fasttext`. Defaults to `tinyld`
-* `defaultLanguage`: language to fall back to when confidence is low. Defaults to `en`
+* `defaultLanguage`: language to fall back to when confidence of is low. Defaults to `en`
 * `fallbackThresholdProbability`: confidence threshold to cause fallback. Defaults to `0.05`
 
 ## Voice activity detection

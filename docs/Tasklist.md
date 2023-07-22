@@ -240,6 +240,7 @@
 * Live vosk alternatives events
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
+* Investigate exporting Whisper models to 16-bit and 8-bit quantized ONNX
 
 ### Web
 * Web based frontend UI to the server
