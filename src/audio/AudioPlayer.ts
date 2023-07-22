@@ -1,21 +1,19 @@
 import { parentPort } from 'node:worker_threads'
 
 import { spawn } from 'child_process'
-import path from 'path'
 
-import { RawAudio, encodeWaveBuffer, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from "./AudioUtilities.js"
+import { RawAudio, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from "./AudioUtilities.js"
 import * as AudioBufferConversion from './AudioBufferConversion.js'
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
 import { Timer } from "../utilities/Timer.js"
-import { commandExists, getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Utilities.js'
+import { waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { isWord } from '../nlp/Segmentation.js'
 import { Timeline } from '../utilities/Timeline.js'
-import { getAppTempDir, readAndParseJsonFile, readFile, remove, writeFile } from '../utilities/FileSystem.js'
+import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
-import { appName } from '../api/Globals.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string) {
@@ -316,4 +314,4 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 }
 
 export const charactersToWriteAhead =
-	[",", ".", "，", "、", "：", "；", "。", ":", ";", "?", "!", ")", "]", "}", "\"", "'", "”", "’", "-", "—"]
+	[",", ".", "，", "、", "：", "；", "。", ":", ";", "?", "!", ")", "]", "}", "\"", "'", "”", "’", "-", "—", "»"]

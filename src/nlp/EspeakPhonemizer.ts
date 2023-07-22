@@ -48,7 +48,14 @@ export async function phonemizeSentence(sentence: string, espeakVoice: string, s
 }
 
 export async function phonemizeText(text: string, voice: string, substitutionMap?: Map<string, string[]>) {
-	text = text.replaceAll("，", ",").replaceAll("、", ",").replaceAll("。", ".").replaceAll("(", ", ").replaceAll(")", ", ")
+	text = text
+			.replaceAll("，", ",")
+			.replaceAll("、", ",")
+			.replaceAll("。", ".")
+			.replaceAll("(", ", ")
+			.replaceAll(")", ", ")
+			.replaceAll("«", ", ")
+			.replaceAll("»", ", ")
 
 	const segmentedText = await Segmentation.parse(text, voice)
 	const preparedClauses: string[] = []
