@@ -58,17 +58,6 @@ Synthesize a Wikipedia article, in any of its language editions:
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
 
-By default, audio isn't played in the terminal when an output file is specified, you can override this behavior by adding `--play`
-
-```bash
-echogarden speak-file text.txt result.mp3 --engine=vits --play
-```
-
-Or similarly prevent playback using `--no-play`:
-```bash
-echogarden speak "Hello world!" --language=en --no-play
-```
-
 ## Speech to text
 
 **Task**: given an audio recording containing speech, find a textual transcription that best matches it.
@@ -92,14 +81,30 @@ This would align the audio file `speech.mp3` with the transcript provided in `tr
 echogarden align speech.mp3 transcript.txt
 ```
 
-This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and store the resulting timeline tree in `result.json` and subtitles in `result.srt`:
+This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and store the resulting subtitles in `result.srt`, and a full timeline tree in `result.json`:
 ```bash
-echogarden speak-file text.txt transcript.txt result.json result.srt
+echogarden speak-file text.txt transcript.txt result.srt result.json
 ```
 
-## Using output file templates to split the outputs to multiple parts
+## Speech translation
 
-Echogarden can split the audio to multiple parts based on the segment boundaries detected. For example:
+**Task**: given an audio file containing speech in one language, transcribe it in a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
+
+This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
+```bash
+echogarden translate speech.mp3
+```
+
+To specify the source and target languages explicitly, use the `sourceLanguage` and `targetLanguage` options:
+```bash
+echogarden translate speech.mp3 transcript.txt --sourceLanguage=es --targetLanguage=en
+```
+
+**Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
+
+## Using output templates to split the output to multiple files
+
+Echogarden can split the output to multiple parts based on the segment boundaries detected. For example:
 
 ```bash
 echogarden speak text.txt parts/[segment].opus
@@ -107,10 +112,25 @@ echogarden speak text.txt parts/[segment].opus
 
 The `[segment]` placeholder would cause multiple files to be created, one for each text segment (segments would be determined according to paragraph or line breaks, in this case). The placeholder would be replaced by the index and initial text of the segment, producing an output file with a name like `parts/001 Hello world how are you doing ... .opus`.
 
-Templates can also be used in multiple outputs. For instance, the following would align `speech.mp3` with `transcript.txt` and then split the audio according to the segments found in the transcript, and store separate audio and timeline files for each part.
+Templates can also be used for multiple output files. For instance, the following would align `speech.mp3` with `transcript.txt` and then split the audio according to the segments found in the transcript, and store separate audio and subtitle files for each part.
 
 ```bash
-echogarden align speech.mp3 transcript.txt parts/[segment].m4a parts/[segment].json
+echogarden align speech.mp3 transcript.txt parts/[segment].m4a parts/[segment].srt
+```
+
+### Splitting based on sentence boundaries (future)
+
+Splitting based on sentences, using a `[sentence]` placeholder, is currently on the to-do list. Please let me know if you find this feature important and I'll prioritize it.
+
+## Audio playback
+By default, audio isn't played in the terminal when an output file is specified, you can override this behavior by adding `--play`:
+```bash
+echogarden speak-file text.txt result.mp3 --play
+```
+
+Or similarly prevent playback using `--no-play`:
+```bash
+echogarden transcribe speech.mp3 --no-play
 ```
 
 ## Loading configuration from a file
@@ -176,23 +196,21 @@ Flattened property names are also accepted:
 }
 ```
 
+## File overwriting behavior
+
+By default, the CLI overwrites existing files.
+
+Please be careful to not accidentally have an input file misidentified as an output file, as it may get rewritten without a notice.
+
+The `align` command, unlike the other ones, requires two arguments to be passed (one for the audio filename, and a separate one for its transcript filename). It's possible that a user's error, changing `align` to, say, to `transcribe` would cause the second argument to be interpreted as an output file and be overwritten.
+
+To ensure files are never overwritten, you can pass the `--no-overwrite` option:
+
+```bash
+echogarden transcribe speech.mp3 transcript.txt --no-overwrite
+```
+
 ## Other operations
-
-### Speech translation
-
-**Task**: given an audio file containing speech in one language, transcribe it in a second language. The translated transcript should be generated directly from the speech itself, without an intermediate translation step.
-
-This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
-```bash
-echogarden translate speech.mp3
-```
-
-To specify the source and target languages explicitly, use the `sourceLanguage` and `targetLanguage` options:
-```bash
-echogarden translate speech.mp3 transcript.txt --sourceLanguage=es --targetLanguage=en
-```
-
-**Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
 
 ### Language detection
 
@@ -241,9 +259,9 @@ This would apply denoising, and save the denoised audio to a file:
 echogarden denoise speech.mp3 denoised-speech.mp3
 ```
 
-### Misc.
+## Information and lists
 
-#### `list-tts-voices`
+### `list-tts-voices`
 
 Shows a list of available TTS voices for a given engine:
 
@@ -256,10 +274,26 @@ Saves the voice list in a JSON file:
 echogarden list-tts-voices google-cloud google-cloud-voices.json
 ```
 
-#### `install`, `uninstall` and `list-packages`
+### `list-engines` (future)
 
-Manage the Echogarden packages that are locally installed:
+Shows a list of available engines for a given command:
 
-* `install`: install one or more expansion packages
-* `uninstall`: uninstall one or more expansion packages
-* `list-packages`: list installed packages
+```bash
+echogarden list-engines speak
+```
+
+## Internal package management
+
+Manage the Echogarden packages that are locally installed
+
+### `install`
+
+Install one or more expansion packages
+
+### `uninstall`
+
+Uninstall one or more expansion packages
+
+### `list-packages`
+
+Show a list of installed expansion packages

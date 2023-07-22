@@ -134,7 +134,7 @@ Applicable to CLI command: `align`.
 
 General:
 * `method`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
-* `language`: language code for the audio and transcript, like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
+* `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 
 DTW:
 * `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater.
@@ -149,14 +149,13 @@ Applicable to CLI command: `translate-speech`.
 
 General:
 * `engine`: only `whisper` supported
-* `sourceLanguage`: the source language of the input speech. Auto-detected if not set
-* `targetLanguage`: the target language of the output speech. Only `en` supported at this time.
+* `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
+* `targetLanguage`: the target language code for the output speech. Only `en` supported at this time.
 
 Whisper:
 * `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`
 
 ## Language detection
-
 
 ### Speech language detection
 
