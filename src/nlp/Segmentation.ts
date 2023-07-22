@@ -209,24 +209,28 @@ export async function splitToWords(text: string, langCode: string): Promise<stri
 	}
 }
 
-export function splitToParagraphs(text: string, paragraphBreakType: ParagraphBreakType, preserveLineBreaks: boolean) {
+export function splitToParagraphs(text: string, paragraphBreaks: ParagraphBreakType, whitespace: WhitespaceProcessing) {
 	let paragraphs: string[] = []
 
-	if (paragraphBreakType == 'single') {
+	if (paragraphBreaks == 'single') {
 		paragraphs = text.split(/(\r?\n)+/g)
-	} else if (paragraphBreakType == 'double') {
+	} else if (paragraphBreaks == 'double') {
 		paragraphs = text.split(/(\r?\n)(\r?\n)+/g)
 	} else {
-		throw new Error(`Invalid paragraph break type: ${paragraphBreakType}`)
+		throw new Error(`Invalid paragraph break type: ${paragraphBreaks}`)
 	}
 
-	if (!preserveLineBreaks) {
-		paragraphs = paragraphs.map(p => p.replaceAll(/\r?\n/g, " "))
+	if (whitespace == "removeLineBreaks") {
+		paragraphs = paragraphs.map(p => p.replaceAll(/(\r?\n)+/g, " "))
+	} else if (whitespace == "collapse") {
+		paragraphs = paragraphs.map(p => p.replaceAll(/\s+/g, " "))
 	}
 
-	paragraphs = paragraphs.map(p => p.trim()).filter(p => p.length > 0)
+	paragraphs = paragraphs.map(p => p.trim())
+	paragraphs = paragraphs.filter(p => p.length > 0)
 
 	return paragraphs
 }
 
 export type ParagraphBreakType = 'single' | 'double'
+export type WhitespaceProcessing = 'preserve' | 'removeLineBreaks' | 'collapse'

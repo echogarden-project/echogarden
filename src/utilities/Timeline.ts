@@ -58,7 +58,7 @@ export function roundTimelineTimestamps(targetTimeline: Timeline, decimalDigits 
 }
 
 export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string) {
-	const paragraphs = await splitToParagraphs(transcript, "double", false)
+	const paragraphs = await splitToParagraphs(transcript, 'double', 'collapse')
 
 	const segments = paragraphs
 			.map(segment =>

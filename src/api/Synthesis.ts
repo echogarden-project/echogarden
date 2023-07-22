@@ -8,7 +8,7 @@ import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, st
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { ParagraphBreakType, isWord, splitToSentences } from "../nlp/Segmentation.js"
+import { ParagraphBreakType, WhitespaceProcessing, isWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
 
@@ -900,12 +900,12 @@ export interface SynthesisOptions {
 	segmentEndPause?: number
 	sentenceEndPause?: number
 
-	alignment?: API.AlignmentOptions
-
 	plainText?: {
 		paragraphBreaks?: ParagraphBreakType
-		preserveLineBreaks?: boolean
+		whitespace?: WhitespaceProcessing
 	}
+
+	alignment?: API.AlignmentOptions
 
 	postProcessing?: {
 		normalizeAudio?: boolean
@@ -1018,13 +1018,13 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	splitToSentences: true,
 
-	plainText: {
-		paragraphBreaks: 'double',
-		preserveLineBreaks: false,
-	},
-
 	segmentEndPause: 1.0,
 	sentenceEndPause: 0.75,
+
+	plainText: {
+		paragraphBreaks: 'double',
+		whitespace: 'collapse'
+	},
 
 	alignment: {
 		engine: "dtw"
@@ -1560,3 +1560,4 @@ export interface SynthesisVoice {
 }
 
 export type VoiceGender = "male" | "female" | "unknown"
+

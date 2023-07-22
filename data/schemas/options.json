@@ -86,20 +86,20 @@
         "sentenceEndPause": {
           "type": "number"
         },
-        "alignment": {
-          "$ref": "#/definitions/AlignmentOptions"
-        },
         "plainText": {
           "type": "object",
           "properties": {
             "paragraphBreaks": {
               "$ref": "#/definitions/ParagraphBreakType"
             },
-            "preserveLineBreaks": {
-              "type": "boolean"
+            "whitespace": {
+              "$ref": "#/definitions/WhitespaceProcessing"
             }
           },
           "additionalProperties": false
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
         },
         "postProcessing": {
           "type": "object",
@@ -373,6 +373,21 @@
         "unknown"
       ]
     },
+    "ParagraphBreakType": {
+      "type": "string",
+      "enum": [
+        "single",
+        "double"
+      ]
+    },
+    "WhitespaceProcessing": {
+      "type": "string",
+      "enum": [
+        "preserve",
+        "removeLineBreaks",
+        "collapse"
+      ]
+    },
     "AlignmentOptions": {
       "type": "object",
       "properties": {
@@ -547,13 +562,6 @@
         "dtw"
       ]
     },
-    "ParagraphBreakType": {
-      "type": "string",
-      "enum": [
-        "single",
-        "double"
-      ]
-    },
     "TimePitchShiftingMethod": {
       "type": "string",
       "enum": [
@@ -699,20 +707,20 @@
         "sentenceEndPause": {
           "type": "number"
         },
-        "alignment": {
-          "$ref": "#/definitions/AlignmentOptions"
-        },
         "plainText": {
           "type": "object",
           "properties": {
             "paragraphBreaks": {
               "$ref": "#/definitions/ParagraphBreakType"
             },
-            "preserveLineBreaks": {
-              "type": "boolean"
+            "whitespace": {
+              "$ref": "#/definitions/WhitespaceProcessing"
             }
           },
           "additionalProperties": false
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
         },
         "postProcessing": {
           "type": "object",

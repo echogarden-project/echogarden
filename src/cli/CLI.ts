@@ -292,14 +292,14 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 	let textSegments: string[]
 
-	const plainTextParagraphBreakType = options.plainText?.paragraphBreaks || 'double'
-	const plainTextPreserveLineBreaks = options.plainText?.preserveLineBreaks || false
+	const plainTextParagraphBreaks = options.plainText?.paragraphBreaks || API.defaultSynthesisOptions.plainText!.paragraphBreaks!
+	const plainTextWhitespace = options.plainText?.whitespace || API.defaultSynthesisOptions.plainText!.whitespace!
 
 	if (command == "speak") {
 		if (options.ssml) {
 			textSegments = [mainArg]
 		} else {
-			textSegments = splitToParagraphs(mainArg, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
+			textSegments = splitToParagraphs(mainArg, plainTextParagraphBreaks, plainTextWhitespace)
 		}
 	} else if (command == "speak-file") {
 		const sourceFile = mainArg
@@ -316,10 +316,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		}
 
 		if (sourceFileExtension == "txt") {
-			textSegments = splitToParagraphs(fileContent, plainTextParagraphBreakType, plainTextPreserveLineBreaks)
+			textSegments = splitToParagraphs(fileContent, plainTextParagraphBreaks, plainTextWhitespace)
 		} else if (sourceFileExtension == "html" || sourceFileExtension == "htm") {
 			const textContent = await convertHtmlToText(fileContent)
-			textSegments = splitToParagraphs(textContent, 'single', true)
+			textSegments = splitToParagraphs(textContent, 'single', 'preserve')
 		} else if (sourceFileExtension == "srt" || sourceFileExtension == "vtt") {
 			const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 			textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
@@ -343,7 +343,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		const { fetchDocumentText } = await import("../utilities/WebReader.js")
 		const textContent = await fetchDocumentText(url)
 
-		textSegments = splitToParagraphs(textContent, 'single', true)
+		textSegments = splitToParagraphs(textContent, 'single', 'preserve')
 	} else if (command == "speak-wikipedia") {
 		if (options.ssml) {
 			throw new Error(`speak-wikipedia doesn't provide SSML inputs`)
