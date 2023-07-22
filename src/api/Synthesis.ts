@@ -1560,4 +1560,3 @@ export interface SynthesisVoice {
 }
 
 export type VoiceGender = "male" | "female" | "unknown"
-
