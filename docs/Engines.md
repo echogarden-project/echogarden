@@ -30,7 +30,7 @@ These are commercial services that require a subscription and an API key to use:
 * [Google Cloud](https://cloud.google.com/text-to-speech) (`google-cloud`)
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/cognitive-services/text-to-speech/) (`microsoft-azure`)
 * [Amazon Polly](https://aws.amazon.com/polly/) (`amazon-polly`)
-* [Elevenlabs](https://beta.elevenlabs.io/) (`elevenlabs`)
+* [Elevenlabs](https://elevenlabs.io/) (`elevenlabs`)
 
 **Cloud services (unofficial)**:
 
@@ -79,7 +79,7 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 
 ## Voice activity detection
 
-* [WebRTC VAD](https://github.com/dpirch/libfvad) (`webrtc`): a voice activity detector. Originally from the Chromium source code.
+* [WebRTC VAD](https://github.com/dpirch/libfvad) (`webrtc`): a voice activity detector. Originally from the Chromium browser source code.
 * [Silero VAD](https://github.com/snakers4/silero-vad) (`silero`): a voice activity detection model by Silero.
 * [RNNoise](https://github.com/xiph/rnnoise) (`rnnoise`): uses RNNoise's speech probabilities output for each audio frame as a VAD metric.
 

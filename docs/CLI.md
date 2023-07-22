@@ -259,6 +259,14 @@ echogarden denoise speech.mp3 denoised-speech.mp3
 
 ## Information and lists
 
+### `list-engines`
+
+Shows a list of available engines for a given command:
+
+```bash
+echogarden list-engines speak
+```
+
 ### `list-tts-voices`
 
 Shows a list of available TTS voices for a given engine:
@@ -270,14 +278,6 @@ echogarden list-tts-voices google-cloud
 Saves the voice list in a JSON file:
 ```bash
 echogarden list-tts-voices google-cloud google-cloud-voices.json
-```
-
-### `list-engines` (future)
-
-Shows a list of available engines for a given command:
-
-```bash
-echogarden list-engines speak
 ```
 
 ## Internal package management

@@ -177,7 +177,8 @@
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segment files, otherwise it is possible to try to guess using the pause lengths or voice activity detection
 * Way to specify model size, such that the English-only/multilingual would be auto selection for sizes other than `tiny`?
-* Accept custom prompt as through an option
+* Accept custom prompt through an option
+* Add sampling and temperature support to decoder
 
 ### Alignment
 * Warn when input is larger than DTW window (this can also happen when synthesizing SSML, which can't be split to segments)
