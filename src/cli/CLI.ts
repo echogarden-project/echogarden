@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { CLIArguments, parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, stringifyAndFormatJson } from "../utilities/Utilities.js"
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, stringifyAndFormatJson } from "../utilities/Utilities.js"
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from "./CLIOptionsSchema.js"
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLIConfigFile.js"
 
@@ -283,12 +283,16 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
 	}
 
 	const options: API.SynthesisOptions = await cliOptionsMapToOptionsObject(cliOptions, "SynthesisOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
 	let textSegments: string[]
 
@@ -359,8 +363,6 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		throw new Error("Invalid command")
 	}
 
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
-
 	async function onSegment(segmentData: API.SynthesisSegmentEventData) {
 		if (includesPartPattern) {
 			progressLogger.start("Writing output files for segment")
@@ -415,16 +417,18 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 		throw new Error(`The given source audio file '${sourceFilename}' was not found.`)
 	}
 
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
-
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
 	}
 
 	const options: API.RecognitionOptions = await cliOptionsMapToOptionsObject(cliOptions, "RecognitionOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
 	const { transcript, timeline, rawAudio } = await API.recognizeFile(sourceFilename, options)
 
@@ -494,6 +498,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
@@ -501,7 +506,8 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	const options: API.AlignmentOptions = await cliOptionsMapToOptionsObject(cliOptions, "AlignmentOptions", additionalOptionsSchema)
 
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
 	const { wordTimeline, rawAudio, transcript, language } = await API.alignFile(audioFilename, text, options)
 
@@ -558,16 +564,18 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 		throw new Error(`The given input file '${inputFilename}' was not found.`)
 	}
 
-	await checkOutputFilenames(outputFilenames, true, true, true)
-
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
 	}
 
 	const options: API.SpeechTranslationOptions = await cliOptionsMapToOptionsObject(cliOptions, "SpeechTranslationOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
 	const { transcript, timeline, rawAudio, sourceLanguage } = await API.translateSpeechFile(inputFilename, options)
 
@@ -604,7 +612,8 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 		throw new Error(`The given input file '${inputFilePath}' was not found.`)
 	}
 
-	await checkOutputFilenames(outputFilenames, false, true, false)
+	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	const inputFileExtension = getFileExtension(inputFilePath)
 	const supportedInputTextFormats = ["txt", "srt", "vtt"]
@@ -620,7 +629,10 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 			throw new Error(`'detect-text-language' doesn't support input file extension '${inputFileExtension}'`)
 		}
 
-		const options: API.TextLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "TextLanguageDetectionOptions")
+		const options: API.TextLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "TextLanguageDetectionOptions", additionalOptionsSchema)
+
+		const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+		await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
 
 		let text = await readFile(inputFilePath, { encoding: "utf-8" })
 
@@ -636,7 +648,10 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 			throw new Error(`detect-speech-language requires an argument containing the input audio file path.`)
 		}
 
-		const options: API.SpeechLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "SpeechLanguageDetectionOptions")
+		const options: API.SpeechLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "SpeechLanguageDetectionOptions", additionalOptionsSchema)
+
+		const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+		await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
 
 		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechFileLanguage(inputFilePath, options)
 
@@ -675,16 +690,19 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 		throw new Error(`The given source audio file '${audioFilename}' was not found.`)
 	}
 
-	await checkOutputFilenames(outputFilenames, true, true, false)
-
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
 	}
 
 	const options: API.VADOptions = await cliOptionsMapToOptionsObject(cliOptions, "VADOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	await checkOutputFilenames(outputFilenames, true, true, false, allowOverwrite)
+
 	const { timeline, rawAudio } = await API.detectFileVoiceActivity(audioFilename, options)
 
 	if (outputFilenames.length > 0) {
@@ -726,16 +744,19 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`The given source audio file '${audioFilename}' was not found.`)
 	}
 
-	await checkOutputFilenames(outputFilenames, true, false, false)
-
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
 		cliOptions.set('play', `${outputFilenames.length == 0}`)
 	}
 
 	const options: API.DenoisingOptions = await cliOptionsMapToOptionsObject(cliOptions, "DenoisingOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	await checkOutputFilenames(outputFilenames, true, false, false, allowOverwrite)
+
 	const outputAudio = await API.denoiseFile(audioFilename, options)
 
 	if (outputFilenames.length > 0) {
@@ -768,11 +789,15 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 		throw new Error(`list-voices requires an argument specifying one of these supported engines:\n${ttsEnginesEnum!.join(", ")}`)
 	}
 
-	await checkOutputFilenames(outputFilenames, false, true, false)
+	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	cliOptions.set('engine', targetEngine)
 
-	const options: API.VoiceListRequestOptions = await cliOptionsMapToOptionsObject(cliOptions, "VoiceListRequestOptions")
+	const options: API.VoiceListRequestOptions = await cliOptionsMapToOptionsObject(cliOptions, "VoiceListRequestOptions", additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
 
 	const { voiceList } = await API.requestVoiceList(options)
 
@@ -989,7 +1014,7 @@ export async function getOptionsSchema() {
 	return cachedOptionsSchema
 }
 
-export async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean) {
+export async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean, allowOverwrite: boolean) {
 	const supportedFileExtensions: string[] = []
 
 	if (acceptMediaOutputs) {
@@ -1037,6 +1062,10 @@ export async function checkOutputFilenames(outputFilenames: string[], acceptMedi
 			}
 
 			includesPartPattern = true
+		}
+
+		if (!allowOverwrite && existsSync(outputFilename)) {
+			throw new Error(`The output file '${outputFilename}' already exists`)
 		}
 	}
 
@@ -1182,5 +1211,7 @@ const supportedSubtitleFileExtensions = ['srt', 'vtt']
 const supportedOutputMediaFileExtensions = ["wav", "mp3", "opus", "m4a", "ogg", "flac"]
 
 const segmentFilenamePattern = /\[(.*)\]\.(.*)$/
+
+const overwriteByDefault = true
 
 startIfInWorkerThread()

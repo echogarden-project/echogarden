@@ -425,3 +425,11 @@ export async function resolveModuleMainPath(moduleName: string) {
 
 	return fileURLToPath(await resolve(moduleName, import.meta.url))
 }
+
+export function getWithDefault<T>(value: T | undefined, defaultValue: T) {
+	if (value === undefined) {
+		return defaultValue
+	} else {
+		return value
+	}
+}
