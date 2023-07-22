@@ -42,14 +42,13 @@
 * Minimum size when iterating text nodes to get handle
 
 ### Worker
-* Optionally omit unnecessary data from the response (decoded input, segment data, etc.)
-* Support compressed audio in response
 * Add cancelation checks in more operations
+* Optionally omit unnecessary data from the response (decoded input, segment data, etc.)
 * Support more operations
+* Support compressed audio in response
 
 ### CLI
 * Colors in log messages
-* Find a way to ensure that a user who typed `align audio.mp3 transcript.txt` and then changed to `transcribe audio.mp3 transcript.txt` won't accidently overwrite their transcript file. Simple solution, but possibly not the best solution: `align audio.mp3 --reference=transcript.txt`. Other solution: on `transcribe` and `translate-speech`, ask if output file already exist or require an `--overwrite` flag to ensure that the user intended to overwrite the existing file.
 * Restrict input media file extensions to a set list to avoid cases where an output media file would be overwritten due to user error
 * Mode to print IPA words when speaking
 * Show a message when a new version is available
@@ -58,7 +57,7 @@
 * Option to set audio output device
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
-* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
+* Make enum options case-insensitive if possible
 * Consider adding the input text offset to each segment, sentence and word in the resulting timeline with respect to the original file (even if it is, say, an HTML or captions file)
 * Add phone playback support
 * More fine-grained intermediate progress report for operations
@@ -66,7 +65,7 @@
 * Multiple configuration files in `--config=..` taking precedence by order
 * Support comments in the JSON configuration file
 * Generate JSON configuration file schema
-* Make enum options case-insensitive if possible
+* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
 
 ### CLI / `speak`
 * Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
@@ -85,7 +84,7 @@
 * Support filters
 
 ### CLI / New commands
-* `list-engines`: List available engines for a particular command, like `list-engines speak`
+* `speak-youtube`: To speak the subtitles of a YouTube video
 * `play-with-captions`: Preview captions in terminal
 * `play-with-timeline`: Preview timeline in terminal
 * `captions-to-text`, `captions-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
@@ -94,21 +93,22 @@
 * `phonemize-text`
 * `normalize-text`
 * `remove-nonspeech`
-* `speak-youtube`: To speak the subtitles of a YouTube video
 
 ### API
 * Option to control logging verbosity
-* Accept full language names as language identifiers
 * Add support to accept caption options in API and CLI
 * Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
+* Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
-* Time/pitch shifting for recognition and alignment results
 * Add support for phrases in timelines
+* Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
 
-### Language detection
-* Deploy and add the new language detection model
+### Speech Language detection
 * When using Whisper for language detection of speech, apply it to the entire audio, not just the first 30 seconds
+
+### Text Language detection
+* Deploy and add the new language detection model
 
 ### Segmentation
 * Split long words
@@ -130,14 +130,12 @@
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (why doesn't `cldr` treat it as a word? Maybe it's not getting the right parameters, or it's not included in the list?) and "C#"
 * Find way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
-* Log full language of selected voice (it may have a different dialect than expected)
-* Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible.
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
 * Decide whether asterisk `*` should be spoken when using `speak-url` or `speak-wikipedia`
-* Decide what to do with `«` and `»` punctuation characters (guillemets) when parsing and playing
+* Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible.
 * Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`.
 * eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically).
-* Investigate if `espeak` can be made to correctly support phonemizing and pronouncing the dot character like in `object.key`
+* Investigate if eSpeak can be made to correctly support phonemizing and pronouncing the dot character like in `object.key`
 * Speaker-specific voice option
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
 * Option to disable alignment
@@ -156,11 +154,14 @@
 * Try to use entity recognition to detect years, dates, currencies etc., which would disambiguate cases where it is not clear, like "in 1993" in "She was born in 1993" and "It searched in 1993 websites"
 * Option to add POS tags to timeline, if available
 
-### VITS
+### Synthesis / VITS
 * Allow to limit how many models are cached in memory
 * Custom model paths (decide how to implement)
 * Pull voice list from JSON file, or based on URL? Is that a good idea?
 * Add speaker names to voice list somehow
+
+### Synthesis / Azure Cognitive Services
+* Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
 
 ### Recognition
 * Add confidence to each recognized word, if available
@@ -171,6 +172,8 @@
 ### Recognition / Whisper
 * When using `dtw-ra` alignment, pass the transcript as a prompt. Remove some of the initial transcript based on what has been detected (try to find the best matching initial segment between the transcript and recognized text, and remove it at each recognition window).
 * During language detection, if file is more than 30s, run the detection over all the segments and average the resulting probability distributions, consider how to handle very short segments
+* Log individual tokens to the terminal as they are being decoded from the model
+* Add sampling and temperature support to decoder
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 * Cache last model
 * Integrate speech language detection into the recognition itself, so it is done efficiently when the language is not known
@@ -178,7 +181,6 @@
 * The segment output can be use to split to segment files, otherwise it is possible to try to guess using the pause lengths or voice activity detection
 * Way to specify model size, such that the English-only/multilingual would be auto selection for sizes other than `tiny`?
 * Accept custom prompt through an option
-* Add sampling and temperature support to decoder
 
 ### Alignment
 * Warn when input is larger than DTW window (this can also happen when synthesizing SSML, which can't be split to segments)
@@ -241,7 +243,7 @@
 * Live vosk alternatives events
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
-* Investigate exporting Whisper models to 16-bit and 8-bit quantized ONNX
+* Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bits
 
 ### Web
 * Web based frontend UI to the server

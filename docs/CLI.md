@@ -97,7 +97,7 @@ echogarden translate speech.mp3
 
 To specify the source and target languages explicitly, use the `sourceLanguage` and `targetLanguage` options:
 ```bash
-echogarden translate speech.mp3 transcript.txt --sourceLanguage=es --targetLanguage=en
+echogarden translate speech.mp3 translation.txt --sourceLanguage=es --targetLanguage=en
 ```
 
 **Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
