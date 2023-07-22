@@ -88,7 +88,7 @@ echogarden speak-file text.txt transcript.txt result.srt result.json
 
 ## Speech translation
 
-**Task**: given an audio file containing speech in one language, transcribe it in a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
+**Task**: given an audio file containing speech in one language, transcribe it to a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
 
 This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
 ```bash
@@ -200,9 +200,7 @@ Flattened property names are also accepted:
 
 By default, the CLI overwrites existing files.
 
-Please be careful to not accidentally have an input file misidentified as an output file, as it may get rewritten without a notice.
-
-The `align` command, unlike the other ones, requires two arguments to be passed (one for the audio filename, and a separate one for its transcript filename). It's possible that a user's error, changing `align` to, say, to `transcribe` would cause the second argument to be interpreted as an output file and be overwritten.
+Please be careful to not accidentally have an input file misidentified as an output file, as it may get rewritten without notice or confirmation.
 
 To ensure files are never overwritten, you can pass the `--no-overwrite` option:
 

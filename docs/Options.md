@@ -2,7 +2,7 @@
 
 Here is a detailed reference for the options accepted by the Echogarden API and CLI.
 
-Related resources:
+**Related resources**:
 * [A comprehensive list of all supported engines](Engines.md)
 * [A quick guide for using the command line interface](CLI.md)
 
@@ -10,7 +10,7 @@ Related resources:
 
 Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`.
 
-General:
+**General**:
 * `engine`: identifier of the synthesis engine to use, such as `espeak` or `vits`.
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Optional
@@ -23,11 +23,11 @@ General:
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
 
-Plain text processing:
+**Plain text processing**:
 * `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
 * `plainText.whitespace`: determines how to process whitespace within paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
 
-Post-processing:
+**Post-processing**:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `true`
 * `postProcessing.targetPeakDb`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxIncreaseDb`: max gain increase (decibels) when performing normalization. Defaults to `30`
@@ -36,62 +36,62 @@ Post-processing:
 * `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
 
-Language detection:
+**Language detection**:
 * `languageDetection`: prefix to provide custom options for language detection. Same options as detailed for text language detection, down below
 
-VITS:
+**VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
 * `vits.customLexiconPaths`: an array of custom lexicon file paths. Optional
 
-eSpeak-ng:
+**eSpeak-ng**:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
 * `espeak.pitch`: pitch, in eSpeak units. Overrides `pitch` when set
 * `espeak.pitchRange`: pitch range, in eSpeak units. Overrides `pitchVariation` when set
 
-SAM:
+**SAM**:
 * `sam.pitch`: pitch value, between `0`..`255`. Overrides `pitch` when set
 * `sam.speed`: speed value, between `0`..`255`. Overrides `speed` when set
 * `sam.mouth`: mouth value, between `0`..`255` (defaults to `128`)
 * `sam.throat`: throat value, between `0`..`255` (defaults to `128`)
 
-SAPI:
+**SAPI**:
 * `sapi.rate`: SAPI speech rate, in its native units. An integer number between `-10` and `10`. Setting `speed` would apply time stretching instead. The two options can be used together
 
-Microsoft Speech Platform:
+**Microsoft Speech Platform**:
 * `msspeech.rate`: same  units and effects as the SAPI speech rate
 
-Coqui Server:
+**Coqui Server**:
 * `coquiServer.serverUrl`: server URL
 * `coquiServer.speakerId`: speaker ID (if applicable)
 
-Google Cloud:
+**Google Cloud**:
 * `googleCloud.apiKey`: API key (required)
 * `googleCloud.pitchDeltaSemitones`: pitch delta in semitones. Overrides `pitch` when set
 * `googleCloud.customVoice.model`: name of custom voice
 * `googleCloud.customVoice.reportedUsage`: reported usage of custom voice
 
-Azure Cognitive Services:
+**Azure Cognitive Services**:
 * `microsoftAzure.subscriptionKey`: subscription key (required)
 * `microsoftAzure.serviceRegion`: service region (required)
 * `microsoftAzure.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
-Amazon Polly:
+**Amazon Polly**:
 * `amazonPolly.region`: region (required)
 * `amazonPolly.accessKeyId`: access key ID (required)
 * `amazonPolly.secretAccessKey`: secret access key (required)
 * `amazonPolly.pollyEngine`: Amazon Polly engine kind, can be `standard` or `neural`. Defaults to `neural`
 * `amazonPolly.lexiconNames`: An array of lexicon names. Optional
 
-Elevenlabs:
+**Elevenlabs**:
 * `elevenLabs.apiKey`: API key (required)
 * `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 * `elevenLabs.stability`: stability. Defaults to `0.5`
 * `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
 
-Google Translate:
+**Google Translate**:
 * `googleTranslate.tld`: top level domain to to connect to. Can change the dialect for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
 
-Microsoft Edge:
+**Microsoft Edge**:
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service
 * `microsoftEdge.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
@@ -99,31 +99,31 @@ Microsoft Edge:
 
 Applicable to CLI command: `transcribe`.
 
-General:
+**General**:
 * `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk`
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 
-Whisper:
+**Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
 
-Vosk:
+**Vosk**:
 * `vosk.modelPath`: path to the Vosk model to be used
 
-Silero:
+**Silero**:
 * `silero.modelPath`: path to a Silero model. Note that latest `en`, `de`, `fr` and `uk` models are automatically installed when needed based on the selected language. This should only be used to manually specify a different model, otherwise specify `language` instead
 
-Google Cloud:
+**Google Cloud**:
 * `googleCloud.apiKey`: Google Cloud API key (required)
 * `googleCloud.alternativeLanguageCodes`: An array of alternative language codes. Optional
 * `googleCloud.profanityFilter`: censor profanity. Defaults to `false`
 * `googleCloud.autoPunctuation`: add punctuation automatically. Defaults to `true`
 * `googleCloud.useEnhancedModel`: use enhanced model. Defaults to `true`
 
-Azure Cognitive Services:
+**Azure Cognitive Services**:
 * `azureCognitiveServices.subscriptionKey`: subscription key (required)
 * `azureCognitiveServices.serviceRegion`: service region (required)
 
-Amazon Transcribe:
+**Amazon Transcribe**:
 * `amazonTranscribe.region`: region (required)
 * `amazonTranscribe.accessKeyId`: access key ID (required)
 * `amazonTranscribe.secretAccessKey`: secret access key (required)
@@ -132,14 +132,14 @@ Amazon Transcribe:
 
 Applicable to CLI command: `align`.
 
-General:
+**General**:
 * `method`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 
-DTW:
+**DTW**:
 * `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater.
 
-DTW-RA only:
+**DTW-RA only**:
 * `dtw.recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `dtw.recognition.engine = silero`
 * `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolate`. Defaults to `dtw`
 
@@ -147,12 +147,12 @@ DTW-RA only:
 
 Applicable to CLI command: `translate-speech`.
 
-General:
+**General**:
 * `engine`: only `whisper` supported
 * `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
 * `targetLanguage`: the target language code for the output speech. Only `en` supported at this time.
 
-Whisper:
+**Whisper**:
 * `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`
 
 ## Language detection
@@ -176,25 +176,25 @@ Applicable to CLI command: `detect-text-langauge`.
 
 Applicable to CLI command: `detect-voice-activity`.
 
-General:
+**General**:
 * `engine`: VAD engine to use. Can be `webrtc`, `silero` or `rnnoise`. Defaults to `webrtc`
 * `activityThreshold`: minimum predicted probability for determining a frame as having speech activity. Defaults to `0.5`
 
-WebRTC:
+**WebRTC**:
 * `webrtc.frameDuration`: WebRTC frame duration (ms). Can be `10`, `20` or `30`. Defaults to `30`
 * `webrtc.mode`: WebRTC mode (aggressiveness). Can be `0`, `1`, `2` or `3`. Defaults to `1`
 
-Silero:
+**Silero**:
 * `silero.frameDuration`: Silero frame duration (ms). Can be `30`, `60` or `90`. Defaults to `90`
 
 ## Speech denoising
 
 Applicable to CLI command: `denoise`.
 
-General:
+**General**:
 * `engine`: can only be `rnnoise`
 
-Postprocessing:
+**Postprocessing**:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `false`
 * `postProcessing.targetPeakDb`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxIncreaseDb`: max gain increase (decibels) when performing normalization. Defaults to `30`
@@ -204,6 +204,13 @@ Postprocessing:
 
 Applicable to CLI command: `list-voices`.
 
+**General**
 * `language`: language code to filter by (optional)
 * `voice`: name or name pattern to filter by (optional)
 * `voiceGender`: gender to filter by (optional)
+
+Also accepted are engine-specific options that may be required in order to retrieve the voice list, especially for cloud engines. Examples:
+* `googleCloud.apiKey`
+* `microsoftAzure.subscriptionKey`, `microsoftAzure.serviceRegion`
+* `amazonPolly.region`, `amazonPolly.accessKeyId`, `amazonPolly.secretAccessKey`
+* `elevenLabs.apiKey`, `elevenLabs.modelId`
