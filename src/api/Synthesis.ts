@@ -14,7 +14,7 @@ import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
 import * as API from "./API.js"
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from "../utilities/Timeline.js"
-import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, resolveToModuleRootDir, writeFileSafe } from "../utilities/FileSystem.js"
+import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from "../utilities/FileSystem.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata, appName } from "./Globals.js"
@@ -776,6 +776,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		const alignmentOptions = options.alignment!
 
 		alignmentOptions.language = language
+
+		if (!alignmentOptions.customLexiconPaths) {
+			alignmentOptions.customLexiconPaths = options.customLexiconPaths
+		}
 
 		const { wordTimeline } = await API.align(synthesizedAudio, plainText, alignmentOptions)
 
