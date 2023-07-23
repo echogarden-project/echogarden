@@ -55,6 +55,8 @@ export function simplifyPunctuationCharacters(text: string) {
 		.replaceAll("„", "\"")
 		.replaceAll(`ߵ`, `"`)
 		.replaceAll(`ߴ`, `"`)
+		.replaceAll('«', `"`)
+		.replaceAll('»', `"`)
 
 		.replaceAll(`’`, `'`)
 		.replaceAll(`ʼ`, `'`)
