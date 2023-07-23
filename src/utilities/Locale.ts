@@ -89,7 +89,13 @@ async function loadLcidLookupIfNeeded() {
 	return lcidEntries
 }
 
-export const shortLanguageCodeToLong: { [lang: string]: string } = {
+export function getDefaultDialectForLanguageCodeIfPossible(langCode: string) {
+	const defaultDialect = defaultDialectForLanguageCode[langCode]
+
+	return defaultDialect || langCode
+}
+
+export const defaultDialectForLanguageCode: { [lang: string]: string } = {
 	"en": "en-US",
 	"zh": "zh-CN",
 	"ar": "ar-EG",

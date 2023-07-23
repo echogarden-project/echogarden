@@ -10,12 +10,12 @@ import { Logger } from "../utilities/Logger.js"
 
 import { ParagraphBreakType, WhitespaceProcessing, isWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
-import { Lexicon, loadLexiconFile } from "../nlp/Lexicon.js"
+import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
 import * as API from "./API.js"
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from "../utilities/Timeline.js"
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, resolveToModuleRootDir, writeFileSafe } from "../utilities/FileSystem.js"
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, shortLanguageCodeToLong } from "../utilities/Locale.js"
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata, appName } from "./Globals.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
@@ -318,20 +318,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				}
 			}
 
-			const lexicons: Lexicon[] = []
-
-			if (getShortLanguageCode(language) == "en") {
-				const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.en.json"))
-				lexicons.push(heteronymsLexicon)
-			}
-
-			if (engineOptions.customLexiconPaths && engineOptions.customLexiconPaths.length > 0) {
-				for (const customLexicon of engineOptions.customLexiconPaths) {
-					const customLexiconObject = await loadLexiconFile(customLexicon)
-
-					lexicons.push(customLexiconObject)
-				}
-			}
+			const lexicons = await loadLexiconsForLanguage(language, options.customLexiconPaths)
 
 			const modelPath = voicePackagePath!
 
@@ -399,16 +386,20 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const engineOptions = options.espeak!
 
-			await EspeakTTS.setVoice(voice)
-			await EspeakTTS.setRate(engineOptions.rate || speed * 150)
-			await EspeakTTS.setPitch(engineOptions.pitch || pitch * 50)
-			await EspeakTTS.setPitchRange(engineOptions.pitchRange || options.pitchVariation! * 50)
+			const espeakVoice = voice
+			const espeakLanguage = selectedVoice.languages[0]
+			const espeakRate = engineOptions.rate || speed * 150
+			const espeakPitch = engineOptions.pitch
+			const espeakPitchRange = engineOptions.pitchRange || options.pitchVariation! * 50
+
+			const lexicons = await loadLexiconsForLanguage(language, options.customLexiconPaths)
 
 			logger.end()
 
-			const { rawAudio, events } = await EspeakTTS.synthesize(simplifiedText, isSSML)
+			const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(simplifiedText, espeakVoice, espeakLanguage, lexicons, espeakRate, espeakPitch, espeakPitchRange)
 
-			synthesizedAudio = rawAudio
+			synthesizedAudio = referenceSynthesizedAudio
+			timeline = referenceTimeline.flatMap(clause => clause.timeline!)
 
 			break
 		}
@@ -899,6 +890,8 @@ export interface SynthesisOptions {
 	segmentEndPause?: number
 	sentenceEndPause?: number
 
+	customLexiconPaths?: string[]
+
 	plainText?: {
 		paragraphBreaks?: ParagraphBreakType
 		whitespace?: WhitespaceProcessing
@@ -922,7 +915,6 @@ export interface SynthesisOptions {
 
 	vits?: {
 		speakerId?: number
-		customLexiconPaths?: string[]
 	}
 
 	pico?: {
@@ -1020,6 +1012,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	segmentEndPause: 1.0,
 	sentenceEndPause: 0.75,
 
+	customLexiconPaths: undefined,
+
 	plainText: {
 		paragraphBreaks: 'double',
 		whitespace: 'collapse'
@@ -1046,7 +1040,6 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	vits: {
 		speakerId: undefined,
-		customLexiconPaths: undefined,
 	},
 
 	pico: {
@@ -1455,8 +1448,8 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 	let bestMatchingVoice = voiceList[0]
 
-	if (bestMatchingVoice && voiceList.length > 1 && shortLanguageCodeToLong[languageCode]) {
-		const expandedLanguageCode = shortLanguageCodeToLong[languageCode]
+	if (bestMatchingVoice && voiceList.length > 1 && defaultDialectForLanguageCode[languageCode]) {
+		const expandedLanguageCode = defaultDialectForLanguageCode[languageCode]
 
 		for (const voice of voiceList) {
 			if (voice.languages.includes(expandedLanguageCode)) {

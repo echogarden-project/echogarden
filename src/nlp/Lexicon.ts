@@ -1,11 +1,11 @@
-import { readAndParseJsonFile, readFile } from "../utilities/FileSystem.js"
+import { readAndParseJsonFile, resolveToModuleRootDir } from "../utilities/FileSystem.js"
 import { getShortLanguageCode } from "../utilities/Locale.js"
 
-export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], espeakVoice: string) {
+export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], languageCode: string) {
 	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons
 
 	for (const lexicon of reversedLexicons) {
-		const match = tryGetLexiconSubstitution(sentenceWords, wordIndex, lexicon, espeakVoice)
+		const match = tryGetLexiconSubstitution(sentenceWords, wordIndex, lexicon, languageCode)
 
 		if (match) {
 			return match
@@ -15,14 +15,14 @@ export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordInde
 	return undefined
 }
 
-export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicon: Lexicon, espeakVoice: string) {
+export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicon: Lexicon, languageCode: string) {
 	let word = sentenceWords[wordIndex]
 
 	if (!word) {
 		return
 	}
 
-	const shortLanguageCode = getShortLanguageCode(espeakVoice)
+	const shortLanguageCode = getShortLanguageCode(languageCode)
 	const lexiconForLanguage = lexicon[shortLanguageCode]
 
 	if (!lexiconForLanguage) {
@@ -38,7 +38,7 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 	for (let i = 0; i < lexiconEntry.length; i++) {
 		const substitutionEntry = lexiconEntry[i]
 
-		const substitutionPhonemesText = substitutionEntry?.pronunciation?.espeak?.[espeakVoice]
+		const substitutionPhonemesText = substitutionEntry?.pronunciation?.espeak?.[languageCode]
 
 		if (!substitutionPhonemesText) {
 			continue
@@ -68,6 +68,25 @@ export async function loadLexiconFile(jsonFilePath: string): Promise<Lexicon> {
 	const parsedLexicon: Lexicon = await readAndParseJsonFile(jsonFilePath)
 
 	return parsedLexicon
+}
+
+export async function loadLexiconsForLanguage(language: string, customLexiconPaths?: string[]) {
+	const lexicons: Lexicon[] = []
+
+	if (getShortLanguageCode(language) == "en") {
+		const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.en.json"))
+		lexicons.push(heteronymsLexicon)
+	}
+
+	if (customLexiconPaths && customLexiconPaths.length > 0) {
+		for (const customLexicon of customLexiconPaths) {
+			const customLexiconObject = await loadLexiconFile(customLexicon)
+
+			lexicons.push(customLexiconObject)
+		}
+	}
+
+	return lexicons
 }
 
 export type Lexicon = {

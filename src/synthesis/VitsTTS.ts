@@ -6,10 +6,11 @@ import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
 import { readAndParseJsonFile, readdir } from "../utilities/FileSystem.js"
 import path from 'node:path'
+import { normalizeLanguageCode } from '../utilities/Locale.js'
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 
-export async function synthesizeSentence(text: string, voiceName: string, modelPath: string, lengthScale: number, speakerId = 0, substitutionLexicons?: Lexicon[]) {
+export async function synthesizeSentence(text: string, voiceName: string, modelPath: string, lengthScale: number, speakerId = 0, lexicons?: Lexicon[]) {
 	const cacheLookupKey = modelPath
 
 	let vitsTTS: VitsTTS | undefined = cachedInstanceLookup.get(cacheLookupKey)
@@ -22,7 +23,7 @@ export async function synthesizeSentence(text: string, voiceName: string, modelP
 		cachedInstanceLookup.set(cacheLookupKey, vitsTTS)
 	}
 
-	const result = await vitsTTS.synthesizeSentence(text, lengthScale, speakerId, substitutionLexicons)
+	const result = await vitsTTS.synthesizeSentence(text, lengthScale, speakerId, lexicons)
 
 	return result
 }
@@ -71,7 +72,7 @@ export class VitsTTS {
 		logger.end()
 	}
 
-	async synthesizeSentence(sentence: string, lengthScale: number, speakerId = 0, substitutionLexicons?: Lexicon[]) {
+	async synthesizeSentence(sentence: string, lengthScale: number, speakerId = 0, lexicons?: Lexicon[]) {
 		const logger = new Logger()
 
 		if (!this.modelSession) {
@@ -83,6 +84,7 @@ export class VitsTTS {
 		const metadata = this.metadata
 		const phonemeMap = this.phonemeMap!
 		const espeakVoice = metadata.espeak.voice
+		const languageCode = espeakVoice
 		const outputSampleRate = metadata.audio.sample_rate
 		const baseLengthScale = metadata.inference.length_scale || 1.0
 
@@ -98,7 +100,7 @@ export class VitsTTS {
 
 		logger.end()
 
-		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesizeSentence(sentence, espeakVoice, substitutionLexicons, true)
+		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, espeakVoice, languageCode, lexicons)
 
 		if (phonemizedSentence.length == 0) {
 			logger.end()

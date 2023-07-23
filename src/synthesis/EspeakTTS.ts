@@ -57,53 +57,54 @@ export async function synthesize(text: string, ssmlEnabled: boolean) {
 	return { rawAudio, events: allEvents }
 }
 
-export async function preprocessAndSynthesizeSentence(sentence: string, espeakVoice: string, lexicons: Lexicon[] = [], normalizeText = true, rate?: number, pitch?: number, pitchRange?: number) {
+export async function preprocessAndSynthesize(segment: string, espeakVoice: string, language: string, lexicons: Lexicon[] = [], rate?: number, pitch?: number, pitchRange?: number) {
 	const logger = new Logger()
 
 	await logger.startAsync("Tokenize and analyze text")
+
+	let lowerCaseLanguageCode = language.toLowerCase()
+
+	if (lowerCaseLanguageCode == "en-gb") {
+		lowerCaseLanguageCode = "en-gb-x-rp"
+	}
 
 	let fragments: string[]
 	let preprocessedFragments: string[]
 	const phonemizedFragmentsSubstitutions = new Map<number, string[]>()
 
-	if (espeakVoice.startsWith("en")) {
-		fragments = []
-		preprocessedFragments = []
+	fragments = []
+	preprocessedFragments = []
 
-		const words = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
+	const words = (await splitToWords(segment, language)).filter(word => word.trim() != "")
 
-		const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, espeakVoice)
+	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
-		const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
+	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 
-		for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
-			const fragment = normalizedFragments[fragmentIndex]
+	for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
+		const fragment = normalizedFragments[fragmentIndex]
 
-			const substitutionPhonemes = tryGetFirstLexiconSubstitution(simplifiedFragments, fragmentIndex, lexicons, espeakVoice)
+		const substitutionPhonemes = tryGetFirstLexiconSubstitution(simplifiedFragments, fragmentIndex, lexicons, lowerCaseLanguageCode)
 
-			if (!substitutionPhonemes) {
-				continue
-			}
-
-			phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
-			const referenceIPA = (await textToPhonemes(fragment, espeakVoice, true)).replaceAll("_", " ")
-			const referenceKirshenbaum = (await textToPhonemes(fragment, espeakVoice, false)).replaceAll("_", "")
-
-			const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
-
-			logger.logTitledMessage(`\nLexicon substitution for '${fragment}'`, `IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
-
-			const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
-
-			normalizedFragments[fragmentIndex] = substitutionPhonemesFragment
+		if (!substitutionPhonemes) {
+			continue
 		}
 
-		fragments = referenceFragments
-		preprocessedFragments = normalizedFragments
-	} else {
-		fragments = (await splitToWords(sentence, espeakVoice)).filter(word => word.trim() != "")
-		preprocessedFragments = fragments
+		phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
+		const referenceIPA = (await textToPhonemes(fragment, espeakVoice, true)).replaceAll("_", " ")
+		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakVoice, false)).replaceAll("_", "")
+
+		const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
+
+		logger.logTitledMessage(`\nLexicon substitution for '${fragment}'`, `IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
+
+		const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
+
+		normalizedFragments[fragmentIndex] = substitutionPhonemesFragment
 	}
+
+	fragments = referenceFragments
+	preprocessedFragments = normalizedFragments
 
 	logger.start("Synthesize preprocessed fragments with eSpeak")
 
