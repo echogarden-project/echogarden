@@ -397,6 +397,9 @@
         "language": {
           "type": "string"
         },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
         "dtw": {
           "type": "object",
           "properties": {
@@ -430,6 +433,28 @@
         "dtw",
         "dtw-ra",
         "whisper"
+      ]
+    },
+    "TextLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TextLanguageDetectionEngine"
+        },
+        "defaultLanguage": {
+          "type": "string"
+        },
+        "fallbackThresholdProbability": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextLanguageDetectionEngine": {
+      "type": "string",
+      "enum": [
+        "tinyld",
+        "fasttext"
       ]
     },
     "RecognitionOptions": {
@@ -689,28 +714,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "TextLanguageDetectionOptions": {
-      "type": "object",
-      "properties": {
-        "engine": {
-          "$ref": "#/definitions/TextLanguageDetectionEngine"
-        },
-        "defaultLanguage": {
-          "type": "string"
-        },
-        "fallbackThresholdProbability": {
-          "type": "number"
-        }
-      },
-      "additionalProperties": false
-    },
-    "TextLanguageDetectionEngine": {
-      "type": "string",
-      "enum": [
-        "tinyld",
-        "fasttext"
-      ]
     },
     "SynthesisOptions": {
       "type": "object",
