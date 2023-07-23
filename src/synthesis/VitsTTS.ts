@@ -1,7 +1,7 @@
 import type { InferenceSession } from 'onnxruntime-node'
 import { SynthesisVoice } from '../api/API.js'
 import { Logger } from "../utilities/Logger.js"
-import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
+import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
 import { readAndParseJsonFile, readdir } from "../utilities/FileSystem.js"
@@ -196,7 +196,7 @@ export class VitsTTS {
 			wordEntry.timeline = wordEntry.timeline!.flatMap(tokenEntry => tokenEntry.timeline!)
 		}
 
-		const mappedTimeline = await alignUsingDtw(rawAudio, referenceSynthesizedAudio, referenceWordTimeline)
+		const mappedTimeline = await alignUsingDtw(rawAudio, referenceSynthesizedAudio, referenceWordTimeline, 120)
 
 		logger.end()
 

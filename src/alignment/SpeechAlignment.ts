@@ -10,8 +10,9 @@ import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
 import { getRawAudioDuration, RawAudio } from "../audio/AudioUtilities.js"
 import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
 import { Lexicon } from "../nlp/Lexicon.js"
+import chalk from "chalk"
 
-export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration = 60) {
+export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number) {
 	const logger = new Logger()
 
 	const mfccOptions: MfccOptions = extendDefaultMfccOptions({ zeroFirstCoefficient: true })
@@ -29,6 +30,12 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 
 	// Compute path
 	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s window)`, `${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
+
+	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
+
+	if (rawAudioDuration > windowDuration) {
+		logger.logTitledMessage('Warning', `Maximum DTW window duration (${windowDuration.toFixed(1)}s) is smaller than source audio duration (${rawAudioDuration.toFixed(1)}s). This may lead to inaccurate results. Consider increasing window length if needed.`, chalk.yellowBright)
+	}
 
 	logger.start("Align MFCC features with DTW")
 	const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
