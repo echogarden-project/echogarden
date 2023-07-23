@@ -12,6 +12,7 @@ import { Timeline } from "../utilities/Timeline.js"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -36,10 +37,10 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 
 	if (!options.language) { // && options.engine != "whisper") {
 		logger.start("No language provided. Detecting audio language")
-		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, { engine: "silero" })
+		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, options.languageDetection!)
 
 		logger.end()
-		logger.log(`Language detected: ${formatLanguageCodeWithName(detectedLanguage)}`)
+		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
 
 		options.language = detectedLanguage
 	}
@@ -203,7 +204,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 	}
 
 	logger.end()
-	logger.logDuration(`Total recognition time`, startTimestamp)
+	logger.logDuration('Total recognition time', startTimestamp, chalk.magentaBright)
 
 	return { transcript, timeline, rawAudio: inputRawAudio, language }
 }
@@ -225,6 +226,8 @@ export interface RecognitionOptions {
 	maxAlternatives?: number
 
 	alignment?: API.AlignmentOptions
+
+	languageDetection?: API.SpeechLanguageDetectionOptions
 
 	whisper?: {
 		model?: WhisperModelName
@@ -266,6 +269,10 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	maxAlternatives: 1,
 
 	alignment: undefined,
+
+	languageDetection: {
+		engine: 'silero'
+	},
 
 	whisper: {
 		model: undefined,
