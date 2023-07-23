@@ -2,12 +2,13 @@ import { extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { RawAudio, applyGainDecibels, downmixToMonoAndNormalize, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
+import { RawAudio, applyGainDecibels, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
 import { logToStderr } from "../utilities/Utilities.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { EngineMetadata } from "./Globals.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -76,7 +77,7 @@ export async function denoise(rawAudio: RawAudio, options: DenoisingOptions) {
 
 	logger.end()
 
-	logger.logDuration("Total denoising time", startTime)
+	logger.logDuration("Total denoising time", startTime, chalk.magentaBright)
 
 	return denoisedAudio
 }

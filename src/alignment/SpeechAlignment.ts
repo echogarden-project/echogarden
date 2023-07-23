@@ -26,7 +26,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	logger.end()
 
 	// Compute path
-	logger.log(`DTW cost matrix memory size (${windowDuration}s window): ${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
+	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s window)`, `${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
 
 	logger.start("Align MFCC features with DTW")
 	const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)

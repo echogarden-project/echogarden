@@ -11,6 +11,7 @@ import * as API from "./API.js"
 import { Timeline, addTimeOffsetToTimeline } from "../utilities/Timeline.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { WhisperModelName } from "../recognition/WhisperSTT.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -73,7 +74,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		language = detectedLanguage
 
 		logger.end()
-		logger.log(`Language detected: ${formatLanguageCodeWithName(detectedLanguage)}`)
+		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
 	logger.start("Get espeak voice list and select best matching voice")
@@ -167,7 +168,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 	}
 
 	logger.end()
-	logger.logDuration(`Total alignment time`, startTimestamp)
+	logger.logDuration(`Total alignment time`, startTimestamp, chalk.magentaBright)
 
 	return {
 		wordTimeline: mappedTimeline,

@@ -1,5 +1,6 @@
+import chalk from "chalk"
 import { Timer } from "./Timer.js"
-import { logToStderr, roundToDigits, writeToStderr, yieldToEventLoop } from "./Utilities.js"
+import { logToStderr, writeToStderr, yieldToEventLoop } from "./Utilities.js"
 
 let currentActiveLogger: Logger | null = null
 
@@ -7,11 +8,11 @@ export class Logger {
 	private timer = new Timer()
 	active = false
 
-	start(title: string) {
-		this.startAsync(title, false)
+	start(title: string, titleColor = chalk.cyanBright) {
+		this.startAsync(title, false, titleColor)
 	}
 
-	async startAsync(title: string, yieldBeforeStart = true) {
+	async startAsync(title: string, yieldBeforeStart = true, titleColor = chalk.cyanBright) {
 		if (currentActiveLogger != null && currentActiveLogger != this) {
 			return
 		}
@@ -22,7 +23,7 @@ export class Logger {
 			await yieldToEventLoop()
 		}
 
-		writeToStderr(`${title}.. `)
+		writeToStderr(`${titleColor(title)}.. `)
 		this.active = true
 		currentActiveLogger = this
 		this.timer.restart()
@@ -32,7 +33,7 @@ export class Logger {
 		if (this.active && currentActiveLogger == this) {
 			const elapsedTime = this.timer.elapsedTime
 
-			writeToStderr(`${roundToDigits(elapsedTime, 1)}ms\n`)
+			writeToStderr(`${elapsedTime.toFixed(1)}ms\n`)
 			currentActiveLogger = null
 		}
 
@@ -45,16 +46,22 @@ export class Logger {
 		}
 	}
 
+	logTitledMessage(title: string, content: string, titleColor = chalk.cyanBright) {
+		if (currentActiveLogger == this || currentActiveLogger == null) {
+			logToStderr(`${titleColor(title)}: ${content}`)
+		}
+	}
+
 	write(message: any) {
 		if (currentActiveLogger == this || currentActiveLogger == null) {
 			writeToStderr(message)
 		}
 	}
 
-	logDuration(message: any, startTime: number) {
+	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright) {
 		const duration = Timer.currentTime - startTime
 
-		this.log(`${message}: ${roundToDigits(duration, 1)}ms`)
+		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`)
 	}
 
 	getTimestamp() {

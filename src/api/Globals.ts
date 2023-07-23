@@ -4,5 +4,5 @@ export interface EngineMetadata {
 	id: string
 	name: string
 	description: string
-	type: 'local' | 'cloud'
+	type: 'local' | 'server' | 'cloud'
 }

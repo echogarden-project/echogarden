@@ -60,7 +60,7 @@ export async function start(processArgs: string[]) {
 	try {
 		const packageData = await readAndParseJsonFile(resolveToModuleRootDir("package.json"))
 
-		log(`Echogarden v${packageData.version}\n`)
+		log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
 
 		const command = processArgs[0]
 
@@ -784,7 +784,7 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 }
 
 async function listEngines(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const targetOperation = commandArgs[0]
 
@@ -871,10 +871,10 @@ async function listEngines(commandArgs: string[], cliOptions: Map<string, string
 	}
 
 	for (const [index, engine] of engines.entries()) {
-		log(`${chalk.cyanBright('Identifier')}: ${chalk.magentaBright(engine.id)}`)
-		log(`${chalk.cyanBright('Name')}: ${engine.name}`)
-		log(`${chalk.cyanBright('Description')}: ${engine.description}`)
-		log(`${chalk.cyanBright('Type')}: ${engine.type}`)
+		logger.logTitledMessage('Identifier', chalk.magentaBright(engine.id))
+		logger.logTitledMessage('Name', engine.name)
+		logger.logTitledMessage('Description', engine.description)
+		logger.logTitledMessage('Type', engine.type)
 
 		if (index < engines.length - 1) {
 			log("")

@@ -16,6 +16,7 @@ import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
 import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
+import chalk from 'chalk'
 
 export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string) {
 	if (sourceRawAudio.sampleRate != 16000) {
@@ -184,7 +185,7 @@ export class Whisper {
 		for (let audioOffset = 0; audioOffset < audioSamples.length;) {
 			const segmentStartTime = audioOffset / sampleRate
 
-			await logger.startAsync(`\nPrepare audio part at time position ${roundToDigits(segmentStartTime, 2)}`)
+			await logger.startAsync(`\nPrepare audio part at time position ${segmentStartTime.toFixed(2)}`, undefined, chalk.magentaBright)
 
 			const audioPartSamples = audioSamples.slice(audioOffset, audioOffset + maxAudioSamples)
 			const audioPartRawAudio: RawAudio = { audioChannels: [audioPartSamples], sampleRate }
@@ -210,7 +211,7 @@ export class Whisper {
 
 			const partTranscript = this.tokensToText(partTokens.slice(initialTokens.length))
 
-			logger.log(`Recognized part transcript: "${partTranscript}"`)
+			logger.logTitledMessage('Recognized part transcript', partTranscript)
 
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = lastToken >= timestampTokensStart

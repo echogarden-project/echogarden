@@ -19,6 +19,7 @@ import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode
 import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata, appName } from "./Globals.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -77,7 +78,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	}
 
 	logger.end()
-	logger.log(`Selected voice: '${options.voice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
+	logger.logTitledMessage('Selected voice', `'${options.voice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
 
 	const segmentsAudio: RawAudio[] = []
 	const segmentsTimelines: Timeline[] = []
@@ -91,7 +92,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
 		const segmentText = segments[segmentIndex].trim()
 
-		logger.log(`\nSynthesizing segment ${segmentIndex + 1}/${segments.length}: "${segmentText}"`)
+		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: "${segmentText}"`)
 
 		const segmentStartTime = timeOffset
 
@@ -129,7 +130,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 			const sentenceText = sentences[sentenceIndex].trim()
 
-			logger.log(`\nSynthesizing sentence ${sentenceIndex + 1}/${sentences.length}: "${sentenceText}"`)
+			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: "${sentenceText}"`)
 
 			const sentenceStartTime = timeOffset
 
@@ -674,7 +675,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			synthesizedAudio = rawAudio
 
-			logger.start(`Generate word-level timestamps by individually aligning segments`)
+			logger.start(`Generate word-level timestamps by individually aligning fragments`)
 			const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language })
 
 			timeline = await API.alignSegments(synthesizedAudio, segmentTimeline, alignmentOptions)
@@ -741,7 +742,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			synthesizedAudio = rawAudio
 
-			logger.start(`Generate word-level timestamps by individually aligning segments`)
+			logger.start(`Generate word-level timestamps by individually aligning fragments`)
 			const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language })
 
 			timeline = await API.alignSegments(synthesizedAudio, segmentTimeline, alignmentOptions)
@@ -840,7 +841,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	logger.end()
 
-	logger.logDuration(`Total synthesis time`, startTimestamp)
+	logger.logDuration('Total synthesis time', startTimestamp, chalk.magentaBright)
 
 	return { synthesizedAudio, timeline }
 }
@@ -1606,6 +1607,12 @@ export const synthesisEngines: EngineMetadata[] = [
 		type: 'local'
 	},
 	{
+		id: 'coqui-server',
+		name: 'Coqui TTS',
+		description: 'A deep learning toolkit for Text-to-Speech.',
+		type: 'server'
+	},
+	{
 		id: 'google-cloud',
 		name: 'Google Cloud',
 		description: 'Google Cloud text-to-speech service.',
@@ -1632,7 +1639,7 @@ export const synthesisEngines: EngineMetadata[] = [
 	{
 		id: 'google-translate',
 		name: 'Google Translate',
-		description: 'Unoffical text-to-speech API used by Google Translate web interface.',
+		description: 'Unoffical text-to-speech API used by the Google Translate web interface.',
 		type: 'cloud'
 	},
 	{
