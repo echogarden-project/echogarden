@@ -8,6 +8,8 @@ import { alignMFCC_DTW, getCostMatrixMemorySizeMiB } from "./DTWMfccSequenceAlig
 import { Logger } from "../utilities/Logger.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
 import { getRawAudioDuration, RawAudio } from "../audio/AudioUtilities.js"
+import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
+import { Lexicon } from "../nlp/Lexicon.js"
 
 export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration = 60) {
 	const logger = new Logger()
@@ -305,6 +307,14 @@ export async function alignPhoneTimelines(sourceRawAudio: RawAudio, sourceWordTi
 	}
 
 	return alignedWordTimeline
+}
+
+export async function createAlignmentReferenceUsingEspeakPreprocessed(text: string, language: string, voice: string, lexicons?: Lexicon[], rate?: number, pitch?: number, pitchRange?: number) {
+	const { referenceSynthesizedAudio, referenceTimeline } = await preprocessAndSynthesize(text, voice, language, lexicons, rate, pitch, pitchRange)
+
+	const wordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
+
+	return { rawAudio: referenceSynthesizedAudio, timeline: wordTimeline }
 }
 
 export async function createAlignmentReferenceUsingEspeak(text: string, language: string, voice: string, insertSeparators = true, rate?: number, pitch?: number, pitchRange?: number) {

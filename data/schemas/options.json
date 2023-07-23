@@ -86,6 +86,12 @@
         "sentenceEndPause": {
           "type": "number"
         },
+        "customLexiconPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "plainText": {
           "type": "object",
           "properties": {
@@ -136,12 +142,6 @@
           "properties": {
             "speakerId": {
               "type": "number"
-            },
-            "customLexiconPaths": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           },
           "additionalProperties": false
@@ -399,6 +399,12 @@
         },
         "languageDetection": {
           "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "customLexiconPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "dtw": {
           "type": "object",
@@ -751,6 +757,12 @@
         "sentenceEndPause": {
           "type": "number"
         },
+        "customLexiconPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "plainText": {
           "type": "object",
           "properties": {
@@ -801,12 +813,6 @@
           "properties": {
             "speakerId": {
               "type": "number"
-            },
-            "customLexiconPaths": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           },
           "additionalProperties": false

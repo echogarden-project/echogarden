@@ -9,9 +9,11 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import * as API from "./API.js"
 import { Timeline, addTimeOffsetToTimeline } from "../utilities/Timeline.js"
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
+import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { WhisperModelName } from "../recognition/WhisperSTT.js"
 import chalk from "chalk"
+import { createAlignmentReferenceUsingEspeakPreprocessed } from "../alignment/SpeechAlignment.js"
+import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
 const log = logToStderr
 
@@ -57,6 +59,8 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 
 	options = extendDeep(defaultAlignmentOptions, options)
 
+	const dtwWindowDuration = options.dtw!.windowDuration!
+
 	let sourceRawAudio = downmixToMonoAndNormalize(inputRawAudio)
 	sourceRawAudio = await resampleAudioSpeex(sourceRawAudio, 16000)
 
@@ -64,10 +68,6 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 
 	if (options.language) {
 		language = normalizeLanguageCode(options.language!)
-
-		if (language == 'en') {
-			language = 'en-us'
-		}
 	} else {
 		logger.start("No language specified. Detecting language")
 		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
@@ -77,6 +77,8 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
+	language = getDefaultDialectForLanguageCodeIfPossible(language)
+
 	logger.start("Get espeak voice list and select best matching voice")
 	const { bestMatchingVoice } = await API.requestVoiceList({ engine: "espeak", language })
 
@@ -85,15 +87,21 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 	}
 
 	const espeakVoice = bestMatchingVoice.name
-	const dtwWindowDuration = options.dtw!.windowDuration!
+
+	logger.end()
+	logger.logTitledMessage('Selected voice', `'${espeakVoice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
 
 	logger.start("Load alignment module")
 
-	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionAssist, createAlignmentReferenceUsingEspeak, alignUsingDtw } = await import("../alignment/SpeechAlignment.js")
+	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import("../alignment/SpeechAlignment.js")
 
 	async function getAlignmentReference() {
 		logger.start("Create alignment reference with eSpeak")
-		let { rawAudio: referenceRawAudio, timeline: referenceTimeline } = await createAlignmentReferenceUsingEspeak(transcript, language, espeakVoice, true)
+
+		const espeakLanguage = bestMatchingVoice.languages[0]
+		const lexicons = await loadLexiconsForLanguage(espeakLanguage, options.customLexiconPaths)
+
+		let { rawAudio: referenceRawAudio, timeline: referenceTimeline } = await createAlignmentReferenceUsingEspeakPreprocessed(transcript, espeakLanguage, espeakVoice, lexicons)
 
 		referenceRawAudio = await resampleAudioSpeex(referenceRawAudio, 16000)
 		referenceRawAudio = downmixToMonoAndNormalize(referenceRawAudio)
@@ -133,7 +141,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
-			mappedTimeline = await alignUsingDtwWithRecognitionAssist(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration)
+			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration)
 
 			break
 		}
@@ -195,6 +203,8 @@ export interface AlignmentOptions {
 
 	languageDetection?: API.TextLanguageDetectionOptions
 
+	customLexiconPaths?: string[]
+
 	dtw?: {
 		windowDuration?: number,
 		recognition?: API.RecognitionOptions
@@ -212,6 +222,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	language: undefined,
 
 	languageDetection: undefined,
+
+	customLexiconPaths: undefined,
 
 	dtw: {
 		windowDuration: 120,
