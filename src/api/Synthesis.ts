@@ -58,7 +58,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 		options.engine = await selectBestOfflineEngineForLanguage(options.language!)
 
-		logger.log(`No engine specified, setting engine to '${options.engine}'`)
+		logger.logTitledMessage('No engine specified. Auto-selected engine', options.engine)
 	}
 
 	logger.start(`Get voice list for ${options.engine}`)

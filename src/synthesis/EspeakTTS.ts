@@ -91,7 +91,7 @@ export async function preprocessAndSynthesizeSentence(sentence: string, espeakVo
 
 			const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
 
-			logger.log(`\nLexicon substitution for '${fragment}': IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
+			logger.logTitledMessage(`\nLexicon substitution for '${fragment}'`, `IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
 
 			const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
 
