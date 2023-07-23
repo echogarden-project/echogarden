@@ -22,6 +22,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
+* `customLexiconPaths`: an array of custom lexicon file paths. Optional
 * `alignment`: prefix to provide custom options for alignment. Options detailed in section for alignment
 * `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for text language detection
 
@@ -40,7 +41,6 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
-* `vits.customLexiconPaths`: an array of custom lexicon file paths. Optional
 
 **eSpeak-ng**:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
@@ -136,6 +136,7 @@ Applicable to CLI command: `align`.
 **General**:
 * `method`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
+* `customLexiconPaths`: an array of custom lexicon file paths. Optional
 
 **DTW**:
 * `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement (in GB), is shown in the log messages before alignment starts.

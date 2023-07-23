@@ -145,13 +145,13 @@ The configuration file format is simple and has a dedicated section for each com
 [speak]
 
 # Engine for synthesis:
-engine = sapi
+engine = vits
 
 # Voice for synthesis (case-insensitive, can be a search pattern):
-voice = zira
+voice = amy
 
-# VITS custom lexicon paths:
-vits.customLexiconPaths = ["lexicon1.json", "lexicon2.json"]
+# Custom lexicon paths:
+customLexiconPaths = ["lexicon1.json", "lexicon2.json"]
 
 [transcribe]
 
@@ -170,11 +170,9 @@ Name your file `echogarden.config.json`:
 ```json
 {
 	"speak": {
-		"engine": "sapi",
-		"voice": "zira",
-		"vits": {
-			"customLexiconPaths": ["lexicon1.json", "lexicon2.json"]
-		}
+		"engine": "vits",
+		"voice": "amy",
+		"customLexiconPaths": ["lexicon1.json", "lexicon2.json"]
 	},
 
 	"transcribe": {

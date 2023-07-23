@@ -104,10 +104,10 @@
 * Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
 
-### Speech Language detection
+### Speech language detection
 * When using Whisper for language detection of speech, apply it to the entire audio, not just the first 30 seconds
 
-### Text Language detection
+### Text language detection
 * Deploy and add the new n-gram based text language detection model
 
 ### Segmentation
@@ -144,7 +144,6 @@
 ### Synthesis / preprocessing
 * Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`)
-* Use preprocessed eSpeak in places other than VITS
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules.
 * Support normalizing to graphemes, not only phonemes
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
@@ -183,7 +182,6 @@
 * Way to specify general model size, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
 
 ### Alignment
-* Warn when input is larger than DTW window, and suggest to increase the window in this case (this can also happen when synthesizing SSML, which can't be split to segments)
 
 ### Postprocessing
 * When `normalize` is set to false, should obvious clipping still be prevented?
