@@ -48,7 +48,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 		options.language = detectedLanguage
 
 		logger.end()
-		logger.log(`Language detected: ${formatLanguageCodeWithName(detectedLanguage)}`)
+		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
 	if (!options.engine) {
