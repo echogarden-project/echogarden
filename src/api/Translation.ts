@@ -9,8 +9,10 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import { Timeline } from "../utilities/Timeline.js"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
-import { getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { EngineMetadata } from "./Globals.js"
+import { SpeechLanguageDetectionOptions, detectSpeechLanguage } from "./API.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -26,13 +28,19 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
 
+	options = extendDeep(defaultSpeechTranslationOptions, options)
+
 	if (!options.sourceLanguage) {
-		throw new Error(`Source language is not set`)
+		logger.start("No language provided. Detecting audio language")
+		const { detectedLanguage } = await detectSpeechLanguage(inputRawAudio, options.languageDetection!)
+
+		logger.end()
+		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
+
+		options.sourceLanguage = detectedLanguage
 	}
 
 	logger.start("Preprocess audio for translation")
-
-	options = extendDeep(defaultSpeechTranslationOptions, options)
 
 	const engine = options.engine!
 	const sourceLanguage = normalizeLanguageCode(options.sourceLanguage!)
@@ -83,7 +91,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	}
 
 	logger.end()
-	logger.logDuration(`Total speech translation time`, startTimestamp)
+	logger.logDuration(`Total speech translation time`, startTimestamp, chalk.magentaBright)
 
 	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage }
 }
@@ -102,6 +110,7 @@ export interface SpeechTranslationOptions {
 
 	sourceLanguage?: string
 	targetLanguage?: string
+	languageDetection?: SpeechLanguageDetectionOptions
 
 	whisper?: {
 		model?: WhisperModelName
@@ -113,6 +122,10 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	sourceLanguage: undefined,
 	targetLanguage: "en",
+
+	languageDetection: {
+		engine: 'silero'
+	},
 
 	whisper: {
 		model: "tiny",

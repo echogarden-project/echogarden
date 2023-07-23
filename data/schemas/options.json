@@ -447,6 +447,9 @@
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
         },
+        "languageDetection": {
+          "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
         "whisper": {
           "type": "object",
           "properties": {
@@ -537,6 +540,44 @@
         "google-cloud",
         "microsoft-azure",
         "amazon-transcribe"
+      ]
+    },
+    "SpeechLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SpeechLanguageDetectionEngine"
+        },
+        "defaultLanguage": {
+          "type": "string"
+        },
+        "fallbackThresholdProbability": {
+          "type": "number"
+        },
+        "silero": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "whisper": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            }
+          },
+          "required": [
+            "model"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpeechLanguageDetectionEngine": {
+      "type": "string",
+      "enum": [
+        "silero",
+        "whisper"
       ]
     },
     "WhisperModelName": {
@@ -966,6 +1007,9 @@
         "targetLanguage": {
           "type": "string"
         },
+        "languageDetection": {
+          "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
         "whisper": {
           "type": "object",
           "properties": {
@@ -981,44 +1025,6 @@
     "SpeechTranslationEngine": {
       "type": "string",
       "const": "whisper"
-    },
-    "SpeechLanguageDetectionOptions": {
-      "type": "object",
-      "properties": {
-        "engine": {
-          "$ref": "#/definitions/SpeechLanguageDetectionEngine"
-        },
-        "defaultLanguage": {
-          "type": "string"
-        },
-        "fallbackThresholdProbability": {
-          "type": "number"
-        },
-        "silero": {
-          "type": "object",
-          "additionalProperties": false
-        },
-        "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            }
-          },
-          "required": [
-            "model"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "SpeechLanguageDetectionEngine": {
-      "type": "string",
-      "enum": [
-        "silero",
-        "whisper"
-      ]
     },
     "VADOptions": {
       "type": "object",
