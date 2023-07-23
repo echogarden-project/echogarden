@@ -22,6 +22,8 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
+* `alignment`: prefix to provide custom options for alignment. Options detailed in section for alignment
+* `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for text language detection
 
 **Plain text processing**:
 * `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
@@ -35,9 +37,6 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `postProcessing.pitch`: target pitch for pitch shifting. Defaults to `1.0`
 * `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
-
-**Language detection**:
-* `languageDetection`: prefix to provide custom options for language detection. Same options as detailed for text language detection, down below
 
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
@@ -102,6 +101,8 @@ Applicable to CLI command: `transcribe`.
 **General**:
 * `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk`
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
+* `alignment`: prefix to provide custom options for alignment. Options detailed in section for alignment
+* `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
 **Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
@@ -137,7 +138,7 @@ Applicable to CLI command: `align`.
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 
 **DTW**:
-* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater.
+* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement (in GB), is shown in the log messages before alignment starts.
 
 **DTW-RA only**:
 * `dtw.recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `dtw.recognition.engine = silero`
@@ -150,7 +151,8 @@ Applicable to CLI command: `translate-speech`.
 **General**:
 * `engine`: only `whisper` supported
 * `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
-* `targetLanguage`: the target language code for the output speech. Only `en` supported at this time.
+* `targetLanguage`: the target language code for the output speech. Only `en` supported at this time
+* `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
 **Whisper**:
 * `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`

@@ -92,12 +92,12 @@ echogarden speak-file text.txt transcript.txt result.srt result.json
 
 This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
 ```bash
-echogarden translate speech.mp3
+echogarden translate-speech speech.mp3
 ```
 
 To specify the source and target languages explicitly, use the `sourceLanguage` and `targetLanguage` options:
 ```bash
-echogarden translate speech.mp3 translation.txt --sourceLanguage=es --targetLanguage=en
+echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --targetLanguage=en
 ```
 
 **Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.

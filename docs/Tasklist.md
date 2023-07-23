@@ -48,13 +48,13 @@
 * Support compressed audio in response
 
 ### CLI
-* Colors in log messages
 * Restrict input media file extensions to a set list to avoid cases where an output media file would be overwritten due to user error
 * Mode to print IPA words when speaking
+* Ignore non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
 * Option to set audio output codec options
-* Option to set audio output device
+* Option to set audio output device for playback
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
 * Make enum options case-insensitive if possible
@@ -78,7 +78,7 @@
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
 
 ### CLI / `list-voices`
-* When given a configuration file, see if you can fall back to take options from from `speak` options, for example, API keys that are required for the both the voice list request and synthesis request
+* When given a configuration file, see if you can fall back to take options from from `speak` options, for example, to take API keys that are required for the both the synthesis request and voice list request and
 
 ### CLI / `list-packages`
 * Support filters
@@ -108,7 +108,7 @@
 * When using Whisper for language detection of speech, apply it to the entire audio, not just the first 30 seconds
 
 ### Text Language detection
-* Deploy and add the new language detection model
+* Deploy and add the new n-gram based text language detection model
 
 ### Segmentation
 * Split long words
@@ -161,7 +161,7 @@
 * Add speaker names to voice list somehow
 
 ### Synthesis / Azure Cognitive Services
-* Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
+* Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
 
 ### Recognition
 * Add confidence to each recognized word, if available
@@ -170,20 +170,20 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
-* When using `dtw-ra` alignment, pass the transcript as a prompt. Remove some of the initial transcript based on what has been detected (try to find the best matching initial segment between the transcript and recognized text, and remove it at each recognition window).
+* Add sampling and temperature support to decoder. This may help with repetitive token sequences.
 * During language detection, if file is more than 30s, run the detection over all the segments and average the resulting probability distributions, consider how to handle very short segments
+* When using `dtw-ra` alignment, pass the transcript as a prompt. Remove some of the initial transcript based on what has been detected (try to find the best matching initial segment between the transcript and recognized text, and remove it at each recognition window).
+* Accept custom prompt via an option
 * Log individual tokens to the terminal as they are being decoded from the model
-* Add sampling and temperature support to decoder
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
-* Cache last model
+* Cache last model (if enough memory available)
 * Integrate speech language detection into the recognition itself, so it is done efficiently when the language is not known
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segment files, otherwise it is possible to try to guess using the pause lengths or voice activity detection
-* Way to specify model size, such that the English-only/multilingual would be auto selection for sizes other than `tiny`?
-* Accept custom prompt through an option
+* Way to specify general model size, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
 
 ### Alignment
-* Warn when input is larger than DTW window (this can also happen when synthesizing SSML, which can't be split to segments)
+* Warn when input is larger than DTW window, and suggest to increase the window in this case (this can also happen when synthesizing SSML, which can't be split to segments)
 
 ### Postprocessing
 * When `normalize` is set to false, should obvious clipping still be prevented?
@@ -201,7 +201,7 @@
 
 ## External bugs
 
-* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote following the exclamation mark
+* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
 * `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
 * `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
 * `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
@@ -225,8 +225,7 @@
 * Auto-generate options file, with comments, based on default options of the API
 * Have the CLI launch a background worker (in a thread) to enable better parallelism
 * Play back result audio while synthesis or recognition is still processing on the background (may require `worker_threads`)
-* Navigate up down backward forward on file with timeline
-* Auto-import project Gutenberg texts (by URL or from a file)
+* Auto-import and extract project Gutenberg texts (by URL or from a file)
 * `stdin` input support
 * `stdout` output support
 * Markdown file as text input?
@@ -235,7 +234,7 @@
 * Auto-install npm modules when needed using something like `npm-programmatic`
 
 ### Text enhancement
-* Add capitalization and punctuation when to recognition outputs (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
+* Add capitalization and punctuation to recognized outputs if needed (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
 
 ### Recognition
 * Low latency recognition mode. Make the partial transcription available as fast as possible
@@ -243,7 +242,7 @@
 * Live vosk alternatives events
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
-* Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bits
+* Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Web
 * Web based frontend UI to the server
@@ -294,4 +293,3 @@
 * Special method to use time stretching to project between different utterances of the same text
 * Is it possible to combine the Silero speech recognizer and a language model and try to perform Viterbi decoding to find alignments?
 * Voice replacement
-
