@@ -37,7 +37,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 
 	if (!options.language) { // && options.engine != "whisper") {
 		logger.start("No language provided. Detecting audio language")
-		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, options.languageDetection!)
+		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()
 		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
@@ -270,9 +270,7 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 
 	alignment: undefined,
 
-	languageDetection: {
-		engine: 'silero'
-	},
+	languageDetection: undefined,
 
 	whisper: {
 		model: undefined,

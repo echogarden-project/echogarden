@@ -43,9 +43,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 			}
 		}
 
-		const languageDetectionOptions = options.languageDetection || {}
-
-		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join("\n\n"), languageDetectionOptions)
+		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join("\n\n"), options.languageDetection || {})
 
 		options.language = detectedLanguage
 

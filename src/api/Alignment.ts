@@ -70,7 +70,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		}
 	} else {
 		logger.start("No language specified. Detecting language")
-		const { detectedLanguage } = await API.detectTextLanguage(transcript, {})
+		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
 		language = detectedLanguage
 
 		logger.end()
@@ -193,6 +193,8 @@ export interface AlignmentOptions {
 
 	language?: string
 
+	languageDetection?: API.TextLanguageDetectionOptions
+
 	dtw?: {
 		windowDuration?: number,
 		recognition?: API.RecognitionOptions
@@ -208,6 +210,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	engine: "dtw",
 
 	language: undefined,
+
+	languageDetection: undefined,
 
 	dtw: {
 		windowDuration: 120,

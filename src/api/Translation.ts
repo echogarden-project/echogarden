@@ -32,7 +32,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 
 	if (!options.sourceLanguage) {
 		logger.start("No language provided. Detecting audio language")
-		const { detectedLanguage } = await detectSpeechLanguage(inputRawAudio, options.languageDetection!)
+		const { detectedLanguage } = await detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()
 		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
@@ -123,9 +123,7 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 	sourceLanguage: undefined,
 	targetLanguage: "en",
 
-	languageDetection: {
-		engine: 'silero'
-	},
+	languageDetection: undefined,
 
 	whisper: {
 		model: "tiny",
