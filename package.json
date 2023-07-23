@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.6.9",
+	"version": "0.7.0",
 	"description": "An integrated speech system, providing a range of synthesis, recognition and other processing tools designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
@@ -121,7 +121,7 @@
 		"@types/msgpack-lite": "^0.1.8",
 		"@types/ndarray": "^1.0.11",
 		"@types/ndarray-ops": "^1.2.4",
-		"@types/node": "^20.4.2",
+		"@types/node": "^20.4.4",
 		"@types/recursive-readdir": "^2.2.1",
 		"@types/tar": "^6.1.5",
 		"@types/ws": "^8.5.5",
