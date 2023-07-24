@@ -63,6 +63,8 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 
 	const results = await detectLanguageByParts(sourceRawAudio, detectLanguageForPart)
 
+	results.sort((entry1, entry2) => entry2.probability - entry1.probability)
+
 	return results
 }
 
@@ -356,8 +358,6 @@ export class Whisper {
 				probability
 			})
 		}
-
-		results.sort((entry1, entry2) => entry2.probability - entry1.probability)
 
 		logger.end()
 

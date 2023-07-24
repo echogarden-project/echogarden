@@ -16,7 +16,11 @@ export async function detectLanguage(rawAudio: RawAudio, modelPath: string, lang
 		return languageResults
 	}
 
-	return detectLanguageByParts(rawAudio, detectLanguageForPart)
+	const results = await detectLanguageByParts(rawAudio, detectLanguageForPart)
+
+	results.sort((a, b) => b.probability - a.probability)
+
+	return results
 }
 
 export class SileroLanguageDetection {
@@ -85,8 +89,6 @@ export class SileroLanguageDetection {
 			})
 		}
 
-		languageResults.sort((a, b) => b.probability - a.probability)
-
 		const languageGroupResults: { languageGroup: string, probability: number }[] = []
 
 		for (let i = 0; i < languageGroupProbabilities.length; i++) {
@@ -95,8 +97,6 @@ export class SileroLanguageDetection {
 				probability: languageGroupProbabilities[i]
 			})
 		}
-
-		languageGroupResults.sort((a, b) => b.probability - a.probability)
 
 		logger.end()
 
