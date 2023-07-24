@@ -1,6 +1,6 @@
 import ndarray from 'ndarray'
 import ops from 'ndarray-ops'
-import { medianFilter, softMax } from '../math/VectorMath.js'
+import { medianFilter, softmax } from '../math/VectorMath.js'
 
 export function ndarraySoftMax(vector: ndarray.NdArray, temperature = 1.0) {
 	const vectorAsArray = new Array(vector.shape[0])
@@ -9,7 +9,7 @@ export function ndarraySoftMax(vector: ndarray.NdArray, temperature = 1.0) {
 		vectorAsArray[i] = vector.get(i)
 	}
 
-	const result = softMax(vectorAsArray, temperature)
+	const result = softmax(vectorAsArray, temperature)
 
 	for (let i = 0; i < vectorAsArray.length; i++) {
 		vector.set(i, result[i])

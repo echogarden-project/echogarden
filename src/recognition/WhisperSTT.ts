@@ -2,8 +2,8 @@ import Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from "../dsp/MelSpectogram.js"
-import { clip, roundToDigits, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logSoftmax, logSumExp, meanOfVector, medianFilter, softMax, stdDeviationOfVector } from '../math/VectorMath.js'
+import { clip, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
@@ -17,13 +17,14 @@ import type { LanguageDetectionResults } from '../api/API.js'
 import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
+import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 
-export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string) {
+export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, decoderTemperature: number) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir, decoderTemperature)
 	await whisper.initialize()
 
 	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage)
@@ -36,7 +37,7 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir, 0.0)
 	await whisper.initialize()
 
 	const timeline = await whisper.align(sourceRawAudio, referenceText, language)
@@ -49,7 +50,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir, 0.0)
 	await whisper.initialize()
 
 	const audioFeatures = await whisper.encodeAudio(sourceRawAudio)
@@ -88,7 +89,11 @@ export class Whisper {
 		timestampTokensStart: number
 	}
 
-	constructor(modelName: WhisperModelName, modelDir: string, tokenizerDir: string) {
+	decoderTemperature: number
+
+	randomGen = new XorShift32RNG(23948203)
+
+	constructor(modelName: WhisperModelName, modelDir: string, tokenizerDir: string, decoderTemperature: number) {
 		this.modelDir = modelDir
 		this.modelName = modelName
 		this.tokenizerDir = tokenizerDir
@@ -116,6 +121,8 @@ export class Whisper {
 				suppressedTokens: [1, 2, 7, 8, 9, 10, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 357, 366, 438, 532, 685, 705, 796, 930, 1058, 1220, 1267, 1279, 1303, 1343, 1377, 1391, 1635, 1782, 1875, 2162, 2361, 2488, 3467, 4008, 4211, 4600, 4808, 5299, 5855, 6329, 7203, 9609, 9959, 10563, 10786, 11420, 11709, 11907, 13163, 13697, 13700, 14808, 15306, 16410, 16791, 17992, 19203, 19510, 20724, 22305, 22935, 27007, 30109, 30420, 33409, 34949, 40283, 40493, 40549, 47282, 49146, 50257, 50359, 50360, 50361]
 			}
 		}
+
+		this.decoderTemperature = decoderTemperature
 	}
 
 	async initialize() {
@@ -332,7 +339,7 @@ export class Whisper {
 		const logitsBuffer = decoderOutputs["logits"].data as Float32Array
 
 		const languageTokensLogits = Array.from(logitsBuffer.slice(sotToken + 1, sotToken + 1 + 99))
-		const languageTokensProbabilities = softMax(languageTokensLogits, 1.0)
+		const languageTokensProbabilities = softmax(languageTokensLogits, 1.0)
 
 		const results: LanguageDetectionResults = []
 
@@ -441,8 +448,9 @@ export class Whisper {
 				}
 			}
 
-			// Compute best token
-			const logProbs = logSoftmax(tokenLogits as any)
+			// Find token distributions and best token
+			const probs = softmax(tokenLogits as any)
+			const logProbs = logOfVector(probs)
 
 			const textTokenLogProbs = logProbs.slice(0, timestampTokensStart)
 			const timestampTokenLogProbs = logProbs.slice(timestampTokensStart)
@@ -461,6 +469,11 @@ export class Whisper {
 			if (isTimestampToken && !previousTokenWasTimestamp) {
 				timestampsSeenCount += 1
 			}
+
+			//
+			//const topLogits = [...tokenLogits].map((logit, index) => ({ index, logit, token: this.tokenToTextLookup.get(index) || "", prob: probs[index] }))
+			//topLogits.sort((a, b) => b.logit - a.logit)
+			///
 
 			// Add best token
 			function addToken(tokenToAdd: number, timestampLogits: number[]) {
@@ -489,7 +502,17 @@ export class Whisper {
 			} else if (indexOfMaxTextLogProb == eotToken) {
 				break
 			} else {
-				addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
+				if (this.decoderTemperature == 0.0) {
+					addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
+				} else {
+					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
+					const textTokenProbs = softmax(textTokenLogits as any, this.decoderTemperature)
+					const selectedTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
+
+					addToken(selectedTokenIndex, tokenTimestampLogits)
+
+					//const selectedTokenText = this.tokenToTextLookup.get(selectedTokenIndex) || ""
+				}
 			}
 
 			await yieldToEventLoop()
@@ -852,7 +875,7 @@ export class Whisper {
 			// Apply softmax to each token's frames
 			for (const head of attentionHeads) {
 				for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
-					head[tokenIndex] = softMax(head[tokenIndex], softmaxTemperature)
+					head[tokenIndex] = softmax(head[tokenIndex], softmaxTemperature)
 				}
 			}
 		}

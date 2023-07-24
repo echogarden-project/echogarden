@@ -486,6 +486,9 @@
           "properties": {
             "model": {
               "$ref": "#/definitions/WhisperModelName"
+            },
+            "temperature": {
+              "type": "number"
             }
           },
           "additionalProperties": false
@@ -1024,6 +1027,9 @@
           "properties": {
             "model": {
               "$ref": "#/definitions/WhisperModelName"
+            },
+            "temperature": {
+              "type": "number"
             }
           },
           "additionalProperties": false

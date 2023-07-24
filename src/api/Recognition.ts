@@ -36,7 +36,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	if (!options.language) { // && options.engine != "whisper") {
-		logger.start("No language provided. Detecting audio language")
+		logger.start("No language provided. Detecting speech language")
 		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()
@@ -68,7 +68,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language, whisperOptions.temperature!))
 
 			break
 		}
@@ -231,6 +231,7 @@ export interface RecognitionOptions {
 
 	whisper?: {
 		model?: WhisperModelName
+		temperature?: number
 	}
 
 	vosk?: {
@@ -274,6 +275,7 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 
 	whisper: {
 		model: undefined,
+		temperature: 0.0
 	},
 
 	vosk: {

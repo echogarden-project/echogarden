@@ -31,7 +31,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	options = extendDeep(defaultSpeechTranslationOptions, options)
 
 	if (!options.sourceLanguage) {
-		logger.start("No language provided. Detecting audio language")
+		logger.start("No language provided. Detecting speech language")
 		const { detectedLanguage } = await detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()
@@ -80,7 +80,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage, whisperOptions.temperature!))
 
 			break
 		}
@@ -114,6 +114,7 @@ export interface SpeechTranslationOptions {
 
 	whisper?: {
 		model?: WhisperModelName
+		temperature?: number
 	}
 }
 
@@ -127,6 +128,7 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	whisper: {
 		model: "tiny",
+		temperature: 0.0
 	},
 }
 

@@ -1,3 +1,4 @@
+import { sumVector } from "../math/VectorMath.js"
 import { logToStderr } from "./Utilities.js"
 
 export abstract class RandomGenerator {
@@ -76,6 +77,26 @@ export abstract class RandomGenerator {
 		const n2 = y * m
 
 		return [n1, n2]
+	}
+
+	selectRandomIndexFromDistribution(distribution: number[]) {
+		const sum = sumVector(distribution)
+
+		const randomTarget = this.getFloatInRange(0, sum)
+
+		let cumSum = 0
+		
+		for (let i = 0; i < distribution.length; i++) {
+			const element = distribution[i]
+
+			if (randomTarget < cumSum + element) {
+				return i
+			}
+
+			cumSum += element
+		}
+
+		return distribution.length - 1
 	}
 
 	abstract nextFloat(): number

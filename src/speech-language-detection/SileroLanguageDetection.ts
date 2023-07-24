@@ -1,5 +1,5 @@
 import Onnx from 'onnxruntime-node'
-import { softMax } from '../math/VectorMath.js'
+import { softmax } from '../math/VectorMath.js'
 import { Logger } from "../utilities/Logger.js"
 import { RawAudio } from "../audio/AudioUtilities.js"
 import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
@@ -34,8 +34,8 @@ export async function detectLanguage(rawAudio: RawAudio, modelPath: string, lang
 	const languageLogits = results["output"].data
 	const languageGroupLogits = results["2038"].data
 
-	const languageProbabilities = softMax(languageLogits as any)
-	const languageGroupProbabilities = softMax(languageGroupLogits as any)
+	const languageProbabilities = softmax(languageLogits as any)
+	const languageGroupProbabilities = softmax(languageGroupLogits as any)
 
 	const languageResults: LanguageDetectionResults = []
 

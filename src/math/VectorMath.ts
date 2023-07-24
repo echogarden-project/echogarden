@@ -675,24 +675,28 @@ export function sigmoid(x: number) {
 	return zeroIfNaN(result)
 }
 
-export function softMax(vector: number[], temperature = 1.0) {
+export function softmax(vector: number[], temperature = 1.0) {
 	if (vector.length == 0) {
 		return []
 	}
+
+	const temperatureMultiplier = 1 / temperature
 
 	const result: number[] = []
 
 	let sumOfExponentiatedValues = 0.0
 
 	for (const value of vector) {
-		const eToValue = Math.exp(value / temperature)
+		const eToValue = Math.exp(value * temperatureMultiplier)
 		sumOfExponentiatedValues += eToValue
 
 		result.push(eToValue)
 	}
 
+	const sumOfExponentiatedValuesMultiplier = 1 / sumOfExponentiatedValues
+
 	for (let i = 0; i < result.length; i++) {
-		result[i] /= sumOfExponentiatedValues
+		result[i] *= sumOfExponentiatedValuesMultiplier
 
 		result[i] = zeroIfNaN(result[i])
 	}
@@ -777,7 +781,7 @@ export function sumExp(values: number[]) {
 }
 
 export function logSoftmax(values: number[], minVal = 1e-40) {
-	const softMaxOfValues = softMax(values)
+	const softMaxOfValues = softmax(values)
 	return logOfVector(softMaxOfValues, minVal)
 }
 
