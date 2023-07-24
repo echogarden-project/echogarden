@@ -1,8 +1,8 @@
-import { extendDeep } from "../utilities/ObjectUtilities.js"
+import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { RawAudio, downmixToMonoAndNormalize } from "../audio/AudioUtilities.js"
+import { RawAudio, downmixToMonoAndNormalize, getRawAudioDuration, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
@@ -10,8 +10,9 @@ import * as API from "./API.js"
 import { logToStderr } from "../utilities/Utilities.js"
 import path from "path"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
-import { languageCodeToName } from "../utilities/Locale.js"
+import { formatLanguageCodeWithName, languageCodeToName } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
@@ -26,6 +27,9 @@ export async function detectSpeechFileLanguage(filename: string, options: Speech
 
 export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLanguageDetectionOptions) {
 	const logger = new Logger()
+
+	const startTime = logger.getTimestamp()
+
 	logger.start("Prepare for speech language detection")
 
 	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
@@ -39,7 +43,6 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 	logger.start(`Initialize ${options.engine} module`)
 
 	let detectedLanguageProbabilities: LanguageDetectionResults
-	let detectedLanguageGroupProbabilities: LanguageDetectionGroupResults
 
 	switch (options.engine) {
 		case "silero": {
@@ -55,14 +58,13 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 			const languageDictionaryPath = path.join(modelDir, "lang_dict_95.json")
 			const languageGroupDictionaryPath = path.join(modelDir, "lang_group_dict_95.json")
 
-			const { languageResults, languageGroupResults } = await SileroLanguageDetection.detectLanguage(
+			const languageResults = await SileroLanguageDetection.detectLanguage(
 				rawAudio,
 				modelPath,
 				languageDictionaryPath,
 				languageGroupDictionaryPath)
 
 			detectedLanguageProbabilities = languageResults
-			detectedLanguageGroupProbabilities = languageGroupResults
 
 			break
 		}
@@ -77,7 +79,6 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 			logger.end()
 
 			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(rawAudio, modelName, modelDir, tokenizerDir)
-			detectedLanguageGroupProbabilities = []
 
 			break
 		}
@@ -88,7 +89,6 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 	}
 
 	let detectedLanguage: string
-	let detectedLanguageName: string
 
 	if (detectedLanguageProbabilities.length == 0 ||
 		detectedLanguageProbabilities[0].probability < fallbackThresholdProbability) {
@@ -99,8 +99,53 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 	}
 
 	logger.end()
+	logger.logDuration("Total detection time", startTime, chalk.magentaBright)
 
-	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities, detectedLanguageGroupProbabilities }
+	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities }
+}
+
+export async function detectLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 15) {
+	const logger = new Logger()
+
+	const audioDuration = getRawAudioDuration(sourceRawAudio)
+
+	const resultsForParts: LanguageDetectionResults[] = []
+
+	for (let audioTimeOffset = 0; audioTimeOffset < audioDuration; audioTimeOffset += hopDuration) {
+		const startOffset = audioTimeOffset
+		const endOffset = Math.min(audioTimeOffset + audioPartDuration, audioDuration)
+		const audioPartLength = endOffset - startOffset
+
+		logger.logTitledMessage(`\nDetecting speech language starting at audio offset`, `${startOffset.toFixed(1)}`, chalk.magentaBright)
+		const audioPart = sliceRawAudioByTime(sourceRawAudio, startOffset, endOffset)
+
+		const resultsForPart = await getResultsForAudioPart(audioPart)
+
+		resultsForParts.push(resultsForPart)
+
+		const sortedResultsForPart = deepClone(resultsForPart).sort((a, b) => b.probability - a.probability)
+
+		logger.logTitledMessage(`Top candidates`, `${formatLanguageCodeWithName(sortedResultsForPart[0].language)}: ${sortedResultsForPart[0].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[1].language)}: ${sortedResultsForPart[1].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[3].language)} (${sortedResultsForPart[3].probability.toFixed(3)}`)
+
+		if (audioPartLength < audioPartDuration) {
+			break
+		}
+	}
+
+	const averagedResults: LanguageDetectionResults = deepClone(resultsForParts[0])
+	averagedResults.forEach(entry => { entry.probability = 0.0 })
+
+	for (const partResults of resultsForParts) {
+		for (let i = 0; i < partResults.length; i++) {
+			averagedResults[i].probability += partResults[i].probability
+		}
+	}
+
+	for (const result of averagedResults) {
+		result.probability /= resultsForParts.length
+	}
+
+	return averagedResults
 }
 
 export type SpeechLanguageDetectionEngine = "silero" | "whisper"

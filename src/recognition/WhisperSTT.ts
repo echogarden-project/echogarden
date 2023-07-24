@@ -18,6 +18,7 @@ import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
+import { detectLanguageByParts } from '../api/LanguageDetection.js'
 
 export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, decoderTemperature: number) {
 	if (sourceRawAudio.sampleRate != 16000) {
@@ -53,8 +54,14 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir, 0.0)
 	await whisper.initialize()
 
-	const audioFeatures = await whisper.encodeAudio(sourceRawAudio)
-	const results = await whisper.detectLanguage(audioFeatures)
+	async function detectLanguageForPart(partAudio: RawAudio) {
+		const audioFeatures = await whisper.encodeAudio(partAudio)
+		const partResults = await whisper.detectLanguage(audioFeatures)
+
+		return partResults
+	}
+
+	const results = await detectLanguageByParts(sourceRawAudio, detectLanguageForPart)
 
 	return results
 }
@@ -320,7 +327,7 @@ export class Whisper {
 		}
 
 		// Prepare and run decoder
-		logger.startAsync("Detect language with Whisper model")
+		await logger.startAsync("Detect language with Whisper model")
 
 		const sotToken = this.tokenConfig.sotToken
 

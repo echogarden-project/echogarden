@@ -2,68 +2,104 @@ import Onnx from 'onnxruntime-node'
 import { softmax } from '../math/VectorMath.js'
 import { Logger } from "../utilities/Logger.js"
 import { RawAudio } from "../audio/AudioUtilities.js"
-import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
-import type { LanguageDetectionResults } from '../api/LanguageDetection.js'
+import { readAndParseJsonFile } from '../utilities/FileSystem.js'
+import { detectLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 
 export async function detectLanguage(rawAudio: RawAudio, modelPath: string, languageDictionaryPath: string, languageGroupDictionaryPath: string) {
-	const logger = new Logger()
-	logger.start("Initialize ONNX inference session")
+	const languageDetection = new SileroLanguageDetection(modelPath, languageDictionaryPath, languageGroupDictionaryPath)
+	await languageDetection.initialize()
 
-	const languageDictionary = await readAndParseJsonFile(languageDictionaryPath)
-	const languageGroupDictionary = await readAndParseJsonFile(languageGroupDictionaryPath)
+	async function detectLanguageForPart(partAudio: RawAudio) {
+		const { languageResults } = await languageDetection.detectLanguage(partAudio)
 
-	const audioSamples = rawAudio.audioChannels[0]
-
-	const onnxOptions: Onnx.InferenceSession.SessionOptions = {
-		logSeverityLevel: 3
+		return languageResults
 	}
 
-	const session = await Onnx.InferenceSession.create(modelPath, onnxOptions)
+	return detectLanguageByParts(rawAudio, detectLanguageForPart)
+}
 
-	logger.start("Detect language with Silero")
+export class SileroLanguageDetection {
+	modelPath: string
+	languageDictionaryPath: string
+	languageGroupDictionaryPath: string
 
-	const inputTensor = new Onnx.Tensor('float32', audioSamples, [1, audioSamples.length])
+	languageDictionary: any
+	languageGroupDictionary: any
 
-	const inputs = { input: inputTensor }
+	session: Onnx.InferenceSession | undefined
 
-	const results = await session.run(inputs)
-
-	logger.start("Parse model results")
-
-	const languageLogits = results["output"].data
-	const languageGroupLogits = results["2038"].data
-
-	const languageProbabilities = softmax(languageLogits as any)
-	const languageGroupProbabilities = softmax(languageGroupLogits as any)
-
-	const languageResults: LanguageDetectionResults = []
-
-	for (let i = 0; i < languageProbabilities.length; i++) {
-		const languageString = languageDictionary[i]
-		const languageCode = languageString.replace(/,.*$/, "")
-
-		languageResults.push({
-			language: languageCode,
-			languageName: languageCodeToName(languageCode),
-			probability: languageProbabilities[i]
-		})
+	constructor(modelPath: string, languageDictionaryPath: string, languageGroupDictionaryPath: string) {
+		this.modelPath = modelPath
+		this.languageDictionaryPath = languageDictionaryPath
+		this.languageGroupDictionaryPath = languageGroupDictionaryPath
 	}
 
-	languageResults.sort((a, b) => b.probability - a.probability)
+	async initialize() {
+		const logger = new Logger()
+		logger.start("Initialize ONNX inference session")
 
-	const languageGroupResults: { languageGroup: string, probability: number }[] = []
+		this.languageDictionary = await readAndParseJsonFile(this.languageDictionaryPath)
+		this.languageGroupDictionary = await readAndParseJsonFile(this.languageGroupDictionaryPath)
 
-	for (let i = 0; i < languageGroupProbabilities.length; i++) {
-		languageGroupResults.push({
-			languageGroup: languageGroupDictionary[i],
-			probability: languageGroupProbabilities[i]
-		})
+		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
+			logSeverityLevel: 3
+		}
+
+		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxOptions)
+
+		logger.end()
 	}
 
-	languageGroupResults.sort((a, b) => b.probability - a.probability)
+	async detectLanguage(rawAudio: RawAudio) {
+		const logger = new Logger()
 
-	logger.end()
+		logger.start("Detect language with Silero")
 
-	return { languageResults, languageGroupResults }
+		const audioSamples = rawAudio.audioChannels[0]
+
+		const inputTensor = new Onnx.Tensor('float32', audioSamples, [1, audioSamples.length])
+
+		const inputs = { input: inputTensor }
+
+		const results = await this.session!.run(inputs)
+
+		logger.start("Parse model results")
+
+		const languageLogits = results["output"].data
+		const languageGroupLogits = results["2038"].data
+
+		const languageProbabilities = softmax(languageLogits as any)
+		const languageGroupProbabilities = softmax(languageGroupLogits as any)
+
+		const languageResults: LanguageDetectionResults = []
+
+		for (let i = 0; i < languageProbabilities.length; i++) {
+			const languageString = this.languageDictionary[i]
+			const languageCode = languageString.replace(/,.*$/, "")
+
+			languageResults.push({
+				language: languageCode,
+				languageName: languageCodeToName(languageCode),
+				probability: languageProbabilities[i]
+			})
+		}
+
+		languageResults.sort((a, b) => b.probability - a.probability)
+
+		const languageGroupResults: { languageGroup: string, probability: number }[] = []
+
+		for (let i = 0; i < languageGroupProbabilities.length; i++) {
+			languageGroupResults.push({
+				languageGroup: this.languageGroupDictionary[i],
+				probability: languageGroupProbabilities[i]
+			})
+		}
+
+		languageGroupResults.sort((a, b) => b.probability - a.probability)
+
+		logger.end()
+
+		return { languageResults, languageGroupResults }
+	}
 }
