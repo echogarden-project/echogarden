@@ -91,6 +91,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	}
 
 	logger.end()
+	logger.log('')
 	logger.logDuration(`Total speech translation time`, startTimestamp, chalk.magentaBright)
 
 	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage }

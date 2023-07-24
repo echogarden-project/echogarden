@@ -2,7 +2,7 @@ import Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from "../dsp/MelSpectogram.js"
-import { clip, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { clip, splitFloat32Array, writeToStderr, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 
@@ -223,10 +223,6 @@ export class Whisper {
 
 			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFinalPart)
 
-			const partTranscript = this.tokensToText(partTokens.slice(initialTokens.length))
-
-			logger.logTitledMessage('Recognized part transcript', partTranscript)
-
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = lastToken >= timestampTokensStart
 
@@ -370,7 +366,7 @@ export class Whisper {
 
 	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFinalPart: boolean) {
 		const logger = new Logger()
-		await logger.startAsync("Decode text tokens with Whisper decoder model")
+		await logger.startAsync("Decoding text tokens with Whisper decoder model")
 
 		const noSpeechThreshold = 0.6
 
@@ -509,17 +505,25 @@ export class Whisper {
 			} else if (indexOfMaxTextLogProb == eotToken) {
 				break
 			} else {
+				let chosenTokenIndex: number
+
 				if (this.decoderTemperature == 0.0) {
-					addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
+					chosenTokenIndex = indexOfMaxTextLogProb
 				} else {
 					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
 					const textTokenProbs = softmax(textTokenLogits as any, this.decoderTemperature)
-					const selectedTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
-
-					addToken(selectedTokenIndex, tokenTimestampLogits)
-
-					//const selectedTokenText = this.tokenToTextLookup.get(selectedTokenIndex) || ""
+					chosenTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
 				}
+
+				let chosenTokenText = this.tokenToTextLookup.get(chosenTokenIndex) || ""
+
+				if (decodedTokens.every(token => token >= eotToken)) {
+					chosenTokenText = chosenTokenText.trimStart()
+				}
+
+				writeToStderr(chosenTokenText)
+
+				addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
 			}
 
 			await yieldToEventLoop()
@@ -531,6 +535,7 @@ export class Whisper {
 			decodedTokensCrossAttentionQKs = decodedTokensCrossAttentionQKs.slice(0, lastTimestampTokenIndex)
 		}
 
+		writeToStderr("\n")
 		logger.end()
 
 		// Return the tokens
