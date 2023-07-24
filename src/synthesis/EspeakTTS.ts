@@ -16,47 +16,6 @@ const log = logToStderr
 let espeakInstance: any
 let espeakModule: any
 
-export async function synthesize(text: string, ssmlEnabled: boolean) {
-	const logger = new Logger()
-	logger.start("Get espeak WASM instance")
-
-	if (!ssmlEnabled) {
-		const { escape } = await import('html-escaper')
-
-		text = escape(text)
-	}
-
-	const { instance } = await getEspeakInstance()
-
-	const sampleChunks: Float32Array[] = []
-	const allEvents: EspeakEvent[] = []
-
-	logger.start("Synthesize with eSpeak")
-
-	instance.synthesize(text, (samples: Int16Array, events: EspeakEvent[]) => {
-		if (samples && samples.length > 0) {
-			sampleChunks.push(int16PcmToFloat32(samples))
-		}
-
-		for (const event of events) {
-			if (event.type == "word") {
-				const textPosition = event.text_position - 1;
-				(event as any)["text"] = text.substring(textPosition, textPosition + event.word_length)
-			}
-		}
-
-		allEvents.push(...events)
-	})
-
-	const concatenatedSamples = concatFloat32Arrays(sampleChunks)
-
-	const rawAudio: RawAudio = { audioChannels: [concatenatedSamples], sampleRate: 22050 }
-
-	logger.end()
-
-	return { rawAudio, events: allEvents }
-}
-
 export async function preprocessAndSynthesize(segment: string, espeakVoice: string, language: string, lexicons: Lexicon[] = [], rate?: number, pitch?: number, pitchRange?: number) {
 	const logger = new Logger()
 
@@ -154,13 +113,8 @@ export async function preprocessAndSynthesize(segment: string, espeakVoice: stri
 	return { referenceSynthesizedAudio, referenceTimeline, fragments, preprocessedFragments, phonemizedFragmentsSubstitutions, phonemizedSentence }
 }
 
-export async function synthesizeFragments(fragments: string[], voice: string, insertSeparators = false, rate = 150, pitch = 50, pitchRange = 50) {
+export async function synthesizeFragments(fragments: string[], voice: string, insertSeparators = false, rate?: number, pitch?: number, pitchRange?: number) {
 	const logger = new Logger()
-
-	await setVoice(voice)
-	await setRate(rate)
-	await setPitch(pitch)
-	await setPitchRange(pitchRange)
 
 	const sampleRate = await getSampleRate()
 
@@ -195,7 +149,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 
 	//log(textWithMarkers)
 
-	const { rawAudio, events } = await synthesize(textWithMarkers, true)
+	const { rawAudio, events } = await synthesize(textWithMarkers, voice, true, rate, pitch, pitchRange)
 
 	const timeline: Timeline = fragments.map(word => ({
 		type: "word",
@@ -340,6 +294,52 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 	return { rawAudio, timeline: timelineWithClauses, events }
 }
 
+export async function synthesize(text: string, voice: string, ssmlEnabled: boolean, rate = 150, pitch = 50, pitchRange = 50) {
+	const logger = new Logger()
+	logger.start("Get espeak WASM instance")
+
+	if (!ssmlEnabled) {
+		const { escape } = await import('html-escaper')
+
+		text = escape(text)
+	}
+
+	const { instance } = await getEspeakInstance()
+
+	const sampleChunks: Float32Array[] = []
+	const allEvents: EspeakEvent[] = []
+
+	logger.start("Synthesize with eSpeak")
+
+	await setVoice(voice)
+	await setRate(rate)
+	await setPitch(pitch)
+	await setPitchRange(pitchRange)
+
+	instance.synthesize(text, (samples: Int16Array, events: EspeakEvent[]) => {
+		if (samples && samples.length > 0) {
+			sampleChunks.push(int16PcmToFloat32(samples))
+		}
+
+		for (const event of events) {
+			if (event.type == "word") {
+				const textPosition = event.text_position - 1;
+				(event as any)["text"] = text.substring(textPosition, textPosition + event.word_length)
+			}
+		}
+
+		allEvents.push(...events)
+	})
+
+	const concatenatedSamples = concatFloat32Arrays(sampleChunks)
+
+	const rawAudio: RawAudio = { audioChannels: [concatenatedSamples], sampleRate: 22050 }
+
+	logger.end()
+
+	return { rawAudio, events: allEvents }
+}
+
 export async function textToIPA(text: string, voice: string) {
 	await setVoice(voice)
 	const { instance } = await getEspeakInstance()
@@ -400,7 +400,13 @@ export async function getSampleRate(): Promise<22050> {
 export async function listVoices() {
 	const { instance } = await getEspeakInstance()
 
-	const voiceList: { identifier: string, name: string, languages: { priority: number, name: string }[] }[] = instance.list_voices()
+	const voiceList: {
+		identifier: string,
+		name: string,
+		languages: {
+			priority: number,
+			name: string
+		}[] }[] = instance.list_voices()
 
 	return voiceList
 }
