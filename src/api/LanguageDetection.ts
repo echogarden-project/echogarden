@@ -99,7 +99,7 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 	}
 
 	logger.end()
-	logger.logDuration("Total detection time", startTime, chalk.magentaBright)
+	logger.logDuration("\nTotal detection time", startTime, chalk.magentaBright)
 
 	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities }
 }
