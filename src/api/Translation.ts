@@ -31,7 +31,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	options = extendDeep(defaultSpeechTranslationOptions, options)
 
 	if (!options.sourceLanguage) {
-		logger.start("No language provided. Detecting speech language")
+		logger.start("No language specified. Detecting speech language")
 		const { detectedLanguage } = await detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()

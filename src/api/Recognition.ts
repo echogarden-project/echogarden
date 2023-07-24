@@ -36,7 +36,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	if (!options.language) { // && options.engine != "whisper") {
-		logger.start("No language provided. Detecting speech language")
+		logger.start("No language specified. Detecting speech language")
 		const { detectedLanguage } = await API.detectSpeechLanguage(inputRawAudio, options.languageDetection || {})
 
 		logger.end()
