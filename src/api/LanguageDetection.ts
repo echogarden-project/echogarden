@@ -125,7 +125,7 @@ export async function detectLanguageByParts(sourceRawAudio: RawAudio, getResults
 
 		const sortedResultsForPart = deepClone(resultsForPart).sort((a, b) => b.probability - a.probability)
 
-		logger.logTitledMessage(`Top candidates`, `${formatLanguageCodeWithName(sortedResultsForPart[0].language)}: ${sortedResultsForPart[0].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[1].language)}: ${sortedResultsForPart[1].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[3].language)} (${sortedResultsForPart[3].probability.toFixed(3)}`)
+		logger.logTitledMessage(`Top candidates`, `${formatLanguageCodeWithName(sortedResultsForPart[0].language)}: ${sortedResultsForPart[0].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[1].language)}: ${sortedResultsForPart[1].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[3].language)}: ${sortedResultsForPart[3].probability.toFixed(3)}`)
 
 		if (audioPartLength < audioPartDuration) {
 			break
