@@ -219,7 +219,6 @@
 ## Future features and enhancements
 
 ### CLI
-* Synthesize given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
 * Auto-generate options file, with comments, based on default options of the API
 * Have the CLI launch a background worker (in a thread) to enable better parallelism
 * Play back result audio while synthesis or recognition is still processing on the background (may require `worker_threads`)
@@ -228,11 +227,19 @@
 * `stdout` output support
 * Markdown file as text input?
 
+### Web
+* Web based frontend UI to the server
+* Adapt some WASM modules to also run on the web
+* Investigate running in WebContainer
+
 ### API
 * Auto-install npm modules when needed using something like `npm-programmatic`
 
 ### Text enhancement
 * Add capitalization and punctuation to recognized outputs if needed (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
+
+### Synthesis
+* Synthesize given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
 
 ### Recognition
 * Low latency recognition mode. Make the partial transcription available as fast as possible
@@ -242,14 +249,10 @@
 * Implement beam search for Silero decoder
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
-### Web
-* Web based frontend UI to the server
-* Adapt some WASM modules to also run on the web
-* Investigate running in WebContainer
-
 ### Alignment
-* Align audio file to audio file
-* Alignment with speech translation assistance, which would enable multilingual subtitle replacement for translated captions
+* Implement hierarchical DTW to reduce memory for very long inputs.
+* Implement alignment with speech translation assistance, which would enable multilingual subtitle replacement for translated subtitles
+* Method to align audio file to audio file
 * Make `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps
 
