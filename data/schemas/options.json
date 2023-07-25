@@ -488,19 +488,7 @@
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
         },
         "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            },
-            "temperature": {
-              "type": "number"
-            },
-            "prompt": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/WhisperOptions"
         },
         "vosk": {
           "type": "object",
@@ -638,6 +626,27 @@
         "large-v1",
         "large-v2"
       ]
+    },
+    "WhisperOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/WhisperModelName"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "topCandidateCount": {
+          "type": "number"
+        },
+        "punctuationThreshold": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
     },
     "PhoneAlignmentMethod": {
       "type": "string",
@@ -1023,19 +1032,7 @@
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
         },
         "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            },
-            "temperature": {
-              "type": "number"
-            },
-            "prompt": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/WhisperOptions"
         }
       },
       "additionalProperties": false

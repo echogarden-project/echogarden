@@ -9,7 +9,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import * as API from "./API.js"
 import { Timeline } from "../utilities/Timeline.js"
-import type { WhisperModelName } from "../recognition/WhisperSTT.js"
+import { whisperOptionsDefaults, type WhisperOptions } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import chalk from "chalk"
@@ -68,7 +68,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language, whisperOptions.temperature!, whisperOptions.prompt))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language, whisperOptions))
 
 			break
 		}
@@ -229,11 +229,7 @@ export interface RecognitionOptions {
 
 	languageDetection?: API.SpeechLanguageDetectionOptions
 
-	whisper?: {
-		model?: WhisperModelName
-		temperature?: number
-		prompt?: string
-	}
+	whisper?: WhisperOptions
 
 	vosk?: {
 		modelPath?: string
@@ -274,11 +270,7 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 
 	languageDetection: undefined,
 
-	whisper: {
-		model: undefined,
-		temperature: 0.0,
-		prompt: undefined
-	},
+	whisper: whisperOptionsDefaults,
 
 	vosk: {
 		modelPath: undefined

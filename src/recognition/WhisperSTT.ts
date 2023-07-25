@@ -7,7 +7,7 @@ import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax
 import { isWordOrSymbolWord, splitToWords } from '../nlp/Segmentation.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
-import { deepClone } from '../utilities/ObjectUtilities.js'
+import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio } from '../audio/AudioUtilities.js'
@@ -20,7 +20,7 @@ import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectLanguageByParts } from '../api/LanguageDetection.js'
 
-export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, decoderTemperature: number, prompt?: string) {
+export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
@@ -28,7 +28,7 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
-	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, decoderTemperature, prompt)
+	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options)
 
 	return result
 }
@@ -179,7 +179,7 @@ export class Whisper {
 		logger.end()
 	}
 
-	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string, decoderTemperature: number, prompt?: string) {
+	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string, options: WhisperOptions) {
 		const logger = new Logger()
 
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
@@ -187,6 +187,7 @@ export class Whisper {
 		const audioSamples = rawAudio.audioChannels[0]
 		const sampleRate = rawAudio.sampleRate
 		const audioDuration = getRawAudioDuration(rawAudio)
+		const prompt = options.prompt
 
 		const maxAudioSamples = sampleRate * 30
 
@@ -225,7 +226,7 @@ export class Whisper {
 
 			logger.end()
 
-			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs, decodedTokensConfidence } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, decoderTemperature)
+			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs, decodedTokensConfidence } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, options)
 
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = lastToken >= timestampTokensStart
@@ -367,9 +368,11 @@ export class Whisper {
 		return results
 	}
 
-	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, temperature: number) {
+	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, options: WhisperOptions) {
 		const logger = new Logger()
 		await logger.startAsync("Decode text tokens with Whisper decoder model")
+
+		options = extendDeep(whisperOptionsDefaults, options)
 
 		const noSpeechThreshold = 0.6
 
@@ -382,7 +385,7 @@ export class Whisper {
 		const noSpeechToken = this.tokenConfig.noSpeechToken
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
 
-		const maxDecodedTokenCount = 200
+		const maxDecodedTokenCount = 250
 
 		let decodedTokens = initialTokens.slice()
 		const initialKvDimensions = this.getKvDimensions(1, decodedTokens.length)
@@ -514,26 +517,50 @@ export class Whisper {
 			} else {
 				let chosenTokenIndex: number
 
-				if (temperature == 0) {
+				if (options.temperature == 0.0) {
 					chosenTokenIndex = indexOfMaxTextLogProb
 				} else {
+					const topLogitCount = options.topCandidateCount!
+
 					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
-					const textTokenProbs = softmax(textTokenLogits as any, temperature)
+					const sortedTextTokenLogitsWithIndexes = Array.from(textTokenLogits).map((logit, index) => ({ logit, index }))
+					sortedTextTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+					const topLogitsWithIndexes = sortedTextTokenLogitsWithIndexes.slice(0, topLogitCount)
 
-					chosenTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
+					const topLogits = topLogitsWithIndexes.map(a => a.logit)
+					const textTokenProbs = softmax(topLogits, options.temperature)
+
+					const topIndexOfPromisingPunctuationLogit = topLogitsWithIndexes.findIndex(entry => {
+						const tokenText = (this.tokenToTextLookup.get(entry.index) || "").trim()
+						const tokenProb = probs[entry.index]
+
+						return tokenProb >= options.punctuationThreshold! && [',', '.', '!', '?'].includes(tokenText)
+					})
+
+					let chosenTokenIndexInTopLogits: number
+
+					if (topIndexOfPromisingPunctuationLogit >= 0) {
+						chosenTokenIndexInTopLogits = topIndexOfPromisingPunctuationLogit
+					} else {
+						chosenTokenIndexInTopLogits = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
+					}
+
+					chosenTokenIndex = sortedTextTokenLogitsWithIndexes[chosenTokenIndexInTopLogits].index
 				}
 
-				let chosenTokenText = this.tokenToTextLookup.get(chosenTokenIndex) || ""
+				if (chosenTokenIndex < eotToken) {
+					let chosenTokenText = this.tokenToTextLookup.get(chosenTokenIndex) || ""
 
-				if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
-					chosenTokenText = chosenTokenText.trimStart()
+					if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
+						chosenTokenText = chosenTokenText.trimStart()
+					}
+
+					writeToStderr(chosenTokenText)
 				}
-
-				writeToStderr(chosenTokenText)
 
 				const confidence = probs[chosenTokenIndex]
 
-				addToken(indexOfMaxTextLogProb, tokenTimestampLogits, confidence)
+				addToken(chosenTokenIndex, tokenTimestampLogits, confidence)
 			}
 
 			await yieldToEventLoop()
@@ -1435,4 +1462,20 @@ const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
 	"large-v1": [199, 222, 224, 237, 447, 451, 457, 462, 475],
 	"large-v2": [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
 	"large": [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
+}
+
+export interface WhisperOptions {
+	model?: WhisperModelName
+	temperature?: number
+	prompt?: string
+	topCandidateCount?: number
+	punctuationThreshold?: number
+}
+
+export const whisperOptionsDefaults = {
+	model: undefined,
+	temperature: 0.1,
+	prompt: undefined,
+	topCandidateCount: 5,
+	punctuationThreshold: 0.2
 }

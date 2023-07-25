@@ -8,7 +8,7 @@ import { Logger } from "../utilities/Logger.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import { Timeline } from "../utilities/Timeline.js"
-import type { WhisperModelName } from "../recognition/WhisperSTT.js"
+import { whisperOptionsDefaults, type WhisperOptions } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { EngineMetadata } from "./Common.js"
 import { SpeechLanguageDetectionOptions, detectSpeechLanguage } from "./API.js"
@@ -80,7 +80,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage, whisperOptions.temperature!, whisperOptions.prompt))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage, whisperOptions))
 
 			break
 		}
@@ -94,7 +94,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 	logger.log('')
 	logger.logDuration(`Total speech translation time`, startTimestamp, chalk.magentaBright)
 
-	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage }
+	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage, targetLanguage }
 }
 
 export interface SpeechTranslationResult {
@@ -102,6 +102,7 @@ export interface SpeechTranslationResult {
 	timeline: Timeline
 	rawAudio: RawAudio
 	sourceLanguage: string
+	targetLanguage: string
 }
 
 export type SpeechTranslationEngine = "whisper"
@@ -113,11 +114,7 @@ export interface SpeechTranslationOptions {
 	targetLanguage?: string
 	languageDetection?: SpeechLanguageDetectionOptions
 
-	whisper?: {
-		model?: WhisperModelName
-		temperature?: number
-		prompt?: string
-	}
+	whisper?: WhisperOptions
 }
 
 export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
@@ -128,11 +125,7 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	languageDetection: undefined,
 
-	whisper: {
-		model: "tiny",
-		temperature: 0.0,
-		prompt: undefined
-	},
+	whisper: whisperOptionsDefaults,
 }
 
 export const speechTranslationEngines: EngineMetadata[] = [
