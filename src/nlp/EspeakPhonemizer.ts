@@ -63,7 +63,7 @@ export async function phonemizeText(text: string, voice: string, substitutionMap
 
 	for (const sentence of segmentedText) {
 		for (const clause of sentence.phrases) {
-			const words = clause.words.filter(wordObject => Segmentation.isWord(wordObject.text))
+			const words = clause.words.filter(wordObject => Segmentation.isWordOrSymbolWord(wordObject.text))
 			const preparedClauseText = words.map(word => word.text.replace(/\./g, " ")).join(" ")
 
 			preparedClauses.push(preparedClauseText)

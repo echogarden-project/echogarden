@@ -1,7 +1,7 @@
 import { convert as convertHtmlToText } from 'html-to-text'
 
 import { formatHMS, formatMS, secondsToHMS, secondsToMS, startsWithAnyOf } from "../utilities/Utilities.js"
-import { isWord } from '../nlp/Segmentation.js'
+import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
 import { charactersToWriteAhead } from '../audio/AudioPlayer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { readFile } from '../utilities/FileSystem.js'
@@ -183,7 +183,8 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 		}
 
 		if (timeline[0].type == "word") {
-			const wordTimeline = timeline.filter(entry => isWord(entry.text))
+			const wordTimeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+
 			const text = wordTimeline.map(entry => entry.text).join(" ")
 
 			const segmentEntry: TimelineEntry = {

@@ -14,7 +14,7 @@ import { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { Timeline, addTimeOffsetToTimeline, roundTimelineTimestamps, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
+import { Timeline, addTimeOffsetToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { ensureDir, existsSync, getFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
@@ -1229,7 +1229,7 @@ function getFileSaver(outputFilePath: string): FileSaver {
 		fileSaver = async (audio, timeline, text) => {
 			await ensureDir(fileDir)
 
-			const roundedTimeline = roundTimelineTimestamps(timeline)
+			const roundedTimeline = roundTimelineProperties(timeline)
 			return writeFileSafe(outputFilePath, stringifyAndFormatJson(roundedTimeline))
 		}
 	} else if (fileExtension == "srt") {

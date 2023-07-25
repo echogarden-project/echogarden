@@ -8,7 +8,7 @@ import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, st
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { ParagraphBreakType, WhitespaceProcessing, isWord, splitToSentences } from "../nlp/Segmentation.js"
+import { ParagraphBreakType, WhitespaceProcessing, isWord, isWordOrSymbolWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
@@ -394,7 +394,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			if (inputIsSSML) {
 				logger.end()
-				
+
 				const { rawAudio } = await EspeakTTS.synthesize(simplifiedText, espeakVoice, true, espeakRate, espeakPitch, espeakPitchRange)
 
 				synthesizedAudio = rawAudio
@@ -837,7 +837,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	}
 
 	if (timeline) {
-		timeline = timeline.filter(entry => isWord(entry.text))
+		timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
 	}
 
 	logger.end()

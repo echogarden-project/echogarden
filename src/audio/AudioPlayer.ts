@@ -10,7 +10,7 @@ import { Timer } from "../utilities/Timer.js"
 import { waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { isWord } from '../nlp/Segmentation.js'
+import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
@@ -30,7 +30,7 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 }
 
 export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
-	timeline = timeline.filter(entry => isWord(entry.text))
+	timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
 
 	let timelineEntryIndex = 0
 	let transcriptOffset = 0
