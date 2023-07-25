@@ -122,9 +122,21 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		}
 
 		case "dtw-ra": {
+			/*
+			const promptWords = (await splitToWords(prompt, language)).filter(word => isWord(word))
+
+			shuffleArrayInPlace(promptWords, this.randomGen)
+			//promptWords.reverse()
+
+			prompt = promptWords.join(" ")
+			*/
+
 			const recognitionOptionsDefaults: API.RecognitionOptions = {
 				engine: "whisper",
 				language,
+
+				whisper: {
+				}
 			}
 
 			const engineOptions = options.dtw!

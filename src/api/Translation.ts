@@ -80,7 +80,7 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage, whisperOptions.temperature!))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "translate", sourceLanguage, whisperOptions.temperature!, whisperOptions.prompt))
 
 			break
 		}
@@ -116,6 +116,7 @@ export interface SpeechTranslationOptions {
 	whisper?: {
 		model?: WhisperModelName
 		temperature?: number
+		prompt?: string
 	}
 }
 
@@ -129,7 +130,8 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	whisper: {
 		model: "tiny",
-		temperature: 0.0
+		temperature: 0.0,
+		prompt: undefined
 	},
 }
 

@@ -20,15 +20,15 @@ import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectLanguageByParts } from '../api/LanguageDetection.js'
 
-export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, decoderTemperature: number) {
+export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, decoderTemperature: number, prompt?: string) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir, decoderTemperature)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
-	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage)
+	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, decoderTemperature, prompt)
 
 	return result
 }
@@ -38,7 +38,7 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir, 0.0)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
 	const timeline = await whisper.align(sourceRawAudio, referenceText, language)
@@ -51,7 +51,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir, 0.0)
+	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
@@ -98,11 +98,9 @@ export class Whisper {
 		timestampTokensStart: number
 	}
 
-	decoderTemperature: number
-
 	randomGen = new XorShift32RNG(23948203)
 
-	constructor(modelName: WhisperModelName, modelDir: string, tokenizerDir: string, decoderTemperature: number) {
+	constructor(modelName: WhisperModelName, modelDir: string, tokenizerDir: string) {
 		this.modelDir = modelDir
 		this.modelName = modelName
 		this.tokenizerDir = tokenizerDir
@@ -130,8 +128,6 @@ export class Whisper {
 				suppressedTokens: [1, 2, 7, 8, 9, 10, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 357, 366, 438, 532, 685, 705, 796, 930, 1058, 1220, 1267, 1279, 1303, 1343, 1377, 1391, 1635, 1782, 1875, 2162, 2361, 2488, 3467, 4008, 4211, 4600, 4808, 5299, 5855, 6329, 7203, 9609, 9959, 10563, 10786, 11420, 11709, 11907, 13163, 13697, 13700, 14808, 15306, 16410, 16791, 17992, 19203, 19510, 20724, 22305, 22935, 27007, 30109, 30420, 33409, 34949, 40283, 40493, 40549, 47282, 49146, 50257, 50359, 50360, 50361]
 			}
 		}
-
-		this.decoderTemperature = decoderTemperature
 	}
 
 	async initialize() {
@@ -183,7 +179,7 @@ export class Whisper {
 		logger.end()
 	}
 
-	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string) {
+	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string, decoderTemperature: number, prompt?: string) {
 		const logger = new Logger()
 
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
@@ -211,11 +207,16 @@ export class Whisper {
 
 			const audioPartFeatures = await this.encodeAudio(audioPartRawAudio)
 
+			const isFirstPart = audioOffset == 0
 			const isFinalPart = audioOffset + maxAudioSamples > audioSamples.length
 
 			let initialTokens: number[] = []
 
-			if (previousPartTokens.length > 0) {
+			if (isFirstPart && prompt) {
+				const promptTokens = await this.textToTokens(prompt, language)
+
+				initialTokens = [this.tokenConfig.sotPrevToken, ...promptTokens]
+			} else if (previousPartTokens.length > 0) {
 				initialTokens = [this.tokenConfig.sotPrevToken, ...previousPartTokens]
 			}
 
@@ -223,7 +224,7 @@ export class Whisper {
 
 			logger.end()
 
-			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFinalPart)
+			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, decoderTemperature)
 
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = lastToken >= timestampTokensStart
@@ -364,7 +365,7 @@ export class Whisper {
 		return results
 	}
 
-	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFinalPart: boolean) {
+	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, temperature: number) {
 		const logger = new Logger()
 		await logger.startAsync("Decoding text tokens with Whisper decoder model")
 
@@ -399,8 +400,6 @@ export class Whisper {
 
 		// Start decoding loop
 		for (let decodedTokenCount = 0; decodedTokenCount < maxDecodedTokenCount; decodedTokenCount++) {
-			//logger.log(decodedTokenCount)
-
 			const isInitialState = decodedTokens.length == initialTokens.length
 
 			const tokensToDecode = isInitialState ? decodedTokens : [decodedTokens[decodedTokens.length - 1]]
@@ -507,11 +506,11 @@ export class Whisper {
 			} else {
 				let chosenTokenIndex: number
 
-				if (this.decoderTemperature == 0.0) {
+				if (temperature == 0.0) {
 					chosenTokenIndex = indexOfMaxTextLogProb
 				} else {
 					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
-					const textTokenProbs = softmax(textTokenLogits as any, this.decoderTemperature)
+					const textTokenProbs = softmax(textTokenLogits as any, temperature)
 					chosenTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
 				}
 
@@ -796,6 +795,10 @@ export class Whisper {
 	}
 
 	async getWordTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, correctionAmount = 0.0) {
+		if (alignmentPath.length == 0) {
+			return []
+		}
+
 		const wordTimeline: Timeline = []
 
 		for (let pathIndex = 0; pathIndex < alignmentPath.length; pathIndex++) {
@@ -839,7 +842,8 @@ export class Whisper {
 		const segmentFrameCount = segmentEndFrame - segmentStartFrame
 
 		if (segmentFrameCount == 0) {
-			throw new Error("Segment has 0 frames")
+			//throw new Error("Segment has 0 frames")
+			return []
 		}
 
 		const tokenCount = qksTensors.length

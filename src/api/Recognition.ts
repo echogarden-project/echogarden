@@ -68,7 +68,7 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language, whisperOptions.temperature!))
+			({ transcript, timeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, "transcribe", language, whisperOptions.temperature!, whisperOptions.prompt))
 
 			break
 		}
@@ -232,6 +232,7 @@ export interface RecognitionOptions {
 	whisper?: {
 		model?: WhisperModelName
 		temperature?: number
+		prompt?: string
 	}
 
 	vosk?: {
@@ -275,7 +276,8 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 
 	whisper: {
 		model: undefined,
-		temperature: 0.0
+		temperature: 0.0,
+		prompt: undefined
 	},
 
 	vosk: {
