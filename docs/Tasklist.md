@@ -105,7 +105,6 @@
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Speech language detection
-* When using Whisper for language detection of speech, apply it to the entire audio, not just the first 30 seconds
 
 ### Text language detection
 * Deploy and add the new n-gram based text language detection model
@@ -125,9 +124,10 @@
 * Option to generate captions that have word-level timings
 
 ### Synthesis
+* Option to disable alignment.
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add phrasing breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
-* Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (why doesn't `cldr` treat it as a word? Maybe it's not getting the right parameters, or it's not included in the list?) and "C#"
+* Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" as well
 * Find way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
@@ -135,10 +135,8 @@
 * Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible.
 * Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`.
 * eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically).
-* Investigate if eSpeak can be made to correctly support phonemizing and pronouncing the dot character like in `object.key`
-* Speaker-specific voice option
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
-* Option to disable alignment
+* Speaker-specific voice option
 * Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
 
 ### Synthesis / preprocessing
@@ -169,17 +167,11 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
-* Add sampling and temperature support to decoder. This may help with repetitive token sequences.
-* During language detection, if file is more than 30s, run the detection over all the segments and average the resulting probability distributions, consider how to handle very short segments
-* When using `dtw-ra` alignment, pass the transcript as a prompt. Remove some of the initial transcript based on what has been detected (try to find the best matching initial segment between the transcript and recognized text, and remove it at each recognition window).
-* Accept custom prompt via an option
-* Log individual tokens to the terminal as they are being decoded from the model
-* Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 * Cache last model (if enough memory available)
-* Integrate speech language detection into the recognition itself, so it is done efficiently when the language is not known
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
-* The segment output can be use to split to segment files, otherwise it is possible to try to guess using the pause lengths or voice activity detection
+* The segment output can be use to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
 * Way to specify general model size, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
+* Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 
 ### Alignment
 
@@ -202,6 +194,7 @@
 * `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
 * `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
 * `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
+* `espeak-ng`: Joins multiple words into a single event when its lexicon has a compound pronunciation. For example "there was" includes the phonemes for both "there" and "was" (`ðɛɹwˌʌz`) only under "there", and leaves "was" empty.
 * `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
 * `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
 * `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)

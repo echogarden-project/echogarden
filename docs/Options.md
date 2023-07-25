@@ -106,6 +106,8 @@ Applicable to CLI command: `transcribe`.
 
 **Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
+* `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.0` (no randomization - always chooses top ranked token) or choose a relatively low value (about `0.2` or lower) for best results. Defaults to `0.0`
+* `whisper.prompt`: initial text to give the Whisper model, can be a vocabulary or a example of some sort. Note that if the prompt is very similar to the transcript, the model may avoid producing the correct tokens. Optional
 
 **Vosk**:
 * `vosk.modelPath`: path to the Vosk model to be used
@@ -157,6 +159,8 @@ Applicable to CLI command: `translate-speech`.
 
 **Whisper**:
 * `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`
+* `whisper.temperature`: temperature setting for the text decoder. See recognition options for more details. Defaults to `0.0`
+* `whisper.prompt` initial text to give the Whisper model. See recognition options for more details. Optional
 
 ## Language detection
 
