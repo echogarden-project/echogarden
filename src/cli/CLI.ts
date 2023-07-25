@@ -437,7 +437,9 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
-	const { transcript, timeline, rawAudio } = await API.recognizeFile(sourceFilename, options)
+	const { transcript, timeline: wordTimeline, rawAudio, language } = await API.recognizeFile(sourceFilename, options)
+
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, 'single', 'preserve')
 
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
@@ -452,7 +454,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 
 		const fileSaver = getFileSaver(outputFile)
 
-		await fileSaver(rawAudio, timeline, transcript)
+		await fileSaver(rawAudio, segmentTimeline, transcript)
 	}
 
 	progressLogger.end()
@@ -460,7 +462,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
-		await playAudioWithWordTimeline(normalizedAudio, timeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
@@ -584,7 +586,9 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 	await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
 
-	const { transcript, timeline, rawAudio, sourceLanguage } = await API.translateSpeechFile(inputFilename, options)
+	const { transcript, timeline: wordTimeline, rawAudio, targetLanguage } = await API.translateSpeechFile(inputFilename, options)
+
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, targetLanguage, 'single', 'preserve')
 
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
@@ -599,7 +603,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 		const fileSaver = getFileSaver(outputFile)
 
-		await fileSaver(rawAudio, timeline, transcript)
+		await fileSaver(rawAudio, segmentTimeline, transcript)
 	}
 
 	progressLogger.end()
@@ -607,7 +611,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
-		await playAudioWithWordTimeline(normalizedAudio, timeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
