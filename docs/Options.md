@@ -106,8 +106,10 @@ Applicable to CLI command: `transcribe`.
 
 **Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
-* `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.0` (no randomization - always chooses top ranked token) or choose a relatively low value (about `0.2` or lower) for best results. Defaults to `0.0`
-* `whisper.prompt`: initial text to give the Whisper model, can be a vocabulary or a example of some sort. Note that if the prompt is very similar to the transcript, the model may avoid producing the correct tokens. Optional
+* `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (about `0.25` or lower) for best results. Defaults to `0.1`
+* `whisper.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
+* `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
+* `punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
 
 **Vosk**:
 * `vosk.modelPath`: path to the Vosk model to be used
@@ -140,8 +142,12 @@ Applicable to CLI command: `align`.
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 * `customLexiconPaths`: an array of custom lexicon file paths. Optional
 
+**Plain text processing**:
+* `plainText.paragraphBreaks`: split transcript to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
+* `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
+
 **DTW**:
-* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Defaults to `120`. If your audio is longer than two minutes, consider increasing this value for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement (in GB), is shown in the log messages before alignment starts.
+* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
 
 **DTW-RA only**:
 * `dtw.recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `dtw.recognition.engine = silero`
@@ -158,9 +164,8 @@ Applicable to CLI command: `translate-speech`.
 * `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
 **Whisper**:
-* `whisper.model`: Whisper model to use (multilingual engines only). Defaults to `tiny`
-* `whisper.temperature`: temperature setting for the text decoder. See recognition options for more details. Defaults to `0.0`
-* `whisper.prompt` initial text to give the Whisper model. See recognition options for more details. Optional
+
+* `whisper`: prefix for options for the Whisper model. Same options as detailed in the recognition section above
 
 ## Language detection
 

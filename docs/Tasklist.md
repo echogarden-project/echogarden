@@ -144,6 +144,7 @@
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`)
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules.
 * Support normalizing to graphemes, not only phonemes
+* Add support for multiple words in `precededBy` and `succeededBy`
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
 * Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines).
@@ -237,9 +238,9 @@
 ### Recognition
 * Low latency recognition mode. Make the partial transcription available as fast as possible
 * Live input / microphone recognition
-* Live vosk alternatives events
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
+* Live vosk alternatives events
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment
@@ -250,6 +251,7 @@
 * Predict timing for individual letters (graphemes) based on phoneme timestamps
 
 ## Documentation
+* Start documenting the developer API, to import the program as a library. At least as experimental. Point to source code for reference.
 
 ### CLI
 * Document the `serve` command
