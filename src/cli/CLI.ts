@@ -455,13 +455,13 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 		await fileSaver(rawAudio, timeline, transcript)
 	}
 
+	progressLogger.end()
+
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
 		await playAudioWithTimeline(normalizedAudio, timeline, transcript)
 	}
-
-	progressLogger.end()
 }
 
 async function align(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -546,6 +546,8 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 		await fileSaver(rawAudio, segmentTimeline, transcript)
 	}
 
+	progressLogger.end()
+
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
@@ -553,8 +555,6 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 		await playAudioWithTimeline(normalizedAudio, wordTimeline, transcript)
 	}
-
-	progressLogger.end()
 }
 
 async function translateSpeech(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -601,6 +601,8 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 		await fileSaver(rawAudio, timeline, transcript)
 	}
+
+	progressLogger.end()
 
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
@@ -681,6 +683,8 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 		log("")
 		log(resultsAsText)
 	}
+
+	progressLogger.end()
 }
 
 async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -728,13 +732,13 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 		await fileSaver(rawAudio, timeline, "")
 	}
 
+	progressLogger.end()
+
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
 		await playAudioWithTimeline(normalizedAudio, timeline)
 	}
-
-	progressLogger.end()
 }
 
 async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -776,11 +780,11 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 		await fileSaver(outputAudio, [], "")
 	}
 
+	progressLogger.end()
+
 	if ((options as any).play) {
 		await playAudioSamples(outputAudio)
 	}
-
-	progressLogger.end()
 }
 
 async function listEngines(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -937,6 +941,8 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 	} else {
 		log(voiceListText)
 	}
+
+	progressLogger.end()
 }
 
 async function installPackages(commandArgs: string[], cliOptions: Map<string, string>) {
