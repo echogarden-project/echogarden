@@ -7,7 +7,7 @@ import { Logger } from "../utilities/Logger.js"
 
 import { logToStderr } from "../utilities/Utilities.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
-import { EngineMetadata } from "./Globals.js"
+import { EngineMetadata } from "./Common.js"
 import chalk from "chalk"
 
 const log = logToStderr

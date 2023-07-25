@@ -4,6 +4,7 @@ import { splitChineseTextToWords_Jieba } from './ChineseSegmentation.js'
 import { sumArray, includesAnyOf, indexOfAnyOf, logToStderr } from '../utilities/Utilities.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
+import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
 
 const log = logToStderr
 
@@ -235,6 +236,3 @@ export function splitToParagraphs(text: string, paragraphBreaks: ParagraphBreakT
 
 	return paragraphs
 }
-
-export type ParagraphBreakType = 'single' | 'double'
-export type WhitespaceProcessing = 'preserve' | 'removeLineBreaks' | 'collapse'

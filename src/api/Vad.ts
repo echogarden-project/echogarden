@@ -10,7 +10,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { Timeline } from "../utilities/Timeline.js"
 import path from "path"
 import { loadPackage } from "../utilities/PackageManager.js"
-import { EngineMetadata } from "./Globals.js"
+import { EngineMetadata } from "./Common.js"
 
 const log = logToStderr
 

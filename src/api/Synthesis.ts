@@ -8,7 +8,7 @@ import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, st
 import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { ParagraphBreakType, WhitespaceProcessing, isWord, isWordOrSymbolWord, splitToSentences } from "../nlp/Segmentation.js"
+import { isWordOrSymbolWord, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
@@ -17,7 +17,7 @@ import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFac
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from "../utilities/FileSystem.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
-import { EngineMetadata, appName } from "./Globals.js"
+import { EngineMetadata, appName } from "./Common.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
 import chalk from "chalk"
 
@@ -904,10 +904,7 @@ export interface SynthesisOptions {
 
 	customLexiconPaths?: string[]
 
-	plainText?: {
-		paragraphBreaks?: ParagraphBreakType
-		whitespace?: WhitespaceProcessing
-	}
+	plainText?: API.PlainTextOptions
 
 	alignment?: API.AlignmentOptions
 

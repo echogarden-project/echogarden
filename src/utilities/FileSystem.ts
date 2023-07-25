@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { OpenPromise } from './OpenPromise.js'
 import { getRandomHexString, sha256AsHex } from './Utilities.js'
-import { appName } from '../api/Globals.js'
+import { appName } from '../api/Common.js'
 
 export const readFile = promisify(gracefulFS.readFile)
 //export const writeFile = promisify(gracefulFS.writeFile)

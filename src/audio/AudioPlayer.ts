@@ -26,10 +26,10 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 		transcript = await readFile(transcriptFileName, "utf8")
 	}
 
-	await playAudioWithTimeline(rawAudio, timeline, transcript)
+	await playAudioWithWordTimeline(rawAudio, timeline, transcript)
 }
 
-export async function playAudioWithTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
+export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
 	timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
 
 	let timelineEntryIndex = 0

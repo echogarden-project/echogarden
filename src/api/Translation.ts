@@ -10,7 +10,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { Timeline } from "../utilities/Timeline.js"
 import type { WhisperModelName } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
-import { EngineMetadata } from "./Globals.js"
+import { EngineMetadata } from "./Common.js"
 import { SpeechLanguageDetectionOptions, detectSpeechLanguage } from "./API.js"
 import chalk from "chalk"
 

@@ -1,4 +1,5 @@
-import { isWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
+import { ParagraphBreakType, WhitespaceProcessing } from "../api/Common.js"
+import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
 import { deepClone } from "./ObjectUtilities.js"
 import { roundToDigits } from "./Utilities.js"
 
@@ -61,8 +62,8 @@ export function roundTimelineProperties(targetTimeline: Timeline, decimalDigits 
 	return roundedTimeline
 }
 
-export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string) {
-	const paragraphs = await splitToParagraphs(transcript, 'double', 'collapse')
+export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string, paragraphBreaks: ParagraphBreakType = 'double', whitespace: WhitespaceProcessing = 'collapse') {
+	const paragraphs = await splitToParagraphs(transcript, paragraphBreaks, whitespace)
 
 	const segments = paragraphs
 			.map(segment =>
@@ -111,7 +112,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		const wordEntry = wordTimeline[wordIndex]
 		const wordText = wordEntry.text
 
-		if (!isWord(wordText)) {
+		if (!isWordOrSymbolWord(wordText)) {
 			continue
 		}
 

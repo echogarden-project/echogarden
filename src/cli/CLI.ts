@@ -12,7 +12,7 @@ import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
 import { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
-import { playAudioSamples, playAudioWithTimeline } from "../audio/AudioPlayer.js"
+import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 import { Timeline, addTimeOffsetToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { ensureDir, existsSync, getFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
@@ -20,7 +20,7 @@ import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/L
 import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
-import { appName } from '../api/Globals.js'
+import { appName } from '../api/Common.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 
@@ -386,7 +386,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			const audioWithAddedGain = applyGainDecibels(segmentData.audio, gainAmount)
 			const segmentWordTimeline = segmentData.timeline.flatMap(sentenceTimeline => sentenceTimeline.timeline!)
 
-			await playAudioWithTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript)
+			await playAudioWithWordTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript)
 		}
 	}
 
@@ -460,7 +460,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
-		await playAudioWithTimeline(normalizedAudio, timeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudio, timeline, transcript)
 	}
 }
 
@@ -518,7 +518,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	const { wordTimeline, rawAudio, transcript, language } = await API.alignFile(audioFilename, text, options)
 
-	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language)
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
@@ -553,7 +553,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 		const wordTimeline = segmentTimeline.flatMap(segmentEntry => segmentEntry.timeline!).flatMap(sentenceEntry => sentenceEntry.timeline!)
 
-		await playAudioWithTimeline(normalizedAudio, wordTimeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
@@ -607,7 +607,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
-		await playAudioWithTimeline(normalizedAudio, timeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudio, timeline, transcript)
 	}
 }
 
@@ -737,7 +737,7 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 	if ((options as any).play) {
 		const normalizedAudio = normalizeAudioLevel(rawAudio)
 
-		await playAudioWithTimeline(normalizedAudio, timeline)
+		await playAudioWithWordTimeline(normalizedAudio, timeline)
 	}
 }
 

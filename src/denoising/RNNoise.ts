@@ -1,7 +1,6 @@
 import { float32ToInt16Pcm } from "../audio/AudioBufferConversion.js"
 import { concatFloat32Arrays } from "../utilities/Utilities.js"
 import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { Logger } from "../utilities/Logger.js"
 import { RawAudio, cloneRawAudio } from "../audio/AudioUtilities.js"
 

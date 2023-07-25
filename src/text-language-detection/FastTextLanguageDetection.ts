@@ -1,13 +1,12 @@
 import path from 'path'
 import type { LanguageDetectionResults } from '../api/LanguageDetection.js'
-import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { resolveModuleMainPath, roundToDigits } from '../utilities/Utilities.js'
 
 let fastTextLanguageDetectionModel: any
 
-export async function detectLanguage(text: string, defaultLang = "en-US", probabilityThreshold = 0.01) {
+export async function detectLanguage(text: string) {
 	const model = await loadLanguageDetectionModel()
 
 	const predictionsVector = model.predict(text, -1, 0.0)

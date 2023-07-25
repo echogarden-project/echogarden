@@ -217,6 +217,8 @@ export interface AlignmentOptions {
 
 	customLexiconPaths?: string[]
 
+	plainText?: API.PlainTextOptions
+
 	dtw?: {
 		windowDuration?: number,
 		recognition?: API.RecognitionOptions
@@ -236,6 +238,11 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	languageDetection: undefined,
 
 	customLexiconPaths: undefined,
+
+	plainText: {
+		paragraphBreaks: 'double',
+		whitespace: 'collapse'
+	},
 
 	dtw: {
 		windowDuration: 120,

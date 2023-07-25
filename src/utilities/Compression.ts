@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { Logger } from './Logger.js'
-import {  chmodRecursive, readdir, stat } from './FileSystem.js'
+import { readdir, stat } from './FileSystem.js'
 
 export async function createTarball(filePath: string, outputFile: string, prefixPath = "") {
 	const pathStat = await stat(filePath)

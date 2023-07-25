@@ -2,7 +2,7 @@ import path from "path"
 import { createTarball } from "./Compression.js"
 import { ensureDir, existsSync, getAppTempDir, move, readdir, stat } from "./FileSystem.js"
 import { ensureAndGetPackagesDir } from "./PackageManager.js"
-import { appName } from "../api/Globals.js"
+import { appName } from "../api/Common.js"
 import { getRandomHexString } from "./Utilities.js"
 
 const tarballDir = "../resources/tarballs"

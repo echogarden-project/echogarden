@@ -10,7 +10,7 @@ import { RecognitionOptions, RecognitionResult } from '../api/Recognition.js'
 import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Translation.js'
 import { Worker as WorkerThread } from 'node:worker_threads'
 import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
-import { playAudioWithTimeline } from '../audio/AudioPlayer.js'
+import { playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
 
 const log = logToStderr
 
@@ -269,7 +269,7 @@ export async function runClientWebSocketTest(serverPort: number, secure: boolean
 
 		const wordTimeline = synthesisResult1.timeline.flatMap(segmentEntry => segmentEntry.timeline!).flatMap(sentenceEntry => sentenceEntry.timeline!)
 		const transcript = synthesisResult1.timeline.map(segmenEntry => segmenEntry.text).join("\n\n")
-		await playAudioWithTimeline(synthesisResult1.synthesizedAudio, wordTimeline, transcript)
+		await playAudioWithWordTimeline(synthesisResult1.synthesizedAudio, wordTimeline, transcript)
 
 		await client.synthesizeSegments(
 			["Hey! What's up?", "See ya."],
