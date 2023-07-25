@@ -93,16 +93,7 @@
           }
         },
         "plainText": {
-          "type": "object",
-          "properties": {
-            "paragraphBreaks": {
-              "$ref": "#/definitions/ParagraphBreakType"
-            },
-            "whitespace": {
-              "$ref": "#/definitions/WhitespaceProcessing"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/PlainTextOptions"
         },
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
@@ -373,6 +364,18 @@
         "unknown"
       ]
     },
+    "PlainTextOptions": {
+      "type": "object",
+      "properties": {
+        "paragraphBreaks": {
+          "$ref": "#/definitions/ParagraphBreakType"
+        },
+        "whitespace": {
+          "$ref": "#/definitions/WhitespaceProcessing"
+        }
+      },
+      "additionalProperties": false
+    },
     "ParagraphBreakType": {
       "type": "string",
       "enum": [
@@ -405,6 +408,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "plainText": {
+          "$ref": "#/definitions/PlainTextOptions"
         },
         "dtw": {
           "type": "object",
@@ -770,16 +776,7 @@
           }
         },
         "plainText": {
-          "type": "object",
-          "properties": {
-            "paragraphBreaks": {
-              "$ref": "#/definitions/ParagraphBreakType"
-            },
-            "whitespace": {
-              "$ref": "#/definitions/WhitespaceProcessing"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/PlainTextOptions"
         },
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
