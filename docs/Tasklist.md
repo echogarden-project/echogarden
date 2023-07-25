@@ -161,7 +161,7 @@
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
 
 ### Recognition
-* Add confidence to each recognized word, if available
+* Add confidence to each recognized word on any engine that supports it
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 * Look for good split points using VAD before performing recognition
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
