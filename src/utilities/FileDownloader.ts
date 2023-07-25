@@ -8,6 +8,7 @@ import { Logger } from "./Logger.js"
 import path from "node:path"
 import { extractTarball } from "./Compression.js"
 import { createWriteStream, move, remove, readdir, ensureDir } from "./FileSystem.js"
+import chalk from "chalk"
 
 export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = "archive") {
 	const logger = new Logger()
@@ -17,7 +18,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	const tempDirPath = path.join(baseTempPath, `/${randomID}`)
 	await ensureDir(tempDirPath)
 
-	await downloadFile(options, tempTarballPath, `Downloading ${displayName}`)
+	await downloadFile(options, tempTarballPath, `${chalk.cyanBright('Downloading')} ${chalk.greenBright(displayName)}`)
 
 	logger.start(`Extracting ${displayName}`)
 
@@ -100,7 +101,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 			if (totalBytes != undefined) {
 				const percentage = (downloadedMBytes / totalMBytes) * 100
 
-				newString = `${prompt}.. ${downloadedMbytesStr}MB/${totalMbytesStr}MB (${percentage.toFixed(1)}%, ${timer.elapsedTimeSeconds.toFixed(1)}s, ${downloadRateStr}MB/s)`
+				newString = `${prompt}.. ${downloadedMbytesStr}MB/${totalMbytesStr}MB (${chalk.blueBright(percentage.toFixed(1) + '%')}, ${timer.elapsedTimeSeconds.toFixed(1)}s, ${downloadRateStr}MB/s)`
 			} else {
 				newString = `${prompt}.. ${downloadedMbytesStr}MB (${timer.elapsedTimeSeconds.toFixed(1)}s, ${downloadRateStr}MB/s)`
 			}
@@ -125,7 +126,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			if (percentDisplay != lastString) {
 				write(percentDisplay)
-				
+
 				if (percent == 1.0) {
 					write(` (${timer.elapsedTimeSeconds.toFixed(2)}s, ${cumulativeDownloadRateStr}MB/s)`)
 				} else {
