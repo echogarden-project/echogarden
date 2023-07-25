@@ -37,7 +37,7 @@ export function multiplyTimelineByFactor(targetTimeline: Timeline, factor: numbe
 	return newTimeline
 }
 
-export function roundTimelineTimestamps(targetTimeline: Timeline, decimalDigits = 2) {
+export function roundTimelineProperties(targetTimeline: Timeline, decimalDigits = 2) {
 	const roundedTimeline = deepClone(targetTimeline)
 
 	for (const entry of roundedTimeline) {
@@ -49,8 +49,12 @@ export function roundTimelineTimestamps(targetTimeline: Timeline, decimalDigits 
 			entry.endTime = roundToDigits(entry.endTime, decimalDigits)
 		}
 
+		if (entry.confidence) {
+			entry.confidence = roundToDigits(entry.confidence, decimalDigits)
+		}
+
 		if (entry.timeline) {
-			entry.timeline = roundTimelineTimestamps(entry.timeline)
+			entry.timeline = roundTimelineProperties(entry.timeline)
 		}
 	}
 

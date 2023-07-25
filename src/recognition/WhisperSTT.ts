@@ -4,11 +4,11 @@ import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from "../dsp/MelSpectogram.js"
 import { clip, splitFloat32Array, writeToStderr, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
-import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
+import { isWordOrSymbolWord, splitToWords } from '../nlp/Segmentation.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
-import { Timeline } from '../utilities/Timeline.js'
+import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
@@ -193,6 +193,7 @@ export class Whisper {
 		let previousPartTokens: number[] = []
 
 		let timeline: Timeline = []
+		let allDecodedTokens: number[] = []
 
 		for (let audioOffset = 0; audioOffset < audioSamples.length;) {
 			const segmentStartTime = audioOffset / sampleRate
@@ -224,7 +225,7 @@ export class Whisper {
 
 			logger.end()
 
-			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, decoderTemperature)
+			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs, decodedTokensConfidence } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, decoderTemperature)
 
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = lastToken >= timestampTokensStart
@@ -257,13 +258,15 @@ export class Whisper {
 			//await this.addWordsToTimeline(timeline, partTokens, audioPartRawAudio, partCrossAttentionQKs, initialAudioTimeOffset, audioPartSamples.length / sampleRate)
 
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
-			const partTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime)
+			const partTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, decodedTokensConfidence)
 
 			timeline.push(...partTimeline)
 
 			audioOffset = audioEndOffset
 
 			previousPartTokens = partTokens.filter(token => token < this.tokenConfig.eotToken)
+
+			allDecodedTokens.push(...previousPartTokens)
 
 			logger.end()
 		}
@@ -274,9 +277,8 @@ export class Whisper {
 
 		timeline = this.mergeSuccessiveWordFragmentsInTimeline(timeline)
 		timeline.forEach(entry => { entry.text = entry.text.trim() })
-		timeline = timeline.filter(entry => wordCharacterPattern.test(entry.text))
 
-		const transcript = timeline.map(entry => entry.text).join(" ")
+		const transcript = this.tokensToText(allDecodedTokens)
 
 		logger.end()
 
@@ -311,7 +313,7 @@ export class Whisper {
 
 		timeline = this.mergeSuccessiveWordFragmentsInTimeline(timeline)
 		timeline.forEach(entry => { entry.text = entry.text.trim() })
-		timeline = timeline.filter(entry => wordCharacterPattern.test(entry.text))
+		//timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
 
 		logger.end()
 
@@ -392,6 +394,7 @@ export class Whisper {
 
 		let timestampsSeenCount = 0
 
+		const decodedTokensConfidence: number[] = []
 		let decodedTokensCrossAttentionQKs: Onnx.Tensor[] = []
 
 		for (let i = 0; i < decodedTokens.length; i++) {
@@ -478,18 +481,20 @@ export class Whisper {
 			///
 
 			// Add best token
-			function addToken(tokenToAdd: number, timestampLogits: number[]) {
+			function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number) {
 				decodedTokens.push(tokenToAdd)
 				decodedTokensTimestampLogits.push(timestampLogits)
 				decodedTokensCrossAttentionQKs.push(decoderOutputs["cross_attention_qks"])
+				decodedTokensConfidence.push(confidence)
 			}
 
 			if (isTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
 				if (previousTokenWasTimestamp) {
 					const previousToken = decodedTokens[decodedTokens.length - 1]
 					const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
+					const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
 
-					addToken(previousToken, previousTokenTimestampLogits)
+					addToken(previousToken, previousTokenTimestampLogits, previousTokenConfidence)
 
 					lastTimestampTokenIndex = decodedTokens.length
 
@@ -499,30 +504,36 @@ export class Whisper {
 						break
 					}
 				} else {
-					addToken(timestampTokensStart + indexOfMaxTimestampLogProb, tokenTimestampLogits)
+					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
+					const confidence = probs[timestampToken]
+
+					addToken(timestampToken, tokenTimestampLogits, confidence)
 				}
 			} else if (indexOfMaxTextLogProb == eotToken) {
 				break
 			} else {
 				let chosenTokenIndex: number
 
-				if (temperature == 0.0) {
+				if (temperature == 0) {
 					chosenTokenIndex = indexOfMaxTextLogProb
 				} else {
 					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
 					const textTokenProbs = softmax(textTokenLogits as any, temperature)
+
 					chosenTokenIndex = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
 				}
 
 				let chosenTokenText = this.tokenToTextLookup.get(chosenTokenIndex) || ""
 
-				if (decodedTokens.every(token => token >= eotToken)) {
+				if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
 					chosenTokenText = chosenTokenText.trimStart()
 				}
 
 				writeToStderr(chosenTokenText)
 
-				addToken(indexOfMaxTextLogProb, tokenTimestampLogits)
+				const confidence = probs[chosenTokenIndex]
+
+				addToken(indexOfMaxTextLogProb, tokenTimestampLogits, confidence)
 			}
 
 			await yieldToEventLoop()
@@ -538,7 +549,7 @@ export class Whisper {
 		logger.end()
 
 		// Return the tokens
-		return { decodedTokens, decodedTokensTimestampLogits, crossAttentionQKs: decodedTokensCrossAttentionQKs }
+		return { decodedTokens, decodedTokensTimestampLogits, crossAttentionQKs: decodedTokensCrossAttentionQKs, decodedTokensConfidence }
 	}
 
 	async inferCrossAttentionQKs(tokens: number[], audioFeatures: Onnx.Tensor) {
@@ -752,12 +763,12 @@ export class Whisper {
 						reinferredCrossAttentionQKs.slice(initialTokens.length)
 
 						const alignmentPath = await this.findAlignmentPathFromQKs(reinferredCrossAttentionQKs, tokensToDecode, 0, segmentFrameCount)//, alignmentHeadsIndexes[modelName])
-						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokensWithoutTimestamps, initialAudioTimeOffset + segmentStartTime, initialAudioTimeOffset + segmentEndTime, 0.0)
+						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokensWithoutTimestamps, initialAudioTimeOffset + segmentStartTime, initialAudioTimeOffset + segmentEndTime)
 
 						timeline.push(...wordTimeline)
 					} else {
 						const alignmentPath = await this.findAlignmentPathFromQKs(segmentCrossAttentionQKs, segmentTokens, segmentStartFrame, segmentEndFrame)//, alignmentHeadsIndexes[modelName])
-						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokens, initialAudioTimeOffset, initialAudioTimeOffset + segmentEndTime, 0.0)
+						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokens, initialAudioTimeOffset, initialAudioTimeOffset + segmentEndTime)
 
 						timeline.push(...wordTimeline)
 					}
@@ -776,25 +787,49 @@ export class Whisper {
 	mergeSuccessiveWordFragmentsInTimeline(timeline: Timeline) {
 		const resultTimeline: Timeline = []
 
+		const groups: TimelineEntry[][] = []
+
 		for (const entry of timeline) {
-			if (entry.type != "word") {
+			if (entry.type != "word" || !isWordOrSymbolWord(entry.text)) {
 				continue
 			}
 
-			if (resultTimeline.length > 0 && !entry.text.startsWith(" ")) {
-				const lastEntry = resultTimeline[resultTimeline.length - 1]
-
-				lastEntry.text += entry.text
-				lastEntry.endTime = entry.endTime
+			if (groups.length == 0 || entry.text.startsWith(" ")) {
+				groups.push([entry])
 			} else {
-				resultTimeline.push(deepClone(entry))
+				groups[groups.length - 1].push(entry)
+			}
+		}
+
+		for (const group of groups) {
+			if (group.length == 1) {
+				resultTimeline.push(deepClone(group[0]))
+			} else {
+				const text = group.map(entry => entry.text).join("")
+				const startTime = group[0].startTime
+				const endTime = group[group.length - 1].endTime
+				let confidence: number | undefined = undefined
+
+				if (group[0].confidence != null) {
+					confidence = meanOfVector(group.map(entry => entry.confidence!))
+				}
+
+				const newEntry: TimelineEntry = {
+					type: "word",
+					text,
+					startTime,
+					endTime,
+					confidence
+				}
+
+				resultTimeline.push(newEntry)
 			}
 		}
 
 		return resultTimeline
 	}
 
-	async getWordTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, correctionAmount = 0.0) {
+	async getWordTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, tokensConfidence?: number[], correctionAmount = 0.0) {
 		if (alignmentPath.length == 0) {
 			return []
 		}
@@ -808,7 +843,9 @@ export class Whisper {
 
 			const tokenMappingEntry = alignmentPath[pathIndex]
 
-			const token = tokens[tokenMappingEntry.source]
+			const tokenIndex = tokenMappingEntry.source
+			const token = tokens[tokenIndex]
+			const tokenConfidence = tokensConfidence ? tokensConfidence[tokenIndex] : undefined
 			const tokenText = this.tokenToTextLookup.get(token)
 
 			if (token >= this.tokenConfig.eotToken || !tokenText) {
@@ -827,7 +864,8 @@ export class Whisper {
 				type: "word",
 				text: tokenText,
 				startTime,
-				endTime: -1
+				endTime: -1,
+				confidence: tokenConfidence
 			})
 		}
 

@@ -12,6 +12,10 @@ export const phraseSeparators = [",", ";", ":"]
 export const sentenceSeparators = [".", "?", "!"]
 export const symbolWords = ["$", "%", "&", "@", "+", "/", "*", "="]
 
+export function isWordOrSymbolWord(str: string) {
+	return isWord(str) || symbolWords.includes(str)
+}
+
 export function isWord(str: string) {
 	str = str.trim()
 	return wordCharacterPattern.test(str) || symbolWords.includes(str)
