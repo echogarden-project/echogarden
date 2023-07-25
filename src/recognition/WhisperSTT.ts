@@ -369,7 +369,7 @@ export class Whisper {
 
 	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, temperature: number) {
 		const logger = new Logger()
-		await logger.startAsync("Decoding text tokens with Whisper decoder model")
+		await logger.startAsync("Decode text tokens with Whisper decoder model")
 
 		const noSpeechThreshold = 0.6
 
