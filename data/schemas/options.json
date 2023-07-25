@@ -489,6 +489,9 @@
             },
             "temperature": {
               "type": "number"
+            },
+            "prompt": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -1030,6 +1033,9 @@
             },
             "temperature": {
               "type": "number"
+            },
+            "prompt": {
+              "type": "string"
             }
           },
           "additionalProperties": false
