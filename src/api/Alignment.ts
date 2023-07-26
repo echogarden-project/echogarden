@@ -10,7 +10,7 @@ import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import * as API from "./API.js"
 import { Timeline, addTimeOffsetToTimeline } from "../utilities/Timeline.js"
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
-import { WhisperModelName } from "../recognition/WhisperSTT.js"
+import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperSTT.js"
 import chalk from "chalk"
 import { createAlignmentReferenceUsingEspeakPreprocessed } from "../alignment/SpeechAlignment.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
@@ -134,14 +134,9 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 			const recognitionOptionsDefaults: API.RecognitionOptions = {
 				engine: "whisper",
 				language,
-
-				whisper: {
-				}
 			}
 
-			const engineOptions = options.dtw!
-
-			const recognitionOptions: API.RecognitionOptions = extendDeep(recognitionOptionsDefaults, engineOptions.recognition)
+			const recognitionOptions: API.RecognitionOptions = extendDeep(recognitionOptionsDefaults, options.recognition || {})
 
 			logger.end()
 
@@ -221,13 +216,12 @@ export interface AlignmentOptions {
 
 	dtw?: {
 		windowDuration?: number,
-		recognition?: API.RecognitionOptions
 		phoneAlignmentMethod?: PhoneAlignmentMethod,
 	}
 
-	whisper?: {
-		model?: WhisperModelName
-	}
+	recognition?: API.RecognitionOptions
+
+	whisper?: WhisperOptions
 }
 
 export const defaultAlignmentOptions: AlignmentOptions = {
@@ -235,7 +229,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 
 	language: undefined,
 
-	languageDetection: undefined,
+	languageDetection: {
+	},
 
 	customLexiconPaths: undefined,
 
@@ -246,13 +241,13 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 
 	dtw: {
 		windowDuration: 120,
-		recognition: undefined,
 		phoneAlignmentMethod: "dtw",
 	},
 
-	whisper: {
-		model: undefined
-	}
+	recognition: {
+	},
+
+	whisper: whisperOptionsDefaults
 }
 
 export const alignmentEngines: API.EngineMetadata[] = [
@@ -271,7 +266,7 @@ export const alignmentEngines: API.EngineMetadata[] = [
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'Extracts timestamps from the internal state of the Whisper recognition model.',
+		description: 'Extracts timestamps from the internal state of the Whisper recognition model (note: currently limited to a maximum of 30s audio length).',
 		type: 'local'
 	}
 ]

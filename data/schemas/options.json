@@ -418,23 +418,17 @@
             "windowDuration": {
               "type": "number"
             },
-            "recognition": {
-              "$ref": "#/definitions/RecognitionOptions"
-            },
             "phoneAlignmentMethod": {
               "$ref": "#/definitions/PhoneAlignmentMethod"
             }
           },
           "additionalProperties": false
         },
+        "recognition": {
+          "$ref": "#/definitions/RecognitionOptions"
+        },
         "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/WhisperOptions"
         }
       },
       "additionalProperties": false
@@ -467,6 +461,13 @@
       "enum": [
         "tinyld",
         "fasttext"
+      ]
+    },
+    "PhoneAlignmentMethod": {
+      "type": "string",
+      "enum": [
+        "interpolation",
+        "dtw"
       ]
     },
     "RecognitionOptions": {
@@ -647,13 +648,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "PhoneAlignmentMethod": {
-      "type": "string",
-      "enum": [
-        "interpolation",
-        "dtw"
-      ]
     },
     "TimePitchShiftingMethod": {
       "type": "string",
