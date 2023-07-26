@@ -1,6 +1,6 @@
 # Echogarden
 
-Echogarden is an integrated speech system that provides a range of synthesis, recognition and other processing tools, designed to be directly accessible to end-users:
+Echogarden is an integrated speech system that provides a range of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users:
 
 * Written in TypeScript, for the Node.js runtime
 * Easy to install, run and update

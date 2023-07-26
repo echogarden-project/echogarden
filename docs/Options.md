@@ -138,7 +138,7 @@ Applicable to CLI command: `transcribe`.
 Applicable to CLI command: `align`.
 
 **General**:
-* `method`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
+* `engine`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 * `customLexiconPaths`: an array of custom lexicon file paths. Optional
 
@@ -150,8 +150,11 @@ Applicable to CLI command: `align`.
 * `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
 
 **DTW-RA only**:
-* `dtw.recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `dtw.recognition.engine = silero`
+* `recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `recognition.whisper.model = base.en`
 * `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolate`. Defaults to `dtw`
+
+**Whisper alignment only**
+* `whisper`: prefix to provide Whisper options when the `whisper` alignment engine is used.
 
 ## Speech translation
 
