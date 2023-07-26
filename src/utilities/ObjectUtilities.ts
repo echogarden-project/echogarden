@@ -1,6 +1,6 @@
 export function extendDeep(base: any, extension: any): any {
 	const extensionClone = deepClone(extension)
-
+	
 	if (!isPlainObject(base) || !isPlainObject(extension)) {
 		return extensionClone
 	}

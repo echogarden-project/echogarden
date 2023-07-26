@@ -824,7 +824,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		} else if (timePitchShiftingMethod == "rubberband") {
 			const rubberband = await import('../dsp/Rubberband.js')
 
-			const rubberbandOptions: RubberbandOptions = extendDeep(rubberband.defaultRubberbandOptions, postProcessingOptions.rubberband)
+			const rubberbandOptions: RubberbandOptions = extendDeep(rubberband.defaultRubberbandOptions, postProcessingOptions.rubberband || {})
 
 			synthesizedAudio = await rubberband.stretchTimePitch(synthesizedAudio, timeStretchFactor, pitchShiftFactor, rubberbandOptions)
 		} else {
