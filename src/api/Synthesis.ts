@@ -644,7 +644,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			}
 
 			const voiceId = (selectedVoice as any)["elevenLabsVoiceId"]
-			const modelId = engineOptions.modelId!
+			const modelId = (selectedVoice as any)["elevenLabsModelId"]
 			const stability = engineOptions.stability!
 			const similarityBoost = engineOptions.similarityBoost!
 
@@ -987,7 +987,6 @@ export interface SynthesisOptions {
 
 	elevenlabs?: {
 		apiKey?: string
-		modelId?: string
 		stability?: number
 		similarityBoost?: number
 	},
@@ -1114,7 +1113,6 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	elevenlabs: {
 		apiKey: undefined,
-		modelId: "eleven_monolingual_v1",
 		stability: 0.5,
 		similarityBoost: 0.5,
 	},

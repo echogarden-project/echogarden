@@ -1,5 +1,5 @@
 import { GaxiosResponse, request } from "gaxios"
-import { SynthesisVoice } from "../api/API.js"
+import { SynthesisVoice, VoiceGender } from "../api/API.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
 import { logToStderr } from "../utilities/Utilities.js"
@@ -75,13 +75,30 @@ export async function getVoiceList(apiKey: string) {
 
 	const elevenLabsVoices: any[] = response.data.voices
 
-	const voices: SynthesisVoice[] = elevenLabsVoices.map(elevenLabsVoice => ({
-		name: elevenLabsVoice.name,
-		languages: ['en-US', 'en'],
-		gender: "unknown",
+	const voices: SynthesisVoice[] = elevenLabsVoices.map(elevenLabsVoice => {
+		const accent: string | undefined = elevenLabsVoice?.labels?.accent
+		const gender: VoiceGender = elevenLabsVoice?.labels?.gender || "unknown"
 
-		elevenLabsVoiceId: elevenLabsVoice.voice_id
-	}))
+		let language: string
+
+		if (!accent || accent.startsWith("american")) {
+			language = 'en-US'
+		} else if (accent.startsWith("british") || accent == "irish") {
+			language = 'en-GB'
+		} else if (accent == "australian") {
+			language = 'en-AU'
+		} else {
+			language = 'en-US'
+		}
+
+		return {
+			name: elevenLabsVoice.name,
+			languages: [language, 'en'],
+			gender,
+
+			elevenLabsVoiceId: elevenLabsVoice.voice_id,
+			elevenLabsModelId: elevenLabsVoice?.high_quality_base_model_ids?.[0] || 'eleven_monolingual_v1'
+		}})
 
 	return voices
 }
