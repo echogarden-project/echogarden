@@ -14,7 +14,6 @@ const cliScriptPath = resolveToModuleRootDir("dist/cli/CLIStarter.js")
 const args = [
 	"--no-warnings",
 	"--no-experimental-fetch",
-	"--experimental-wasm-threads",
 	"--experimental-wasi-unstable-preview1",
 	cliScriptPath,
 	...scriptArgs
