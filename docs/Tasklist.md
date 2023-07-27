@@ -29,7 +29,6 @@
 * Autoscroll should work even if the scrollbar relevant to the target element is not the viewport's scrollbar
 * Find a way to show handles even for elements that start with a link
 * Add detection for line breaks in `pre` blocks
-* Some symbols, like `=`, `*`, `#` are not highlighted
 * Support the custom tags used in YouTube comments
 * Show handles based on `<br>` tags and possibly line breaks internal to the element
 * Show handles based on sentence start positions
@@ -96,7 +95,6 @@
 
 ### API
 * Option to control logging verbosity
-* Add support to accept caption options in API and CLI
 * Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
 * Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
@@ -114,7 +112,7 @@
 * See if it's possible to reliably use eSpeak as a segmentation engine
 * Path to `kuromoji` dictionaries can be found more reliably than current
 
-### Captions
+### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
@@ -168,6 +166,7 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
+* May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection

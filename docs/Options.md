@@ -39,6 +39,12 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
 
+**Subtitles**
+* `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
+* `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
+* `subtitles.minWordsInLine`: minimum number of words in a line, such that a line break can be added. Defaults to `4`
+* `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
+
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
 
@@ -104,6 +110,12 @@ Applicable to CLI command: `transcribe`.
 * `alignment`: prefix to provide custom options for alignment. Options detailed in section for alignment
 * `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
+**Subtitles**
+* `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
+* `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
+* `subtitles.minWordsInLine`: minimum number of words in a line, such that a line break to be added. Defaults to `4`
+* `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
+
 **Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
 * `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (about `0.25` or lower) for best results. Defaults to `0.1`
@@ -148,9 +160,9 @@ Applicable to CLI command: `align`.
 
 **Subtitles**
 * `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
-* `subtitles.maxLineWidth`: maximum line width. Defaults to `42`
-* `subtitles.minWords`: minimum number of words per line to allow a break to be added. Defaults to `4`
-* `subtitles.maxAddedDuration`: maximum added time (in seconds) that may be added to a cue, to ensure it is viewable. Defaults to `3`
+* `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
+* `subtitles.minWordsInLine`: minimum number of words in a line, such that a line break to be added. Defaults to `4`
+* `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
 
 **DTW**:
 * `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
