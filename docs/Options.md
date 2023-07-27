@@ -146,8 +146,14 @@ Applicable to CLI command: `align`.
 * `plainText.paragraphBreaks`: split transcript to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
 * `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
 
+**Subtitles**
+* `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
+* `subtitles.maxLineWidth`: maximum line width. Defaults to `42`
+* `subtitles.minWords`: minimum number of words per line to allow a break to be added. Defaults to `4`
+* `subtitles.maxAddedDuration`: maximum added time (in seconds) that may be added to a cue, to ensure it is viewable. Defaults to `3`
+
 **DTW**:
-* `dtw.windowDuration`: time duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
+* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
 
 **DTW-RA only**:
 * `recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `recognition.whisper.model = base.en`
