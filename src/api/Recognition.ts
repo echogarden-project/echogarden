@@ -13,6 +13,7 @@ import { whisperOptionsDefaults, type WhisperOptions } from "../recognition/Whis
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import chalk from "chalk"
+import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
 
 const log = logToStderr
 
@@ -229,6 +230,8 @@ export interface RecognitionOptions {
 
 	languageDetection?: API.SpeechLanguageDetectionOptions
 
+	subtitles?: SubtitlesConfig
+
 	whisper?: WhisperOptions
 
 	vosk?: {
@@ -269,6 +272,8 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	alignment: undefined,
 
 	languageDetection: undefined,
+
+	subtitles: defaultSubtitlesConfig,
 
 	whisper: whisperOptionsDefaults,
 

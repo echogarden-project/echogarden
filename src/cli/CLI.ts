@@ -404,7 +404,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		}
 
 		const fileSaver = getFileSaver(outputFile)
-		await fileSaver(synthesizedAudio, timeline, textSegments.join("\n\n"))
+		await fileSaver(synthesizedAudio, timeline, textSegments.join("\n\n"), options.subtitles)
 	}
 
 	progressLogger.end()
@@ -454,7 +454,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 
 		const fileSaver = getFileSaver(outputFile)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript)
+		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
 
 	progressLogger.end()
@@ -545,7 +545,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 		const fileSaver = getFileSaver(outputFile)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript)
+		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
 
 	progressLogger.end()
@@ -603,7 +603,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 		const fileSaver = getFileSaver(outputFile)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript)
+		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
 
 	progressLogger.end()

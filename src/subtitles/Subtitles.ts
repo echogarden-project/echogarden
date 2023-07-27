@@ -124,9 +124,9 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 	let config = subtitlesConfig || {}
 
 	if (config.format && config.format == "webvtt") {
-		config = { ...webVttConfig, ...defaultConfig, ...config }
+		config = { ...webVttConfig, ...defaultSubtitlesConfig, ...config }
 	} else {
-		config = { ...srtConfig, ...defaultConfig, ...config }
+		config = { ...srtConfig, ...defaultSubtitlesConfig, ...config }
 	}
 
 	const lineBreakString = config.lineBreakString
@@ -355,7 +355,7 @@ export type Cue = {
 	endTime: number
 }
 
-export const defaultConfig: SubtitlesConfig = {
+export const defaultSubtitlesConfig: SubtitlesConfig = {
 	format: "srt",
 	maxLineCount: 2,
 	maxLineWidth: 42,

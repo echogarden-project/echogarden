@@ -128,6 +128,9 @@
         "languageDetection": {
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
         "vits": {
           "type": "object",
           "properties": {
@@ -412,6 +415,9 @@
         "plainText": {
           "$ref": "#/definitions/PlainTextOptions"
         },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
         "dtw": {
           "type": "object",
           "properties": {
@@ -463,6 +469,54 @@
         "fasttext"
       ]
     },
+    "SubtitlesConfig": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "srt",
+            "webvtt"
+          ]
+        },
+        "language": {
+          "type": "string"
+        },
+        "maxLineCount": {
+          "type": "number"
+        },
+        "maxLineWidth": {
+          "type": "number"
+        },
+        "minWords": {
+          "type": "number"
+        },
+        "maxAddedDuration": {
+          "type": "number"
+        },
+        "decimalSeparator": {
+          "type": "string",
+          "enum": [
+            ",",
+            "."
+          ]
+        },
+        "includeCueIndexes": {
+          "type": "boolean"
+        },
+        "includeHours": {
+          "type": "boolean"
+        },
+        "lineBreakString": {
+          "type": "string",
+          "enum": [
+            "\n",
+            "\r\n"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PhoneAlignmentMethod": {
       "type": "string",
       "enum": [
@@ -487,6 +541,9 @@
         },
         "languageDetection": {
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
         },
         "whisper": {
           "$ref": "#/definitions/WhisperOptions"
@@ -814,6 +871,9 @@
         "languageDetection": {
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
         "vits": {
           "type": "object",
           "properties": {
@@ -1024,6 +1084,9 @@
         },
         "languageDetection": {
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
         },
         "whisper": {
           "$ref": "#/definitions/WhisperOptions"

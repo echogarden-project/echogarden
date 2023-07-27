@@ -14,6 +14,7 @@ import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperST
 import chalk from "chalk"
 import { createAlignmentReferenceUsingEspeakPreprocessed } from "../alignment/SpeechAlignment.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
+import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
 
 const log = logToStderr
 
@@ -214,6 +215,8 @@ export interface AlignmentOptions {
 
 	plainText?: API.PlainTextOptions
 
+	subtitles?: SubtitlesConfig
+
 	dtw?: {
 		windowDuration?: number,
 		phoneAlignmentMethod?: PhoneAlignmentMethod,
@@ -238,6 +241,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 		paragraphBreaks: 'double',
 		whitespace: 'collapse'
 	},
+
+	subtitles: defaultSubtitlesConfig,
 
 	dtw: {
 		windowDuration: 120,
