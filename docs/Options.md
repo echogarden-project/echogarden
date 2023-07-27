@@ -89,7 +89,6 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 
 **Elevenlabs**:
 * `elevenLabs.apiKey`: API key (required)
-* `elevenLabs.modelId`: Model identifier. Defaults to `eleven_monolingual_v1`
 * `elevenLabs.stability`: stability. Defaults to `0.5`
 * `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
 
