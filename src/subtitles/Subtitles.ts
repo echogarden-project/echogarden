@@ -274,7 +274,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 					const lineLengthWithNextWordExceedsMaxLineWidth = lineLengthWithNextWord >= maxLineWidth
 					const lineLengthExceedsHalfMaxLineWidth = lineLength >= maxLineWidth / 2
 
-					const wordsRemainingAreEqualOrLessToMinimumWordsInLine = wordsRemaining <= config.minWords!
+					const wordsRemainingAreEqualOrLessToMinimumWordsInLine = wordsRemaining <= config.minWordsInLine!
 					const remainingTextExceedsMaxLineWidth = entryText.length - lineStartOffset > maxLineWidth
 					const followingSubstringIsPhraseSeparator = startsWithAnyOf(entryText.substring(wordEndOffset), phraseSeparators)
 
@@ -359,7 +359,7 @@ export const defaultSubtitlesConfig: SubtitlesConfig = {
 	format: "srt",
 	maxLineCount: 2,
 	maxLineWidth: 42,
-	minWords: 4,
+	minWordsInLine: 4,
 	maxAddedDuration: 3,
 }
 
@@ -382,7 +382,7 @@ export interface SubtitlesConfig {
 	language?: string
 	maxLineCount?: number
 	maxLineWidth?: number
-	minWords?: number
+	minWordsInLine?: number
 	maxAddedDuration?: number
 
 	decimalSeparator?: "," | "."

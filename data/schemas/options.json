@@ -488,7 +488,7 @@
         "maxLineWidth": {
           "type": "number"
         },
-        "minWords": {
+        "minWordsInLine": {
           "type": "number"
         },
         "maxAddedDuration": {
