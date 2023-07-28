@@ -79,7 +79,7 @@ export function resolveToModuleRootDir(relativePath: string) {
 	return path.resolve(getModuleRootDir(), relativePath)
 }
 
-export function getFileExtension(filename: string) {
+export function getLowercaseFileExtension(filename: string) {
 	const fileExtensionIndex = filename.lastIndexOf(".")
 
 	if (fileExtensionIndex == -1) {

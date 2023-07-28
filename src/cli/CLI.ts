@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { CLIArguments, parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, stringifyAndFormatJson } from "../utilities/Utilities.js"
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from "../utilities/Utilities.js"
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from "./CLIOptionsSchema.js"
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLIConfigFile.js"
 
@@ -10,12 +10,12 @@ import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtit
 import { Logger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
-import { parse as parsePath } from "node:path"
+import path, { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 import { Timeline, addTimeOffsetToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
-import { ensureDir, existsSync, getFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
+import { ensureDir, existsSync, getLowercaseFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
@@ -299,7 +299,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	const options: API.SynthesisOptions = await cliOptionsMapToOptionsObject(cliOptions, "SynthesisOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	let textSegments: string[]
 
@@ -319,7 +319,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			throw new Error(`The given source file '${sourceFile}' was not found.`)
 		}
 
-		const sourceFileExtension = getFileExtension(sourceFile)
+		const sourceFileExtension = getLowercaseFileExtension(sourceFile)
 		const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
 
 		if (options.ssml && sourceFileExtension != "xml" && sourceFileExtension != "ssml") {
@@ -375,7 +375,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			progressLogger.start("Writing output files for segment")
 		}
 
-		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio, segmentData.timeline, segmentData.transcript, segmentData.language)
+		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio, segmentData.timeline, segmentData.transcript, segmentData.language, allowOverwrite)
 
 		progressLogger.end()
 
@@ -403,7 +403,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFile)
+		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 		await fileSaver(synthesizedAudio, timeline, textSegments.join("\n\n"), options.subtitles)
 	}
 
@@ -435,7 +435,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	const options: API.RecognitionOptions = await cliOptionsMapToOptionsObject(cliOptions, "RecognitionOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { transcript, timeline: wordTimeline, rawAudio, language } = await API.recognizeFile(sourceFilename, options)
 
@@ -452,7 +452,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFile)
+		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
 		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
@@ -490,7 +490,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`The given reference file '${alignmentReferenceFile}' was not found.`)
 	}
 
-	const referenceFileExtension = getFileExtension(alignmentReferenceFile)
+	const referenceFileExtension = getLowercaseFileExtension(alignmentReferenceFile)
 	const fileContent = await readFile(alignmentReferenceFile, { encoding: 'utf-8' })
 
 	let text: string
@@ -516,7 +516,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 	const options: API.AlignmentOptions = await cliOptionsMapToOptionsObject(cliOptions, "AlignmentOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
+	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { wordTimeline, rawAudio, transcript, language } = await API.alignFile(audioFilename, text, options)
 
@@ -532,7 +532,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 			const segmentAudio = sliceRawAudioByTime(rawAudio, segmentEntry.startTime, segmentEntry.endTime)
 			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
 
-			await writeOutputFilesForSegment(outputFilenames, segmentIndex, segmentTimeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language)
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, segmentTimeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
 		}
 	}
 
@@ -543,7 +543,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFile)
+		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
 		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
@@ -584,7 +584,8 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	const options: API.SpeechTranslationOptions = await cliOptionsMapToOptionsObject(cliOptions, "SpeechTranslationOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	await checkOutputFilenames(outputFilenames, true, true, true, allowOverwrite)
+
+	await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { transcript, timeline: wordTimeline, rawAudio, targetLanguage } = await API.translateSpeechFile(inputFilename, options)
 
@@ -601,7 +602,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFile)
+		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
 		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
 	}
@@ -628,10 +629,12 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
-	const inputFileExtension = getFileExtension(inputFilePath)
+	const inputFileExtension = getLowercaseFileExtension(inputFilePath)
 	const supportedInputTextFormats = ["txt", "srt", "vtt"]
 
 	let results: API.LanguageDetectionResults
+
+	let allowOverwrite: boolean
 
 	if (mode == "text" || (mode == "auto" && supportedInputTextFormats.includes(inputFileExtension))) {
 		if (inputFilePath == undefined) {
@@ -643,9 +646,9 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 		}
 
 		const options: API.TextLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "TextLanguageDetectionOptions", additionalOptionsSchema)
+		allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 
-		const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-		await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
+		await checkOutputFilenames(outputFilenames, false, true, false)
 
 		let text = await readFile(inputFilePath, { encoding: "utf-8" })
 
@@ -662,9 +665,9 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 		}
 
 		const options: API.SpeechLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, "SpeechLanguageDetectionOptions", additionalOptionsSchema)
+		allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 
-		const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-		await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
+		await checkOutputFilenames(outputFilenames, false, true, false)
 
 		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechFileLanguage(inputFilePath, options)
 
@@ -677,7 +680,7 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 		const resultsAsText = results.map(result => `${formatLanguageCodeWithName(result.language)}: ${result.probability.toFixed(5)}`).join("\n")
 
 		for (const outputFile of outputFilenames) {
-			const fileSaver = getFileSaver(outputFile)
+			const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
 			await fileSaver(getEmptyRawAudio(0, 0), results as any, resultsAsText)
 		}
@@ -716,7 +719,8 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 	const options: API.VADOptions = await cliOptionsMapToOptionsObject(cliOptions, "VADOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	await checkOutputFilenames(outputFilenames, true, true, false, allowOverwrite)
+
+	await checkOutputFilenames(outputFilenames, true, true, false)
 
 	const { timeline, rawAudio } = await API.detectFileVoiceActivity(audioFilename, options)
 
@@ -731,7 +735,7 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFile)
+		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
 		await fileSaver(rawAudio, timeline, "")
 	}
@@ -770,7 +774,8 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 	const options: API.DenoisingOptions = await cliOptionsMapToOptionsObject(cliOptions, "DenoisingOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	await checkOutputFilenames(outputFilenames, true, false, false, allowOverwrite)
+
+	await checkOutputFilenames(outputFilenames, true, false, false)
 
 	const outputAudio = await API.denoiseFile(audioFilename, options)
 
@@ -779,7 +784,7 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 	}
 
 	for (const filename of outputFilenames) {
-		const fileSaver = getFileSaver(filename)
+		const fileSaver = getFileSaver(filename, allowOverwrite)
 
 		await fileSaver(outputAudio, [], "")
 	}
@@ -911,7 +916,8 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 	const options: API.VoiceListRequestOptions = await cliOptionsMapToOptionsObject(cliOptions, "VoiceListRequestOptions", additionalOptionsSchema)
 
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
-	await checkOutputFilenames(outputFilenames, false, true, false, allowOverwrite)
+
+	await checkOutputFilenames(outputFilenames, false, true, false)
 
 	const { voiceList } = await API.requestVoiceList(options)
 
@@ -935,7 +941,7 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 		progressLogger.start("\nWriting output files")
 
 		for (const filename of outputFilenames) {
-			const fileSaver = getFileSaver(filename)
+			const fileSaver = getFileSaver(filename, allowOverwrite)
 
 			const { default: stripAnsi } = await import('strip-ansi')
 			const voiceListTextWithoutColors = stripAnsi(voiceListText)
@@ -1133,7 +1139,7 @@ export async function getOptionsSchema() {
 	return cachedOptionsSchema
 }
 
-export async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean, allowOverwrite: boolean) {
+export async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean) {
 	const supportedFileExtensions: string[] = []
 
 	if (acceptMediaOutputs) {
@@ -1151,7 +1157,7 @@ export async function checkOutputFilenames(outputFilenames: string[], acceptMedi
 	let includesPartPattern = false
 
 	for (const outputFilename of outputFilenames) {
-		const fileExtension = getFileExtension(outputFilename)
+		const fileExtension = getLowercaseFileExtension(outputFilename)
 
 		if (!supportedFileExtensions.includes(fileExtension)) {
 			let errorText = ""
@@ -1182,16 +1188,12 @@ export async function checkOutputFilenames(outputFilenames: string[], acceptMedi
 
 			includesPartPattern = true
 		}
-
-		if (!allowOverwrite && existsSync(outputFilename)) {
-			throw new Error(`The output file '${outputFilename}' already exists`)
-		}
 	}
 
 	return { includesPartPattern }
 }
 
-export async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string) {
+export async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean) {
 	const digitCount = Math.max((total + 1).toString().length, 2)
 
 	const segmentWords = (await splitToWords(text, language)).filter(text => wordCharacterPattern.test(text))
@@ -1217,16 +1219,31 @@ export async function writeOutputFilesForSegment(outputFilenames: string[], inde
 
 		const segmentFilename = outputFilename.replace(segmentFilenamePattern, `${formatIntegerWithLeadingZeros(index + 1, digitCount)} - ${initialText}.$2`)
 
-		const fileSaver = getFileSaver(segmentFilename)
+		const fileSaver = getFileSaver(segmentFilename, allowOverwrite)
 		await fileSaver(audio, timeline, text)
 	}
 }
 
 type FileSaver = (audio: RawAudio, timeline: Timeline, text: string, subtitlesConfig?: SubtitlesConfig) => Promise<void>
 
-function getFileSaver(outputFilePath: string): FileSaver {
-	const fileDir = parsePath(outputFilePath).dir || "./"
-	const fileExtension = getFileExtension(outputFilePath)
+function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSaver {
+	const parsedPath = parsePath(outputFilePath)
+
+	const fileDir = parsedPath.dir || "./"
+
+	if (!allowOverwrite) {
+		const filenameParts = splitFilenameOnExtendedExtension(parsedPath.base)
+
+		for (let i = 1; existsSync(outputFilePath); i++) {
+			outputFilePath = path.join(parsedPath.dir, `${filenameParts[0]} (${i})`)
+
+			if (filenameParts[1]) {
+				outputFilePath += `.${filenameParts[1]}`
+			}
+		}
+	}
+
+	const fileExtension = getLowercaseFileExtension(outputFilePath)
 
 	let fileSaver: FileSaver
 
@@ -1331,6 +1348,6 @@ const supportedOutputMediaFileExtensions = ["wav", "mp3", "opus", "m4a", "ogg", 
 
 const segmentFilenamePattern = /\[(.*)\]\.(.*)$/
 
-const overwriteByDefault = true
+const overwriteByDefault = false
 
 startIfInWorkerThread()

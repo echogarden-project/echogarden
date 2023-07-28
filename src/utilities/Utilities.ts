@@ -435,3 +435,109 @@ export function getWithDefault<T>(value: T | undefined, defaultValue: T) {
 		return value
 	}
 }
+
+export function splitFilenameOnExtendedExtension(filenameWithExtension: string) {
+	let splitPoint = filenameWithExtension.length
+
+	for (let i = filenameWithExtension.length - 1; i >= 0; i--) {
+		if (filenameWithExtension[i] == ".") {
+			if (/^[a-zA-Z0-9\.]+$/.test(filenameWithExtension.slice(i + 1))) {
+				splitPoint = i
+
+				continue
+			 } else {
+			 	break
+			 }
+		}
+	}
+
+	const name = filenameWithExtension.slice(0, splitPoint)
+	const ext = filenameWithExtension.slice(splitPoint + 1)
+
+	return [name, ext]
+}
+
+export function getRepetitionScoreRelativeToFirstSubstring(tokens: string[] | number[]) {
+	const maxOrder = Math.floor(tokens.length)
+
+	const matchCountForOrder: number[] = []
+
+	for (let i = 0; i <= maxOrder; i++) {
+		matchCountForOrder.push(0)
+	}
+
+	for (let offset = 0; offset < tokens.length; offset++) {
+		for (let order = 1; order <= maxOrder; order++) {
+			const referenceToken = tokens[-1 + order]
+			const targetToken = tokens[offset + order]
+
+			if (targetToken == referenceToken) {
+				matchCountForOrder[order] += 1
+			} else {
+				break
+			}
+		}
+	}
+
+	const scores = matchCountForOrder.map((count, index) => count * index)
+
+	let maxScoreOrder = -1
+	let maxScore = -Infinity
+
+	for (let i = 1; i <= matchCountForOrder.length; i++) {
+		const score = scores[i]
+
+		if (score > maxScore) {
+			maxScoreOrder = i
+			maxScore = score
+		}
+	}
+
+	return { maxScore, maxScoreOrder }
+}
+
+export function getConsecutiveRepetitionScoreRelativeToFirstSubstring(tokens: string[] | number[]) {
+	function countRepetitionForLength(len: number) {
+		let count = 0
+
+		for (let offset = len; offset < tokens.length; offset += len) {
+			for (let i = 0; i < len; i++) {
+				if (tokens[i] != tokens[offset + i]) {
+					return count
+				}
+			}
+
+			count += 1
+		}
+
+		return count
+	}
+
+	const maxLength = Math.floor(tokens.length / 2)
+
+	const repeatCountForLength: number[] = []
+
+	for (let i = 0; i <= maxLength; i++) {
+		repeatCountForLength.push(0)
+	}
+
+	for (let targetLen = 1; targetLen <= maxLength; targetLen++) {
+		repeatCountForLength[targetLen] = countRepetitionForLength(targetLen)
+	}
+
+	const scores = repeatCountForLength.map((count, index) => count * index)
+
+	let maxScoreLength = -1
+	let maxScore = -Infinity
+
+	for (let i = 1; i <= repeatCountForLength.length; i++) {
+		const score = scores[i]
+
+		if (score > maxScore) {
+			maxScoreLength = i
+			maxScore = score
+		}
+	}
+
+	return { maxScore, maxScoreLength, repeatCountForLength }
+}

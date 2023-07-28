@@ -109,13 +109,11 @@ async function transcode_CLI(input: string | Buffer, outputOptions: FFMpegOutput
 	})
 }
 
-
 async function transcode_Wasm(inputData: Buffer, outputOptions: FFMpegOutputOptions) {
 	await initializeWasmIfNeeded(false)
 
 	const logger = new Logger()
 	logger.start("Transcode with WASM ffmpeg")
-
 
 	let outputFileExtension = ""
 
