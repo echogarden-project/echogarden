@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.8.8",
+	"version": "0.8.9",
 	"description": "An integrated speech system, providing a set of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
@@ -53,8 +53,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.377.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.377.0",
+		"@aws-sdk/client-polly": "^3.379.1",
+		"@aws-sdk/client-transcribe-streaming": "^3.379.1",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
