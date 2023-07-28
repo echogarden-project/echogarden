@@ -133,6 +133,12 @@ Or similarly prevent playback using `--no-play`:
 echogarden transcribe speech.mp3 --no-play
 ```
 
+## File overwriting
+
+By default, the CLI doesn't overwrite existing files. If an output file `out.mp3` already exists, it will save it as `out (1).mp3`:
+
+To have existing files be overwritten, you can pass the `--overwrite` option.
+
 ## Loading configuration from a file
 
 Since there are many possible configuration options, it may be more convenient to store them in a configuration file.
@@ -192,18 +198,6 @@ Flattened property names are also accepted:
 		"whisper.model": "tiny"
 	}
 }
-```
-
-## File overwriting behavior
-
-By default, the CLI overwrites existing files.
-
-Please be careful to not accidentally have an input file misidentified as an output file, as it may get rewritten without notice or confirmation.
-
-To ensure files are never overwritten, you can pass the `--no-overwrite` option:
-
-```bash
-echogarden transcribe speech.mp3 transcript.txt --no-overwrite
 ```
 
 ## Other operations

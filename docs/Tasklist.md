@@ -47,7 +47,7 @@
 * Support compressed audio in response
 
 ### CLI
-* Restrict input media file extensions to a set list to avoid cases where an output media file would be overwritten due to user error
+* Restrict input media file extensions to ensure that invalid files are not passed to FFMpeg.
 * Mode to print IPA words when speaking
 * Ignore non-supported templates like `[hello]`
 * Show a message when a new version is available
