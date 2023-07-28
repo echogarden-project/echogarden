@@ -164,7 +164,7 @@ Applicable to CLI command: `align`.
 * `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
 
 **DTW**:
-* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note that a higher value would consume quadratically larger amounts of memory. A value of `600` (10 minutes) would already require several Gigabytes of memory when the audio duration is 10 minutes or greater. The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120`
+* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note: a higher value would consume quadratically larger amounts of memory. A value of `300` (5 minutes window) would already start at about 7 Gigabytes of memory when the audio duration is 10 minutes (there are plans to attempt to reduce this requirement, see [this issue](https://github.com/echogarden-project/echogarden/issues/11)). The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120` (two minutes)
 
 **DTW-RA only**:
 * `recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `recognition.whisper.model = base.en`
