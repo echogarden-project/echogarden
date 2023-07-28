@@ -130,7 +130,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 
 	const { escape } = await import('html-escaper')
 
-	let textWithMarkers = ''
+	let textWithMarkers = '`<mark name="textstart"/> | '
 
 	for (let i = 0; i < fragments.length; i++) {
 		//let fragment = escape(fragments[i])
