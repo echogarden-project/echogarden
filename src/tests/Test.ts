@@ -1,4 +1,4 @@
-import { logToStderr, setupProgramTerminationListeners } from "../utilities/Utilities.js"
+import { getRepetitionScoreRelativeToFirstSubstring, logToStderr, setupProgramTerminationListeners } from "../utilities/Utilities.js"
 import { makeTarballsForInstalledPackages } from "../utilities/TarballMaker.js"
 import { testEspeakSynthesisWithPrePhonemizedInputs, testKirshenbaumPhonemization } from "../synthesis/EspeakTTS.js"
 
@@ -13,5 +13,12 @@ setupProgramTerminationListeners()
 //await testKirshenbaumPhonemization(testText)
 
 //await makeTarballsForInstalledPackages(true)
+
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'b', 'c', 'a', 'b', 'c'])
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'b', 'a', 'd', 'a', 'b', 'a', 'd'])
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'b', 'a', 'b', 'c', 'a', 'b', 'a', 'b'])
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'a', 'a', 'b', 'a', 'a', 'a', 'b'])
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'b', 'a', 'c', 'a', 'b', 'a', 'c', 'a'])
+//getRepetitionScoreRelativeToFirstSubstring(['a', 'a', 'a', 'b', 'b', 'a', 'a', 'a', 'b'])
 
 process.exit(0)

@@ -525,7 +525,22 @@ export class Whisper {
 					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
 					const sortedTextTokenLogitsWithIndexes = Array.from(textTokenLogits).map((logit, index) => ({ logit, index }))
 					sortedTextTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
-					const topLogitsWithIndexes = sortedTextTokenLogitsWithIndexes.slice(0, topLogitCount)
+					let topLogitsWithIndexes = sortedTextTokenLogitsWithIndexes.slice(0, topLogitCount)
+
+					////
+					/*
+					topLogitsWithIndexes = topLogitsWithIndexes.filter(entry => {
+						const lastDecodedTextTokens = decodedTokens.filter(token => token < eotToken).reverse().slice(0, 20)
+						const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.index, ...lastDecodedTextTokens])
+
+						if (maxScore < 4) {
+							return true
+						} else {
+							return false
+						}
+					})
+					*/
+					////
 
 					const topLogits = topLogitsWithIndexes.map(a => a.logit)
 					const textTokenProbs = softmax(topLogits, options.temperature)
