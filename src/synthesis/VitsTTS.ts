@@ -266,17 +266,17 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
-		name: "en_GB-danny-low",
-		languages: ["en-GB", "en"],
-		gender: "male",
-	},
-	{
 		name: "en_GB-alan-low",
 		languages: ["en-GB", "en"],
 		gender: "male",
 	},
 	{
 		name: "en_GB-alan-medium",
+		languages: ["en-GB", "en"],
+		gender: "male",
+	},
+	{
+		name: "en_GB-danny-low",
 		languages: ["en-GB", "en"],
 		gender: "male",
 	},
