@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.8.9",
+	"version": "0.9.0",
 	"description": "An integrated speech system, providing a set of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0-only",
@@ -84,6 +84,7 @@
 		"import-meta-resolve": "^3.0.0",
 		"jieba-wasm": "^0.0.2",
 		"jsdom": "^22.1.0",
+		"json5": "^2.2.3",
 		"kuromoji": "^0.1.2",
 		"microsoft-cognitiveservices-speech-sdk": "^1.30.1",
 		"moving-median": "^1.0.0",
