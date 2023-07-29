@@ -47,9 +47,10 @@
 * Support compressed audio in response
 
 ### CLI
+* Show names of files written do disk. This is useful for cases where a file is auto-renamed to allow overwrite.
 * Restrict input media file extensions to ensure that invalid files are not passed to FFMpeg.
 * Mode to print IPA words when speaking
-* Ignore non-supported templates like `[hello]`
+* Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
 * Option to set audio output codec options
@@ -57,12 +58,10 @@
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
 * Make enum options case-insensitive if possible
-* Consider adding the input text offset to each segment, sentence and word in the resulting timeline with respect to the original file (even if it is, say, an HTML or captions file)
 * Add phone playback support
 * More fine-grained intermediate progress report for operations
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
-* Support comments in the JSON configuration file
 * Generate JSON configuration file schema
 * Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
 
@@ -174,6 +173,7 @@
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 
 ### Alignment
+* Consider a reliable way to cut silent or non-speech sections to improve results.
 
 ### Postprocessing
 * When `normalize` is set to false, should obvious clipping still be prevented?

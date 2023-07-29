@@ -32,7 +32,7 @@ npm install echogarden -g
 
 Additional tools:
 * [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording (only). Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
-* [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via platform package manager like `brew`, otherwise, much slower `ffmpeg-wasm` would be used.
+* [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via a platform package manager like `brew`.
 
 (hopefully in the future all platforms would be covered using expansion packages)
 
