@@ -2,15 +2,10 @@ import { spawn } from "child_process"
 
 import { encodeWaveBuffer, decodeWaveBuffer, RawAudio } from "../audio/AudioUtilities.js"
 
-import type { FFmpeg } from "@ffmpeg/ffmpeg"
-
 import { Logger } from "../utilities/Logger.js"
 import { commandExists, logToStderr } from "../utilities/Utilities.js"
 import path from "node:path"
-import { readFile, writeFileSafe } from "../utilities/FileSystem.js"
 import { loadPackage } from "../utilities/PackageManager.js"
-
-let ffmpeg: FFmpeg
 
 const log = logToStderr
 
@@ -49,24 +44,14 @@ export async function decodeToChannels(input: string | Buffer, outSampleRate?: n
 export async function transcode(input: string | Buffer, outputOptions: FFMpegOutputOptions) {
 	const executablePath = await getExecutablePath()
 
-	if (executablePath) {
-		return transcode_CLI(input, outputOptions)
-	} else {
-		if (Buffer.isBuffer(input)) {
-			return transcode_Wasm(input, outputOptions)
-		} else {
-			return transcode_Wasm(await readFile(input), outputOptions)
-		}
+	if (!executablePath) {
+		throw new Error("The ffmpeg utility wasn't found. Please ensure it is available on the system path.")
 	}
+
+	return transcode_CLI(executablePath, input, outputOptions)
 }
 
-async function transcode_CLI(input: string | Buffer, outputOptions: FFMpegOutputOptions) {
-	const ffmpegCommand = await getExecutablePath()
-
-	if (!ffmpegCommand) {
-		throw new Error("No ffmpeg executable was found")
-	}
-
+async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outputOptions: FFMpegOutputOptions) {
 	return new Promise<Buffer>((resolve, reject) => {
 		const logger = new Logger()
 		logger.start("Transcode with command-line ffmpeg")
@@ -107,61 +92,6 @@ async function transcode_CLI(input: string | Buffer, outputOptions: FFMpegOutput
 			logger.end()
 		})
 	})
-}
-
-async function transcode_Wasm(inputData: Buffer, outputOptions: FFMpegOutputOptions) {
-	await initializeWasmIfNeeded(false)
-
-	const logger = new Logger()
-	logger.start("Transcode with WASM ffmpeg")
-
-	let outputFileExtension = ""
-
-	if (outputOptions.filename) {
-		outputFileExtension = path.parse(outputOptions.filename).ext
-	}
-
-	const inputFilename = "inputFile"
-	const outputFilename = "outputFile" + outputFileExtension
-
-	const args = buildCommandLineArguments(inputFilename, { ...outputOptions, filename: outputFilename })
-
-	ffmpeg.FS('writeFile', inputFilename, inputData)
-
-	await ffmpeg.run(...args)
-
-	const outFileData = ffmpeg.FS('readFile', outputFilename)
-
-	let result: Buffer
-
-	if (outputOptions.filename) {
-		await writeFileSafe(outputOptions.filename, outFileData)
-		result = Buffer.from([])
-	} else {
-		result = Buffer.from(outFileData)
-	}
-
-	logger.end()
-	return result
-}
-
-export async function listWasmCodecs() {
-	await initializeWasmIfNeeded(true)
-	await ffmpeg.run("-codecs")
-}
-
-async function initializeWasmIfNeeded(verbose = false) {
-	if (!ffmpeg) {
-		const logger = new Logger()
-		logger.start("Initialize WASM ffmpeg instance")
-
-		const { createFFmpeg } = await import("@ffmpeg/ffmpeg")
-
-		ffmpeg = createFFmpeg({ log: verbose })
-		await ffmpeg.load()
-
-		logger.end()
-	}
 }
 
 function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegOutputOptions) {
