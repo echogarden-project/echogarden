@@ -14,7 +14,7 @@ import path, { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { Timeline, addTimeOffsetToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
+import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { ensureDir, existsSync, getLowercaseFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
@@ -301,6 +301,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
+	let plainText: string | undefined = undefined
 	let textSegments: string[]
 
 	const plainTextParagraphBreaks = options.plainText?.paragraphBreaks || API.defaultSynthesisOptions.plainText!.paragraphBreaks!
@@ -312,6 +313,8 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		} else {
 			textSegments = splitToParagraphs(mainArg, plainTextParagraphBreaks, plainTextWhitespace)
 		}
+
+		plainText = mainArg
 	} else if (command == "speak-file") {
 		const sourceFile = mainArg
 
@@ -328,6 +331,8 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 		if (sourceFileExtension == "txt") {
 			textSegments = splitToParagraphs(fileContent, plainTextParagraphBreaks, plainTextWhitespace)
+
+			plainText = fileContent
 		} else if (sourceFileExtension == "html" || sourceFileExtension == "htm") {
 			const textContent = await convertHtmlToText(fileContent)
 			textSegments = splitToParagraphs(textContent, 'single', 'preserve')
@@ -392,6 +397,10 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 	const { synthesizedAudio, timeline } = await API.synthesizeSegments(textSegments, options, onSegment, undefined)
 
+	if (plainText) {
+		addWordTextOffsetsToTimeline(timeline, plainText)
+	}
+
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
 	}
@@ -440,6 +449,8 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	const { transcript, timeline: wordTimeline, rawAudio, language } = await API.recognizeFile(sourceFilename, options)
 
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, 'single', 'preserve')
+
+	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
 
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
@@ -522,6 +533,8 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
+	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
+
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
 	}
@@ -590,6 +603,8 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	const { transcript, timeline: wordTimeline, rawAudio, targetLanguage } = await API.translateSpeechFile(inputFilename, options)
 
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, targetLanguage, 'single', 'preserve')
+
+	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
 
 	if (outputFilenames.length > 0) {
 		progressLogger.start("\nWriting output files")
@@ -1112,7 +1127,8 @@ async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, 
 			}
 		} else if (optionType == 'array' || optionType == 'object') {
 			try {
-				parsedValue = JSON.parse(value)
+				const { default: JSON5 } = await import('json5')
+				parsedValue = JSON5.parse(value)
 			} catch (e) {
 				parsedValue = value
 			}

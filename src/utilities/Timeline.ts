@@ -155,6 +155,46 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 	return { segmentTimeline }
 }
 
+export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, currentOffset = 0) {
+	for (const entry of timeline) {
+		if (entry.type == 'word') {
+			let word = entry.text
+
+			word = word.trim().replaceAll(/\s+/g, ' ')
+
+			const wordParts = word.split(' ')
+
+			let startOffset: number | undefined
+			let endOffset: number | undefined
+
+			for (let i = 0; i < wordParts.length; i++) {
+				let wordPart = wordParts[i]
+
+				let wordPartOffset = text.indexOf(wordPart, currentOffset)
+
+				if (wordPartOffset == -1) {
+					continue
+				}
+
+				currentOffset = wordPartOffset + wordParts[i].length
+
+				if (i == 0) {
+					startOffset = wordPartOffset
+				}
+
+				endOffset = currentOffset
+			}
+
+			entry.textStartOffset = startOffset
+			entry.textEndOffset = endOffset
+		} else if (entry.timeline) {
+			currentOffset = addWordTextOffsetsToTimeline(entry.timeline, text, currentOffset)
+		}
+	}
+
+	return currentOffset
+}
+
 export type TimelineEntryType = "segment" | "paragraph" | "sentence" | "clause" | "phrase" | "word" | "token" | "letter" | "phone" | "subphone"
 
 export type TimelineEntry = {
@@ -165,15 +205,12 @@ export type TimelineEntry = {
 	startTime: number,
 	endTime: number,
 
-	timeline?: Timeline
-
-	startSample?: number
-	endSample?: number
-
 	textStartOffset?: number
 	textEndOffset?: number
 
 	confidence?: number
+
+	timeline?: Timeline
 }
 
 export type Timeline = TimelineEntry[]

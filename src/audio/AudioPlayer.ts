@@ -10,11 +10,11 @@ import { Timer } from "../utilities/Timer.js"
 import { waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
-import { Timeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
 import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
+import { deepClone } from '../utilities/ObjectUtilities.js'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string) {
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)
@@ -30,7 +30,11 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 }
 
 export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
-	timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+	if (transcript) {
+		timeline = deepClone(timeline)
+
+		addWordTextOffsetsToTimeline(timeline, transcript)
+	}
 
 	let timelineEntryIndex = 0
 	let transcriptOffset = 0
@@ -48,14 +52,14 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Ti
 				return
 			}
 
-			const wordStartOffset = transcript!.indexOf(entry.text, transcriptOffset)
+			const wordStartOffset = entry.textStartOffset
+			let wordEndOffset = entry.textEndOffset
 
-			if (wordStartOffset == -1) {
+			if (wordStartOffset == null || wordEndOffset == null) {
+				//writeToStderr(` [No offset availble for '${entry.text}'] `)
+
 				continue
-				//throw new Error(`Couldn't find substring "${entry.text}" in remaining text.`)
 			}
-
-			let wordEndOffset = wordStartOffset + entry.text.length
 
 			while (wordEndOffset < transcript.length &&
 				charactersToWriteAhead.includes(transcript[wordEndOffset]) &&
@@ -63,7 +67,7 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Ti
 				wordEndOffset += 1
 			}
 
-			writeToStderr(`${transcript.substring(transcriptOffset, wordEndOffset)}`)
+			writeToStderr(transcript.substring(transcriptOffset, wordEndOffset))
 
 			transcriptOffset = wordEndOffset
 		}

@@ -104,10 +104,16 @@ export async function computeFileSha256Hex(filePath: string) {
 	return resultOpenPromise.promise
 }
 
-export async function readAndParseJsonFile(jsonFilePath: string) {
+export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
 	const fileContent = await readFile(jsonFilePath, { encoding: "utf-8" })
 
-	return JSON.parse(fileContent)
+	if (useJson5) {
+		const { default: JSON5 } = await import('json5')
+
+		return JSON5.parse(fileContent)
+	} else {
+		return JSON.parse(fileContent)
+	}
 }
 
 export async function writeFile(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {

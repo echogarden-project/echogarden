@@ -52,7 +52,7 @@ export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
 }
 
 export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFile> {
-	const parsedJSON = await readAndParseJsonFile(path)
+	const parsedJSON = await readAndParseJsonFile(path, true)
 
 	const result: ParsedConfigFile = new Map()
 
