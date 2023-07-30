@@ -473,6 +473,8 @@ export function getUTF32Chars(str: string) {
 		utf32Index += 1
 	}
 
+	mapping.push(utf32Index)
+
 	return { utf32chars, mapping }
 }
 
