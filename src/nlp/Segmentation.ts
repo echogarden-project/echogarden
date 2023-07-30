@@ -11,7 +11,7 @@ const log = logToStderr
 export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
 export const phraseSeparators = [",", ";", ":"]
 export const sentenceSeparators = [".", "?", "!"]
-export const symbolWords = ["$", "%", "&", "@", "+", "/", "*", "="]
+export const symbolWords = ["$", "€", "¢", "£", "¥", "©", "®", "™", "%", "&", "#", "~", "@", "+", "±", "÷", "/", "*", "=", "¼", "½", "¾"]
 
 export function isWordOrSymbolWord(str: string) {
 	return isWord(str) || symbolWords.includes(str)
