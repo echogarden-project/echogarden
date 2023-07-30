@@ -52,8 +52,8 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Ti
 				return
 			}
 
-			const wordStartOffset = entry.textStartOffset
-			let wordEndOffset = entry.textEndOffset
+			const wordStartOffset = entry.startOffsetUtf16
+			let wordEndOffset = entry.endOffsetUtf16
 
 			if (wordStartOffset == null || wordEndOffset == null) {
 				//writeToStderr(` [No offset availble for '${entry.text}'] `)

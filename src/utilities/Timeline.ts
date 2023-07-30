@@ -1,7 +1,7 @@
 import { ParagraphBreakType, WhitespaceProcessing } from "../api/Common.js"
 import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
 import { deepClone } from "./ObjectUtilities.js"
-import { roundToDigits } from "./Utilities.js"
+import { getUTF32Chars, roundToDigits } from "./Utilities.js"
 
 export function addTimeOffsetToTimeline(targetTimeline: Timeline, timeOffset: number) {
 	if (!targetTimeline) {
@@ -66,9 +66,9 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 	const paragraphs = await splitToParagraphs(transcript, paragraphBreaks, whitespace)
 
 	const segments = paragraphs
-			.map(segment =>
-				splitToSentences(segment, language).map(sentence =>
-					sentence.trim()))
+		.map(segment =>
+			splitToSentences(segment, language).map(sentence =>
+				sentence.trim()))
 
 	let text = ""
 	const charIndexToSentenceEntryMapping: TimelineEntry[] = []
@@ -156,6 +156,8 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 }
 
 export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, currentOffset = 0) {
+	const { mapping } = getUTF32Chars(text)
+
 	for (const entry of timeline) {
 		if (entry.type == 'word') {
 			let word = entry.text
@@ -185,8 +187,11 @@ export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, c
 				endOffset = currentOffset
 			}
 
-			entry.textStartOffset = startOffset
-			entry.textEndOffset = endOffset
+			entry.startOffsetUtf16 = startOffset
+			entry.endOffsetUtf16 = endOffset
+
+			entry.startOffsetUtf32 = startOffset != undefined ? mapping[startOffset] : undefined
+			entry.endOffsetUtf32 = endOffset != undefined ? mapping[endOffset] : undefined
 		} else if (entry.timeline) {
 			currentOffset = addWordTextOffsetsToTimeline(entry.timeline, text, currentOffset)
 		}
@@ -205,8 +210,11 @@ export type TimelineEntry = {
 	startTime: number,
 	endTime: number,
 
-	textStartOffset?: number
-	textEndOffset?: number
+	startOffsetUtf16?: number
+	endOffsetUtf16?: number
+
+	startOffsetUtf32?: number
+	endOffsetUtf32?: number
 
 	confidence?: number
 

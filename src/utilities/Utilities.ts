@@ -457,6 +457,25 @@ export function splitFilenameOnExtendedExtension(filenameWithExtension: string) 
 	return [name, ext]
 }
 
+export function getUTF32Chars(str: string) {
+	const utf32chars: string[] = []
+	const mapping: number[] = []
+
+	let utf32Index = 0
+
+	for (const utf32char of str) {
+		utf32chars.push(utf32char)
+
+		for (let i = 0; i < utf32char.length; i++) {
+			mapping.push(utf32Index)
+		}
+
+		utf32Index += 1
+	}
+
+	return { utf32chars, mapping }
+}
+
 export function getRepetitionScoreRelativeToFirstSubstring(tokens: string[] | number[]) {
 	const maxOrder = Math.floor(tokens.length)
 

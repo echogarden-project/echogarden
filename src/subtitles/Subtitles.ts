@@ -229,8 +229,8 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 					let wordEndOffset = wordStartOffset + wordEntry.text.length
 					lastWordEndOffset = wordEndOffset
 
-					wordEntry.textStartOffset = wordStartOffset
-					wordEntry.textEndOffset = wordEndOffset
+					wordEntry.startOffsetUtf16 = wordStartOffset
+					wordEntry.endOffsetUtf16 = wordEndOffset
 				}
 
 				let currentCue: Cue = {
@@ -246,7 +246,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 					const isLastWord = wordIndex == wordTimeline.length - 1
 
 					const wordEntry = wordTimeline[wordIndex]
-					const wordEndOffset = wordEntry.textEndOffset!
+					const wordEndOffset = wordEntry.endOffsetUtf16!
 
 					function getExtendedEndOffset(offset: number | undefined) {
 						if (offset == undefined) {
@@ -263,7 +263,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 					const wordExtendedEndOffset = getExtendedEndOffset(wordEndOffset)
 
 					const nextWordEntry = wordTimeline[wordIndex + 1]
-					const nextWordExtendedEndOffset = getExtendedEndOffset(nextWordEntry?.textEndOffset)
+					const nextWordExtendedEndOffset = getExtendedEndOffset(nextWordEntry?.endOffsetUtf16)
 
 					const lineLength = wordExtendedEndOffset - lineStartOffset
 					const lineLengthWithNextWord = nextWordExtendedEndOffset - lineStartOffset
