@@ -562,3 +562,13 @@ export function getConsecutiveRepetitionScoreRelativeToFirstSubstring(tokens: st
 
 	return { maxScore, maxScoreLength, repeatCountForLength }
 }
+
+export async function resolveModuleScriptPath(moduleName: string) {
+	const { resolve } = await import('import-meta-resolve')
+
+	const scriptPath = await resolve(moduleName, import.meta.url)
+
+	const { fileURLToPath } = await import('url')
+
+	return fileURLToPath(scriptPath)
+}

@@ -1,6 +1,6 @@
 import path from "path"
 import { OpenPromise } from "../utilities/OpenPromise.js"
-import { getModuleRootDir } from "../utilities/FileSystem.js"
+import { resolveModuleScriptPath } from "../utilities/Utilities.js"
 
 export async function splitJapaneseTextToWords_Kuromoji(text: string) {
 	const tokenizer = await getKuromojiTokenizer()
@@ -22,7 +22,8 @@ async function getKuromojiTokenizer() {
 
 	const resultOpenPromise = new OpenPromise<any>()
 
-	const dictionaryPath = path.join(getModuleRootDir(), "node_modules", "kuromoji", "dict")
+	const kuromojiScriptPath = await resolveModuleScriptPath('kuromoji')
+	const dictionaryPath = path.join(path.dirname(kuromojiScriptPath), "..", '/dict')
 
 	kuromoji.builder({ dicPath: dictionaryPath }).build(function (error: any, tokenizer: any) {
 		if (error) {
