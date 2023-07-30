@@ -97,6 +97,7 @@
 * Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
 * Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
+* See if it's possible to detect and Emoji characters to timelines.
 * Add support for phrases in timelines
 * Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
