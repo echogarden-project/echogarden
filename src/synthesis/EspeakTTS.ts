@@ -128,13 +128,12 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		}
 	}
 
-	const { escape } = await import('html-escaper')
-
-	let textWithMarkers = '`<mark name="textstart"/> | '
+	let textWithMarkers = '<mark name="textstart"/> | '
 
 	for (let i = 0; i < fragments.length; i++) {
-		//let fragment = escape(fragments[i])
 		let fragment = fragments[i]
+
+		fragment = fragment.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
 
 		if (insertSeparators) {
 			textWithMarkers += `<mark name="wordstart-${i}"/> | ${fragment} | <mark name="wordend-${i}"/>`
