@@ -29,7 +29,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	logger.end()
 
 	// Compute path
-	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s window)`, `${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
+	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window)`, `${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
 
 	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
 	const minRecommendedWindowDuration = 0.25 * rawAudioDuration
@@ -38,7 +38,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 		logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s, which is smaller than 25% of the source audio duration of ${rawAudioDuration.toFixed(1)}s. This may lead to suboptimal results in some cases. Consider increasing window length if needed.`, chalk.yellowBright)
 	}
 
-	logger.start("Align MFCC features with DTW")
+	logger.start("Align MFCC features using DTW")
 	const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
 
 	const rawPath = await alignMFCC_DTW(referenceMfccs, sourceMfccs, dtwWindowLength)
