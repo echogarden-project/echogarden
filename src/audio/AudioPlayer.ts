@@ -29,26 +29,25 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 	await playAudioWithWordTimeline(rawAudio, timeline, transcript)
 }
 
-export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Timeline, transcript?: string) {
-	if (transcript) {
-		timeline = deepClone(timeline)
-
-		addWordTextOffsetsToTimeline(timeline, transcript)
+export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline: Timeline, transcript?: string) {
+	if (!transcript) {
+		transcript = wordTimeline.map(entry => entry.text).join(' ')
 	}
+
+	wordTimeline = deepClone(wordTimeline)
+
+	addWordTextOffsetsToTimeline(wordTimeline, transcript)
 
 	let timelineEntryIndex = 0
 	let transcriptOffset = 0
 
 	function onTimePosition(timePosition: number) {
-		for (; timelineEntryIndex < timeline.length; timelineEntryIndex++) {
-			const entry = timeline[timelineEntryIndex]
+		const text = transcript!
+
+		for (; timelineEntryIndex < wordTimeline.length; timelineEntryIndex++) {
+			const entry = wordTimeline[timelineEntryIndex]
 
 			if (entry.startTime > timePosition) {
-				return
-			}
-
-			if (transcript == null) {
-				writeToStderr(`${entry.text} `)
 				return
 			}
 
@@ -61,13 +60,13 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, timeline: Ti
 				continue
 			}
 
-			while (wordEndOffset < transcript.length &&
-				charactersToWriteAhead.includes(transcript[wordEndOffset]) &&
-				transcript[wordEndOffset] != timeline[timelineEntryIndex + 2]?.text) {
+			while (wordEndOffset < text.length &&
+				charactersToWriteAhead.includes(text[wordEndOffset]) &&
+				text[wordEndOffset] != wordTimeline[timelineEntryIndex + 2]?.text) {
 				wordEndOffset += 1
 			}
 
-			writeToStderr(transcript.substring(transcriptOffset, wordEndOffset))
+			writeToStderr(text.substring(transcriptOffset, wordEndOffset))
 
 			transcriptOffset = wordEndOffset
 		}

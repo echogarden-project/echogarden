@@ -1,8 +1,6 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
-import { RawAudio, applyGainDecibels, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, applyGainDecibels, ensureRawAudio, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
 import { logToStderr } from "../utilities/Utilities.js"
@@ -12,23 +10,20 @@ import chalk from "chalk"
 
 const log = logToStderr
 
-export async function denoiseFile(filename: string, options: DenoisingOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
-
-	return denoise(rawAudio, options)
-}
-
-export async function denoise(rawAudio: RawAudio, options: DenoisingOptions) {
+export async function denoise(input: AudioSourceParam, options: DenoisingOptions) {
 	const logger = new Logger()
 	const startTime = logger.getTimestamp()
+
 	logger.start("Prepare for denoising")
 
 	options = extendDeep(defaultDenoisingOptions, options)
 
+	const inputRawAudio = await ensureRawAudio(input)
+
 	const processingSampleRate = 48000
 
 	logger.start(`Resample audio to ${processingSampleRate} Hz`)
-	const resampledRawAudio = await resampleAudioSpeex(rawAudio, processingSampleRate, 3)
+	const resampledRawAudio = await resampleAudioSpeex(inputRawAudio, processingSampleRate, 3)
 
 	logger.start(`Initialize ${options.method} module`)
 
@@ -77,9 +72,18 @@ export async function denoise(rawAudio: RawAudio, options: DenoisingOptions) {
 
 	logger.end()
 
+	logger.log('')
 	logger.logDuration("Total denoising time", startTime, chalk.magentaBright)
 
-	return denoisedAudio
+	return {
+		denoisedAudio,
+		inputRawAudio
+	}
+}
+
+export interface DenoisingResult {
+	denoisedAudio: RawAudio
+	inputRawAudio: RawAudio
 }
 
 export type DenoisingMethod = "rnnoise"

@@ -1,14 +1,11 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
 import { logToStderr } from "../utilities/Utilities.js"
-import { RawAudio, downmixToMonoAndNormalize, trimAudioEnd } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevel, trimAudioEnd } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import * as API from "./API.js"
-import { Timeline } from "../utilities/Timeline.js"
+import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { whisperOptionsDefaults, type WhisperOptions } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
@@ -17,24 +14,21 @@ import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.
 
 const log = logToStderr
 
-export async function recognizeFile(filename: string, options: RecognitionOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
-	return recognize(rawAudio, options)
-}
-
-export async function recognize(inputRawAudio: RawAudio, options: RecognitionOptions): Promise<RecognitionResult> {
+export async function recognize(input: AudioSourceParam, options: RecognitionOptions): Promise<RecognitionResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
 
 	logger.start("Prepare for recognition")
 
+	const inputRawAudio = await ensureRawAudio(input)
+
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+
 	options = extendDeep(defaultRecognitionOptions, options)
 
 	const engine = options.engine!
-
-	let sourceRawAudio = await resampleAudioSpeex(inputRawAudio, 16000)
-	sourceRawAudio = downmixToMonoAndNormalize(sourceRawAudio)
-	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	if (!options.language) { // && options.engine != "whisper") {
 		logger.start("No language specified. Detecting speech language")
@@ -204,17 +198,22 @@ export async function recognize(inputRawAudio: RawAudio, options: RecognitionOpt
 		timeline = wordTimeline
 	}
 
+	addWordTextOffsetsToTimeline(timeline, transcript)
+
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(timeline, transcript, language, 'single', 'preserve')
+
 	logger.end()
 	logger.logDuration('Total recognition time', startTimestamp, chalk.magentaBright)
 
-	return { transcript, timeline, rawAudio: inputRawAudio, language }
+	return { transcript, timeline: segmentTimeline, wordTimeline: timeline, inputRawAudio, language }
 }
 
 export interface RecognitionResult {
 	transcript: string
 	timeline: Timeline
-	rawAudio: RawAudio
+	wordTimeline: Timeline
 	language: string
+	inputRawAudio: RawAudio
 }
 
 export type RecognitionEngine = "whisper" | "vosk" | "silero" | "google-cloud" | "microsoft-azure" | "amazon-transcribe"

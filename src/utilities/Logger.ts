@@ -40,15 +40,19 @@ export class Logger {
 		this.active = false
 	}
 
-	log(message: any) {
-		if (currentActiveLogger == this || currentActiveLogger == null) {
-			logToStderr(message)
-		}
+	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright) {
+		const duration = Timer.currentTime - startTime
+
+		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`)
 	}
 
 	logTitledMessage(title: string, content: string, titleColor = chalk.cyanBright) {
+		this.log(`${titleColor(title)}: ${content}`)
+	}
+
+	log(message: any) {
 		if (currentActiveLogger == this || currentActiveLogger == null) {
-			logToStderr(`${titleColor(title)}: ${content}`)
+			logToStderr(message)
 		}
 	}
 
@@ -56,12 +60,6 @@ export class Logger {
 		if (currentActiveLogger == this || currentActiveLogger == null) {
 			writeToStderr(message)
 		}
-	}
-
-	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright) {
-		const duration = Timer.currentTime - startTime
-
-		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`)
 	}
 
 	getTimestamp() {

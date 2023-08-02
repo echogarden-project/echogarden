@@ -5,10 +5,10 @@ import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
 import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
-import { RawAudio, concatAudioSegments, downmixToMono, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
+import { RawAudio, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
-import { isWordOrSymbolWord, splitToSentences } from "../nlp/Segmentation.js"
+import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
 import { type RubberbandOptions } from "../dsp/Rubberband.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 
@@ -27,7 +27,25 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Synthesis
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesizeSegmentsResult> {
+export async function synthesize(input: string | string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
+	options = extendDeep(defaultSynthesisOptions, options)
+
+	let segments: string[]
+
+	if (Array.isArray(input)) {
+		segments = input
+	} else if (options.ssml) {
+		segments = [input]
+	} else {
+		const plainTextOptions = options.plainText!
+
+		segments = splitToParagraphs(input, plainTextOptions.paragraphBreaks!, plainTextOptions.whitespace!)
+	}
+
+	return synthesizeSegments(segments, options, onSegment, onSentence)
+}
+
+async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
 	const logger = new Logger()
 	options = extendDeep(defaultSynthesisOptions, options)
 
@@ -79,7 +97,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	logger.end()
 	logger.logTitledMessage('Selected voice', `'${options.voice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
 
-	const segmentsAudio: RawAudio[] = []
+	const segmentsRawAudio: RawAudio[] = []
 	const segmentsTimelines: Timeline[] = []
 
 	const timeline: Timeline = []
@@ -116,7 +134,7 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 			sentences = [segmentText]
 		}
 
-		const sentencesAudio: RawAudio[] = []
+		const sentencesRawAudio: RawAudio[] = []
 		const sentencesTimelines: Timeline[] = []
 
 		for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
@@ -136,18 +154,18 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 			let sentencetSynthesisOptions: SynthesisOptions = { postProcessing: { normalizeAudio: false } }
 			sentencetSynthesisOptions = extendDeep(options, sentencetSynthesisOptions)
 
-			const { synthesizedAudio: sentenceAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentencetSynthesisOptions)
+			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentencetSynthesisOptions)
 
 			const endPause = sentenceIndex == sentences.length - 1 ? options.segmentEndPause! : options.sentenceEndPause!
-			sentenceAudio.audioChannels[0] = trimAudioEnd(sentenceAudio.audioChannels[0], endPause * sentenceAudio.sampleRate, -40)
+			sentenceRawAudio.audioChannels[0] = trimAudioEnd(sentenceRawAudio.audioChannels[0], endPause * sentenceRawAudio.sampleRate, -40)
 
-			sentencesAudio.push(sentenceAudio)
+			sentencesRawAudio.push(sentenceRawAudio)
 
 			if (sentenceTimeline.length > 0) {
 				sentencesTimelines.push(sentenceTimeline)
 			}
 
-			const sentenceAudioLength = sentenceAudio.audioChannels[0].length / sentenceAudio.sampleRate
+			const sentenceAudioLength = sentenceRawAudio.audioChannels[0].length / sentenceRawAudio.sampleRate
 
 			timeOffset += sentenceAudioLength
 
@@ -161,7 +179,9 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 				timeline: sentenceTimelineWithOffset
 			})
 
-			peakDecibelsSoFar = Math.max(peakDecibelsSoFar, getAudioPeakDecibels(sentenceAudio.audioChannels))
+			peakDecibelsSoFar = Math.max(peakDecibelsSoFar, getAudioPeakDecibels(sentenceRawAudio.audioChannels))
+
+			const sentenceAudio = await convertToTargetCodecIfNeeded(sentenceRawAudio)
 
 			if (onSentence) {
 				await onSentence({
@@ -182,20 +202,22 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 
 		logger.start(`Merge and postprocess sentences`)
 
-		let segmentAudio: RawAudio
+		let segmentRawAudio: RawAudio
 
-		if (sentencesAudio.length > 0) {
-			const joinedAudioBuffers = concatAudioSegments(sentencesAudio.map(part => part.audioChannels))
-			segmentAudio = { audioChannels: joinedAudioBuffers, sampleRate: sentencesAudio[0].sampleRate }
+		if (sentencesRawAudio.length > 0) {
+			const joinedAudioBuffers = concatAudioSegments(sentencesRawAudio.map(part => part.audioChannels))
+			segmentRawAudio = { audioChannels: joinedAudioBuffers, sampleRate: sentencesRawAudio[0].sampleRate }
 		} else {
-			segmentAudio = getEmptyRawAudio(1, 24000)
+			segmentRawAudio = getEmptyRawAudio(1, 24000)
 		}
 
-		segmentsAudio.push(segmentAudio)
+		segmentsRawAudio.push(segmentRawAudio)
 
 		timeline.push(segmentEntry)
 		const segmentTimelineWithoutOffset = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentStartTime)
 		segmentsTimelines.push(segmentTimelineWithoutOffset)
+
+		const segmentAudio = await convertToTargetCodecIfNeeded(segmentRawAudio)
 
 		logger.end()
 
@@ -213,34 +235,55 @@ export async function synthesizeSegments(segments: string[], options: SynthesisO
 	}
 
 	logger.start(`\nMerge and postprocess segments`)
-	let resultAudio: RawAudio
+	let resultRawAudio: RawAudio
 
-	if (segmentsAudio.length > 0) {
-		const joinedAudioBuffers = concatAudioSegments(segmentsAudio.map(part => part.audioChannels))
-		resultAudio = { audioChannels: joinedAudioBuffers, sampleRate: segmentsAudio[0].sampleRate }
+	if (segmentsRawAudio.length > 0) {
+		const joinedAudioBuffers = concatAudioSegments(segmentsRawAudio.map(part => part.audioChannels))
+		resultRawAudio = { audioChannels: joinedAudioBuffers, sampleRate: segmentsRawAudio[0].sampleRate }
 
 		if (options.postProcessing!.normalizeAudio) {
-			resultAudio = normalizeAudioLevel(resultAudio, options.postProcessing!.targetPeakDb, options.postProcessing!.maxIncreaseDb)
+			resultRawAudio = normalizeAudioLevel(resultRawAudio, options.postProcessing!.targetPeakDb, options.postProcessing!.maxIncreaseDb)
 		}
 	} else {
-		resultAudio = getEmptyRawAudio(1, 24000)
+		resultRawAudio = getEmptyRawAudio(1, 24000)
 	}
+
+	async function convertToTargetCodecIfNeeded(rawAudio: RawAudio) {
+		const targetCodec = options.outputAudioFormat?.codec
+
+		let output: RawAudio | Buffer
+
+		if (targetCodec) {
+			logger.start(`Convert to ${targetCodec} codec`)
+
+			if (targetCodec == "wav") {
+				output = encodeWaveBuffer(rawAudio)
+			} else {
+				const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech(targetCodec, options.outputAudioFormat?.bitrate)
+				output = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions)
+			}
+		} else {
+			output = rawAudio
+		}
+
+		return output
+	}
+
+	const resultAudio = await convertToTargetCodecIfNeeded(resultRawAudio)
 
 	logger.end()
 
 	return {
-		synthesizedAudio: resultAudio,
+		audio: resultAudio,
 		timeline,
-		segmentsAudio,
-		segmentsTimelines,
+		language: options.language
 	}
 }
 
-export interface SynthesizeSegmentsResult {
-	synthesizedAudio: RawAudio
+export interface SynthesisResult {
+	audio: RawAudio | Buffer
 	timeline: Timeline
-	segmentsAudio: RawAudio[]
-	segmentsTimelines: Timeline[]
+	language: string
 }
 
 async function synthesizeSegment(text: string, options: SynthesisOptions) {
@@ -921,6 +964,11 @@ export interface SynthesisOptions {
 		rubberband?: RubberbandOptions
 	}
 
+	outputAudioFormat?: {
+		codec?: "wav" | "mp3" | "opus" | "m4a" | "ogg" | "flac"
+		bitrate?: number
+	}
+
 	languageDetection?: API.TextLanguageDetectionOptions
 
 	subtitles?: SubtitlesConfig
@@ -1046,6 +1094,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		rubberband: {
 		}
 	},
+
+	outputAudioFormat: undefined,
 
 	languageDetection: undefined,
 
@@ -1546,7 +1596,7 @@ export const defaultVoiceListRequestOptions: VoiceListRequestOptions = {
 export interface SynthesisSegmentEventData {
 	index: number
 	total: number
-	audio: RawAudio
+	audio: RawAudio | Buffer
 	timeline: Timeline
 	transcript: string
 	language: string
@@ -1564,7 +1614,6 @@ export interface SynthesisVoice {
 }
 
 export type VoiceGender = "male" | "female" | "unknown"
-
 
 export const synthesisEngines: EngineMetadata[] = [
 	{

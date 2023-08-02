@@ -1,12 +1,11 @@
 import type { InferenceSession } from 'onnxruntime-node'
 import { SynthesisVoice } from '../api/API.js'
 import { Logger } from "../utilities/Logger.js"
-import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
+import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
 import { readAndParseJsonFile, readdir } from "../utilities/FileSystem.js"
 import path from 'node:path'
-import { normalizeLanguageCode } from '../utilities/Locale.js'
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 

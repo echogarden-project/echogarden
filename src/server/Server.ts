@@ -6,15 +6,25 @@ import { readFile, existsSync } from '../utilities/FileSystem.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread } from './Worker.js'
 import { Worker } from 'node:worker_threads'
+import { IncomingMessage, ServerResponse } from 'node:http'
+import { Logger } from '../utilities/Logger.js'
+import chalk from 'chalk'
 
-const log = logToStderr
+//const log = logToStderr
 
 export async function startWebSocketServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void) {
+	const logger = new Logger()
+
 	serverOptions = extendDeep(defaultServerOptions, serverOptions)
 
 	const wsServerOptions: WsServerOptions = {
 		perMessageDeflate: serverOptions.deflate,
 		maxPayload: serverOptions.maxPayload
+	}
+
+	function onHttpRequest(request: IncomingMessage, response: ServerResponse) {
+		response.writeHead(200, { 'Content-Type': 'text/plain' })
+		response.end("This is the Echogarden HTTP server!")
 	}
 
 	if (serverOptions.secure) {
@@ -31,13 +41,19 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 		const httpsServer = createServer({
 			cert: await readFile(serverOptions.certPath!),
 			key: await readFile(serverOptions.keyPath!)
-		})
+		}, onHttpRequest)
 
 		httpsServer.listen(serverOptions.port!)
 
 		wsServerOptions.server = httpsServer
 	} else {
-		wsServerOptions.port = serverOptions.port!
+		const { createServer } = await import('http')
+
+		const httpServer = createServer({}, onHttpRequest)
+
+		httpServer.listen(serverOptions.port)
+
+		wsServerOptions.server = httpServer
 	}
 
 	const wss = new WebSocketServer(wsServerOptions)
@@ -48,6 +64,9 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 		if (message.name == "writeToStdErr") {
 			return
 		}
+
+		// Remove input raw audio property from message, if exists, when using WebSocket protocol:
+		message['inputRawAudio'] = undefined
 
 		if (!message.requestId) {
 			throw new Error("Worker message doesn't have a request ID")
@@ -76,7 +95,7 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 	const serverOpenPromise = new OpenPromise<void>
 
 	wss.on("listening", () => {
-		log(`Started Echogarden WebSocket server on port ${serverOptions.port}`)
+		logger.log(chalk.gray(`Started Echogarden WebSocket server on port ${serverOptions.port}`))
 		onStarted(serverOptions)
 	})
 
@@ -85,11 +104,11 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 	})
 
 	wss.on('connection', async (ws, req) => {
-		log(`Accepted incoming connection from ${req.socket.remoteAddress}`)
+		logger.log(chalk.gray((`Accepted incoming connection from ${req.socket.remoteAddress}`)))
 
 		ws.on('message', (messageData, isBinary) => {
 			if (!isBinary) {
-				log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)
+				logger.log(chalk.gray((`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)))
 				return
 			}
 
@@ -98,14 +117,14 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 			try {
 				incomingMessage = decodeMsgPack(messageData as Buffer)
 			} catch (e) {
-				log(`Failed to decode binary WebSocket message. Reason: ${e}`)
+				logger.log(chalk.gray(`Failed to decode binary WebSocket message. Reason: ${e}`))
 				return
 			}
 
 			const requestId = incomingMessage.requestId
 
 			if (!requestId) {
-				log("Received a WebSocket message without a request ID")
+				logger.log(chalk.gray(("Received a WebSocket message without a request ID")))
 				return
 			}
 
@@ -119,7 +138,7 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 		})
 
 		ws.on('error', (e) => {
-			log(e)
+			logger.logTitledMessage("WebSocket error", e.message, chalk.redBright)
 		})
 
 		ws.on("close", () => {
@@ -133,7 +152,7 @@ export async function startWebSocketServer(serverOptions: ServerOptions, onStart
 
 			keysToDelete.forEach(key => requestIdToWebSocket.delete(key))
 
-			log(`Incoming connection from ${req.socket.remoteAddress} was closed`)
+			logger.log(chalk.gray((`Incoming connection from ${req.socket.remoteAddress} was closed`)))
 		})
 	})
 
@@ -151,7 +170,7 @@ export interface ServerOptions {
 }
 
 export const defaultServerOptions: ServerOptions = {
-	port: 4000,
+	port: 45054,
 	secure: false,
 	certPath: undefined,
 	keyPath: undefined,

@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { CLIArguments, parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from "../utilities/Utilities.js"
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from "../utilities/Utilities.js"
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from "./CLIOptionsSchema.js"
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLIConfigFile.js"
 
@@ -9,12 +9,12 @@ import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normal
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
 import { Logger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
-import { encodeFromChannels, FFMpegOutputOptions } from "../codecs/FFMpegTranscoder.js"
+import { encodeFromChannels, FFMpegOutputOptions, getDefaultFFMpegOptionsForSpeech } from "../codecs/FFMpegTranscoder.js"
 import path, { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
+import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { ensureDir, existsSync, getLowercaseFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
@@ -24,7 +24,7 @@ import { appName } from '../api/Common.js'
 import { ServerOptions, startWebSocketServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 
-const log = logToStderr
+//const log = logToStderr
 
 async function startIfInWorkerThread() {
 	if (isMainThread || !parentPort) {
@@ -55,22 +55,24 @@ async function startIfInWorkerThread() {
 }
 
 export async function start(processArgs: string[]) {
+	const logger = new Logger()
+
 	let args: CLIArguments
 
 	try {
 		const packageData = await readAndParseJsonFile(resolveToModuleRootDir("package.json"))
 
-		log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
+		logger.log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
 
 		const command = processArgs[0]
 
 		if (!command || command == "help") {
-			log(`Supported operations:\n\n${commandHelp.join("\n")}`)
+			logger.log(`Supported operations:\n\n${commandHelp.join("\n")}`)
 			process.exit(0)
 		}
 
 		if (command == "--help") {
-			log(`There's no command called '--help'. Did you mean to run 'echogarden help'?`)
+			logger.log(`There's no command called '--help'. Did you mean to run 'echogarden help'?`)
 			process.exit(0)
 		}
 
@@ -116,7 +118,7 @@ export async function start(processArgs: string[]) {
 			args.options = newOptions
 		}
 	} catch (e: any) {
-		log(`Error: ${e.message}`)
+		logger.logTitledMessage(`Error`, e.message, chalk.redBright)
 		process.exit(1)
 	}
 
@@ -131,9 +133,9 @@ export async function start(processArgs: string[]) {
 		await startWithArgs(args)
 	} catch (e: any) {
 		if (debugMode) {
-			log(e)
+			logger.log(e)
 		} else {
-			log(`Error: ${e.message}`)
+			logger.logTitledMessage(`Error`, e.message, chalk.redBright)
 		}
 
 		process.exit(1)
@@ -177,9 +179,13 @@ const commandHelp = [
 	`    Uninstall one or more Echogarden packages\n`,
 	`${executableName} ${chalk.magentaBright('list-packages')} [options...]`,
 	`    List installed Echogarden packages\n`,
+	`${executableName} ${chalk.magentaBright('serve')} [options...]`,
+	`    Start a server\n`,
 ]
 
 async function startWithArgs(parsedArgs: CLIArguments) {
+	const logger = new Logger()
+
 	switch (parsedArgs.command) {
 		case 'speak':
 		case 'speak-file':
@@ -260,7 +266,7 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 		}
 
 		default: {
-			log(`Unknown command: ${parsedArgs.command}`)
+			logger.logTitledMessage(`Unknown command`, parsedArgs.command, chalk.redBright)
 			process.exit(1)
 		}
 	}
@@ -269,7 +275,7 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 type SpeakCommand = "speak" | "speak-file" | "speak-url" | "speak-wikipedia"
 
 async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const mainArg = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -377,32 +383,36 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 	async function onSegment(segmentData: API.SynthesisSegmentEventData) {
 		if (includesPartPattern) {
-			progressLogger.start("Writing output files for segment")
+			logger.start("Writing output files for segment")
 		}
 
-		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio, segmentData.timeline, segmentData.transcript, segmentData.language, allowOverwrite)
+		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio as RawAudio, segmentData.timeline, segmentData.transcript, segmentData.language, allowOverwrite)
 
-		progressLogger.end()
+		logger.end()
 
 		if ((options as any).play) {
 			let gainAmount = -3 - segmentData.peakDecibelsSoFar
 			//gainAmount = Math.min(gainAmount, 0)
 
-			const audioWithAddedGain = applyGainDecibels(segmentData.audio, gainAmount)
+			const audioWithAddedGain = applyGainDecibels(segmentData.audio as RawAudio, gainAmount)
 			const segmentWordTimeline = segmentData.timeline.flatMap(sentenceTimeline => sentenceTimeline.timeline!)
 
 			await playAudioWithWordTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript)
 		}
 	}
 
-	const { synthesizedAudio, timeline } = await API.synthesizeSegments(textSegments, options, onSegment, undefined)
+	if (options.outputAudioFormat?.codec) {
+		options.outputAudioFormat!.codec = undefined
+	}
+
+	const { audio: synthesizedAudio, timeline } = await API.synthesize(textSegments, options, onSegment, undefined)
 
 	if (plainText) {
 		addWordTextOffsetsToTimeline(timeline, plainText)
 	}
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	for (const outputFile of outputFilenames) {
@@ -413,14 +423,14 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		}
 
 		const fileSaver = getFileSaver(outputFile, allowOverwrite)
-		await fileSaver(synthesizedAudio, timeline, textSegments.join("\n\n"), options.subtitles)
+		await fileSaver(synthesizedAudio as RawAudio, timeline, textSegments.join("\n\n"), options.subtitles)
 	}
 
-	progressLogger.end()
+	logger.end()
 }
 
 async function transcribe(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const sourceFilename = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -446,14 +456,10 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { transcript, timeline: wordTimeline, rawAudio, language } = await API.recognizeFile(sourceFilename, options)
-
-	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, 'single', 'preserve')
-
-	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
+	const { transcript, timeline, wordTimeline, inputRawAudio, language } = await API.recognize(sourceFilename, options)
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	for (const outputFile of outputFilenames) {
@@ -465,20 +471,20 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 
 		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
+		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 	}
 
-	progressLogger.end()
+	logger.end()
 
 	if ((options as any).play) {
-		const normalizedAudio = normalizeAudioLevel(rawAudio)
+		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
 		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
 async function align(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const audioFilename = commandArgs[0]
 	const outputFilenames = commandArgs.slice(2)
@@ -529,23 +535,19 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
 	const { includesPartPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { wordTimeline, rawAudio, transcript, language } = await API.alignFile(audioFilename, text, options)
-
-	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
-
-	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
+	const { timeline, wordTimeline, transcript, language, inputRawAudio } = await API.align(audioFilename, text, options)
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	if (includesPartPattern) {
-		for (let segmentIndex = 0; segmentIndex < segmentTimeline.length; segmentIndex++) {
-			const segmentEntry = segmentTimeline[segmentIndex]
-			const segmentAudio = sliceRawAudioByTime(rawAudio, segmentEntry.startTime, segmentEntry.endTime)
+		for (let segmentIndex = 0; segmentIndex < timeline.length; segmentIndex++) {
+			const segmentEntry = timeline[segmentIndex]
+			const segmentAudio = sliceRawAudioByTime(inputRawAudio, segmentEntry.startTime, segmentEntry.endTime)
 			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
 
-			await writeOutputFilesForSegment(outputFilenames, segmentIndex, segmentTimeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
 		}
 	}
 
@@ -558,22 +560,20 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
+		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 	}
 
-	progressLogger.end()
+	logger.end()
 
 	if ((options as any).play) {
-		const normalizedAudio = normalizeAudioLevel(rawAudio)
-
-		const wordTimeline = segmentTimeline.flatMap(segmentEntry => segmentEntry.timeline!).flatMap(sentenceEntry => sentenceEntry.timeline!)
+		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
 		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
 async function translateSpeech(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const inputFilename = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -600,14 +600,10 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { transcript, timeline: wordTimeline, rawAudio, targetLanguage } = await API.translateSpeechFile(inputFilename, options)
-
-	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, targetLanguage, 'single', 'preserve')
-
-	addWordTextOffsetsToTimeline(segmentTimeline, transcript)
+	const { transcript, timeline, wordTimeline, sourceLanguage, targetLanguage, inputRawAudio } = await API.translateSpeech(inputFilename, options)
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	for (const outputFile of outputFilenames) {
@@ -619,20 +615,20 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
-		await fileSaver(rawAudio, segmentTimeline, transcript, options.subtitles)
+		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 	}
 
-	progressLogger.end()
+	logger.end()
 
 	if ((options as any).play) {
-		const normalizedAudio = normalizeAudioLevel(rawAudio)
+		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
 		await playAudioWithWordTimeline(normalizedAudio, wordTimeline, transcript)
 	}
 }
 
 async function detectLanguage(commandArgs: string[], cliOptions: Map<string, string>, mode: "speech" | "text" | "auto") {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const inputFilePath = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -684,13 +680,13 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 
 		await checkOutputFilenames(outputFilenames, false, true, false)
 
-		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechFileLanguage(inputFilePath, options)
+		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechLanguage(inputFilePath, options)
 
 		results = detectedLanguageProbabilities
 	}
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 
 		const resultsAsText = results.map(result => `${formatLanguageCodeWithName(result.language)}: ${result.probability.toFixed(5)}`).join("\n")
 
@@ -702,15 +698,15 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 	} else {
 		const resultsAsText = results.slice(0, 10).map(result => `${formatLanguageCodeWithName(result.language)}: ${result.probability.toFixed(5)}`).join("\n")
 
-		log("")
-		log(resultsAsText)
+		logger.log("")
+		logger.log(resultsAsText)
 	}
 
-	progressLogger.end()
+	logger.end()
 }
 
 async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const audioFilename = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -737,10 +733,10 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 
 	await checkOutputFilenames(outputFilenames, true, true, false)
 
-	const { timeline, rawAudio } = await API.detectFileVoiceActivity(audioFilename, options)
+	const { timeline, inputRawAudio } = await API.detectVoiceActivity(audioFilename, options)
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	for (const outputFile of outputFilenames) {
@@ -752,20 +748,24 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 
 		const fileSaver = getFileSaver(outputFile, allowOverwrite)
 
-		await fileSaver(rawAudio, timeline, "")
+		await fileSaver(inputRawAudio, timeline, "")
 	}
 
-	progressLogger.end()
+	logger.end()
 
 	if ((options as any).play) {
-		const normalizedAudio = normalizeAudioLevel(rawAudio)
+		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
-		await playAudioWithWordTimeline(normalizedAudio, timeline)
+		const timelineToPlay = timeline.map(entry => {
+			return {...entry, type: "word" } as TimelineEntry
+		})
+
+		await playAudioWithWordTimeline(normalizedAudio, timelineToPlay)
 	}
 }
 
 async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const audioFilename = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -792,22 +792,22 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	await checkOutputFilenames(outputFilenames, true, false, false)
 
-	const outputAudio = await API.denoiseFile(audioFilename, options)
+	const { denoisedAudio } = await API.denoise(audioFilename, options)
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 	}
 
 	for (const filename of outputFilenames) {
 		const fileSaver = getFileSaver(filename, allowOverwrite)
 
-		await fileSaver(outputAudio, [], "")
+		await fileSaver(denoisedAudio, [], "")
 	}
 
-	progressLogger.end()
+	logger.end()
 
 	if ((options as any).play) {
-		await playAudioSamples(outputAudio)
+		await playAudioSamples(denoisedAudio)
 	}
 }
 
@@ -905,13 +905,13 @@ async function listEngines(commandArgs: string[], cliOptions: Map<string, string
 		logger.logTitledMessage('Type', engine.type)
 
 		if (index < engines.length - 1) {
-			log("")
+			logger.log("")
 		}
 	}
 }
 
 async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, string>) {
-	const progressLogger = new Logger()
+	const logger = new Logger()
 
 	const targetEngine = commandArgs[0]
 	const outputFilenames = commandArgs.slice(1)
@@ -953,7 +953,7 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 	}).join("\n\n")
 
 	if (outputFilenames.length > 0) {
-		progressLogger.start("\nWriting output files")
+		logger.start("\nWriting output files")
 
 		for (const filename of outputFilenames) {
 			const fileSaver = getFileSaver(filename, allowOverwrite)
@@ -964,13 +964,15 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 			await fileSaver(getEmptyRawAudio(0, 0), voiceList as any, voiceListTextWithoutColors)
 		}
 	} else {
-		log(voiceListText)
+		logger.log(voiceListText)
 	}
 
-	progressLogger.end()
+	logger.end()
 }
 
 async function installPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+	const logger = new Logger()
+
 	if (commandArgs.length == 0) {
 		throw new Error("No package names specified")
 	}
@@ -981,21 +983,23 @@ async function installPackages(commandArgs: string[], cliOptions: Map<string, st
 		try {
 			await loadPackage(packageName)
 		} catch (e) {
-			log(`Failed installing package ${packageName}: ${e}`)
+			logger.log(`Failed installing package ${packageName}: ${e}`)
 			failedPackageNames.push(packageName)
 		}
 	}
 
 	if (failedPackageNames.length > 0) {
 		if (failedPackageNames.length == 1) {
-			log(`The package ${failedPackageNames[0]} failed to install`)
+			logger.log(`The package ${failedPackageNames[0]} failed to install`)
 		} else {
-			log(`The packages ${failedPackageNames.join(', ')} failed to install`)
+			logger.log(`The packages ${failedPackageNames.join(', ')} failed to install`)
 		}
 	}
 }
 
 async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+	const logger = new Logger()
+
 	if (commandArgs.length == 0) {
 		throw new Error("No package names specified")
 	}
@@ -1006,17 +1010,19 @@ async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, 
 		try {
 			await removePackage(packageName)
 		} catch (e) {
-			log(`Failed uninstalling package ${packageName}: ${e}`)
+			logger.log(`Failed uninstalling package ${packageName}: ${e}`)
 			failedPackageNames.push(packageName)
 		}
 	}
 
 	if (failedPackageNames.length > 0) {
-		log(`The packages ${failedPackageNames.join(', ')} failed to uninstall`)
+		logger.log(`The packages ${failedPackageNames.join(', ')} failed to uninstall`)
 	}
 }
 
 async function listPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+	const logger = new Logger()
+
 	const packagesDir = await ensureAndGetPackagesDir()
 
 	const installedPackageNames = await readdir(packagesDir)
@@ -1041,9 +1047,9 @@ async function listPackages(commandArgs: string[], cliOptions: Map<string, strin
 
 	installedPackageNamesFormatted.sort()
 
-	log(`Total of ${installedPackageNamesFormatted.length} packages installed in '${packagesDir}'\n`)
+	logger.log(`Total of ${installedPackageNamesFormatted.length} packages installed in '${packagesDir}'\n`)
 
-	log(installedPackageNamesFormatted.join("\n"))
+	logger.log(installedPackageNamesFormatted.join("\n"))
 }
 
 async function startServer(commandArgs: string[], cliOptions: Map<string, string>) {
@@ -1303,45 +1309,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 		}
 	} else if (supportedOutputMediaFileExtensions.includes(fileExtension)) {
 		fileSaver = async (audio) => {
-			let ffmpegOptions: FFMpegOutputOptions
-
-			if (fileExtension == "mp3") {
-				ffmpegOptions = {
-					format: "mp3",
-					codec: "libmp3lame",
-					bitrate: 64,
-					customOptions: []
-				}
-			} else if (fileExtension == "opus") {
-				ffmpegOptions = {
-					codec: "libopus",
-					bitrate: 48,
-					customOptions: []
-				}
-			} else if (fileExtension == "m4a") {
-				ffmpegOptions = {
-					format: "mp4",
-					codec: "aac",
-					bitrate: 48,
-					customOptions: ["-profile:a", "aac_low", "-movflags", "frag_keyframe+empty_moov"]
-				}
-			} else if (fileExtension == "ogg") {
-				ffmpegOptions = {
-					codec: "libvorbis",
-					bitrate: 48,
-					customOptions: []
-				}
-			} else if (fileExtension == "flac") {
-				ffmpegOptions = {
-					format: "flac",
-					customOptions: ["-compression_level", "6"]
-				}
-			} else {
-				ffmpegOptions = {
-					format: fileExtension,
-					customOptions: []
-				}
-			}
+			const ffmpegOptions = getDefaultFFMpegOptionsForSpeech(fileExtension)
 
 			ffmpegOptions.filename = outputFilePath
 

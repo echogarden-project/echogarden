@@ -19,7 +19,7 @@ const log: typeof logToStderr = traceEnabled ? logToStderr : () => { }
 export async function synthesize(
 	text: string,
 	trustedClientToken: string,
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, ChristopherNeural)",
+	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)",
 	ssmlPitchString = "+0Hz",
 	ssmlRateString = "+0%",
 	ssmlVolumeString = "+0%") {

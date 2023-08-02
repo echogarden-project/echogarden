@@ -1,13 +1,10 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
 import { logToStderr } from "../utilities/Utilities.js"
-import { RawAudio, downmixToMonoAndNormalize, trimAudioEnd } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevel, trimAudioEnd } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
-import { Timeline } from "../utilities/Timeline.js"
+import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { whisperOptionsDefaults, type WhisperOptions } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { EngineMetadata } from "./Common.js"
@@ -20,14 +17,17 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Speech translation
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function translateSpeechFile(filename: string, options: SpeechTranslationOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
-	return translateSpeech(rawAudio, options)
-}
-
-export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
+export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
+
+	logger.start("Prepare for speech translation")
+
+	const inputRawAudio = await ensureRawAudio(input)
+
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	options = extendDeep(defaultSpeechTranslationOptions, options)
 
@@ -49,10 +49,6 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 
 	let transcript: string
 	let timeline: Timeline | undefined
-
-	let sourceRawAudio = await resampleAudioSpeex(inputRawAudio, 16000)
-	sourceRawAudio = downmixToMonoAndNormalize(sourceRawAudio)
-	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	logger.start(`Load ${engine} module`)
 
@@ -91,19 +87,24 @@ export async function translateSpeech(inputRawAudio: RawAudio, options: SpeechTr
 		}
 	}
 
+	addWordTextOffsetsToTimeline(timeline, transcript)
+
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(timeline, transcript, targetLanguage, 'single', 'preserve')
+
 	logger.end()
 	logger.log('')
 	logger.logDuration(`Total speech translation time`, startTimestamp, chalk.magentaBright)
 
-	return { transcript, timeline, rawAudio: inputRawAudio, sourceLanguage, targetLanguage }
+	return { transcript, timeline: segmentTimeline, wordTimeline: timeline, sourceLanguage, targetLanguage, inputRawAudio }
 }
 
 export interface SpeechTranslationResult {
 	transcript: string
 	timeline: Timeline
-	rawAudio: RawAudio
+	wordTimeline: Timeline
 	sourceLanguage: string
 	targetLanguage: string
+	inputRawAudio: RawAudio
 }
 
 export type SpeechTranslationEngine = "whisper"

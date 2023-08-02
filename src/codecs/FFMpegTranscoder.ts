@@ -42,7 +42,7 @@ export async function decodeToChannels(input: string | Buffer, outSampleRate?: n
 }
 
 export async function transcode(input: string | Buffer, outputOptions: FFMpegOutputOptions) {
-	const executablePath = await getExecutablePath()
+	const executablePath = await getFFMpegExecutablePath()
 
 	if (!executablePath) {
 		throw new Error("The ffmpeg utility wasn't found. Please ensure it is available on the system path.")
@@ -146,7 +146,7 @@ function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegO
 	return args
 }
 
-async function getExecutablePath() {
+async function getFFMpegExecutablePath() {
 	if (process.platform == "win32") {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-essentials-win64")
 
@@ -164,4 +164,49 @@ async function getExecutablePath() {
 	}
 
 	return undefined
+}
+
+export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBitrate?: number) {
+	let ffmpegOptions: FFMpegOutputOptions
+
+	if (fileExtension == "mp3") {
+		ffmpegOptions = {
+			format: "mp3",
+			codec: "libmp3lame",
+			bitrate: 64,
+			customOptions: []
+		}
+	} else if (fileExtension == "opus") {
+		ffmpegOptions = {
+			codec: "libopus",
+			bitrate: 48,
+			customOptions: []
+		}
+	} else if (fileExtension == "m4a") {
+		ffmpegOptions = {
+			format: "mp4",
+			codec: "aac",
+			bitrate: 48,
+			customOptions: ["-profile:a", "aac_low", "-movflags", "frag_keyframe+empty_moov"]
+		}
+	} else if (fileExtension == "ogg") {
+		ffmpegOptions = {
+			codec: "libvorbis",
+			bitrate: 48,
+			customOptions: []
+		}
+	} else if (fileExtension == "flac") {
+		ffmpegOptions = {
+			format: "flac",
+			customOptions: ["-compression_level", "6"]
+		}
+	} else {
+		throw new Error(`Unsupported codec extension: '${fileExtension}'`)
+	}
+
+	if (customBitrate != null) {
+		ffmpegOptions.bitrate = customBitrate
+	}
+
+	return ffmpegOptions
 }

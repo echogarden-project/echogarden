@@ -1,16 +1,15 @@
 import { WebSocket } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
-import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesizeSegmentsResult, VoiceListRequestOptions } from "../api/Synthesis.js"
-import { SynthesizeSegmentsRequestMessage as SynthesiseSegmentsRequestMessage, SynthesizeSegmentsResponseMessage, SynthesisSegmentEventMessage, SynthesisSentenceEventMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage } from './Worker.js'
+import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesisResult, VoiceListRequestOptions } from "../api/Synthesis.js"
+import { SynthesisResponseMessage, SynthesisSegmentEventMessage, SynthesisSentenceEventMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage, SpeechLanguageDetectionRequestMessage, SpeechLanguageDetectionResponseMessage, TextLanguageDetectionResponseMessage, TextLanguageDetectionRequestMessage, SynthesisRequestMessage } from './Worker.js'
 import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { RawAudio } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio } from '../audio/AudioUtilities.js'
 import { AlignmentOptions, AlignmentResult } from '../api/Alignment.js'
 import { RecognitionOptions, RecognitionResult } from '../api/Recognition.js'
 import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Translation.js'
 import { Worker as WorkerThread } from 'node:worker_threads'
-import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
-import { playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
+import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, TextLanguageDetectionOptions, TextLanguageDetectionResult } from '../api/LanguageDetection.js'
 
 const log = logToStderr
 
@@ -61,17 +60,17 @@ export class Client {
 		}
 	}
 
-	async synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesizeSegmentsResult> {
-		const requestOpenPromise = new OpenPromise<SynthesizeSegmentsResult>()
+	async synthesize(input: string | string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
+		const requestOpenPromise = new OpenPromise<SynthesisResult>()
 
-		const requestMessage: SynthesiseSegmentsRequestMessage = {
-			messageType: "SynthesizeSegmentsRequest",
-			segments,
+		const requestMessage: SynthesisRequestMessage = {
+			messageType: "SynthesisRequest",
+			input,
 			options
 		}
 
-		function onResponse(responseMessage: SynthesizeSegmentsResponseMessage | SynthesisSegmentEventMessage | SynthesisSentenceEventMessage) {
-			if (responseMessage.messageType == "SynthesizeSegmentsResponse") {
+		function onResponse(responseMessage: SynthesisResponseMessage | SynthesisSegmentEventMessage | SynthesisSentenceEventMessage) {
+			if (responseMessage.messageType == "SynthesisResponse") {
 				requestOpenPromise.resolve(responseMessage)
 			} else if (responseMessage.messageType == "SynthesisSegmentEvent" && onSegment) {
 				onSegment(responseMessage)
@@ -120,12 +119,12 @@ export class Client {
 		return requestOpenPromise.promise
 	}
 
-	async recognize(inputRawAudio: RawAudio, options: RecognitionOptions): Promise<RecognitionResult> {
+	async recognize(input: AudioSourceParam, options: RecognitionOptions): Promise<RecognitionResult> {
 		const requestOpenPromise = new OpenPromise<RecognitionResult>()
 
 		const requestMessage: RecognitionRequestMessage = {
 			messageType: "RecognitionRequest",
-			inputRawAudio,
+			input,
 			options
 		}
 
@@ -147,12 +146,12 @@ export class Client {
 		return requestOpenPromise.promise
 	}
 
-	async align(inputRawAudio: RawAudio, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
+	async align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
 		const requestOpenPromise = new OpenPromise<AlignmentResult>()
 
 		const requestMessage: AlignmentRequestMessage = {
 			messageType: "AlignmentRequest",
-			inputRawAudio,
+			input,
 			transcript,
 			options
 		}
@@ -176,17 +175,73 @@ export class Client {
 		return requestOpenPromise.promise
 	}
 
-	async translateSpeech(inputRawAudio: RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
+	async translateSpeech(input: string | Buffer | Uint8Array |RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
 		const requestOpenPromise = new OpenPromise<SpeechTranslationResult>()
 
 		const requestMessage: SpeechTranslationRequestMessage = {
 			messageType: "SpeechTranslationRequest",
-			inputRawAudio,
+			input,
 			options
 		}
 
 		function onResponse(responseMessage: SpeechTranslationResponseMessage) {
 			if (responseMessage.messageType == "SpeechTranslationResponse") {
+				requestOpenPromise.resolve(responseMessage)
+			}
+		}
+
+		function onError(e: any) {
+			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
+		}
+
+		return requestOpenPromise.promise
+	}
+
+	async detectSpeechLanguage(input: AudioSourceParam, options: SpeechLanguageDetectionOptions): Promise<SpeechLanguageDetectionResult> {
+		const requestOpenPromise = new OpenPromise<SpeechLanguageDetectionResult>()
+
+		const requestMessage: SpeechLanguageDetectionRequestMessage = {
+			messageType: "SpeechLanguageDetectionRequest",
+			input,
+			options
+		}
+
+		function onResponse(responseMessage: SpeechLanguageDetectionResponseMessage) {
+			if (responseMessage.messageType == "SpeechLanguageDetectionResponse") {
+				requestOpenPromise.resolve(responseMessage)
+			}
+		}
+
+		function onError(e: any) {
+			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
+		}
+
+		return requestOpenPromise.promise
+	}
+
+	async detectTextLanguage(input: string, options: TextLanguageDetectionOptions): Promise<TextLanguageDetectionResult> {
+		const requestOpenPromise = new OpenPromise<TextLanguageDetectionResult>()
+
+		const requestMessage: TextLanguageDetectionRequestMessage = {
+			messageType: "TextLanguageDetectionRequest",
+			input,
+			options
+		}
+
+		function onResponse(responseMessage: TextLanguageDetectionResponseMessage) {
+			if (responseMessage.messageType == "TextLanguageDetectionResponse") {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -239,83 +294,4 @@ export class Client {
 			listener(incomingMessage)
 		}
 	}
-}
-
-export async function runClientWebSocketTest(serverPort: number, secure: boolean) {
-	const ws = new WebSocket(`${secure ? "wss" : "ws" }://localhost:${serverPort}`, {
-		rejectUnauthorized: false
-	})
-
-	ws.on("open", async () => {
-		const client = new Client(ws)
-
-		const voiceListResult = await client.requestVoiceList({
-			engine: "pico"
-		})
-
-		log(voiceListResult)
-
-		const synthesisResult1 = await client.synthesizeSegments(
-			["Hello world! How are you?", "Do you like turtles?"],
-			{},
-			async (eventData) => {
-				log("onSegment (call 1)")
-			},
-			async (eventData) => {
-				log("onSentence (call 1)")
-			})
-
-		//log(synthesisResult1.timeline)
-
-		const wordTimeline = synthesisResult1.timeline.flatMap(segmentEntry => segmentEntry.timeline!).flatMap(sentenceEntry => sentenceEntry.timeline!)
-		const transcript = synthesisResult1.timeline.map(segmenEntry => segmenEntry.text).join("\n\n")
-		await playAudioWithWordTimeline(synthesisResult1.synthesizedAudio, wordTimeline, transcript)
-
-		await client.synthesizeSegments(
-			["Hey! What's up?", "See ya."],
-			{},
-			async (eventData) => {
-				log("onSegment (call 2)")
-			},
-			async (eventData) => {
-				log("onSentence (call 2)")
-			})
-
-		//log(synthesisResult2)
-
-		//ws.close()
-	})
-}
-
-export async function runClientWorkerThreadTest() {
-	const worker = new WorkerThread(resolveToModuleRootDir("dist/server/Worker.js"))
-	const client = new Client(worker)
-
-	const voiceListResult = await client.requestVoiceList({
-		engine: "pico"
-	})
-
-	log(voiceListResult)
-
-	await client.synthesizeSegments(
-		["Hello world! How are you?", "Do you like turtles?"],
-		{ },
-		async (eventData) => {
-			log("onSegment (call 1)")
-		},
-		async (eventData) => {
-			log("onSentence (call 1)")
-		})
-
-	//log(synthesisResult1)
-
-	await client.synthesizeSegments(
-		["Hey! What's up?", "See ya."],
-		{},
-		async (eventData) => {
-			log("onSegment (call 2)")
-		},
-		async (eventData) => {
-			log("onSentence (call 2)")
-		})
 }

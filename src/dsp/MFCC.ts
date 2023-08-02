@@ -1,6 +1,5 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
 import { resampleAudioSpeex } from "./SpeexResampler.js"
 import { computeMelSpectogram } from "./MelSpectogram.js"
 import { RawAudio, powerToDecibels } from "../audio/AudioUtilities.js"

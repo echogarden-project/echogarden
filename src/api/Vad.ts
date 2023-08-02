@@ -1,33 +1,28 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
 import { logToStderr } from "../utilities/Utilities.js"
-import { RawAudio, downmixToMonoAndNormalize } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, ensureRawAudio, } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import { Timeline } from "../utilities/Timeline.js"
 import path from "path"
 import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata } from "./Common.js"
+import chalk from "chalk"
 
 const log = logToStderr
 
-export async function detectFileVoiceActivity(filename: string, options: VADOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
-
-	return detectVoiceActivity(rawAudio, options)
-}
-
-export async function detectVoiceActivity(rawAudio: RawAudio, options: VADOptions) {
+export async function detectVoiceActivity(input: AudioSourceParam, options: VADOptions): Promise<VADResult> {
 	const logger = new Logger()
+	const startTimestamp = logger.getTimestamp()
+
 	logger.start("Prepare for voice activity detection")
 
-	options = extendDeep(defaultVADOptions, options)
+	const inputRawAudio = await ensureRawAudio(input)
 
-	rawAudio = await resampleAudioSpeex(rawAudio, 16000)
-	rawAudio = downmixToMonoAndNormalize(rawAudio)
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+
+	options = extendDeep(defaultVADOptions, options)
 
 	logger.start(`Detect voice activity with ${options.engine}`)
 
@@ -40,7 +35,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, options: VADOption
 
 			const webrtcOptions = options.webrtc!
 
-			frameProbabilities = await WebRtcVAD.detectVoiceActivity(rawAudio, webrtcOptions.frameDuration!)
+			frameProbabilities = await WebRtcVAD.detectVoiceActivity(sourceRawAudio, webrtcOptions.frameDuration!)
 			frameDurationSeconds = webrtcOptions.frameDuration! / 1000
 
 			break
@@ -56,7 +51,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, options: VADOption
 			const modelPath = path.join(modelDir, "silero-vad.onnx")
 			const frameDuration = sileroOptions.frameDuration!
 
-			frameProbabilities = await SileroVAD.detectVoiceActivity(rawAudio, modelPath, frameDuration)
+			frameProbabilities = await SileroVAD.detectVoiceActivity(sourceRawAudio, modelPath, frameDuration)
 			frameDurationSeconds = sileroOptions.frameDuration! / 1000
 
 			break
@@ -67,7 +62,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, options: VADOption
 
 			const rnnoiseOptions = options.rnnoise!
 
-			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(rawAudio)
+			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(sourceRawAudio)
 
 			frameDurationSeconds = 0.01
 			frameProbabilities = frameVadProbabilities
@@ -104,8 +99,15 @@ export async function detectVoiceActivity(rawAudio: RawAudio, options: VADOption
 	}
 
 	logger.end()
+	logger.log('')
+	logger.logDuration(`Total voice activity detection time`, startTimestamp, chalk.magentaBright)
 
-	return { timeline, rawAudio }
+	return { timeline, inputRawAudio }
+}
+
+export interface VADResult {
+	timeline: Timeline
+	inputRawAudio: RawAudio
 }
 
 export type VADEngine = "webrtc" | "silero" | "rnnoise"

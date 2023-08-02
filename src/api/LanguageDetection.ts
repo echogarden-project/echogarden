@@ -1,15 +1,12 @@
 import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
-import { RawAudio, downmixToMonoAndNormalize, getRawAudioDuration, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime, trimAudioEnd } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import * as API from "./API.js"
 import { logToStderr } from "../utilities/Utilities.js"
 import path from "path"
-import type { WhisperModelName } from "../recognition/WhisperSTT.js"
+import { type WhisperOptions } from "../recognition/WhisperSTT.js"
 import { formatLanguageCodeWithName, languageCodeToName } from "../utilities/Locale.js"
 import { loadPackage } from "../utilities/PackageManager.js"
 import chalk from "chalk"
@@ -19,26 +16,23 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Speech language detection
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function detectSpeechFileLanguage(filename: string, options: SpeechLanguageDetectionOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(filename)
-
-	return detectSpeechLanguage(rawAudio, options)
-}
-
-export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLanguageDetectionOptions) {
+export async function detectSpeechLanguage(input: AudioSourceParam, options: SpeechLanguageDetectionOptions): Promise<SpeechLanguageDetectionResult> {
 	const logger = new Logger()
 
 	const startTime = logger.getTimestamp()
 
 	logger.start("Prepare for speech language detection")
 
+	const inputRawAudio = await ensureRawAudio(input)
+
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+
 	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
 
 	const defaultLanguage = options.defaultLanguage!
 	const fallbackThresholdProbability = options.fallbackThresholdProbability!
-
-	rawAudio = await resampleAudioSpeex(rawAudio, 16000)
-	rawAudio = downmixToMonoAndNormalize(rawAudio)
 
 	logger.start(`Initialize ${options.engine} module`)
 
@@ -59,7 +53,7 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 			const languageGroupDictionaryPath = path.join(modelDir, "lang_group_dict_95.json")
 
 			const languageResults = await SileroLanguageDetection.detectLanguage(
-				rawAudio,
+				sourceRawAudio,
 				modelPath,
 				languageDictionaryPath,
 				languageGroupDictionaryPath)
@@ -78,7 +72,7 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 
 			logger.end()
 
-			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(rawAudio, modelName, modelDir, tokenizerDir)
+			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, tokenizerDir)
 
 			break
 		}
@@ -101,10 +95,17 @@ export async function detectSpeechLanguage(rawAudio: RawAudio, options: SpeechLa
 	logger.end()
 	logger.logDuration("\nTotal detection time", startTime, chalk.magentaBright)
 
-	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities }
+	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities, inputRawAudio }
 }
 
-export async function detectLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 15) {
+export interface SpeechLanguageDetectionResult {
+	detectedLanguage: string
+	detectedLanguageName: string
+	detectedLanguageProbabilities: LanguageDetectionResults
+	inputRawAudio: RawAudio
+}
+
+export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 15) {
 	const logger = new Logger()
 
 	const audioDuration = getRawAudioDuration(sourceRawAudio)
@@ -158,9 +159,7 @@ export interface SpeechLanguageDetectionOptions {
 	silero?: {
 	}
 
-	whisper?: {
-		model: WhisperModelName
-	}
+	whisper?: WhisperOptions
 }
 
 export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptions = {
@@ -177,7 +176,7 @@ export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptio
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Text language detection
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function detectTextLanguage(text: string, options: TextLanguageDetectionOptions) {
+export async function detectTextLanguage(input: string, options: TextLanguageDetectionOptions): Promise<TextLanguageDetectionResult> {
 	const logger = new Logger()
 
 	options = extendDeep(defaultTextLanguageDetectionOptions, options)
@@ -195,7 +194,7 @@ export async function detectTextLanguage(text: string, options: TextLanguageDete
 
 			logger.start("Detecting text language using tinyld")
 
-			detectedLanguageProbabilities = await detectLanguage(text)
+			detectedLanguageProbabilities = await detectLanguage(input)
 
 			break
 		}
@@ -205,7 +204,7 @@ export async function detectTextLanguage(text: string, options: TextLanguageDete
 
 			logger.start("Detecting text language using FastText")
 
-			detectedLanguageProbabilities = await detectLanguage(text)
+			detectedLanguageProbabilities = await detectLanguage(input)
 
 			break
 		}
@@ -228,6 +227,12 @@ export async function detectTextLanguage(text: string, options: TextLanguageDete
 	logger.end()
 
 	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities }
+}
+
+export interface TextLanguageDetectionResult {
+	detectedLanguage: string
+	detectedLanguageName: string
+	detectedLanguageProbabilities: LanguageDetectionResults
 }
 
 export type LanguageDetectionResults = LanguageDetectionResultsEntry[]

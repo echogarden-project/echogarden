@@ -125,6 +125,26 @@
           },
           "additionalProperties": false
         },
+        "outputAudioFormat": {
+          "type": "object",
+          "properties": {
+            "codec": {
+              "type": "string",
+              "enum": [
+                "wav",
+                "mp3",
+                "opus",
+                "m4a",
+                "ogg",
+                "flac"
+              ]
+            },
+            "bitrate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
         "languageDetection": {
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
@@ -645,16 +665,7 @@
           "additionalProperties": false
         },
         "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            }
-          },
-          "required": [
-            "model"
-          ],
-          "additionalProperties": false
+          "$ref": "#/definitions/WhisperOptions"
         }
       },
       "additionalProperties": false
@@ -664,22 +675,6 @@
       "enum": [
         "silero",
         "whisper"
-      ]
-    },
-    "WhisperModelName": {
-      "type": "string",
-      "enum": [
-        "tiny",
-        "tiny.en",
-        "base",
-        "base.en",
-        "small",
-        "small.en",
-        "medium",
-        "medium.en",
-        "large",
-        "large-v1",
-        "large-v2"
       ]
     },
     "WhisperOptions": {
@@ -702,6 +697,22 @@
         }
       },
       "additionalProperties": false
+    },
+    "WhisperModelName": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny.en",
+        "base",
+        "base.en",
+        "small",
+        "small.en",
+        "medium",
+        "medium.en",
+        "large",
+        "large-v1",
+        "large-v2"
+      ]
     },
     "TimePitchShiftingMethod": {
       "type": "string",
@@ -861,6 +872,26 @@
             },
             "rubberband": {
               "$ref": "#/definitions/RubberbandOptions"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputAudioFormat": {
+          "type": "object",
+          "properties": {
+            "codec": {
+              "type": "string",
+              "enum": [
+                "wav",
+                "mp3",
+                "opus",
+                "m4a",
+                "ogg",
+                "flac"
+              ]
+            },
+            "bitrate": {
+              "type": "number"
             }
           },
           "additionalProperties": false

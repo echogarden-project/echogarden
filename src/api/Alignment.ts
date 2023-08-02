@@ -1,14 +1,12 @@
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-
 import { logToStderr } from "../utilities/Utilities.js"
-import { RawAudio, downmixToMonoAndNormalize, getRawAudioDuration } from "../audio/AudioUtilities.js"
+import { AudioSourceParam, RawAudio, downmixToMonoAndNormalize, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 
 import * as API from "./API.js"
-import { Timeline, addTimeOffsetToTimeline } from "../utilities/Timeline.js"
+import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperSTT.js"
 import chalk from "chalk"
@@ -18,52 +16,21 @@ import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.
 
 const log = logToStderr
 
-export async function alignFile(audioFilename: string, text: string, options: AlignmentOptions) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename)
-
-	return align(rawAudio, text, options)
-}
-
-export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: Timeline, alignmentOptions: AlignmentOptions) {
-	const timeline: Timeline = []
-
-	for (const segmentEntry of segmentTimeline) {
-		const segmentText = segmentEntry.text
-
-		const segmentStartTime = segmentEntry.startTime
-		const segmentEndTime = segmentEntry.endTime
-
-		const segmentStartSampleIndex = Math.floor(segmentStartTime * sourceRawAudio.sampleRate)
-		const segmentEndSampleIndex = Math.floor(segmentEndTime * sourceRawAudio.sampleRate)
-
-		const segmentAudioSamples = sourceRawAudio.audioChannels[0].slice(segmentStartSampleIndex, segmentEndSampleIndex)
-		const segmentRawAudio: RawAudio = {
-			audioChannels: [segmentAudioSamples],
-			sampleRate: sourceRawAudio.sampleRate
-		}
-
-		const { wordTimeline: mappedTimeline } = await align(segmentRawAudio, segmentText, alignmentOptions)
-
-		const segmentTimelineWithOffset = addTimeOffsetToTimeline(mappedTimeline, segmentStartTime)
-
-		timeline.push(...segmentTimelineWithOffset)
-	}
-
-	return timeline
-}
-
-export async function align(inputRawAudio: RawAudio, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
+export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
 	const logger = new Logger()
-
 	const startTimestamp = logger.getTimestamp()
+
 	logger.start("Prepare for alignment")
+
+	const inputRawAudio = await ensureRawAudio(input)
+
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
 
 	options = extendDeep(defaultAlignmentOptions, options)
 
 	const dtwWindowDuration = options.dtw!.windowDuration!
-
-	let sourceRawAudio = downmixToMonoAndNormalize(inputRawAudio)
-	sourceRawAudio = await resampleAudioSpeex(sourceRawAudio, 16000)
 
 	let language: string
 
@@ -141,7 +108,7 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 
 			logger.end()
 
-			const { timeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
+			const { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
 
 			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
 
@@ -183,22 +150,57 @@ export async function align(inputRawAudio: RawAudio, transcript: string, options
 		}
 	}
 
+	addWordTextOffsetsToTimeline(mappedTimeline, transcript)
+
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
+
 	logger.end()
 	logger.logDuration(`Total alignment time`, startTimestamp, chalk.magentaBright)
 
 	return {
+		timeline: segmentTimeline,
 		wordTimeline: mappedTimeline,
-		rawAudio: inputRawAudio,
+		inputRawAudio,
 		transcript,
 		language
 	}
 }
 
+export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: Timeline, alignmentOptions: AlignmentOptions) {
+	const timeline: Timeline = []
+
+	for (const segmentEntry of segmentTimeline) {
+		const segmentText = segmentEntry.text
+
+		const segmentStartTime = segmentEntry.startTime
+		const segmentEndTime = segmentEntry.endTime
+
+		const segmentStartSampleIndex = Math.floor(segmentStartTime * sourceRawAudio.sampleRate)
+		const segmentEndSampleIndex = Math.floor(segmentEndTime * sourceRawAudio.sampleRate)
+
+		const segmentAudioSamples = sourceRawAudio.audioChannels[0].slice(segmentStartSampleIndex, segmentEndSampleIndex)
+		const segmentRawAudio: RawAudio = {
+			audioChannels: [segmentAudioSamples],
+			sampleRate: sourceRawAudio.sampleRate
+		}
+
+		const { wordTimeline: mappedTimeline } = await align(segmentRawAudio, segmentText, alignmentOptions)
+
+		const segmentTimelineWithOffset = addTimeOffsetToTimeline(mappedTimeline, segmentStartTime)
+
+		timeline.push(...segmentTimelineWithOffset)
+	}
+
+	return timeline
+}
+
+
 export interface AlignmentResult {
-	wordTimeline: Timeline,
-	rawAudio: RawAudio,
+	timeline: Timeline
+	wordTimeline: Timeline
 	transcript: string
 	language: string
+	inputRawAudio: RawAudio
 }
 
 export type AlignmentEngine = "dtw" | "dtw-ra" | "whisper"

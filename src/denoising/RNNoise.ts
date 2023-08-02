@@ -46,7 +46,6 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 		frameVadProbabilities.push(vadProbability)
 	}
 
-
 	for (let readOffset = 0; readOffset < int16Samples.length; readOffset += frameSize) {
 		let frame = int16SamplesAsFloats.subarray(readOffset, readOffset + frameSize)
 

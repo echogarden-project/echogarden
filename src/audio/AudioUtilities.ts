@@ -1,4 +1,6 @@
+import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { SampleFormat, encodeWave, decodeWave } from "../codecs/WaveCodec.js"
+import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,6 +272,38 @@ export function getRawAudioDuration(rawAudio: RawAudio) {
 	return rawAudio.audioChannels[0].length / rawAudio.sampleRate
 }
 
+export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: number, outChannelCount?: number) {
+	let inputAsRawAudio: RawAudio = input as RawAudio
+
+	if (inputAsRawAudio.audioChannels?.length > 0 && inputAsRawAudio.sampleRate) {
+		const inputAudioChannelCount = inputAsRawAudio.audioChannels.length
+
+		if (outChannelCount == 1 && inputAudioChannelCount > 1) {
+			inputAsRawAudio = downmixToMono(inputAsRawAudio)
+		}
+
+		if (outChannelCount != null && outChannelCount >= 2 && outChannelCount != inputAudioChannelCount) {
+			throw new Error(`Can't convert ${inputAudioChannelCount} channels to ${outChannelCount} channels. Channel conversion of raw audio currently only supports downmixing to mono.`)
+		}
+
+		if (outSampleRate && inputAsRawAudio.sampleRate != outSampleRate) {
+			inputAsRawAudio = await resampleAudioSpeex(input as RawAudio, outSampleRate)
+		}
+	} else if (typeof input == "string" || input instanceof Uint8Array) {
+		if (input instanceof Uint8Array && !Buffer.isBuffer(input)) {
+			input = Buffer.from(input)
+		}
+
+		const inputAsStringOrBuffer = input as string | Buffer
+
+		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(inputAsStringOrBuffer, outSampleRate, outChannelCount)
+	} else {
+		throw new Error("Received an invalid input audio data type.")
+	}
+
+	return inputAsRawAudio
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Unit conversion
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -310,3 +344,5 @@ export type AudioEncoding = {
 
 	bitrate?: number
 }
+
+export type AudioSourceParam = string | Buffer | Uint8Array | RawAudio

@@ -18,7 +18,7 @@ import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
-import { detectLanguageByParts } from '../api/LanguageDetection.js'
+import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
 
 export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
 	if (sourceRawAudio.sampleRate != 16000) {
@@ -61,7 +61,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		return partResults
 	}
 
-	const results = await detectLanguageByParts(sourceRawAudio, detectLanguageForPart)
+	const results = await detectSpeechLanguageByParts(sourceRawAudio, detectLanguageForPart)
 
 	results.sort((entry1, entry2) => entry2.probability - entry1.probability)
 

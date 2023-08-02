@@ -22,7 +22,6 @@ export function addTimeOffsetToTimeline(targetTimeline: Timeline, timeOffset: nu
 	return newTimeline
 }
 
-
 export function multiplyTimelineByFactor(targetTimeline: Timeline, factor: number) {
 	const newTimeline = deepClone(targetTimeline)
 

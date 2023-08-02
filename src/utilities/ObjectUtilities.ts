@@ -1,11 +1,14 @@
 export function extendDeep(base: any, extension: any): any {
+	const baseClone = deepClone(base)
+
+	if (isPlainObject(base) && extension === undefined) {
+		return baseClone
+	}
+
 	const extensionClone = deepClone(extension)
-	
 	if (!isPlainObject(base) || !isPlainObject(extension)) {
 		return extensionClone
 	}
-
-	const baseClone = deepClone(base)
 
 	for (const propName in extensionClone) {
 		if (!extensionClone.hasOwnProperty(propName)) {

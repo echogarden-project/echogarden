@@ -3,7 +3,7 @@ import { softmax } from '../math/VectorMath.js'
 import { Logger } from "../utilities/Logger.js"
 import { RawAudio } from "../audio/AudioUtilities.js"
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
-import { detectLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
+import { detectSpeechLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 
 export async function detectLanguage(rawAudio: RawAudio, modelPath: string, languageDictionaryPath: string, languageGroupDictionaryPath: string) {
@@ -16,7 +16,7 @@ export async function detectLanguage(rawAudio: RawAudio, modelPath: string, lang
 		return languageResults
 	}
 
-	const results = await detectLanguageByParts(rawAudio, detectLanguageForPart)
+	const results = await detectSpeechLanguageByParts(rawAudio, detectLanguageForPart)
 
 	results.sort((a, b) => b.probability - a.probability)
 
