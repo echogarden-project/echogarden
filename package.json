@@ -1,9 +1,9 @@
 {
 	"name": "echogarden",
-	"version": "0.9.3",
+	"version": "0.10.0",
 	"description": "An integrated speech system, providing a set of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
-	"license": "GPL-3.0-only",
+	"license": "GPL-3.0",
 	"keywords": [
 		"speech",
 		"text-to-speech",
@@ -53,8 +53,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.379.1",
-		"@aws-sdk/client-transcribe-streaming": "^3.379.1",
+		"@aws-sdk/client-polly": "^3.382.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.382.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -66,7 +66,6 @@
 		"@echogarden/speex-resampler-wasm": "^0.1.1",
 		"@echogarden/svoxpico-wasm": "^0.1.0",
 		"@mozilla/readability": "^0.4.4",
-		"@types/graceful-fs": "^4.1.6",
 		"alawmulaw": "^6.0.0",
 		"buffer-split": "^1.0.0",
 		"chalk": "^5.3.0",
@@ -124,8 +123,9 @@
 		"@types/recursive-readdir": "^2.2.1",
 		"@types/tar": "^6.1.5",
 		"@types/ws": "^8.5.5",
-		"@typescript-eslint/eslint-plugin": "^6.2.0",
-		"@typescript-eslint/parser": "^6.2.0",
+		"@typescript-eslint/eslint-plugin": "^6.2.1",
+		"@typescript-eslint/parser": "^6.2.1",
+		"@types/graceful-fs": "^4.1.6",
 		"eslint": "^8.46.0",
 		"ts-json-schema-generator": "^1.2.0",
 		"typescript": "^5.1.6"
