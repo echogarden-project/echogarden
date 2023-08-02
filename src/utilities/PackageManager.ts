@@ -80,5 +80,5 @@ const basePackageUrl = "https://huggingface.co/echogarden/echogarden-packages/re
 const defaultVersionTag = "20230718"
 
 const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
-
+	"sox-14.4.2-linux-minimal": "20230802"
 }

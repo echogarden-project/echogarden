@@ -11,6 +11,9 @@ export async function tryResolvingSoxPath() {
 	} else if (process.platform == "darwin" && process.arch == "x64") {
 		const soxPackagePath = await loadPackage("sox-14.4.1-macosx")
 		soxPath = path.join(soxPackagePath, "sox")
+	} else if (process.platform == "linux" && process.arch == "x64") {
+		const soxPackagePath = await loadPackage("sox-14.4.2-linux-minimal")
+		soxPath = path.join(soxPackagePath, "sox")
 	} else if (await commandExists("sox")) {
 		soxPath = "sox"
 	}
