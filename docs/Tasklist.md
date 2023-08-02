@@ -42,9 +42,7 @@
 
 ### Worker
 * Add cancelation checks in more operations
-* Optionally omit unnecessary data from the response (decoded input, segment data, etc.)
 * Support more operations
-* Support compressed audio in response
 
 ### CLI
 * Show names of files written do disk. This is useful for cases where a file is auto-renamed to allow overwrite.
@@ -53,7 +51,6 @@
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
-* Option to set audio output codec options
 * Option to set audio output device for playback
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
@@ -83,9 +80,9 @@
 
 ### CLI / New commands
 * `speak-youtube`: To speak the subtitles of a YouTube video
-* `play-with-captions`: Preview captions in terminal
+* `play-with-subtitles`: Preview subtitles in terminal
 * `play-with-timeline`: Preview timeline in terminal
-* `captions-to-text`, `captions-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
+* `subtitles-to-text`, `subtitles-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
 * `crop-to-timeline`, `split-by-timeline`
 * `text-to-ipa`, `arpabet-to-ipa`, `ipa-to-arpabet`
 * `phonemize-text`
@@ -110,7 +107,6 @@
 ### Segmentation
 * Split long words
 * See if it's possible to reliably use eSpeak as a segmentation engine
-* Path to `kuromoji` dictionaries can be found more reliably than current
 
 ### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
@@ -139,10 +135,10 @@
 
 ### Synthesis / preprocessing
 * Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
-* Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`)
+* Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`, `August 21, 2023`)
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules.
-* Support normalizing to graphemes, not only phonemes
 * Add support for multiple words in `precededBy` and `succeededBy`
+* Support substituting to graphemes in lexicons, not only phonemes
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
 * Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines).

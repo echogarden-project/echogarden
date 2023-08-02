@@ -5,10 +5,11 @@ Here is a detailed reference for the options accepted by the Echogarden API and 
 **Related resources**:
 * [A comprehensive list of all supported engines](Engines.md)
 * [A quick guide for using the command line interface](CLI.md)
+* [Developer's API reference](API.md)
 
 ## Synthesis
 
-Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`.
+Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
 
 **General**:
 * `engine`: identifier of the synthesis engine to use, such as `espeak` or `vits`.
@@ -38,6 +39,10 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `postProcessing.pitch`: target pitch for pitch shifting. Defaults to `1.0`
 * `postProcessing.timePitchShiftingMethod`: method for time and pitch shifting. Can be `sonic` or `rubberband`. Defaults to `sonic`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO)
+
+**Output audio format**:
+* `outputAudioFormat.codec`: Codec identifier (**Note**: API only! CLI uses file extension instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the API documentation). Optional
+* `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size.  Optional
 
 **Subtitles**
 * `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
@@ -99,9 +104,24 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service
 * `microsoftEdge.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
+## Voice list request
+
+Applicable to CLI command: `list-voices`, API method: `requestVoiceList`
+
+**General**
+* `language`: language code to filter by (optional)
+* `voice`: name or name pattern to filter by (optional)
+* `voiceGender`: gender to filter by (optional)
+
+Also accepted are engine-specific options that may be required in order to retrieve the voice list, especially for cloud engines. Examples:
+* `googleCloud.apiKey`
+* `microsoftAzure.subscriptionKey`, `microsoftAzure.serviceRegion`
+* `amazonPolly.region`, `amazonPolly.accessKeyId`, `amazonPolly.secretAccessKey`
+* `elevenLabs.apiKey`
+
 ## Recognition
 
-Applicable to CLI command: `transcribe`.
+Applicable to CLI command: `transcribe`, API method: `recognize`
 
 **General**:
 * `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk`
@@ -146,7 +166,7 @@ Applicable to CLI command: `transcribe`.
 
 ## Alignment
 
-Applicable to CLI command: `align`.
+Applicable to CLI command: `align`, API method: `align`
 
 **General**:
 * `engine`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
@@ -175,7 +195,7 @@ Applicable to CLI command: `align`.
 
 ## Speech translation
 
-Applicable to CLI command: `translate-speech`.
+Applicable to CLI command: `translate-speech`, API method: `translateSpeech`
 
 **General**:
 * `engine`: only `whisper` supported
@@ -191,22 +211,24 @@ Applicable to CLI command: `translate-speech`.
 
 ### Speech language detection
 
-Applicable to CLI command: `detect-speech-langauge`.
+Applicable to CLI command: `detect-speech-langauge`, API method: `detectSpeechLangauge`
 
+**General**:
 * `engine`: `silero` or `whisper`. Defaults to `silero`
 * `whisper`: whisper options prefix, can be used like `whisper.model = base` to set options for the Whisper engine. See Whisper options on the recognition section
 
 ### Text language detection
 
-Applicable to CLI command: `detect-text-langauge`.
+Applicable to CLI command: `detect-text-langauge`, API method: `detectTextLangauge`
 
+**General**:
 * `engine`: `tinyld` or `fasttext`. Defaults to `tinyld`
 * `defaultLanguage`: language to fall back to when confidence of is low. Defaults to `en`
 * `fallbackThresholdProbability`: confidence threshold to cause fallback. Defaults to `0.05`
 
 ## Voice activity detection
 
-Applicable to CLI command: `detect-voice-activity`.
+Applicable to CLI command: `detect-voice-activity`, API method: `detectVoiceActivity`
 
 **General**:
 * `engine`: VAD engine to use. Can be `webrtc`, `silero` or `rnnoise`. Defaults to `webrtc`
@@ -221,7 +243,7 @@ Applicable to CLI command: `detect-voice-activity`.
 
 ## Speech denoising
 
-Applicable to CLI command: `denoise`.
+Applicable to CLI command: `denoise`, API method: `denoise`
 
 **General**:
 * `engine`: can only be `rnnoise`
@@ -231,18 +253,3 @@ Applicable to CLI command: `denoise`.
 * `postProcessing.targetPeakDb`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxIncreaseDb`: max gain increase (decibels) when performing normalization. Defaults to `30`
 * `postProcessing.dryMixGainDb`: gain (decibels) of dry (original) signal to mix back to the denoised output. Defaults to `-20`
-
-## Voice list request
-
-Applicable to CLI command: `list-voices`.
-
-**General**
-* `language`: language code to filter by (optional)
-* `voice`: name or name pattern to filter by (optional)
-* `voiceGender`: gender to filter by (optional)
-
-Also accepted are engine-specific options that may be required in order to retrieve the voice list, especially for cloud engines. Examples:
-* `googleCloud.apiKey`
-* `microsoftAzure.subscriptionKey`, `microsoftAzure.serviceRegion`
-* `amazonPolly.region`, `amazonPolly.accessKeyId`, `amazonPolly.secretAccessKey`
-* `elevenLabs.apiKey`, `elevenLabs.modelId`

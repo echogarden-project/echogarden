@@ -31,10 +31,8 @@ npm install echogarden -g
 ```
 
 Additional tools:
-* [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording (only). Auto-installed via an expansion package on Windows and Intel macOS. On Linux and ARM64 macOS, it is recommended to install it via platform package managers like `apt` and `brew`.
+* [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording. Auto-installed via an expansion package on Windows, Intel macOS and x64 Linux. On ARM64 macOS, it is recommended to install it via a platform package manager like `brew`.
 * [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions. Auto-installed via an expansion package on Windows, Intel macOS, and x64 Linux. On ARM64 macOS, it is recommended to install it via a platform package manager like `brew`.
-
-(hopefully in the future all platforms would be covered using expansion packages)
 
 ### Updating to latest version
 
@@ -53,6 +51,8 @@ Development of more graphical and interactive tooling is currently ongoing. A ge
 * [Using the command-line interface](docs/CLI.md)
 * [Options reference](docs/Options.md)
 * [Full list of supported engines](docs/Engines.md)
+* [Developer API reference](docs/API.md)
+* [Starting and interfacing with a WebSocket server](docs/Server.md)
 * [Technical overview and Q&A](docs/Technical.md)
 * [Developer's task list](docs/Tasklist.md)
 * [How to help](docs/Development.md)
@@ -63,8 +63,6 @@ _(For much more detailed information, see the [developer task list](docs/Tasklis
 
 ### In development
 
-* (**90**%) Background worker
-* (**90**%) WebSocket-based server and API
 * (**70**%) Browser extension, acting as a bridge to a local or self-hosted server. Includes integration with the Web Speech API, and real-time narration of page content, with live word highlighting
 * (**60**%) New, high-accuracy text language identification model (own work)
 
@@ -72,8 +70,6 @@ _(For much more detailed information, see the [developer task list](docs/Tasklis
 
 * Web-based UI frontend
 * Real-time, streaming speech recognition
-* Official developer API (it's currently possible to import the `echogarden` npm package as a library, but the official API has not been published yet)
-* Text enhancement, adding breaks to improve phrasing of synthesized text, as well as adding missing punctuation to recognized transcripts, if needed
 
 ### Future (maybe)
 
