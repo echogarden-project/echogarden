@@ -56,6 +56,33 @@ Synthesizes the given input.
 ```
 * A `Buffer` containing the audio in encoded form, in the case a particular codec was specified in the `outputAudioFormat.codec` option.
 
+
+#### Segment and sentence event callbacks
+
+You can optionally pass two `async` callbacks to `synthesize`, `onSegment` and `onSentence`.
+
+For example:
+```ts
+async function onSegment(data: SynthesisSegmentEventData) {
+	console.log(data.transcript)
+}
+
+const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak' }, onSegment)
+```
+
+`SynthesisSegmentEventData` is an object with the structure:
+```ts
+{
+	index: number              // Index of part
+	total: number              // Total number of parts
+	audio: RawAudio | Buffer   // Audio for parts
+	timeline: Timeline         // Timeline for part
+	transcript: string         // Transcript for part
+	language: string           // Language for part
+	peakDecibelsSoFar: number  // Peak decibels measured for all synthesized audio, so far
+}
+```
+
 ### `requestVoiceList(options)`
 
 Request a list of voices for a particular engine.

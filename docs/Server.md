@@ -1,5 +1,7 @@
 # Starting and interfacing with the WebSocket server
 
+This is a guide for the WebSocket server protocol. The protocol is still in an early development stage and may change in future releases.
+
 ## Starting the server
 
 ```bash
@@ -15,7 +17,30 @@ echogarden serve [options]
 * `maxPayload`: Maximum raw message payload size (in bytes). Defaults to `1000 * 1000000` (1GB)
 * `useWorkerThread`: Run worker in a separate thread. Defaults to `true` (recommended to leave as is)
 
-## The protocol
+## Using the client class
+
+For Node.js clients, a simple client class allows to wrap communications with with the server in a more convenient interface, without needing to know the details of the protocol.
+
+Currently, the client is is embedded in the main codebase. This means you have to import the `echogarden` package to use it:
+
+```ts
+import { WebSocket } from 'ws'
+import { Client } from 'echogarden'
+
+const ws = new WebSocket('ws://localhost:45054')
+
+ws.on("open", async () => {
+	const client = new Client(ws)
+
+	const { audio } = await client.synthesize("Hello World", { engine: 'espeak' })
+})
+```
+
+In the future, this module may be separated to an independent lightweight package.
+
+**TODO**: add support for cancelation signals in client class.
+
+## Protocol details
 
 The protocol is based on binary WebSocket messages, for both request and response objects. Messages are encoded using the [MessagePack](https://msgpack.org/index.html) encoding scheme.
 
@@ -76,22 +101,45 @@ Example response, for the above synthesis request:
 	messageType: 'SynthesisResponse',
 	requestId: 'cb7e0f3ec835a213b005c4424c8d5775',
 
-	rawAudio: {
+	audio: {
 		sampleRate: 22050,
-		channels: [ ... ] // An array of `float32` sample data
+		channels: [ ... ] // An array of `Float32Array` channel data
 	}
 
 	// ... other result object properties
 }
 ```
 
-## Client package (future)
+### Cancelation messages
 
-For Node.js clients, there is a simpler client class, that allows to wrap communications with with the server in a more convenient interface.
+To cancel an existing request, the client can send a `CancelationRequest` message, with the same `requestId` of an ongoing request, like:
 
-Currently, the client is is embedded in the original codebase. This means you have to import the entire package to use it.
+```ts
+{
+	messageType: 'CancelationRequest',
+	requestId: 'cb7e0f3ec835a213b005c4424c8d5775'
+}
+```
 
-In the future, this module would be separated to an independent lightweight package.
+## Starting the server programmatically
+
+You can use the `startServer` method to start a new server.
+```ts
+async function startServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void)
+```
+
+Example:
+```ts
+import { startServer } from 'echogarden'
+
+startServer({ port: 1234 }, () => {
+	console.log("Server is started!")
+})
+```
+
+The method would return when the server is closed.
+
+**TODO**: accept a signal to stop the server.
 
 ## Web-based user interface (future)
 
