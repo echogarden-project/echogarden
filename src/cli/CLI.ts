@@ -7,7 +7,7 @@ import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLICon
 import chalk from 'chalk'
 import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normalizeAudioLevel, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
-import { Logger } from "../utilities/Logger.js"
+import { Logger, resetActiveLogger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, FFMpegOutputOptions, getDefaultFFMpegOptionsForSpeech } from "../codecs/FFMpegTranscoder.js"
 import path, { parse as parsePath } from "node:path"
@@ -118,6 +118,8 @@ export async function start(processArgs: string[]) {
 			args.options = newOptions
 		}
 	} catch (e: any) {
+		resetActiveLogger()
+
 		logger.logTitledMessage(`Error`, e.message, chalk.redBright)
 		process.exit(1)
 	}
@@ -132,6 +134,8 @@ export async function start(processArgs: string[]) {
 	try {
 		await startWithArgs(args)
 	} catch (e: any) {
+		resetActiveLogger()
+
 		if (debugMode) {
 			logger.log(e)
 		} else {
@@ -983,6 +987,8 @@ async function installPackages(commandArgs: string[], cliOptions: Map<string, st
 		try {
 			await loadPackage(packageName)
 		} catch (e) {
+			resetActiveLogger()
+			
 			logger.log(`Failed installing package ${packageName}: ${e}`)
 			failedPackageNames.push(packageName)
 		}
@@ -1010,6 +1016,8 @@ async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, 
 		try {
 			await removePackage(packageName)
 		} catch (e) {
+			resetActiveLogger()
+
 			logger.log(`Failed uninstalling package ${packageName}: ${e}`)
 			failedPackageNames.push(packageName)
 		}
