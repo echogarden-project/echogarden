@@ -287,7 +287,7 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 		}
 
 		if (outSampleRate && inputAsRawAudio.sampleRate != outSampleRate) {
-			inputAsRawAudio = await resampleAudioSpeex(input as RawAudio, outSampleRate)
+			inputAsRawAudio = await resampleAudioSpeex(inputAsRawAudio, outSampleRate)
 		}
 	} else if (typeof input == "string" || input instanceof Uint8Array) {
 		if (input instanceof Uint8Array && !Buffer.isBuffer(input)) {
