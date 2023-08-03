@@ -44,8 +44,6 @@ function enqueueAndProcessIfIdle(message: any) {
 }
 
 async function processQueueIfIdle() {
-	const logger = new Logger()
-
 	if (isProcessing) {
 		return
 	}
@@ -83,7 +81,7 @@ async function processQueueIfIdle() {
 
 			await processMessage(incomingMessage, sendMessage)
 		} catch (e: any) {
-			logger.logTitledMessage("Error", e.message, chalk.redBright)
+			log(`${chalk.redBright("Error")}: ${e.message}`)
 
 			sendMessageToClient({
 				requestId,

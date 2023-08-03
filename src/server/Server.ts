@@ -10,11 +10,9 @@ import { IncomingMessage, ServerResponse } from 'node:http'
 import { Logger } from '../utilities/Logger.js'
 import chalk from 'chalk'
 
-//const log = logToStderr
+const log = logToStderr
 
 export async function startServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void) {
-	const logger = new Logger()
-
 	serverOptions = extendDeep(defaultServerOptions, serverOptions)
 
 	const wsServerOptions: WsServerOptions = {
@@ -95,7 +93,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 	const serverOpenPromise = new OpenPromise<void>
 
 	wss.on("listening", () => {
-		logger.log(chalk.gray(`Started Echogarden WebSocket server on port ${serverOptions.port}`))
+		log(chalk.gray(`Started Echogarden WebSocket server on port ${serverOptions.port}`))
 		onStarted(serverOptions)
 	})
 
@@ -104,11 +102,11 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 	})
 
 	wss.on('connection', async (ws, req) => {
-		logger.log(chalk.gray((`Accepted incoming connection from ${req.socket.remoteAddress}`)))
+		log(chalk.gray((`Accepted incoming connection from ${req.socket.remoteAddress}`)))
 
 		ws.on('message', (messageData, isBinary) => {
 			if (!isBinary) {
-				logger.log(chalk.gray((`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)))
+				log(chalk.gray((`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)))
 				return
 			}
 
@@ -117,14 +115,14 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 			try {
 				incomingMessage = decodeMsgPack(messageData as Buffer)
 			} catch (e) {
-				logger.log(chalk.gray(`Failed to decode binary WebSocket message. Reason: ${e}`))
+				log(chalk.gray(`Failed to decode binary WebSocket message. Reason: ${e}`))
 				return
 			}
 
 			const requestId = incomingMessage.requestId
 
 			if (!requestId) {
-				logger.log(chalk.gray(("Received a WebSocket message without a request ID")))
+				log(chalk.gray(("Received a WebSocket message without a request ID")))
 				return
 			}
 
@@ -138,7 +136,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 		})
 
 		ws.on('error', (e) => {
-			logger.logTitledMessage("WebSocket error", e.message, chalk.redBright)
+			log(`${chalk.redBright('WebSocket error')}: ${e.message}`)
 		})
 
 		ws.on("close", () => {
@@ -152,7 +150,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 			keysToDelete.forEach(key => requestIdToWebSocket.delete(key))
 
-			logger.log(chalk.gray((`Incoming connection from ${req.socket.remoteAddress} was closed`)))
+			log(chalk.gray((`Incoming connection from ${ req.socket.remoteAddress } was closed`)))
 		})
 	})
 
