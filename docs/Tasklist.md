@@ -40,6 +40,9 @@
 * Navigate paragraphs or sentences with keyboard shortcuts
 * Minimum size when iterating text nodes to get handle
 
+### Server
+* Option to allow or disallow local file paths as arguments to API methods (as a security issue)
+
 ### Worker
 * Add cancelation checks in more operations
 * Support more operations

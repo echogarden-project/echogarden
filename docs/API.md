@@ -75,7 +75,7 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 {
 	index: number              // Index of part
 	total: number              // Total number of parts
-	audio: RawAudio | Buffer   // Audio for parts
+	audio: RawAudio | Buffer   // Audio for part
 	timeline: Timeline         // Timeline for part
 	transcript: string         // Transcript for part
 	language: string           // Language for part

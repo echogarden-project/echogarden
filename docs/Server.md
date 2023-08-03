@@ -19,7 +19,7 @@ echogarden serve [options]
 
 ## Using the client class
 
-For Node.js clients, a simple client class allows to wrap communications with with the server in a more convenient interface, without needing to know the details of the protocol.
+For Node.js clients, a simple client class allows to wrap communications with the server in a more convenient interface, without needing to know the details of the protocol.
 
 Currently, the client is is embedded in the main codebase. This means you have to import the `echogarden` package to use it:
 
@@ -38,7 +38,7 @@ ws.on("open", async () => {
 
 In the future, this module may be separated to an independent lightweight package.
 
-**TODO**: add support for cancelation signals in client class.
+**TODO**: add support for cancelation signals in the client class.
 
 ## Protocol details
 
@@ -120,6 +120,8 @@ To cancel an existing request, the client can send a `CancelationRequest` messag
 	requestId: 'cb7e0f3ec835a213b005c4424c8d5775'
 }
 ```
+
+**TODO**: Cancelation requests are currently only supported for synthesis operations. Extend support for other operations.
 
 ## Starting the server programmatically
 
