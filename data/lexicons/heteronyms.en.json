@@ -55,7 +55,7 @@
 				],
 
 				"precededBy": [
-					"to", "can", "can't", "will", "would", "we", "they", "i", "you", "me", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "shall", "people"
+					"to", "can", "can't", "will", "would", "we", "they", "i", "you", "me", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "shall", "people", "just"
 				],
 
 				"notPrecededBy": [
