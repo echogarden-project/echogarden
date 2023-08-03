@@ -12,7 +12,7 @@ import chalk from 'chalk'
 
 //const log = logToStderr
 
-export async function startWebSocketServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void) {
+export async function startServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void) {
 	const logger = new Logger()
 
 	serverOptions = extendDeep(defaultServerOptions, serverOptions)

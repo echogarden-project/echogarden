@@ -26,7 +26,7 @@ export function shouldCancelCurrentTask() {
 }
 
 addListenerToClientMessages((message) => {
-	if (message.messageType == "Cancel") {
+	if (message.messageType == "CancelationRequest") {
 		//log(`CANCEL REQUESTED FOR ${message.requestId}`)
 		canceledRequests.add(message.requestId)
 		return

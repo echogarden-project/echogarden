@@ -21,7 +21,7 @@ import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
-import { ServerOptions, startWebSocketServer } from '../server/Server.js'
+import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 
 //const log = logToStderr
@@ -261,7 +261,7 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 		}
 
 		case 'serve': {
-			await startServer(parsedArgs.commandArgs, parsedArgs.options)
+			await serve(parsedArgs.commandArgs, parsedArgs.options)
 			break
 		}
 
@@ -1052,7 +1052,7 @@ async function listPackages(commandArgs: string[], cliOptions: Map<string, strin
 	logger.log(installedPackageNamesFormatted.join("\n"))
 }
 
-async function startServer(commandArgs: string[], cliOptions: Map<string, string>) {
+async function serve(commandArgs: string[], cliOptions: Map<string, string>) {
 	const options: ServerOptions = await cliOptionsMapToOptionsObject(cliOptions, "ServerOptions")
 
 	async function onServerStarted(serverOptions: ServerOptions) {
@@ -1060,7 +1060,7 @@ async function startServer(commandArgs: string[], cliOptions: Map<string, string
 		//await runClientWebSocketTest(serverOptions.port!, serverOptions.secure!)
 	}
 
-	await startWebSocketServer(options, onServerStarted)
+	await startServer(options, onServerStarted)
 }
 
 async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, optionsRoot: keyof APIOptions, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>) {

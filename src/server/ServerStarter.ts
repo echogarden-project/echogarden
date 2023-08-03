@@ -1,5 +1,5 @@
 import { logToStderr, setupProgramTerminationListeners, setupUnhandledExceptionListeners } from '../utilities/Utilities.js'
-import { startWebSocketServer } from './Server.js'
+import { startServer } from './Server.js'
 
 const log = logToStderr
 
@@ -9,4 +9,4 @@ setupProgramTerminationListeners(() => {
 	log('')
 })
 
-await startWebSocketServer({}, (options) => { })
+await startServer({}, (options) => { })
