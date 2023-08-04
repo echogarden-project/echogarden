@@ -38,7 +38,8 @@ ws.on("open", async () => {
 
 In the future, this module may be separated to an independent lightweight package.
 
-**TODO**: add support for cancelation signals in the client class.
+**TODO**: Document using the client class with a background worker.
+**TODO**: Add support for cancelation signals in the client class.
 
 ## Protocol details
 
