@@ -206,7 +206,7 @@ export async function splitToWords(text: string, langCode: string): Promise<stri
 	const shortLangCode = getShortLanguageCode(langCode || "")
 
 	if (shortLangCode == "zh" || shortLangCode == "cmn") {
-		return splitChineseTextToWords_Jieba(text, true, true)
+		return splitChineseTextToWords_Jieba(text, false, true)
 	} else if (shortLangCode == "ja") {
 		return splitJapaneseTextToWords_Kuromoji(text)
 	} else {
