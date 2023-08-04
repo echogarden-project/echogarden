@@ -1,4 +1,4 @@
-export async function splitChineseTextToWords_Jieba(text: string, fineGrained = true, useHMM = true) {
+export async function splitChineseTextToWords_Jieba(text: string, fineGrained = false, useHMM = true) {
 	const jieba = await getWasmInstance()
 
 	if (!fineGrained) {
