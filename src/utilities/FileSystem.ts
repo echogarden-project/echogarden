@@ -16,13 +16,12 @@ export const stat = promisify(gracefulFS.stat)
 export const open = promisify(gracefulFS.open)
 export const close = promisify(gracefulFS.close)
 export const chmod = promisify(gracefulFS.chmod)
+export const copyFile = promisify(gracefulFS.copyFile)
 
 export const createReadStream = gracefulFS.createReadStream
 export const createWriteStream = gracefulFS.createWriteStream
 export const existsSync = gracefulFS.existsSync
 
-export const ensureDir = fsExtra.ensureDir
-export const move = fsExtra.move
 export const remove = fsExtra.remove
 export const copy = fsExtra.copy
 export const outputFile = fsExtra.outputFile
@@ -122,7 +121,7 @@ export async function writeFile(filePath: string, data: string | NodeJS.ArrayBuf
 
 export async function writeFileSafe(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {
 	const tempDir = getAppTempDir(appName)
-	const tempFilePath = `${tempDir}${getRandomHexString(16)}.partial`
+	const tempFilePath = path.join(tempDir, `${getRandomHexString(16)}.partial`)
 
 	await writeFile(tempFilePath, data, options)
 
@@ -181,4 +180,56 @@ export async function chmodRecursive(rootPath: string, newMode: number) {
 			await chmodRecursive(filePath, newMode)
 		}
 	}
+}
+
+export async function ensureDir(dirPath: string) {
+	dirPath = path.normalize(dirPath)
+
+	const parsedPath = path.parse(dirPath)
+
+	if (!existsSync(parsedPath.root)) {
+		throw new Error(`The root path '${parsedPath.root}' does not exist`)
+	}
+
+	if (parsedPath.dir != parsedPath.root) {
+		return fsExtra.ensureDir(dirPath)
+	}
+}
+
+export async function move(source: string, dest: string, options?: fsExtra.MoveOptions) {
+	const destParsedPath = path.parse(path.normalize(dest))
+
+	if (destParsedPath.dir == destParsedPath.root && destParsedPath.name != "") {
+		if (!options?.overwrite && existsSync(dest)) {
+			throw new Error(`The target path ${dest} already exists`)
+		}
+
+		const { COPYFILE_FICLONE } = gracefulFS.constants
+
+		await copyFile(source, dest, COPYFILE_FICLONE)
+		await remove(source)
+	} else {
+		return fsExtra.move(source, dest, options)
+	}
+}
+
+export async function copyFileAlternative(source: string, dest: string) {
+	return new Promise<void>((resolve, reject) => {
+		const readStream = createReadStream(source)
+		const writeStream = createWriteStream(dest)
+
+		readStream.on('error', (err: any) => {
+			reject(err)
+		})
+
+		writeStream.on('error', (err: any) => {
+			reject(err)
+		})
+
+		readStream.pipe(writeStream)
+
+		readStream.on('end', () => {
+			resolve()
+		})
+	})
 }
