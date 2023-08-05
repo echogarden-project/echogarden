@@ -201,12 +201,11 @@ export function splitToSentences(text: string, langCode: string): string[] {
 	return CldrSegmentation.sentenceSplit(text, CldrSegmentation.suppressions[shortLangCode])
 }
 
-
 export async function splitToWords(text: string, langCode: string): Promise<string[]> {
 	const shortLangCode = getShortLanguageCode(langCode || "")
 
 	if (shortLangCode == "zh" || shortLangCode == "cmn") {
-		return splitChineseTextToWords_Jieba(text, false, true)
+		return splitChineseTextToWords_Jieba(text, undefined, true)
 	} else if (shortLangCode == "ja") {
 		return splitJapaneseTextToWords_Kuromoji(text)
 	} else {
