@@ -17,6 +17,8 @@ export const open = promisify(gracefulFS.open)
 export const close = promisify(gracefulFS.close)
 export const chmod = promisify(gracefulFS.chmod)
 export const copyFile = promisify(gracefulFS.copyFile)
+export const access = promisify(gracefulFS.access)
+
 
 export const createReadStream = gracefulFS.createReadStream
 export const createWriteStream = gracefulFS.createWriteStream
@@ -185,32 +187,56 @@ export async function chmodRecursive(rootPath: string, newMode: number) {
 export async function ensureDir(dirPath: string) {
 	dirPath = path.normalize(dirPath)
 
-	const parsedPath = path.parse(dirPath)
+	if (existsSync(dirPath)) {
+		const dirStats = await stat(dirPath)
 
-	if (!existsSync(parsedPath.root)) {
-		throw new Error(`The root path '${parsedPath.root}' does not exist`)
-	}
-
-	if (parsedPath.dir != parsedPath.root) {
+		if (!dirStats.isDirectory()) {
+			throw new Error( `${dirPath} exists but is not a directory.`)
+		}
+	} else {
 		return fsExtra.ensureDir(dirPath)
 	}
 }
 
 export async function move(source: string, dest: string, options?: fsExtra.MoveOptions) {
-	const destParsedPath = path.parse(path.normalize(dest))
+	source = path.normalize(source)
+	dest = path.normalize(dest)
 
-	if (destParsedPath.dir == destParsedPath.root && destParsedPath.name != "") {
-		if (!options?.overwrite && existsSync(dest)) {
-			throw new Error(`The target path ${dest} already exists`)
+	if (existsSync(dest)) {
+		const destPathExistsAndIsWritable = await existsAndIsWritable(dest)
+
+		if (!destPathExistsAndIsWritable) {
+			throw new Error(`The destination path '${dest}' exists but is not writable.`)
 		}
-
-		const { COPYFILE_FICLONE } = gracefulFS.constants
-
-		await copyFile(source, dest, COPYFILE_FICLONE)
-		await remove(source)
 	} else {
-		return fsExtra.move(source, dest, options)
+		const destPathIsCreatable = await tryCreatePath(dest)
+
+		if (!destPathIsCreatable) {
+			throw new Error(`Couldn't create '${dest}'. Its parent directory may not be writable.`)
+		}
 	}
+
+	return fsExtra.move(source, dest, options)
+}
+
+export async function existsAndIsWritable(targetPath: string) {
+	try {
+		await access(targetPath, gracefulFS.constants.W_OK);
+	} catch {
+		return false
+	}
+
+	return true
+}
+
+export async function tryCreatePath(targetPath: string) {
+	try {
+		await fsExtra.createFile(targetPath)
+	} catch {
+		return false
+	}
+
+	return true
 }
 
 export async function copyFileAlternative(source: string, dest: string) {
