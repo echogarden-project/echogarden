@@ -232,6 +232,7 @@ export async function existsAndIsWritable(targetPath: string) {
 export async function tryCreatePath(targetPath: string) {
 	try {
 		await fsExtra.createFile(targetPath)
+		await remove(targetPath)
 	} catch {
 		return false
 	}
