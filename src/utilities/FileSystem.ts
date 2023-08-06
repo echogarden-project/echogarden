@@ -127,7 +127,7 @@ export async function writeFileSafe(filePath: string, data: string | NodeJS.Arra
 
 	await writeFile(tempFilePath, data, options)
 
-	await move(tempFilePath, filePath, { overwrite: true })
+	await move(tempFilePath, filePath)
 }
 
 export function getAppTempDir(appName: string) {
@@ -191,14 +191,14 @@ export async function ensureDir(dirPath: string) {
 		const dirStats = await stat(dirPath)
 
 		if (!dirStats.isDirectory()) {
-			throw new Error( `${dirPath} exists but is not a directory.`)
+			throw new Error(`The path '${dirPath}' exists but is not a directory.`)
 		}
 	} else {
 		return fsExtra.ensureDir(dirPath)
 	}
 }
 
-export async function move(source: string, dest: string, options?: fsExtra.MoveOptions) {
+export async function move(source: string, dest: string) {
 	source = path.normalize(source)
 	dest = path.normalize(dest)
 
@@ -206,17 +206,18 @@ export async function move(source: string, dest: string, options?: fsExtra.MoveO
 		const destPathExistsAndIsWritable = await existsAndIsWritable(dest)
 
 		if (!destPathExistsAndIsWritable) {
-			throw new Error(`The destination path '${dest}' exists but is not writable.`)
+			throw new Error(`The destination path '${dest}' exists but is not writable. There may be a permissions or locking issue.`)
 		}
 	} else {
-		const destPathIsCreatable = await tryCreatePath(dest)
+		const destDir = path.parse(dest).dir
+		const destDirIsWritable = await testDirectoryIsWritable(destDir)
 
-		if (!destPathIsCreatable) {
-			throw new Error(`Couldn't create '${dest}'. Its parent directory may not be writable.`)
+		if (!destDirIsWritable) {
+			throw new Error(`The directory ${destDir} is not writable. There may be a permissions issue.`)
 		}
 	}
 
-	return fsExtra.move(source, dest, options)
+	return fsExtra.move(source, dest, { overwrite: true })
 }
 
 export async function existsAndIsWritable(targetPath: string) {
@@ -229,11 +230,13 @@ export async function existsAndIsWritable(targetPath: string) {
 	return true
 }
 
-export async function tryCreatePath(targetPath: string) {
+export async function testDirectoryIsWritable(dir: string) {
+	const testFileName = path.join(dir, getRandomHexString(16))
+
 	try {
-		await fsExtra.createFile(targetPath)
-		await remove(targetPath)
-	} catch {
+		await fsExtra.createFile(testFileName)
+		await remove(testFileName)
+	} catch (e) {
 		return false
 	}
 

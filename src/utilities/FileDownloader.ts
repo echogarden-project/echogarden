@@ -30,7 +30,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 		const sourceFilePath = path.join(tempDirPath, filename)
 		const targetFilePath = path.join(targetDir, filename)
 
-		await move(sourceFilePath, targetFilePath, { overwrite: true })
+		await move(sourceFilePath, targetFilePath)
 	}
 
 	await remove(tempDirPath)
@@ -176,7 +176,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			write("\n")
 
-			await move(partialFilePath, targetFilePath, { overwrite: true })
+			await move(partialFilePath, targetFilePath)
 
 			downloadPromise.resolve()
 		} catch (err) {

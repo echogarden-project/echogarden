@@ -30,7 +30,7 @@ export async function createNamedTarball(inputPath: string, name: string) {
 
 	const targetFilname = path.join(tarballDir, `${name}.tar.gz`)
 
-	await move(tempFilename, targetFilname, { overwrite: true })
+	await move(tempFilename, targetFilname)
 }
 
 export async function createTarballForEachDirIn(baseDir: string, namePrefix: String) {
