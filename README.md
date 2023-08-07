@@ -36,7 +36,7 @@ Additional required tools:
 
 Both tools are auto-downloaded as internal packages on Windows and Linux.
 
-On macOS, they are not currently auto-installed, due to various security issues with untrusted binaries. It is recommended to install them via a platform package manager like `brew`, or some other method, and have them available on the system path.
+On macOS, they are not currently auto-downloaded, due to various security issues with untrusted binaries. It is recommended to install them via a platform package manager like `brew`, and make them available on the system path.
 
 ### Updating to latest version
 
