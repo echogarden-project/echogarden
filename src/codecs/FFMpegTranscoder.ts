@@ -151,11 +151,13 @@ async function getFFMpegExecutablePath() {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-essentials-win64")
 
 		return path.join(ffmpegPackagePath, "ffmpeg.exe")
-	} else if (process.platform == "darwin" && process.arch == "x64") {
+	}
+	/* else if (process.platform == "darwin" && process.arch == "x64") {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-macos64")
 
 		return path.join(ffmpegPackagePath, "ffmpeg")
-	} else if (process.platform == "linux" && process.arch == "x64") {
+	}
+	*/ else if (process.platform == "linux" && process.arch == "x64") {
 		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-linux-amd64")
 
 		return path.join(ffmpegPackagePath, "ffmpeg")

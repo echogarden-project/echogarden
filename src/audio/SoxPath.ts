@@ -8,10 +8,12 @@ export async function tryResolvingSoxPath() {
 	if (process.platform == "win32") {
 		const soxPackagePath = await loadPackage("sox-14.4.1a-win32")
 		soxPath = path.join(soxPackagePath, "sox.exe")
-	} else if (process.platform == "darwin" && process.arch == "x64") {
+	}
+	/*else if (process.platform == "darwin" && process.arch == "x64") {
 		const soxPackagePath = await loadPackage("sox-14.4.1-macosx")
 		soxPath = path.join(soxPackagePath, "sox")
-	} else if (process.platform == "linux" && process.arch == "x64") {
+	} */
+	else if (process.platform == "linux" && process.arch == "x64") {
 		const soxPackagePath = await loadPackage("sox-14.4.2-linux-minimal")
 		soxPath = path.join(soxPackagePath, "sox")
 	} else if (await commandExists("sox")) {
