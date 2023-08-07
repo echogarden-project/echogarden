@@ -34,7 +34,9 @@ Additional required tools:
 * [`ffmpeg`](https://ffmpeg.org/download.html): used for codec conversions
 * [`sox`](https://sourceforge.net/projects/sox/): used for the CLI's audio playback and recording
 
-Both tools are auto-installed via internal packages on Windows, Intel macOS and Linux. On ARM64 macOS, it is recommended to install them via a platform package manager like `brew`.
+Both tools are auto-downloaded as internal packages on Windows and Linux.
+
+On macOS, they are not currently auto-installed, due to various security issues with untrusted binaries. It is recommended to install them via a platform package manager like `brew`, or some other method, and have them available on the system path.
 
 ### Updating to latest version
 
