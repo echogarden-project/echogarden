@@ -80,5 +80,12 @@ const basePackageUrl = "https://huggingface.co/echogarden/echogarden-packages/re
 const defaultVersionTag = "20230718"
 
 const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
-	"sox-14.4.2-linux-minimal": "20230802"
+	"sox-14.4.2-linux-minimal": "20230802",
+	"vits-de_DE-thorsten_emotional-medium": "20230808",
+	"vits-en_GB-semaine-medium": "20230808",
+	"vits-fr_FR-upmc-medium": "20230808",
+	"vits-lb_LU-marylux-medium": "20230808",
+	"vits-ro_RO-mihai-medium": "20230808",
+	"vits-sr_RS-serbski_institut-medium": "20230808",
+	"vits-tr_TR-dfki-medium": "20230808",
 }

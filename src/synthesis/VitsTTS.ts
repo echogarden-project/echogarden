@@ -233,6 +233,12 @@ export const voiceList: SynthesisVoice[] = [
 		gender: "male",
 	},
 	{
+		name: "de_DE-thorsten_emotional-medium",
+		languages: ["de-DE", "de"],
+		gender: "male",
+		speakerCount: 8
+	},
+	{
 		name: "de_DE-eva_k-x_low",
 		languages: ["de-DE", "de"],
 		gender: "female",
@@ -273,6 +279,12 @@ export const voiceList: SynthesisVoice[] = [
 		name: "en_GB-alan-medium",
 		languages: ["en-GB", "en"],
 		gender: "male",
+	},
+	{
+		name: "en_GB-semaine-medium",
+		languages: ["en-GB", "en"],
+		gender: "unknown",
+		speakerCount: 4
 	},
 	{
 		name: "en_GB-danny-low",
@@ -450,6 +462,12 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["fr-FR", "fr"],
 		gender: "male",
 	},
+	{
+		name: "fr_FR-upmc-medium",
+		languages: ["fr-FR", "fr"],
+		gender: "unknown",
+		speakerCount: 2
+	},
 
 	{
 		name: "is_IS-ugla-medium",
@@ -499,6 +517,12 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["kk-KZ", "kk"],
 		gender: "unknown",
 		speakerCount: 6,
+	},
+
+	{
+		name: "lb_LU-marylux-medium",
+		languages: ["lb-LU", "lb"],
+		gender: "female",
 	},
 
 	{
@@ -581,6 +605,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "ro_RO-mihai-medium",
+		languages: ["ro-RO", "ro"],
+		gender: "male",
+	},
+
+	{
 		name: "ru_RU-ruslan-medium",
 		languages: ["ru-RU", "ru"],
 		gender: "male",
@@ -602,6 +632,13 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "sr_RS-serbski_institut-medium",
+		languages: ["sr-RS", "sr"],
+		gender: "male",
+		speakerCount: 2
+	},
+
+	{
 		name: "sv_SE-nst-medium",
 		languages: ["sv-SE", "sv"],
 		gender: "male",
@@ -610,6 +647,12 @@ export const voiceList: SynthesisVoice[] = [
 	{
 		name: "sw_CD-lanfrica-medium",
 		languages: ["sw-CD", "sw"],
+		gender: "male",
+	},
+
+	{
+		name: "tr_TR-dfki-medium",
+		languages: ["tr-TR", "tr"],
 		gender: "male",
 	},
 
