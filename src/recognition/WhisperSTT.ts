@@ -25,6 +25,12 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 		throw new Error("Source audio must have a sampling rate of 16000")
 	}
 
+	sourceLanguage = getShortLanguageCode(sourceLanguage)
+
+	if (!(sourceLanguage in languageIdLookup)) {
+		throw new Error(`The language '${languageCodeToName(sourceLanguage)}' is not supported by the Whisper engine.`)
+	}
+
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
@@ -33,15 +39,21 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 	return result
 }
 
-export async function align(sourceRawAudio: RawAudio, referenceText: string, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, language: string) {
+export async function align(sourceRawAudio: RawAudio, referenceText: string, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, sourceLanguage: string) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error("Source audio must have a sampling rate of 16000")
+	}
+
+	sourceLanguage = getShortLanguageCode(sourceLanguage)
+
+	if (!(sourceLanguage in languageIdLookup)) {
+		throw new Error(`The language '${languageCodeToName(sourceLanguage)}' is not supported by the Whisper engine.`)
 	}
 
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
 	await whisper.initialize()
 
-	const timeline = await whisper.align(sourceRawAudio, referenceText, language)
+	const timeline = await whisper.align(sourceRawAudio, referenceText, sourceLanguage)
 
 	return timeline
 }
@@ -549,7 +561,7 @@ export class Whisper {
 						const tokenText = (this.tokenToTextLookup.get(entry.index) || "").trim()
 						const tokenProb = probs[entry.index]
 
-						return tokenProb >= options.punctuationThreshold! && [',', '.', '!', '?'].includes(tokenText)
+						return tokenProb >= options.punctuationThreshold! && [',', '，', '.', '。', '!', '?'].includes(tokenText)
 					})
 
 					let chosenTokenIndexInTopLogits: number
