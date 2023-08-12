@@ -102,6 +102,9 @@
 * Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
 
+### Package manager
+* Better error message when package is not found remotely.
+
 ### Speech language detection
 
 ### Text language detection
