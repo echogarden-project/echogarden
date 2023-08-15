@@ -28,7 +28,11 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
 
 	if (!(sourceLanguage in languageIdLookup)) {
-		throw new Error(`The language '${languageCodeToName(sourceLanguage)}' is not supported by the Whisper engine.`)
+		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+	}
+
+	if (!isMultiligualModel(modelName) && sourceLanguage != 'en') {
+		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
@@ -47,7 +51,11 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
 
 	if (!(sourceLanguage in languageIdLookup)) {
-		throw new Error(`The language '${languageCodeToName(sourceLanguage)}' is not supported by the Whisper engine.`)
+		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+	}
+
+	if (!isMultiligualModel(modelName) && sourceLanguage != 'en') {
+		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
 	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
