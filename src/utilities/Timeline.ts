@@ -127,31 +127,39 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		wordSearchStartOffset = indexOfWordInText + wordText.length
 	}
 
+	const newSegmentTimeline: Timeline = []
+
 	for (const segmentEntry of segmentTimeline) {
-		const sentenceTimeline = segmentEntry.timeline!
+		const oldSentenceTimeline = segmentEntry.timeline!
 
-		if (sentenceTimeline.length == 0) {
-			throw new Error("Segment has no sentence entries")
-		}
+		const newSentenceTimeline: Timeline = []
 
-		for (const sentenceEntry of sentenceTimeline) {
-			const wordTimeline = sentenceEntry.timeline!
+		for (const sentenceEntry of oldSentenceTimeline) {
+			const wordTimeline = sentenceEntry.timeline
 
-			if (wordTimeline.length == 0) {
-				throw new Error("Sentence has no word entries")
+			if (!wordTimeline || wordTimeline.length == 0) {
+				continue
 			}
 
 			sentenceEntry.startTime = wordTimeline[0].startTime
 			sentenceEntry.endTime = wordTimeline[wordTimeline.length - 1].endTime
+
+			newSentenceTimeline.push(sentenceEntry)
 		}
 
-		segmentEntry.text = sentenceTimeline.map(sentenceEntry => sentenceEntry.text).join(" ")
+		if (newSentenceTimeline.length == 0) {
+			continue
+		}
 
-		segmentEntry.startTime = sentenceTimeline[0].startTime
-		segmentEntry.endTime = sentenceTimeline[sentenceTimeline.length - 1].endTime
+		segmentEntry.text = newSentenceTimeline.map(sentenceEntry => sentenceEntry.text).join(" ")
+
+		segmentEntry.startTime = newSentenceTimeline[0].startTime
+		segmentEntry.endTime = newSentenceTimeline[newSentenceTimeline.length - 1].endTime
+
+		newSegmentTimeline.push(segmentEntry)
 	}
 
-	return { segmentTimeline }
+	return { segmentTimeline: newSegmentTimeline }
 }
 
 export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, currentOffset = 0) {
