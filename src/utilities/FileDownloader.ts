@@ -141,7 +141,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	const partialFilePath = `${targetFilePath}.${getRandomHexString(16)}.partial`
 	const fileWriteStream = createWriteStream(partialFilePath, { encoding: "binary", autoClose: true })
 
-	let statusInterval: NodeJS.Timer = setInterval(() => {
+	let statusInterval = setInterval(() => {
 		updateStatus()
 	}, statusUpdateInterval)
 
