@@ -33,29 +33,23 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	const lifteringFactor = options.lifteringFactor!
 	const zeroFirstCoefficient = options.zeroFirstCoefficient!
 
-	const method = options.method!
-
 	logger.start(`Resample audio to analysis sample rate (${analysisSampleRate}Hz)`)
 	const resampledAudio = await resampleAudioSpeex(monoAudio, analysisSampleRate)
 
 	let mfccs: number[][]
 
-	if (method == "default") {
-		if (emphasisFactor > 0) {
-			logger.start("Apply emphasis")
-			resampledAudio.audioChannels[0] = applyEmphasis(resampledAudio.audioChannels[0], emphasisFactor)
-		}
-
-		logger.start("Compute Mel spectogram")
-		const { melSpectogram } = await computeMelSpectogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
-
-		logger.start("Extract MFCCs from Mel spectogram")
-		const mfccsFloat32 = melSpectogramToMFCCs(melSpectogram, featureCount)
-
-		mfccs = mfccsFloat32.map(mfcc => Array.from(mfcc))
-	} else {
-		throw new Error("Invalid MFCC method")
+	if (emphasisFactor > 0) {
+		logger.start("Apply emphasis")
+		resampledAudio.audioChannels[0] = applyEmphasis(resampledAudio.audioChannels[0], emphasisFactor)
 	}
+
+	logger.start("Compute Mel spectogram")
+	const { melSpectogram } = await computeMelSpectogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
+
+	logger.start("Extract MFCCs from Mel spectogram")
+	const mfccsFloat32 = melSpectogramToMFCCs(melSpectogram, featureCount)
+
+	mfccs = mfccsFloat32.map(mfcc => Array.from(mfcc))
 
 	if (options.normalize!) {
 		logger.start("Normalize MFCCs")
@@ -211,7 +205,6 @@ export type MfccOptions = {
 	lifteringFactor?: number
 	normalize?: boolean
 	zeroFirstCoefficient?: boolean
-	method?: "default" | "cmfcc"
 }
 
 export const defaultMfccOptions: MfccOptions = {
@@ -227,7 +220,6 @@ export const defaultMfccOptions: MfccOptions = {
 	lifteringFactor: 0,
 	normalize: false,
 	zeroFirstCoefficient: false,
-	method: "default"
 }
 
 export function extendDefaultMfccOptions(options: MfccOptions) {
