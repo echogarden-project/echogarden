@@ -180,11 +180,12 @@ Applicable to CLI command: `align`, API method: `align`
 **Subtitles**
 * `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
 * `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
-* `subtitles.minWordsInLine`: minimum number of words in a line, such that a line break to be added. Defaults to `4`
+* `subtitles.minWordsInLine`: minimum number of leftover words required to break to a new line or cue. Defaults to `4`
 * `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
 
 **DTW**:
-* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 25% of the audio duration, consider increasing this value, for better results. Note: a higher value would consume quadratically larger amounts of memory. A value of `300` (5 minutes window) would already start at about 7 Gigabytes of memory when the audio duration is 10 minutes (there are plans to attempt to reduce this requirement, see [this issue](https://github.com/echogarden-project/echogarden/issues/11)). The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120` (two minutes)
+* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. If the window duration is shorter than about 10 - 20% of the audio duration, consider increasing this value, for better results. Note: a higher value would consume quadratically larger amounts of memory. A value of `300` (5 minutes window), with high granularity, would already start at about 7GB of memory when the audio duration is 10 minutes (there are plans to attempt to reduce this requirement, see [this issue](https://github.com/echogarden-project/echogarden/issues/11)). The estimated memory requirement is shown in the log messages before alignment starts. Defaults to `120` (two minutes)
+* `dtw.granularity`: adjusts the MFCC frame window width, hop and FFT window size based on the profile selected. Can be set to either `high` (25ms width, 10ms hop) , `medium` (50ms width, 25ms hop) or `low` (100ms width, 50ms hop). A lower granularity alignment is recommended if the main goal is producing subtitles since it's faster and requires significantly less memory, enabling longer audio durations to be processed. For example, `low` can align 30 minutes of audio using 1GB of memory in less than 1 minute. Defaults to `high`.
 
 **DTW-RA only**:
 * `recognition`: prefix for providing custom recognition options when using `dtw-ra` method, for example: setting `recognition.whisper.model = base.en`
