@@ -443,8 +443,14 @@
             },
             "phoneAlignmentMethod": {
               "$ref": "#/definitions/PhoneAlignmentMethod"
+            },
+            "granularity": {
+              "$ref": "#/definitions/DtwGranularity"
             }
           },
+          "required": [
+            "granularity"
+          ],
           "additionalProperties": false
         },
         "recognition": {
@@ -539,6 +545,14 @@
       "enum": [
         "interpolation",
         "dtw"
+      ]
+    },
+    "DtwGranularity": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
       ]
     },
     "RecognitionOptions": {

@@ -13,6 +13,7 @@ import chalk from "chalk"
 import { createAlignmentReferenceUsingEspeakPreprocessed } from "../alignment/SpeechAlignment.js"
 import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
 import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { type MfccOptions } from "../dsp/MFCC.js"
 
 const log = logToStderr
 
@@ -84,7 +85,9 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
 			logger.end()
 
-			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, dtwWindowDuration)
+			const mfccOptions = getMfccOptionsForGranularity(options.dtw!.granularity!)
+
+			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, dtwWindowDuration, mfccOptions)
 
 			break
 		}
@@ -116,7 +119,9 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
-			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration)
+			const mfccOptions = getMfccOptionsForGranularity(options.dtw!.granularity!)
+
+			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration, mfccOptions)
 
 			break
 		}
@@ -194,6 +199,21 @@ export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: T
 	return timeline
 }
 
+function getMfccOptionsForGranularity(granularity: DtwGranularity) {
+	let result: MfccOptions
+
+	if (granularity == 'high') {
+		result = { windowDuration: 0.025, hopDuration: 0.010, fftOrder: 512 }
+	} else if (granularity == 'medium') {
+		result = { windowDuration: 0.050, hopDuration: 0.025, fftOrder: 1024 }
+	} else if (granularity == 'low') {
+		result = { windowDuration: 0.100, hopDuration: 0.050, fftOrder: 2048 }
+	} else {
+		throw new Error(`Invalid granularity setting: '${granularity}'`)
+	}
+
+	return result
+}
 
 export interface AlignmentResult {
 	timeline: Timeline
@@ -205,6 +225,7 @@ export interface AlignmentResult {
 
 export type AlignmentEngine = "dtw" | "dtw-ra" | "whisper"
 export type PhoneAlignmentMethod = "interpolation" | "dtw"
+export type DtwGranularity = 'high' | 'medium' | 'low'
 
 export interface AlignmentOptions {
 	engine?: AlignmentEngine
@@ -222,6 +243,7 @@ export interface AlignmentOptions {
 	dtw?: {
 		windowDuration?: number,
 		phoneAlignmentMethod?: PhoneAlignmentMethod,
+		granularity: DtwGranularity
 	}
 
 	recognition?: API.RecognitionOptions
@@ -248,7 +270,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 
 	dtw: {
 		windowDuration: 120,
-		phoneAlignmentMethod: "dtw",
+		phoneAlignmentMethod: 'dtw',
+		granularity: 'high'
 	},
 
 	recognition: {
