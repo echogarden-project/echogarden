@@ -4,7 +4,7 @@ import { clip, roundToDigits } from "../utilities/Utilities.js"
 import * as API from "../api/API.js"
 
 import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from "../dsp/MFCC.js"
-import { alignMFCC_DTW, getCostMatrixMemorySizeMiB } from "./DTWMfccSequenceAlignment.js"
+import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from "./DTWMfccSequenceAlignment.js"
 import { Logger } from "../utilities/Logger.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
 import { getRawAudioDuration, RawAudio } from "../audio/AudioUtilities.js"
@@ -12,10 +12,10 @@ import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import chalk from "chalk"
 
-export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number) {
+export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number, mfccOptions?: MfccOptions) {
 	const logger = new Logger()
 
-	const mfccOptions: MfccOptions = extendDefaultMfccOptions({ zeroFirstCoefficient: true })
+	mfccOptions = extendDefaultMfccOptions({ ...mfccOptions, zeroFirstCoefficient: true }) as MfccOptions
 
 	const framesPerSecond = 1 / mfccOptions.hopDuration!
 
@@ -29,7 +29,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	logger.end()
 
 	// Compute path
-	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window)`, `${roundToDigits(getCostMatrixMemorySizeMiB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MiB`)
+	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window)`, `${roundToDigits(getCostMatrixMemorySizeMB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MB`)
 
 	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
 	const minRecommendedWindowDuration = 0.2 * rawAudioDuration
@@ -81,7 +81,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice = "gmw/en-US", phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number) {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice = "gmw/en-US", phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, mfccOptions?: MfccOptions) {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
@@ -157,7 +157,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 
 	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
 	// Align the synthesized recognized transcript to the synthesized reference transcript
-	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDuration)
+	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDuration, mfccOptions)
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 

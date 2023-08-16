@@ -34,7 +34,7 @@ export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number
 	}
 }
 
-export function getCostMatrixMemorySizeMiB(sequence1Length: number, sequence2Length: number, windowLength: number) {
-	const costMatrixMemorySizeMiB = sequence1Length * Math.min(sequence2Length, windowLength) * 4 / 1000000
-	return costMatrixMemorySizeMiB
+export function getCostMatrixMemorySizeMB(sequence1Length: number, sequence2Length: number, windowLength: number) {
+	const costMatrixMemorySizeMB = sequence1Length * Math.min(sequence2Length, windowLength) * 4 / 1000000
+	return costMatrixMemorySizeMB
 }
