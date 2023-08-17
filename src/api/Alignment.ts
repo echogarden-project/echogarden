@@ -30,6 +30,16 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	options = extendDeep(defaultAlignmentOptions, options)
 
+	if (options.dtw!.windowDuration == null) {
+		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
+
+		if (sourceAudioDuration < 60 * 4) {
+			options.dtw!.windowDuration = 60
+		} else {
+			options.dtw!.windowDuration = Math.ceil(sourceAudioDuration * 0.25)
+		}
+	}
+
 	const dtwWindowDuration = options.dtw!.windowDuration!
 
 	let language: string
@@ -84,7 +94,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
 			logger.end()
 
-			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, dtwWindowDuration, options.dtw!.granularity)
+			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, dtwWindowDuration, options.dtw!.granularity!)
 
 			break
 		}
@@ -116,7 +126,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
-			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration, options.dtw!.granularity)
+			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration, options.dtw!.granularity!)
 
 			break
 		}
@@ -219,9 +229,9 @@ export interface AlignmentOptions {
 	subtitles?: SubtitlesConfig
 
 	dtw?: {
-		windowDuration?: number,
-		phoneAlignmentMethod?: PhoneAlignmentMethod,
-		granularity: DtwGranularity
+		windowDuration?: number
+		granularity?: DtwGranularity
+		phoneAlignmentMethod?: PhoneAlignmentMethod
 	}
 
 	recognition?: API.RecognitionOptions
@@ -247,9 +257,9 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	subtitles: defaultSubtitlesConfig,
 
 	dtw: {
-		windowDuration: 120,
-		phoneAlignmentMethod: 'dtw',
-		granularity: 'auto'
+		windowDuration: undefined,
+		granularity: 'auto',
+		phoneAlignmentMethod: 'dtw'
 	},
 
 	recognition: {

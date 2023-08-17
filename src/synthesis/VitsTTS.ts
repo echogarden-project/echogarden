@@ -1,7 +1,7 @@
 import type { InferenceSession } from 'onnxruntime-node'
 import { SynthesisVoice } from '../api/API.js'
 import { Logger } from "../utilities/Logger.js"
-import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
+import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
 import { readAndParseJsonFile, readdir } from "../utilities/FileSystem.js"
@@ -181,9 +181,9 @@ export class VitsTTS {
 		const modelResults = await this.modelSession.run(modelInputs)
 		const modelOutput = modelResults["output"]
 
-		const synthesizedAudio = modelOutput['data'] as Float32Array
+		const modelOutputAudioSamples = modelOutput['data'] as Float32Array
 
-		const rawAudio: RawAudio = { audioChannels: [synthesizedAudio], sampleRate: outputSampleRate }
+		const synthesizedAudio: RawAudio = { audioChannels: [modelOutputAudioSamples], sampleRate: outputSampleRate }
 
 		await logger.startAsync("Align with reference synthesized audio")
 
@@ -191,11 +191,12 @@ export class VitsTTS {
 
 		const referenceWordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
 
-		const mappedTimeline = await alignUsingDtw(rawAudio, referenceSynthesizedAudio, referenceWordTimeline, 120, 'high')
+		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
+		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, dtwWindowDuration, 'high')
 
 		logger.end()
 
-		return { rawAudio, timeline: mappedTimeline, referenceSynthesizedAudio, referenceTimeline }
+		return { rawAudio: synthesizedAudio, timeline: mappedTimeline, referenceSynthesizedAudio, referenceTimeline }
 	}
 }
 

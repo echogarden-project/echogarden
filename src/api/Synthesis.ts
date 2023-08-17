@@ -5,7 +5,7 @@ import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
 import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
-import { RawAudio, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
+import { RawAudio, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
 import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
@@ -833,6 +833,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			alignmentOptions.customLexiconPaths = options.customLexiconPaths
 		}
 
+		if (alignmentOptions.dtw!.windowDuration == null) {
+			alignmentOptions.dtw!.windowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
+		}
+
 		const { wordTimeline } = await API.align(synthesizedAudio, plainText, alignmentOptions)
 
 		timeline = wordTimeline
@@ -1079,7 +1083,11 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	},
 
 	alignment: {
-		engine: "dtw"
+		engine: "dtw",
+
+		dtw: {
+			granularity: 'high'
+		}
 	},
 
 	postProcessing: {

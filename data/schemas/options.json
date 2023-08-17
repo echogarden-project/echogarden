@@ -441,16 +441,13 @@
             "windowDuration": {
               "type": "number"
             },
-            "phoneAlignmentMethod": {
-              "$ref": "#/definitions/PhoneAlignmentMethod"
-            },
             "granularity": {
               "$ref": "#/definitions/DtwGranularity"
+            },
+            "phoneAlignmentMethod": {
+              "$ref": "#/definitions/PhoneAlignmentMethod"
             }
           },
-          "required": [
-            "granularity"
-          ],
           "additionalProperties": false
         },
         "recognition": {
@@ -540,13 +537,6 @@
       },
       "additionalProperties": false
     },
-    "PhoneAlignmentMethod": {
-      "type": "string",
-      "enum": [
-        "interpolation",
-        "dtw"
-      ]
-    },
     "DtwGranularity": {
       "type": "string",
       "enum": [
@@ -556,6 +546,13 @@
         "medium",
         "high",
         "x-high"
+      ]
+    },
+    "PhoneAlignmentMethod": {
+      "type": "string",
+      "enum": [
+        "interpolation",
+        "dtw"
       ]
     },
     "RecognitionOptions": {

@@ -401,7 +401,7 @@ function getMfccOptionsForGranularity(granularity: DtwGranularity, audioDuration
 	if (granularity == 'auto') {
 		if (audioDuration < 60) {
 			granularity = 'high'
-		} else if (audioDuration < 60 * 5) {
+		} else if (audioDuration < 60 * 10) {
 			granularity = 'medium'
 		} else {
 			granularity = 'low'
