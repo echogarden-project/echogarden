@@ -64,6 +64,7 @@
 * Multiple configuration files in `--config=..` taking precedence by order
 * Generate JSON configuration file schema
 * Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
+* Option to set playback volume.
 
 ### CLI / `speak`
 * Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
@@ -103,7 +104,7 @@
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
-* Better error message when package is not found remotely.
+* Better error message when package is not found remotely. Currently it just gives a `404 not found` without any other information.
 
 ### Speech language detection
 
@@ -253,10 +254,6 @@
 * Predict timing for individual letters (graphemes) based on phoneme timestamps
 
 ## Documentation
-* Start documenting the developer API, to import the program as a library. At least as experimental. Point to source code for reference.
-
-### CLI
-* Document the `serve` command
 
 ## Possible new engines or platforms
 
