@@ -128,7 +128,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		}
 	}
 
-	let textWithMarkers = '<mark name="textstart"/> | '
+	let textWithMarkers = '() | '
 
 	for (let i = 0; i < fragments.length; i++) {
 		let fragment = fragments[i]
