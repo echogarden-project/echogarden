@@ -12,10 +12,12 @@ import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import chalk from "chalk"
 
-export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number, mfccOptions?: MfccOptions) {
+export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number, granularity: DtwGranularity) {
 	const logger = new Logger()
 
-	mfccOptions = extendDefaultMfccOptions({ ...mfccOptions, zeroFirstCoefficient: true }) as MfccOptions
+	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
+
+	const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity, rawAudioDuration), zeroFirstCoefficient: true }) as MfccOptions
 
 	const framesPerSecond = 1 / mfccOptions.hopDuration!
 
@@ -29,9 +31,8 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	logger.end()
 
 	// Compute path
-	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window, ${1 / mfccOptions.hopDuration!} frames per second)`, `${roundToDigits(getCostMatrixMemorySizeMB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond), 1)}MB`)
+	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window size, ${1 / mfccOptions.hopDuration!} frames per second)`, `${getCostMatrixMemorySizeMB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond).toFixed(1)}MB`)
 
-	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
 	const minRecommendedWindowDuration = 0.2 * rawAudioDuration
 
 	if (windowDuration < minRecommendedWindowDuration ) {
@@ -81,7 +82,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice = "gmw/en-US", phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, mfccOptions?: MfccOptions) {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice = "gmw/en-US", phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, granularity: DtwGranularity) {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
@@ -157,7 +158,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 
 	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
 	// Align the synthesized recognized transcript to the synthesized reference transcript
-	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDuration, mfccOptions)
+	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDuration, granularity)
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 
@@ -394,6 +395,36 @@ function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: 
 	return mappedFrameIndex
 }
 
+function getMfccOptionsForGranularity(granularity: DtwGranularity, audioDuration: number) {
+	let result: MfccOptions
+
+	if (granularity == 'auto') {
+		if (audioDuration < 60) {
+			granularity = 'high'
+		} else if (audioDuration < 60 * 5) {
+			granularity = 'medium'
+		} else {
+			granularity = 'low'
+		}
+	}
+
+	if (granularity == 'x-low') {
+		result = { windowDuration: 0.200, hopDuration: 0.080, fftOrder: 4096 }
+	} else if (granularity == 'low') {
+		result = { windowDuration: 0.100, hopDuration: 0.040, fftOrder: 2048 }
+	} else if (granularity == 'medium') {
+		result = { windowDuration: 0.050, hopDuration: 0.020, fftOrder: 1024 }
+	} else if (granularity == 'high') {
+		result = { windowDuration: 0.025, hopDuration: 0.010, fftOrder: 512 }
+	} else if (granularity == 'x-high') {
+		result = { windowDuration: 0.020, hopDuration: 0.005, fftOrder: 512 }
+	} else {
+		throw new Error(`Invalid granularity setting: '${granularity}'`)
+	}
+
+	return result
+}
+
 export type AlignmentPath = AlignmentPathEntry[]
 
 export type AlignmentPathEntry = {
@@ -407,3 +438,4 @@ export type CompactedPathEntry = {
 	first: number, last: number
 }
 
+export type DtwGranularity = 'auto' | 'x-low' | 'low' | 'medium' | 'high' | 'x-high'

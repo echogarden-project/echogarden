@@ -191,7 +191,7 @@ export class VitsTTS {
 
 		const referenceWordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
 
-		const mappedTimeline = await alignUsingDtw(rawAudio, referenceSynthesizedAudio, referenceWordTimeline, 120)
+		const mappedTimeline = await alignUsingDtw(rawAudio, referenceSynthesizedAudio, referenceWordTimeline, 120, 'high')
 
 		logger.end()
 

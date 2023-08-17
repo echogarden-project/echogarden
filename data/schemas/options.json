@@ -550,9 +550,12 @@
     "DtwGranularity": {
       "type": "string",
       "enum": [
-        "high",
+        "auto",
+        "x-low",
+        "low",
         "medium",
-        "low"
+        "high",
+        "x-high"
       ]
     },
     "RecognitionOptions": {
