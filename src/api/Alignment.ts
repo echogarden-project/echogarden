@@ -33,10 +33,10 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	if (options.dtw!.windowDuration == null) {
 		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
 
-		if (sourceAudioDuration < 60 * 4) {
+		if (sourceAudioDuration < 60 * 5) {
 			options.dtw!.windowDuration = 60
 		} else {
-			options.dtw!.windowDuration = Math.ceil(sourceAudioDuration * 0.25)
+			options.dtw!.windowDuration = Math.ceil(sourceAudioDuration * 0.2)
 		}
 	}
 
