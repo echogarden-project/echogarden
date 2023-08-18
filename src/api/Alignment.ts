@@ -10,9 +10,9 @@ import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTi
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
 import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperSTT.js"
 import chalk from "chalk"
-import { DtwGranularity, createAlignmentReferenceUsingEspeakPreprocessed } from "../alignment/SpeechAlignment.js"
-import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
+import { DtwGranularity } from "../alignment/SpeechAlignment.js"
 import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { synthesize } from "./API.js"
 
 const log = logToStderr
 
@@ -57,18 +57,6 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	language = getDefaultDialectForLanguageCodeIfPossible(language)
 
-	logger.start("Get espeak voice list and select best matching voice")
-	const { bestMatchingVoice } = await API.requestVoiceList({ engine: "espeak", language })
-
-	if (!bestMatchingVoice) {
-		throw new Error("No matching voice found")
-	}
-
-	const espeakVoice = bestMatchingVoice.name
-
-	logger.end()
-	logger.logTitledMessage('Selected voice', `'${espeakVoice}' (${formatLanguageCodeWithName(bestMatchingVoice.languages[0], 2)})`)
-
 	logger.start("Load alignment module")
 
 	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import("../alignment/SpeechAlignment.js")
@@ -76,15 +64,25 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	async function getAlignmentReference() {
 		logger.start("Create alignment reference with eSpeak")
 
-		const espeakLanguage = bestMatchingVoice.languages[0]
-		const lexicons = await loadLexiconsForLanguage(espeakLanguage, options.customLexiconPaths)
+		const synthesisOptions: API.SynthesisOptions = {
+			engine: "espeak",
+			language,
+			plainText: options.plainText,
+			customLexiconPaths: options.customLexiconPaths,
 
-		let { rawAudio: referenceRawAudio, timeline: referenceTimeline } = await createAlignmentReferenceUsingEspeakPreprocessed(transcript, espeakLanguage, espeakVoice, lexicons)
+			espeak: {
+			}
+		}
 
-		referenceRawAudio = await resampleAudioSpeex(referenceRawAudio, 16000)
+		let { audio: referenceRawAudio,  timeline: segmentTimeline, voice: espeakVoice } = await synthesize(transcript, synthesisOptions)
+
+		const sentenceTimeline = segmentTimeline.flatMap(entry => entry.timeline!)
+		const wordTimeline = sentenceTimeline.flatMap(entry => entry.timeline!)
+
+		referenceRawAudio = await resampleAudioSpeex(referenceRawAudio as RawAudio, 16000)
 		referenceRawAudio = downmixToMonoAndNormalize(referenceRawAudio)
 
-		return { referenceRawAudio, referenceTimeline }
+		return { referenceRawAudio, referenceTimeline: wordTimeline, espeakVoice }
 	}
 
 	let mappedTimeline: Timeline
@@ -120,7 +118,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
 
-			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
+			const { referenceRawAudio, referenceTimeline, espeakVoice } = await getAlignmentReference()
 
 			logger.end()
 

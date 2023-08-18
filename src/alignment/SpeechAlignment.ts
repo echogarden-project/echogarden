@@ -82,7 +82,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice = "gmw/en-US", phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, granularity: DtwGranularity) {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice: string, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, granularity: DtwGranularity) {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
