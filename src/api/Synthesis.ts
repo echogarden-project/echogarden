@@ -276,7 +276,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	return {
 		audio: resultAudio,
 		timeline,
-		language: options.language
+		language: options.language,
+		voice: options.voice
 	}
 }
 
@@ -284,6 +285,7 @@ export interface SynthesisResult {
 	audio: RawAudio | Buffer
 	timeline: Timeline
 	language: string
+	voice: string
 }
 
 async function synthesizeSegment(text: string, options: SynthesisOptions) {
@@ -439,7 +441,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			if (inputIsSSML) {
 				logger.end()
 
-				const { rawAudio } = await EspeakTTS.synthesize(simplifiedText, espeakVoice, true, espeakRate, espeakPitch, espeakPitchRange)
+				const { rawAudio } = await EspeakTTS.synthesize(text, espeakVoice, true, espeakRate, espeakPitch, espeakPitchRange)
 
 				synthesizedAudio = rawAudio
 			} else {
@@ -447,7 +449,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 				logger.end()
 
-				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(simplifiedText, espeakVoice, espeakLanguage, lexicons, espeakRate, espeakPitch, espeakPitchRange)
+				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(text, espeakVoice, espeakLanguage, lexicons, espeakRate, espeakPitch, espeakPitchRange)
 
 				synthesizedAudio = referenceSynthesizedAudio
 				timeline = referenceTimeline.flatMap(clause => clause.timeline!)
@@ -584,7 +586,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { audioData, timepoints } = await GoogleCloudTTS.synthesize(simplifiedText, apiKey, language, voice, speed, pitchDeltaSemitones, 0, inputIsSSML)
+			const { audioData, timepoints } = await GoogleCloudTTS.synthesize(text, apiKey, language, voice, speed, pitchDeltaSemitones, 0, inputIsSSML)
 			const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData)
 
 			synthesizedAudio = rawAudio
@@ -661,7 +663,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await AwsPollyTTS.synthesize(simplifiedText, undefined, voice, region, accessKeyId, secretAccessKey, pollyEngine, inputIsSSML, lexiconNames)
+			const { rawAudio } = await AwsPollyTTS.synthesize(text, undefined, voice, region, accessKeyId, secretAccessKey, pollyEngine, inputIsSSML, lexiconNames)
 
 			synthesizedAudio = rawAudio
 
@@ -693,7 +695,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await ElevenLabsTTS.synthesize(simplifiedText, voiceId, apiKey, modelId, stability, similarityBoost)
+			const { rawAudio } = await ElevenLabsTTS.synthesize(text, voiceId, apiKey, modelId, stability, similarityBoost)
 
 			synthesizedAudio = rawAudio
 

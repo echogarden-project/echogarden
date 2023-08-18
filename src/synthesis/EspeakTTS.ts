@@ -16,7 +16,7 @@ const log = logToStderr
 let espeakInstance: any
 let espeakModule: any
 
-export async function preprocessAndSynthesize(segment: string, espeakVoice: string, language: string, lexicons: Lexicon[] = [], rate?: number, pitch?: number, pitchRange?: number) {
+export async function preprocessAndSynthesize(text: string, espeakVoice: string, language: string, lexicons: Lexicon[] = [], rate?: number, pitch?: number, pitchRange?: number) {
 	const logger = new Logger()
 
 	await logger.startAsync("Tokenize and analyze text")
@@ -34,7 +34,7 @@ export async function preprocessAndSynthesize(segment: string, espeakVoice: stri
 	fragments = []
 	preprocessedFragments = []
 
-	const words = (await splitToWords(segment, language)).filter(word => word.trim() != "")
+	const words = (await splitToWords(text, language)).filter(word => word.trim() != "")
 
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
