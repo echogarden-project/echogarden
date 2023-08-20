@@ -119,6 +119,7 @@
 ### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
 * Option to disable sentence isolation (a new sentence can start in the same cue)
+* Option to output one subtitle per word
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
