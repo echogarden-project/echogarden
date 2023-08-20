@@ -293,7 +293,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 
 		const previousWordTokenEntry = previousWordEntry.timeline[0]
 
-		if (!previousWordTokenEntry.timeline || previousWordTokenEntry.timeline.length < wordReferencePhonemes.length) {
+		if (!previousWordTokenEntry.timeline || previousWordTokenEntry.timeline.length <= wordReferencePhonemes.length) {
 			continue
 		}
 
