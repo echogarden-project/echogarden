@@ -150,7 +150,8 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 
 	const { rawAudio, events } = await synthesize(textWithMarkers, voice, true, rate, pitch, pitchRange)
 
-	const timeline: Timeline = fragments.map(word => ({
+	// Build word timeline from events
+	const wordTimeline: Timeline = fragments.map(word => ({
 		type: "word",
 		text: word,
 		startTime: -1,
@@ -171,12 +172,12 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 	for (const event of events) {
 		const eventTime = event.audio_position / 1000
 
-		const currentWordEntry = timeline[wordIndex]
+		const currentWordEntry = wordTimeline[wordIndex]
 
-		const currentSubwordTimeline = currentWordEntry.timeline!
-		const currentSubwordEntry = currentSubwordTimeline[currentSubwordTimeline.length - 1]
+		const currentTokenTimeline = currentWordEntry.timeline!
+		const currentTokenEntry = currentTokenTimeline[currentTokenTimeline.length - 1]
 
-		const currentPhoneTimeline = currentSubwordEntry.timeline!
+		const currentPhoneTimeline = currentTokenEntry.timeline!
 		const lastPhoneEntry = currentPhoneTimeline[currentPhoneTimeline.length - 1]
 
 		if (lastPhoneEntry && lastPhoneEntry.endTime == -1) {
@@ -188,11 +189,11 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 				continue
 			}
 
-			if (currentSubwordEntry.endTime == -1) {
-				currentSubwordEntry.endTime = eventTime
+			if (currentTokenEntry.endTime == -1) {
+				currentTokenEntry.endTime = eventTime
 			}
 
-			currentSubwordTimeline.push({
+			currentTokenTimeline.push({
 				type: "token",
 				text: "",
 				startTime: eventTime,
@@ -213,8 +214,8 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 				endTime: -1
 			})
 
-			currentSubwordEntry.text += phoneText
-			currentSubwordEntry.startTime = currentPhoneTimeline[0].startTime
+			currentTokenEntry.text += phoneText
+			currentTokenEntry.startTime = currentPhoneTimeline[0].startTime
 		} else if (event.type == "mark") {
 			const markerName = event.id! as string
 
@@ -230,7 +231,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 				}
 
 				currentWordEntry.startTime = eventTime
-				currentSubwordEntry.startTime = eventTime
+				currentTokenEntry.startTime = eventTime
 			} else if (markerName.startsWith("wordend-")) {
 				const markerIndex = parseInt(markerName.substring(8))
 
@@ -238,14 +239,14 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 					throw new Error(`Word end marker for index ${wordIndex} is not consistent with word index. The words were: ${objToString(fragments)}`)
 				}
 
-				currentWordEntry.startTime = currentSubwordTimeline[0].startTime
+				currentWordEntry.startTime = currentTokenTimeline[0].startTime
 
 				currentWordEntry.endTime = eventTime
-				currentSubwordEntry.endTime = eventTime
+				currentTokenEntry.endTime = eventTime
 
 				wordIndex += 1
 
-				if (wordIndex == timeline.length) {
+				if (wordIndex == wordTimeline.length) {
 					break
 				}
 			} else {
@@ -256,9 +257,69 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		}
 	}
 
-	clauseEndIndexes.push(timeline.length)
+	clauseEndIndexes.push(wordTimeline.length)
 
-	const timelineWithClauses: Timeline = []
+	// Split compound tokens
+	for (const [index, wordEntry] of wordTimeline.entries()) {
+		const tokenTimeline = wordEntry.timeline
+
+		if (index == 0) {
+			continue
+		}
+
+		if (!tokenTimeline || tokenTimeline.length == 0) {
+			throw new Error("Unexpected: token timeline should exist and have at least one token")
+		}
+
+		if (tokenTimeline[0].text != '') {
+			continue
+		}
+
+		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, voice, true)).split("_")
+
+		const wordReferenceIPA = wordReferencePhonemes.join(" ")
+
+		if (wordReferenceIPA.trim().length == 0) {
+			continue
+		}
+
+		const wordReferenceIPAWithoutStress = wordReferenceIPA.replaceAll("ˈ", "").replaceAll("ˌ", "")
+
+		const previousWordEntry = wordTimeline[index - 1]
+
+		if (!previousWordEntry.timeline) {
+			continue
+		}
+
+		const previousWordTokenEntry = previousWordEntry.timeline[0]
+
+		if (!previousWordTokenEntry.timeline || previousWordTokenEntry.timeline.length < wordReferencePhonemes.length) {
+			continue
+		}
+
+		const previousWordTokenIPAWithoutStress = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text.replaceAll("ˈ", "").replaceAll("ˌ", "")).join(" ")
+
+		if (!previousWordTokenIPAWithoutStress.endsWith(wordReferenceIPAWithoutStress)) {
+			continue
+		}
+
+		const tokenEntry = tokenTimeline[0]
+
+		tokenEntry.timeline = previousWordTokenEntry.timeline.splice(previousWordTokenEntry.timeline.length - wordReferencePhonemes.length)
+		tokenEntry.text = tokenEntry.timeline.map(phoneEntry => phoneEntry.text).join("")
+
+		tokenEntry.startTime = tokenEntry.timeline[0].startTime
+		tokenEntry.endTime = tokenEntry.timeline[tokenEntry.timeline.length - 1].endTime
+		wordEntry.startTime = tokenEntry.startTime
+		wordEntry.endTime = tokenEntry.endTime
+
+		previousWordTokenEntry.text = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text).join("")
+		previousWordTokenEntry.endTime = previousWordTokenEntry.timeline[previousWordTokenEntry.timeline.length - 1].endTime
+		previousWordEntry.endTime = previousWordTokenEntry.endTime
+	}
+
+	// Build clause timeline
+	const clauseTimeline: Timeline = []
 
 	let clauseStartIndex = 0
 
@@ -271,8 +332,8 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 			timeline: []
 		}
 
-		for (let entryIndex = clauseStartIndex; entryIndex <= clauseEndIndex && entryIndex < timeline.length; entryIndex++) {
-			const wordEntry = timeline[entryIndex]
+		for (let entryIndex = clauseStartIndex; entryIndex <= clauseEndIndex && entryIndex < wordTimeline.length; entryIndex++) {
+			const wordEntry = wordTimeline[entryIndex]
 			if (newClause.startTime == -1) {
 				newClause.startTime = wordEntry.startTime
 			}
@@ -285,12 +346,12 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		}
 
 		if (newClause.timeline!.length > 0) {
-			timelineWithClauses.push(newClause)
+			clauseTimeline.push(newClause)
 			clauseStartIndex = clauseEndIndex + 1
 		}
 	}
 
-	return { rawAudio, timeline: timelineWithClauses, events }
+	return { rawAudio, timeline: clauseTimeline, events }
 }
 
 export async function synthesize(text: string, voice: string, ssmlEnabled: boolean, rate = 150, pitch = 50, pitchRange = 50) {
@@ -405,7 +466,8 @@ export async function listVoices() {
 		languages: {
 			priority: number,
 			name: string
-		}[] }[] = instance.list_voices()
+		}[]
+	}[] = instance.list_voices()
 
 	return voiceList
 }
