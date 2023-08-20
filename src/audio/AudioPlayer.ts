@@ -1,20 +1,22 @@
 import { parentPort } from 'node:worker_threads'
 
-import { spawn } from 'child_process'
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 
-import { RawAudio, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from "./AudioUtilities.js"
+import { RawAudio, encodeWaveBuffer, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from "./AudioUtilities.js"
 import * as AudioBufferConversion from './AudioBufferConversion.js'
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
 import { Timer } from "../utilities/Timer.js"
-import { waitTimeout, writeToStderr } from '../utilities/Utilities.js'
+import { getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
-import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
+import { getAppTempDir, outputFile, readAndParseJsonFile, readFile, remove } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
+import { appName } from '../api/Common.js'
+import path from 'node:path'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string) {
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)
@@ -170,44 +172,80 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 			throw new Error(`Couldn't find or install the SoX utility. Please install the SoX utility on your system path to enable audio playback.`)
 		}
 
-		const audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
+		let streamToStdin = true
 
-		const player = spawn(
-			soxPath,
-			['-t', 'raw', '-r', `${rawAudio.sampleRate}`, '-e', 'signed', '-b', '16', '-c', channelCount.toString(), '-', '-d'],
-			{}
-		)
+		if (process.platform == "darwin") {
+			streamToStdin = false
+		}
+
+		let tempFilePath: string | undefined
+		let audioBuffer: Buffer | undefined
+
+		async function cleanup() {
+			if (tempFilePath) {
+				await remove(tempFilePath)
+			}
+		}
+
+		let playerProcess: ChildProcessWithoutNullStreams
+
+		if (streamToStdin) {
+			audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
+
+			playerProcess = spawn(
+				soxPath,
+				['-t', 'raw', '-r', `${rawAudio.sampleRate}`, '-e', 'signed', '-b', '16', '-c', channelCount.toString(), '-', '-d'],
+				{}
+			)
+		} else {
+			tempFilePath = path.join(getAppTempDir(appName), `${getRandomHexString(16)}.wav`)
+			const waveFileBuffer = encodeWaveBuffer(rawAudio)
+			await outputFile(tempFilePath, waveFileBuffer)
+
+			playerProcess = spawn(
+				soxPath,
+				[tempFilePath, '-d'],
+				{}
+			)
+		}
 
 		if (signalChannel) {
 			signalChannel.on("abort", () => {
 				aborted = true
-				player.kill('SIGKILL')
+				playerProcess.kill('SIGKILL')
 			})
 		}
 
 		// Required to work around SoX bug:
-		player.stderr.on("data", (data) => {
+		playerProcess.stderr.on("data", (data) => {
 			//writeToStderr(data.toString('utf-8'))
 		})
 
-		player.stdout.on("data", (data) => {
+		playerProcess.stdout.on("data", (data) => {
 			//writeToStderr(data.toString('utf-8'))
 		})
 
-		player.once("spawn", () => {
-			player.stdin!.write(audioBuffer)
-			player.stdin!.end()
-			player.stdin!.on("error", () => { })
+		playerProcess.once("spawn", () => {
+			if (audioBuffer != undefined) {
+				playerProcess.stdin!.write(audioBuffer)
+				playerProcess.stdin!.end()
+				playerProcess.stdin!.on("error", () => { })
+			}
 
 			playerSpawnedOpenPromise.resolve(null)
 		})
 
-		player.once("error", (e) => {
+		playerProcess.once("error", async (e) => {
+			await cleanup()
+			playerProcessClosed = true
+
 			reject(e)
 		})
 
-		player.once('close', () => {
+		playerProcess.once('close', async () => {
+			await cleanup()
 			playerProcessClosed = true
+
 			resolve()
 		})
 
