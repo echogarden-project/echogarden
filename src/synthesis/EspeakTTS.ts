@@ -133,7 +133,11 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 	for (let i = 0; i < fragments.length; i++) {
 		let fragment = fragments[i]
 
-		fragment = fragment.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+		fragment = simplifyPunctuationCharacters(fragment)
+
+		fragment = fragment
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
 
 		if (insertSeparators) {
 			textWithMarkers += `<mark name="wordstart-${i}"/> | ${fragment} | <mark name="wordend-${i}"/>`

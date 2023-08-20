@@ -50,23 +50,23 @@ export function shuffleArrayInPlace<T>(array: T[], randomGen: RandomGenerator) {
 
 export function simplifyPunctuationCharacters(text: string) {
 	return text
-		.replaceAll("“", "\"")
-		.replaceAll("”", "\"")
-		.replaceAll("„", "\"")
+		.replaceAll(`“`, `"`)
+		.replaceAll(`”`, `"`)
+		.replaceAll(`„`, `"`)
 		.replaceAll(`ߵ`, `"`)
 		.replaceAll(`ߴ`, `"`)
-		.replaceAll('«', `"`)
-		.replaceAll('»', `"`)
+		.replaceAll(`«`, `"`)
+		.replaceAll(`»`, `"`)
 
 		.replaceAll(`’`, `'`)
 		.replaceAll(`ʼ`, `'`)
 		.replaceAll(`ʼ`, `'`)
 		.replaceAll(`＇`, `'`)
-		.replaceAll("，", ",")
-		.replaceAll("、", ",")
-		.replaceAll("：", ":")
-		.replaceAll("；", ";")
-		.replaceAll("。", ".")
+		.replaceAll(`，`, `,`)
+		.replaceAll(`、`, `,`)
+		.replaceAll(`：`, `:`)
+		.replaceAll(`；`, `;`)
+		.replaceAll(`。`, `.`)
 }
 
 export function writeToStderr(message: any) {
