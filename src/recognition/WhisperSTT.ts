@@ -238,7 +238,7 @@ export class Whisper {
 				const promptTokens = await this.textToTokens(prompt, language)
 
 				initialTokens = [this.tokenConfig.sotPrevToken, ...promptTokens]
-			} else if (previousPartTokens.length > 0) {
+			} else if (options.autoPromptParts && previousPartTokens.length > 0) {
 				initialTokens = [this.tokenConfig.sotPrevToken, ...previousPartTokens]
 			}
 
@@ -1505,12 +1505,14 @@ export interface WhisperOptions {
 	prompt?: string
 	topCandidateCount?: number
 	punctuationThreshold?: number
+	autoPromptParts?: boolean
 }
 
-export const whisperOptionsDefaults = {
+export const whisperOptionsDefaults: WhisperOptions = {
 	model: undefined,
 	temperature: 0.1,
 	prompt: undefined,
 	topCandidateCount: 5,
-	punctuationThreshold: 0.2
+	punctuationThreshold: 0.2,
+	autoPromptParts: true
 }

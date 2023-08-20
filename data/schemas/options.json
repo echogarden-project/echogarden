@@ -708,6 +708,9 @@
         },
         "punctuationThreshold": {
           "type": "number"
+        },
+        "autoPromptParts": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
