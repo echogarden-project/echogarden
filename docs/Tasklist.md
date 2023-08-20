@@ -41,7 +41,7 @@
 * Minimum size when iterating text nodes to get handle
 
 ### Server
-* Option to allow or disallow local file paths as arguments to API methods (as a security issue)
+* Option to allow or disallow local file paths as arguments to API methods (as a security guard)
 
 ### Worker
 * Add cancelation checks in more operations
@@ -49,6 +49,7 @@
 
 ### CLI
 * Show names of files written do disk. This is useful for cases where a file is auto-renamed to allow overwrite.
+* Consider if auto-renamed files can use a suffix other than ` (1)`.
 * Restrict input media file extensions to ensure that invalid files are not passed to FFMpeg.
 * Mode to print IPA words when speaking
 * Consider what to do with non-supported templates like `[hello]`
@@ -98,7 +99,7 @@
 * Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
 * Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
-* See if it's possible to detect and Emoji characters to timelines.
+* See if it's possible to detect and include Emoji characters in timelines.
 * Add support for phrases in timelines
 * Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
@@ -117,6 +118,7 @@
 
 ### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
+* Option to disable sentence isolation (a new sentence can start in the same cue)
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
@@ -169,6 +171,7 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
+* Disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
@@ -177,7 +180,7 @@
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 
 ### Alignment
-* Consider a reliable way to cut silent or non-speech sections to improve results.
+* Investigate a reliable way to cut silent or non-speech sections to improve results.
 
 ### Postprocessing
 * When `normalize` is set to false, should obvious clipping still be prevented?
@@ -198,7 +201,6 @@
 * `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
 * `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
 * `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
-* `espeak-ng`: Joins multiple words into a single event when its lexicon has a compound pronunciation. For example "there was" includes the phonemes for both "there" and "was" (`ðɛɹwˌʌz`) only under "there", and leaves "was" empty.
 * `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
 * `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
 * `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)

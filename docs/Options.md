@@ -136,11 +136,12 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's speech end time. This also ensures that very short-duration segments aren't shown in a flash. Defaults to `3`
 
 **Whisper**:
-* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny`
-* `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (about `0.25` or lower) for best results. Defaults to `0.1`
+* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny` or `tiny.en`
+* `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (`0.25` or lower) for best results. Defaults to `0.1`
 * `whisper.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
 * `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
-* `punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
+* `whisper.punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
+* `whisper.autoPromptParts`: use previous part's recognized text as prompt for the next part. Disabling this may help to prevent repetition carrying over between parts, in some cases. Defaults to `true`
 
 **Vosk**:
 * `vosk.modelPath`: path to the Vosk model to be used
