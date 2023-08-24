@@ -23,6 +23,7 @@ import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
+import JSON5 from 'json5'
 
 //const log = logToStderr
 
@@ -988,7 +989,7 @@ async function installPackages(commandArgs: string[], cliOptions: Map<string, st
 			await loadPackage(packageName)
 		} catch (e) {
 			resetActiveLogger()
-			
+
 			logger.log(`Failed installing package ${packageName}: ${e}`)
 			failedPackageNames.push(packageName)
 		}
@@ -1107,19 +1108,28 @@ async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, 
 
 		const path = key.split(".")
 
-		let optionType: string
+		let optionType: string | undefined
 		let optionEnum: any[] | undefined
+		let optionIsUnion: boolean | undefined
 
 		if (additionalOptionsSchema && additionalOptionsSchema.has(key)) {
-			({ type: optionType, enum: optionEnum } = additionalOptionsSchema.get(key)!)
+			({ type: optionType, enum: optionEnum, isUnion: optionIsUnion } = additionalOptionsSchema.get(key)!)
 		} else {
 			const extendedPath = [optionsRoot, ...path];
-			({ type: optionType, enum: optionEnum } = getOptionTypeFromSchema(extendedPath, optionsSchema))
+			({ type: optionType, enum: optionEnum, isUnion: optionIsUnion } = getOptionTypeFromSchema(extendedPath, optionsSchema))
 		}
 
 		let parsedValue: any
 
-		if (optionType == 'boolean') {
+		if (optionType == 'string') {
+			parsedValue = value
+		} else if (optionType == 'number') {
+			parsedValue = parseFloat(value)
+
+			if (isNaN(parsedValue)) {
+				throw new Error(`The property '${key}' is a number. '${value}' cannot be parsed as a number.`)
+			}
+		} else if (optionType == 'boolean') {
 			if (value == null || value == '') {
 				parsedValue = !isNegated
 			} else if (value == 'true') {
@@ -1133,17 +1143,22 @@ async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, 
 			throw new Error(`No value was specified for the property '${key}', which has type ${optionType}.`)
 		} else if (isNegated) {
 			throw new Error(`The property '${key}' is not a Boolean, and cannot be negated using the 'not-' prefix.`)
-		} else if (optionType == 'number') {
-			parsedValue = parseFloat(value)
-
-			if (isNaN(parsedValue)) {
-				throw new Error(`The property '${key}' is a number. '${value}' cannot be parsed as a number.`)
-			}
 		} else if (optionType == 'array' || optionType == 'object') {
 			try {
 				const { default: JSON5 } = await import('json5')
 				parsedValue = JSON5.parse(value)
 			} catch (e) {
+				parsedValue = value
+			}
+		} else if (optionIsUnion) {
+			const isArrayJSON = value.startsWith('[') && value.endsWith(']')
+			const isObjectJSON = value.startsWith('{') && value.endsWith('}')
+			const isNumberJSON = !isNaN(Number.parseFloat(value))
+			const isBooleanJSON = value == 'true' || value == 'false'
+
+			if (isArrayJSON || isObjectJSON || isNumberJSON || isBooleanJSON) {
+				parsedValue = JSON5.parse(value)
+			} else {
 				parsedValue = value
 			}
 		} else {

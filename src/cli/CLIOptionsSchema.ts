@@ -32,7 +32,9 @@ export function getOptionTypeFromSchema(path: string[], schema: any): SchemaType
 				possibleValues = [currentObject['const']]
 			}
 
-			return { type: currentObjectType, enum: possibleValues }
+			const isUnion = ('anyOf' in currentObject)
+
+			return { type: currentObjectType, enum: possibleValues, isUnion }
 		}
 
 		if (currentObjectType == 'object') {
@@ -42,10 +44,11 @@ export function getOptionTypeFromSchema(path: string[], schema: any): SchemaType
 		}
 	}
 
-	return { type: "", enum: undefined }
+	return {}
 }
 
 export type SchemaTypeDefinition = {
-	type: string
+	type?: string
 	enum?: any[]
+	isUnion?: boolean
 }
