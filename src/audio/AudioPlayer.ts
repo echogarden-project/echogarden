@@ -190,7 +190,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 		let playerProcess: ChildProcessWithoutNullStreams
 
 		if (streamToStdin) {
-			audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels, 16)
+			audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels)
 
 			playerProcess = spawn(
 				soxPath,
@@ -280,7 +280,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 		}
 
 		const channelCount = rawAudio.audioChannels.length
-		let audioData = AudioBufferConversion.encodeToAudioBuffer(rawAudio.audioChannels, 16)
+		let audioData = AudioBufferConversion.encodeToAudioBuffer(rawAudio.audioChannels)
 
 		const { default: Speaker } = await import('speaker')
 

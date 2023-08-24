@@ -4,7 +4,7 @@ import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
-export function encodeWave(rawAudio: RawAudio, bitDepth: 8 | 16 | 24 | 32 | 64 = 16, sampleFormat: SampleFormat, speakerPositionMask = 0) {
+export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
 	const audioChannels = rawAudio.audioChannels
 	const sampleRate = rawAudio.sampleRate
 
@@ -133,7 +133,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 	sampleRate: number // 4 bytes LE
 	get byteRate() { return this.sampleRate * this.bytesPerSample * this.channelCount } // 4 bytes LE
 	get blockAlign() { return this.bytesPerSample * this.channelCount } // 2 bytes LE
-	bitDepth: 8 | 16 | 24 | 32 | 64 // 2 bytes LE
+	bitDepth: BitDepth // 2 bytes LE
 
 	speakerPositionMask: number // 4 bytes LE
 	get guid() { return sampleFormatToGuid[this.sampleFormat] } // 16 bytes BE
@@ -141,7 +141,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 	// helpers:
 	get bytesPerSample() { return this.bitDepth / 8 }
 
-	constructor(channelCount: number, sampleRate: number, bitDepth: 8 | 16 | 24 | 32 | 64, sampleFormat: SampleFormat, speakerPositionMask = 0) {
+	constructor(channelCount: number, sampleRate: number, bitDepth: BitDepth, sampleFormat: SampleFormat, speakerPositionMask = 0) {
 		this.sampleFormat = sampleFormat
 		this.channelCount = channelCount
 		this.sampleRate = sampleRate
@@ -241,6 +241,8 @@ export enum SampleFormat {
 	Alaw = 6,
 	Mulaw = 7,
 }
+
+export type BitDepth = 8 | 16 | 24 | 32 | 64
 
 const sampleFormatToSerializedSize = {
 	[SampleFormat.PCM]: 24,

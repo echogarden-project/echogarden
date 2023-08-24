@@ -1,12 +1,12 @@
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { SampleFormat, encodeWave, decodeWave } from "../codecs/WaveCodec.js"
+import { SampleFormat, encodeWave, decodeWave, BitDepth } from "../codecs/WaveCodec.js"
 import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Wave encoding and decoding
 ////////////////////////////////////////////////////////////////////////////////////////////////
-export function encodeWaveBuffer(rawAudio: RawAudio, bitDepth: 8 | 16 | 24 | 32 | 64 = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
+export function encodeWaveBuffer(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
 	return encodeWave(rawAudio, bitDepth, sampleFormat, speakerPositionMask)
 }
 

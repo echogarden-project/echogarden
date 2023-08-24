@@ -1,11 +1,11 @@
 import AlawMulaw from "alawmulaw"
 import * as BinaryArrayConversion from '../utilities/BinaryArrayConversion.js'
-import { SampleFormat } from "../codecs/WaveCodec.js"
+import { BitDepth, SampleFormat } from "../codecs/WaveCodec.js"
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Low level audio sample conversions
 /////////////////////////////////////////////////////////////////////////////////////////////
-export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDepth: number, targetSampleFormat: SampleFormat = SampleFormat.PCM) {
+export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDepth: BitDepth = 16, targetSampleFormat: SampleFormat = SampleFormat.PCM) {
 	const interleavedChannels = interleaveChannels(audioChannels)
 
 	if (targetSampleFormat == SampleFormat.PCM) {
