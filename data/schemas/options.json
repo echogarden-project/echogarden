@@ -438,11 +438,31 @@
         "dtw": {
           "type": "object",
           "properties": {
-            "windowDuration": {
-              "type": "number"
-            },
             "granularity": {
-              "$ref": "#/definitions/DtwGranularity"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/DtwGranularity"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/DtwGranularity"
+                  }
+                }
+              ]
+            },
+            "windowDuration": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              ]
             },
             "phoneAlignmentMethod": {
               "$ref": "#/definitions/PhoneAlignmentMethod"
@@ -541,6 +561,7 @@
       "type": "string",
       "enum": [
         "auto",
+        "xx-low",
         "x-low",
         "low",
         "medium",

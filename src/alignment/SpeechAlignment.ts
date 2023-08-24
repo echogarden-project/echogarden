@@ -1,5 +1,5 @@
 import { splitToWords } from "../nlp/Segmentation.js"
-import { clip, roundToDigits } from "../utilities/Utilities.js"
+import { clip } from "../utilities/Utilities.js"
 
 import * as API from "../api/API.js"
 
@@ -12,40 +12,82 @@ import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
 import { Lexicon } from "../nlp/Lexicon.js"
 import chalk from "chalk"
 
-export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDuration: number, granularity: DtwGranularity) {
+export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDurations: number[], granularities: DtwGranularity[]) {
 	const logger = new Logger()
+
+	if (windowDurations.length == 0) {
+		throw new Error(`Window durations array has length 0.`)
+	}
+
+	if (windowDurations.length != granularities.length) {
+		throw new Error(`Window durations and granularities are not the same length.`)
+	}
 
 	const rawAudioDuration = getRawAudioDuration(sourceRawAudio)
 
-	const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity, rawAudioDuration), zeroFirstCoefficient: true }) as MfccOptions
+	let framesPerSecond: number
+	let compactedPath: CompactedPath
+	let relativeCenters: number[] | undefined
 
-	const framesPerSecond = 1 / mfccOptions.hopDuration!
+	for (let passIndex = 0; passIndex < windowDurations.length; passIndex++) {
+		const windowDuration = windowDurations[passIndex]
+		const granularity = resolveAutoGranularityIfNeeded(granularities[passIndex], rawAudioDuration)
 
-	// Compute reference MFCCs
-	logger.start("Compute reference MFCC features")
-	const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions)
+		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `max window duration: ${windowDuration}s, granularity: ${granularity}`, chalk.magentaBright)
 
-	// Compute source MFCCs
-	logger.start("Compute source MFCC features")
-	const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
-	logger.end()
+		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity, rawAudioDuration), zeroFirstCoefficient: true }) as MfccOptions
 
-	// Compute path
-	logger.logTitledMessage(`DTW cost matrix memory size (${windowDuration}s maximum window size, ${1 / mfccOptions.hopDuration!} frames per second)`, `${getCostMatrixMemorySizeMB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond).toFixed(1)}MB`)
+		framesPerSecond = 1 / mfccOptions.hopDuration!
 
-	const minRecommendedWindowDuration = 0.2 * rawAudioDuration
+		// Compute reference MFCCs
+		logger.start("Compute reference MFCC features")
+		const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions)
 
-	if (windowDuration < minRecommendedWindowDuration ) {
-		logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s, which is smaller than 20% of the source audio duration of ${rawAudioDuration.toFixed(1)}s. This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, chalk.yellowBright)
+		// Compute source MFCCs
+		logger.start("Compute source MFCC features")
+		const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
+		logger.end()
+
+		// Compute path
+		logger.logTitledMessage(`DTW cost matrix memory size`, `${getCostMatrixMemorySizeMB(referenceMfccs.length, sourceMfccs.length, windowDuration * framesPerSecond).toFixed(1)}MB`)
+
+		if (passIndex == 0) {
+			const minRecommendedWindowDuration = 0.2 * rawAudioDuration
+
+			if (windowDuration < minRecommendedWindowDuration ) {
+				logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s, which is smaller than 20% of the source audio duration of ${rawAudioDuration.toFixed(1)}s. This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, chalk.yellowBright)
+			}
+		}
+
+		logger.start("Align MFCC features using DTW")
+		const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
+
+		let centerIndexes: number[] | undefined
+
+		if (relativeCenters) {
+			centerIndexes = []
+
+			for (let i = 0; i < referenceMfccs.length; i++) {
+				const relativeReferencePosition = i / referenceMfccs.length
+
+				const relativeCenterIndex = Math.floor(relativeReferencePosition * relativeCenters!.length)
+				const relativeCenter = relativeCenters[relativeCenterIndex]
+				const centerIndex = Math.floor(relativeCenter * sourceMfccs.length)
+
+				centerIndexes.push(centerIndex)
+			}
+		}
+
+		const rawPath = await alignMFCC_DTW(referenceMfccs, sourceMfccs, dtwWindowLength, undefined, centerIndexes)
+
+		compactedPath = compactPath(rawPath)
+
+		relativeCenters = compactedPath.map(entry => (entry.first + entry.last) / 2 / sourceMfccs.length)
+
+		logger.end()
 	}
 
-	logger.start("Align MFCC features using DTW")
-	const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
-
-	const rawPath = await alignMFCC_DTW(referenceMfccs, sourceMfccs, dtwWindowLength)
-
-	logger.start("Convert path to timeline")
-	const compactedPath = compactPath(rawPath)
+	logger.start("\nConvert path to timeline")
 
 	function getMappedTimelineEntry(timelineEntry: TimelineEntry, recurse = true): TimelineEntry {
 		const referenceStartFrameIndex = Math.floor(timelineEntry.startTime * framesPerSecond)
@@ -82,7 +124,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice: string, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDuration: number, granularity: DtwGranularity) {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice: string, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDurations: number[], granularities: DtwGranularity[]) {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
@@ -158,7 +200,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 
 	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
 	// Align the synthesized recognized transcript to the synthesized reference transcript
-	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDuration, granularity)
+	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDurations, granularities)
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 
@@ -395,34 +437,42 @@ function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: 
 	return mappedFrameIndex
 }
 
-function getMfccOptionsForGranularity(granularity: DtwGranularity, audioDuration: number) {
-	let result: MfccOptions
-
-	if (granularity == 'auto') {
-		if (audioDuration < 60) {
-			granularity = 'high'
-		} else if (audioDuration < 60 * 10) {
-			granularity = 'medium'
-		} else {
-			granularity = 'low'
-		}
+function resolveAutoGranularityIfNeeded(granularity: DtwGranularity, audioDuration: number) {
+	if (granularity != 'auto') {
+		return granularity
 	}
 
-	if (granularity == 'x-low') {
-		result = { windowDuration: 0.200, hopDuration: 0.080, fftOrder: 4096 }
+	if (audioDuration < 60) {
+		return 'high'
+	} else if (audioDuration < 60 * 10) {
+		return 'medium'
+	} else {
+		return 'low'
+	}
+}
+
+function getMfccOptionsForGranularity(granularity: DtwGranularity, audioDuration: number) {
+	let mfccOptions: MfccOptions
+
+	granularity = resolveAutoGranularityIfNeeded(granularity, audioDuration)
+
+	if (granularity == 'xx-low') {
+		mfccOptions = { windowDuration: 0.400, hopDuration: 0.160, fftOrder: 8192 }
+	} else if (granularity == 'x-low') {
+		mfccOptions = { windowDuration: 0.200, hopDuration: 0.080, fftOrder: 4096 }
 	} else if (granularity == 'low') {
-		result = { windowDuration: 0.100, hopDuration: 0.040, fftOrder: 2048 }
+		mfccOptions = { windowDuration: 0.100, hopDuration: 0.040, fftOrder: 2048 }
 	} else if (granularity == 'medium') {
-		result = { windowDuration: 0.050, hopDuration: 0.020, fftOrder: 1024 }
+		mfccOptions = { windowDuration: 0.050, hopDuration: 0.020, fftOrder: 1024 }
 	} else if (granularity == 'high') {
-		result = { windowDuration: 0.025, hopDuration: 0.010, fftOrder: 512 }
+		mfccOptions = { windowDuration: 0.025, hopDuration: 0.010, fftOrder: 512 }
 	} else if (granularity == 'x-high') {
-		result = { windowDuration: 0.020, hopDuration: 0.005, fftOrder: 512 }
+		mfccOptions = { windowDuration: 0.020, hopDuration: 0.005, fftOrder: 512 }
 	} else {
 		throw new Error(`Invalid granularity setting: '${granularity}'`)
 	}
 
-	return result
+	return mfccOptions
 }
 
 export type AlignmentPath = AlignmentPathEntry[]
@@ -438,4 +488,4 @@ export type CompactedPathEntry = {
 	first: number, last: number
 }
 
-export type DtwGranularity = 'auto' | 'x-low' | 'low' | 'medium' | 'high' | 'x-high'
+export type DtwGranularity = 'auto' | 'xx-low' | 'x-low' | 'low' | 'medium' | 'high' | 'x-high'

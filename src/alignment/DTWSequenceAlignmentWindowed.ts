@@ -3,7 +3,7 @@ import { AlignmentPath } from "./SpeechAlignment.js"
 
 const log = logToStderr
 
-export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number) {
+export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: number[]) {
 	if (windowMaxLength < 2) {
 		throw new Error("Window length must be greater or equal to 2")
 	}
@@ -13,7 +13,7 @@ export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunct
 	}
 
 	// Compute accumulated cost matrix (transposed)
-	const { accumulatedCostMatrixTransposed, windowStartOffsets } = computeAccumulatedCostMatrixTransposed(sequence1, sequence2, costFunction, windowMaxLength)
+	const { accumulatedCostMatrixTransposed, windowStartOffsets } = computeAccumulatedCostMatrixTransposed(sequence1, sequence2, costFunction, windowMaxLength, centerIndexes)
 
 	// Find best path for the computed matrix
 	const path = computeBestPathTransposed(accumulatedCostMatrixTransposed, windowStartOffsets)
@@ -28,7 +28,7 @@ export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunct
 	return { path, pathCost }
 }
 
-function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number) {
+function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: number[]) {
 	const halfWindowMaxLength = Math.floor(windowMaxLength / 2)
 
 	const columnCount = sequence1.length
@@ -45,8 +45,14 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 		const currentColumn = new Float32Array(rowCount)
 		accumulatedCostMatrixTransposed[columnIndex] = currentColumn
 
-		// Compute window center
-		const windowCenter = Math.floor((columnIndex / columnCount) * sequence2.length)
+		// Compute window center, or use given one
+		let windowCenter: number
+
+		if (centerIndexes) {
+			windowCenter = centerIndexes[columnIndex]
+		} else {
+			windowCenter = Math.floor((columnIndex / columnCount) * sequence2.length)
+		}
 
 		// Compute window start and end offsets
 		let windowStartOffset = Math.max(windowCenter - halfWindowMaxLength, 0)

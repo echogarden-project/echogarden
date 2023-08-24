@@ -33,14 +33,14 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	if (options.dtw!.windowDuration == null) {
 		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
 
-		if (sourceAudioDuration < 60 * 5) {
+		if (sourceAudioDuration < 5 * 60) { // If up to 5 minutes, set window to one minute
 			options.dtw!.windowDuration = 60
-		} else {
+		} else if (sourceAudioDuration < 60 * 60) { // If up to 1 hour, set window to 20% of total duration
 			options.dtw!.windowDuration = Math.ceil(sourceAudioDuration * 0.2)
+		} else { // If 1 hour or more, set window to 12 minutes
+			options.dtw!.windowDuration = 12 * 60
 		}
 	}
-
-	const dtwWindowDuration = options.dtw!.windowDuration!
 
 	let language: string
 
@@ -85,6 +85,39 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		return { referenceRawAudio, referenceTimeline: wordTimeline, espeakVoice }
 	}
 
+	function getDtwWindowDurationsAndGranularities() {
+		let granularities: DtwGranularity[]
+		let windowDurations: number[]
+
+		if (typeof options.dtw!.granularity == 'string') {
+			granularities = [options.dtw!.granularity]
+		} else if (Array.isArray(options.dtw!.granularity)) {
+			granularities = options.dtw!.granularity
+		} else {
+			granularities = ['auto']
+		}
+
+		if (typeof options.dtw!.windowDuration == 'number') {
+			if (granularities.length == 1) {
+				windowDurations = [options.dtw!.windowDuration]
+			} else if (granularities.length == 2) {
+				windowDurations = [options.dtw!.windowDuration, 15]
+			} else {
+				throw new Error(`More than two passes requested, this requires window durations to be explicitly specified for each pass. For example 'dtw.windowDuration=[600,60,10]'.`)
+			}
+		} else if (Array.isArray(options.dtw!.windowDuration)) {
+			windowDurations = options.dtw!.windowDuration
+		} else {
+			throw new Error('No window duration given')
+		}
+
+		if (granularities.length != windowDurations.length) {
+			throw new Error(`Unequal element counts in options. 'dtw.granularity' has ${granularities.length} items, but 'dtw.windowDuration' has ${windowDurations.length} items. Can't infer what number of DTW passes were intended.`)
+		}
+
+		return { windowDurations, granularities }
+	}
+
 	let mappedTimeline: Timeline
 
 	switch (options.engine) {
@@ -92,7 +125,9 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
 			logger.end()
 
-			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, dtwWindowDuration, options.dtw!.granularity!)
+			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
+
+			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, windowDurations, granularities)
 
 			break
 		}
@@ -124,7 +159,9 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
-			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, dtwWindowDuration, options.dtw!.granularity!)
+			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
+
+			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, windowDurations, granularities)
 
 			break
 		}
@@ -227,8 +264,8 @@ export interface AlignmentOptions {
 	subtitles?: SubtitlesConfig
 
 	dtw?: {
-		windowDuration?: number
-		granularity?: DtwGranularity
+		granularity?: DtwGranularity | DtwGranularity[]
+		windowDuration?: number | number[]
 		phoneAlignmentMethod?: PhoneAlignmentMethod
 	}
 
@@ -255,8 +292,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	subtitles: defaultSubtitlesConfig,
 
 	dtw: {
-		windowDuration: undefined,
 		granularity: 'auto',
+		windowDuration: undefined,
 		phoneAlignmentMethod: 'dtw'
 	},
 
