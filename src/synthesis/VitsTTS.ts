@@ -218,6 +218,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "cs_CZ-jirka-medium",
+		languages: ["cs-CZ", "cs"],
+		gender: "male",
+	},
+
+	{
 		name: "da_DK-nst_talesyntese-medium",
 		languages: ["da-DK", "da"],
 		gender: "male",
@@ -238,6 +244,11 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["de-DE", "de"],
 		gender: "male",
 		speakerCount: 8
+	},
+	{
+		name: "de_DE-thorsten-high",
+		languages: ["de-DE", "de"],
+		gender: "male",
 	},
 	{
 		name: "de_DE-eva_k-x_low",
@@ -471,6 +482,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "hu_HU-anna-medium",
+		languages: ["hu-HU", "hu"],
+		gender: "female",
+	},
+
+	{
 		name: "is_IS-ugla-medium",
 		languages: ["is-IS", "is"],
 		gender: "female",
@@ -606,6 +623,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "pt_PT-tugao-medium",
+		languages: ["pt-PT", "pt"],
+		gender: "male",
+	},
+
+	{
 		name: "ro_RO-mihai-medium",
 		languages: ["ro-RO", "ro"],
 		gender: "male",
@@ -633,6 +656,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "sk_SK-lili-medium",
+		languages: ["sk-SK", "sk"],
+		gender: "female",
+	},
+
+	{
 		name: "sr_RS-serbski_institut-medium",
 		languages: ["sr-RS", "sr"],
 		gender: "male",
@@ -653,6 +682,11 @@ export const voiceList: SynthesisVoice[] = [
 
 	{
 		name: "tr_TR-dfki-medium",
+		languages: ["tr-TR", "tr"],
+		gender: "male",
+	},
+	{
+		name: "tr_TR-fahrettin-medium",
 		languages: ["tr-TR", "tr"],
 		gender: "male",
 	},
