@@ -6,7 +6,7 @@ However, there are many areas where contributions can be made.
 
 ## Report any issue or bug you encounter
 
-First, check out the [task list](Tasklist.md) to see if the problem is already known to me. The task list allows me to efficiently document and organize a large quantity of small issues, enhancements or ideas that would otherwise flood an issue tracker with lots of unimportant entries, be ignored, or forgotten entirely.
+First, check the issue tracker, as well as the [task list](Tasklist.md) to see if the problem is already known to me. The task list allows me to efficiently document and organize a large quantity of small issues, enhancements or ideas that would otherwise flood an issue tracker with lots of unimportant entries, be ignored, or forgotten entirely.
 
 If you find the issue you're encountering in the task list, you can still open an issue to discuss it. This allows me to know that someone cares about a particular issue, and I may give it higher priority.
 
@@ -16,7 +16,7 @@ There might be some obvious errors that have gone unreported. Especially if:
 
 In any case, please let me know if you get any unexpected error message or surprising behavior that you care about, and I'll try to prioritize it, if possible.
 
-## Report odd TTS pronunciations and other fail cases
+## Report or help fix odd TTS pronunciations and other fail cases
 
 When you encounter an odd pronunciation in a VITS voice, there are several possible causes:
 

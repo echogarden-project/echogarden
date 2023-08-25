@@ -1,6 +1,6 @@
 # Starting and interfacing with the WebSocket server
 
-This is a guide for the WebSocket server protocol. The protocol is still in an early development stage and may change in future releases.
+This is a guide for the WebSocket server protocol. The protocol is still in an early development stage and may change on future releases.
 
 ## Starting the server
 
@@ -78,7 +78,7 @@ For example, this message requests synthesis:
 
 	options: {
 		engine: 'espeak',
-		voice: 'en-GB'
+		language: 'en-GB'
 	}
 }
 ```
@@ -135,7 +135,7 @@ Example:
 ```ts
 import { startServer } from 'echogarden'
 
-startServer({ port: 1234 }, () => {
+await startServer({ port: 1234 }, () => {
 	console.log("Server is started!")
 })
 ```

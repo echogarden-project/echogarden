@@ -16,7 +16,7 @@ Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
 
-By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 15.4GB (10.6GB compressed).
+By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 16.2GB (11.4GB compressed).
 
 The packages are currently hosted and downloaded from a dedicated [Hugging Face repository](https://huggingface.co/echogarden/echogarden-packages).
 
@@ -28,7 +28,6 @@ Currently, the biggest contributors to the size are:
 
 * `onnxruntime-node` (NAPI): 92MB
 * `kuromoji` (JavaScript) 40MB
-* `ffmpeg` (WASM): 24MB
 * `flite-wasi` (WASI): 20MB
 * `espeak-ng-emscripten` (WASM): 18MB
 
@@ -38,7 +37,7 @@ So, yes, in the future it may be possible to reduce the core installed size by d
 
 ## Since the code is almost all JavaScript and WASM, why can't it just run in a web browser?
 
-It is technically possible, overall, since its core components: `espeak-ng` and `onnxruntime` both have WASM ports. Actually, `onnxruntime-web`, unlike `onnxruntime-node` can also make use of the GPU via WebGL, and in the future, [it will support WebGPU](https://github.com/microsoft/onnxruntime/issues/11695), which should give a performance boost.
+It is technically possible, overall, since its core components: `espeak-ng` and `onnxruntime` both have WASM ports. Actually, `onnxruntime-web`, unlike `onnxruntime-node` can also make use of the GPU via WebGL and WebGPU, which may give a performance boost for some users.
 
 However, it is a lot of work, and only a subset of the engines can be supported (no cloud engines, in particular). There are several reasons why the web may not be the most effective platform for Echogarden:
 
@@ -52,7 +51,7 @@ However, it is a lot of work, and only a subset of the engines can be supported 
 * Possibly lots of issues with inconsistent browser support and browser security constraints
 * Not future-proof. Due to changing restrictions of browsers, the runtime environment is not guaranteed be reliably reproducible in the future, meaning that it may need continuous maintenance to ensure it keeps working on the newest browsers
 
-It remains to be seen if this sort of work would feel justified somehow. I designed the tool to make the local installation extremely easy and issue-free. I guess it could look "impressive" to be able to run it in a browser, and may be come as a nice "toy" or "tech-demo", and could get some attention, but it may eventually turn out to be simpler and more practical to just install a local instance and connect to it from the browser via a WebSocket API (which is already working and running, but at a development stage).
+It remains to be seen if this sort of work would feel justified somehow. I designed the tool to make the local installation extremely easy and issue-free. I guess it could look "impressive" to be able to run it in a browser, and may be come as a nice "toy" or "tech-demo", and could get some attention, but it may eventually turn out to be simpler and more practical to just install a local instance and connect to it from the browser via a WebSocket API.
 
 A TTS-only browser extension is in development. It registers Echogarden's voices on the browser's Web Speech API using the [`chrome.ttsEngine`](https://developer.chrome.com/docs/extensions/reference/ttsEngine/) extension API and communicates with it using the WebSocket API
 

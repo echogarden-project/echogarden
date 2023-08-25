@@ -2,14 +2,11 @@
 
 ## Bugs
 
-### Audio player
-* In rare situations, the audio player fails when encountering encoded markup (it can't find it in the text). Decide what to do when this happens
-
 ### Phoneme processing
-* IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
+* IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
 
 ### Segmentation
-* eSpeak workaround for getting markers to work after sentence boundaries fails on some edge cases, especially when the input has special characters. Sequences like `**********` or `----------` fail.
+* eSpeak markers fail when given inputs like `**********` or `----------` due to the fact that eSpeak limits output of these special characters to only a few, so only some of the markers are output.
 
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
@@ -118,8 +115,8 @@
 
 ### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
+* Option to output one cue per word
 * Option to disable sentence isolation (a new sentence can start in the same cue)
-* Option to output one subtitle per word
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
@@ -128,8 +125,8 @@
 * Option to generate captions that have word-level timings
 
 ### Synthesis
-* Option to disable alignment.
-* Find places to add commas (",") to improve speech fluency. VITS voices don't normally add phrasing breaks if there is no punctuation
+* Option to disable alignment (only for some engines).
+* Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" as well
 * Find way to manually reset voice list cache
@@ -172,7 +169,7 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
-* Disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
+* Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
@@ -193,7 +190,7 @@
 * See if the installation of `winax` can be automated and only initiate if it is in a Windows environment
 * Ensure that all modules have no internal state other than caching
 * Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, an which cannot?
-* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag to all of them and rebuild them. Support for node.js was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915), so maybe wait a little bit until it is stable.
+* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag to all of them and rebuild them. Support for node.js modules was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915), so maybe wait a little bit until it's' stable.
 * Remove built-in voices from `flite` to reduce size?
 * Slim down `kuromoji` package to the reduce base install size
 
@@ -221,7 +218,7 @@
 ### CLI
 * Auto-generate options file, with comments, based on default options of the API
 * Have the CLI launch a background worker (in a thread) to enable better parallelism
-* Play back result audio while synthesis or recognition is still processing on the background (may require `worker_threads`)
+* Play back result audio while synthesis or recognition is still processing in the background
 * Auto-import and extract project Gutenberg texts (by URL or from a file)
 * `stdin` input support
 * `stdout` output support
@@ -233,7 +230,7 @@
 * Investigate running in WebContainer
 
 ### API
-* Auto-install npm modules when needed using something like `npm-programmatic`
+* Auto-install npm modules when needed using an approach similar to like `npm-programmatic`
 
 ### Text enhancement
 * Add capitalization and punctuation to recognized outputs if needed (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
@@ -250,7 +247,6 @@
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment
-* Implement hierarchical DTW to reduce memory for very long inputs.
 * Implement alignment with speech translation assistance, which would enable multilingual subtitle replacement for translated subtitles
 * Method to align audio file to audio file
 * Make `dtw` mode work with more speech synthesizers to produce its reference
