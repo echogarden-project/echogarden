@@ -1,6 +1,6 @@
 import { RawAudio } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
-const FFT = await import("./FFT.js")
+import * as FFT from "./FFT.js"
 
 export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number) {
 	const logger = new Logger()
