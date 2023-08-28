@@ -201,12 +201,12 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	if (postprocessOutput) {
 		logger.start("Apply EQ to synthesized audio")
 
-		const BiquadFilter = await import("../dsp/BiquadFilter.js")
+		const Biquad = await import("../dsp/BiquadFilter.js")
 
-		rawAudio = BiquadFilter.lowshelfFilter(rawAudio, 177, -2.6)
-		rawAudio = BiquadFilter.peakingFilter(rawAudio, 440, -9.7, bandwidthToQFactor(2))
-		rawAudio = BiquadFilter.peakingFilter(rawAudio, 1639, 5.2, bandwidthToQFactor(2))
-		rawAudio = BiquadFilter.highshelfFilter(rawAudio, 5180, 10.6)
+		Biquad.createLowshelfFilter(rawAudio.sampleRate, 177, -2.6).apply(rawAudio.audioChannels[0])
+		Biquad.createPeakingFilter(rawAudio.sampleRate, 440, bandwidthToQFactor(2), -9.7).apply(rawAudio.audioChannels[0])
+		//Biquad.createPeakingFilter(rawAudio.sampleRate, 1639, bandwidthToQFactor(2), 5.2).apply(rawAudio.audioChannels[0])
+		Biquad.createHighshelfFilter(rawAudio.sampleRate, 5180, 10.6).apply(rawAudio.audioChannels[0])
 	}
 
 	logger.end()

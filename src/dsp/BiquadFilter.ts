@@ -10,98 +10,98 @@
 // MDN documentation:
 // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
 
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { clip } from "../utilities/Utilities.js"
-
-export function lowpassFilter(rawAudio: RawAudio, cutoffFrequency: number, q = 0.7071) {
-	return filter(rawAudio, "lowpass", cutoffFrequency, 0, q)
+export function createLowpassFilter(sampleRate: number, cutoffFrequency: number, q = 0.7071) {
+	return createFilter("lowpass", sampleRate, cutoffFrequency, q, 0)
 }
 
-export function highpassFilter(rawAudio: RawAudio, cutoffFrequency: number, q = 0.7071) {
-	return filter(rawAudio, "highpass", cutoffFrequency, 0, q)
+export function createHighpassFilter(sampleRate: number, cutoffFrequency: number, q = 0.7071) {
+	return createFilter("highpass", sampleRate, cutoffFrequency, q, 0)
 }
 
-export function bandpassFilter(rawAudio: RawAudio, centerFrequency: number, q = 1) {
-	return filter(rawAudio, "bandpass", centerFrequency, 0, q)
+export function createBandpassFilter(sampleRate: number, centerFrequency: number, q = 1) {
+	return createFilter("bandpass", sampleRate, centerFrequency, q, 0)
 }
 
-export function lowshelfFilter(rawAudio: RawAudio, midpointFrequency: number, gain: number) {
-	return filter(rawAudio, "lowshelf", midpointFrequency, gain, 0)
+export function createLowshelfFilter(sampleRate: number, midpointFrequency: number, gain: number) {
+	return createFilter("lowshelf", sampleRate, midpointFrequency, 0, gain)
 }
 
-export function highshelfFilter(rawAudio: RawAudio, midpointFrequency: number, gain: number) {
-	return filter(rawAudio, "highshelf", midpointFrequency, gain, 0)
+export function createHighshelfFilter(sampleRate: number, midpointFrequency: number, gain: number) {
+	return createFilter("highshelf", sampleRate, midpointFrequency, 0, gain)
 }
 
-export function peakingFilter(rawAudio: RawAudio, centerFrequency: number, gain: number, q = 1) {
-	return filter(rawAudio, "peaking", centerFrequency, gain, q)
+export function createPeakingFilter(sampleRate: number, centerFrequency: number, q = 1, gain = 0) {
+	return createFilter("peaking", sampleRate, centerFrequency, q, gain)
 }
 
-export function notchFilter(rawAudio: RawAudio, centerFrequency: number, q = 1) {
-	return filter(rawAudio, "notch", centerFrequency, 0, q)
+export function createNotchFilter(sampleRate: number, centerFrequency: number, q = 1) {
+	return createFilter("notch", sampleRate, centerFrequency, q, 0)
 }
 
-export function allpassFilter(rawAudio: RawAudio, centerFrequency: number, q = 1) {
-	return filter(rawAudio, "allpass", centerFrequency, 0, q)
+export function createAllpassFilter(sampleRate: number, centerFrequency: number, q = 1) {
+	return createFilter("allpass", sampleRate, centerFrequency, q, 0)
 }
 
-export function filter(rawAudio: RawAudio, filterType: FilterType, frequency: number, gain: number, q: number) {
-	const sampleRate = rawAudio.sampleRate
-	const filteredAudio: RawAudio = { audioChannels: [], sampleRate }
+export function createFilter(filterType: FilterType, sampleRate: number, frequency: number, q: number, gain: number) {
+	const coefficients = getFilterCoefficients(filterType, sampleRate, frequency, q, gain)
 
-	const coefficients = createFilter(filterType, sampleRate, frequency, q, gain)
+	return new BiquadFilter(coefficients)
+}
 
-	for (let channelIndex = 0; channelIndex < rawAudio.audioChannels.length; channelIndex++) {
-		const channelSamples = rawAudio.audioChannels[channelIndex]
+export class BiquadFilter {
+	private b0: number
+	private b1: number
+	private b2: number
+	private a1: number
+	private a2: number
 
-		const filteredSamples = filterUsingCoefficients(channelSamples, coefficients)
+	private prevSample1 = 0
+	private prevSample2 = 0
 
-		filteredAudio.audioChannels.push(filteredSamples)
+	private prevFilteredSample1 = 0
+	private prevFilteredSample2 = 0
+
+	constructor(coefficients: FilterCoefficients) {
+		this.b0 = coefficients.b0
+		this.b1 = coefficients.b1
+		this.b2 = coefficients.b2
+		this.a1 = coefficients.a1
+		this.a2 = coefficients.a2
 	}
 
-	return filteredAudio
-}
+	step(sample: number): number {
+		const filteredSample =
+			(this.b0 * sample) +
+			(this.b1 * this.prevSample1) +
+			(this.b2 * this.prevSample2) -
+			(this.a1 * this.prevFilteredSample1) -
+			(this.a2 * this.prevFilteredSample2)
 
-export function filterUsingCoefficients(samples: Float32Array, filterCoefficients: FilterCoefficients) {
-	const sampleCount = samples.length
-	const filteredSamples = new Float32Array(sampleCount)
+		this.prevSample2 = this.prevSample1
+		this.prevSample1 = sample
 
-	if (sampleCount < 2) {
-		return filteredSamples
+		this.prevFilteredSample2 = this.prevFilteredSample1
+		this.prevFilteredSample1 = filteredSample
+
+		return filteredSample
 	}
 
-	const b0 = filterCoefficients.b0
-	const b1 = filterCoefficients.b1
-	const b2 = filterCoefficients.b2
-	const a1 = filterCoefficients.a1
-	const a2 = filterCoefficients.a2
-
-	// Prime the pump. (Assumes the signal has length >= 2!)
-	filteredSamples[0] = b0 * samples[0]
-	filteredSamples[1] = (b0 * samples[1]) + (b1 * samples[0]) - (a1 * filteredSamples[0])
-
-	// Filter
-	for (let i = 2; i < sampleCount; i++) {
-		filteredSamples[i] =
-			(b0 * samples[i]) +
-			(b1 * samples[i - 1]) +
-			(b2 * samples[i - 2]) -
-			(a1 * filteredSamples[i - 1]) -
-			(a2 * filteredSamples[i - 2])
+	apply(samples: Float32Array) {
+		for (let i = 0; i < samples.length; i++) {
+			samples[i] = this.step(samples[i])
+		}
 	}
-
-	return filteredSamples
 }
 
-export function createFilter(filterType: FilterType, sampleRate: number, centerFrequency: number, q: number, gain: number) {
+export function getFilterCoefficients(filterType: FilterType, sampleRate: number, centerFrequency: number, q: number, gain: number) {
 	const nyquistFrequency = sampleRate / 2
 	const freqRatio = clip(centerFrequency / nyquistFrequency, 0, 1)
 
-	return filterCreatorFunction[filterType](freqRatio, q, gain)
+	return filterCoefficientsFunction[filterType](freqRatio, q, gain) as FilterCoefficients
 }
 
 // Lowpass filter.
-export function createLowpassFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+export function getLowpassFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
@@ -135,7 +135,7 @@ export function createLowpassFilter(freqRatio: number, q: number, gain: number):
 	return normalizeFilterCoefficients(b0, b1, b2, a0, a1, a2)
 }
 
-function createHighpassFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getHighpassFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
@@ -178,13 +178,14 @@ function createHighpassFilter(freqRatio: number, q: number, gain: number): Filte
 	return normalizeFilterCoefficients(b0, b1, b2, a0, a1, a2)
 }
 
-function createBandpassFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getBandpassFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	if (freqRatio > 0 && freqRatio < 1) {
@@ -217,7 +218,7 @@ function createBandpassFilter(freqRatio: number, q: number, gain: number): Filte
 	return coefficients
 }
 
-function createLowShelfFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getLowShelfFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	// q not used
 	let b0: number
 	let b1: number
@@ -225,6 +226,7 @@ function createLowShelfFilter(freqRatio: number, q: number, gain: number): Filte
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	const S = 1
@@ -257,7 +259,7 @@ function createLowShelfFilter(freqRatio: number, q: number, gain: number): Filte
 	return coefficients
 }
 
-function createHighShelfFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getHighShelfFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	// q not used
 	let b0: number
 	let b1: number
@@ -265,6 +267,7 @@ function createHighShelfFilter(freqRatio: number, q: number, gain: number): Filt
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	const A = Math.pow(10, gain / 40)
@@ -297,13 +300,14 @@ function createHighShelfFilter(freqRatio: number, q: number, gain: number): Filt
 	return coefficients
 }
 
-function createPeakingFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getPeakingFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	const A = Math.pow(10, gain / 40)
@@ -336,13 +340,14 @@ function createPeakingFilter(freqRatio: number, q: number, gain: number): Filter
 	return coefficients
 }
 
-function createNotchFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getNotchFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	if (freqRatio > 0 && freqRatio < 1) {
@@ -357,6 +362,7 @@ function createNotchFilter(freqRatio: number, q: number, gain: number): FilterCo
 			a0 = 1 + alpha
 			a1 = -2 * k
 			a2 = 1 - alpha
+
 			coefficients = normalizeFilterCoefficients(b0, b1, b2, a0, a1, a2)
 		} else {
 			// When q = 0, we get a divide by zero above.  The limit of the
@@ -372,13 +378,14 @@ function createNotchFilter(freqRatio: number, q: number, gain: number): FilterCo
 	return coefficients
 }
 
-function createAllpassFilter(freqRatio: number, q: number, gain: number): FilterCoefficients {
+function getAllpassFilterCoefficients(freqRatio: number, q: number, gain: number): FilterCoefficients {
 	let b0: number
 	let b1: number
 	let b2: number
 	let a0: number
 	let a1: number
 	let a2: number
+
 	let coefficients: FilterCoefficients
 
 	if (freqRatio > 0 && freqRatio < 1) {
@@ -393,6 +400,7 @@ function createAllpassFilter(freqRatio: number, q: number, gain: number): Filter
 			a0 = 1 + alpha
 			a1 = -2 * k
 			a2 = 1 - alpha
+
 			coefficients = normalizeFilterCoefficients(b0, b1, b2, a0, a1, a2)
 		} else {
 			// q = 0
@@ -426,20 +434,25 @@ export function bandwidthToQFactor(bandwidth: number) {
 
 export function qFactorToBandwidth(q: number) {
 	const bandwidth = (2 / Math.log(2)) * Math.asinh(1 / (2 * q))
+
 	return bandwidth
+}
+
+export function clip(num: number, min: number, max: number) {
+	return Math.max(min, Math.min(max, num))
 }
 
 // Map the filter type name to a function that computes the filter coefficents
 // for the given filter type.
-const filterCreatorFunction: { [name in FilterType]: Function } = {
-	'lowpass': createLowpassFilter,
-	'highpass': createHighpassFilter,
-	'bandpass': createBandpassFilter,
-	'lowshelf': createLowShelfFilter,
-	'highshelf': createHighShelfFilter,
-	'peaking': createPeakingFilter,
-	'notch': createNotchFilter,
-	'allpass': createAllpassFilter
+const filterCoefficientsFunction: { [name in FilterType]: Function } = {
+	'lowpass': getLowpassFilterCoefficients,
+	'highpass': getHighpassFilterCoefficients,
+	'bandpass': getBandpassFilterCoefficients,
+	'lowshelf': getLowShelfFilterCoefficients,
+	'highshelf': getHighShelfFilterCoefficients,
+	'peaking': getPeakingFilterCoefficients,
+	'notch': getNotchFilterCoefficients,
+	'allpass': getAllpassFilterCoefficients
 }
 
 export const filterTypeName: { [name in FilterType]: string } = {
