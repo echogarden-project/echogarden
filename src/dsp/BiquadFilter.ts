@@ -49,39 +49,35 @@ export function createFilter(filterType: FilterType, sampleRate: number, frequen
 }
 
 export class BiquadFilter {
-	private b0: number
-	private b1: number
-	private b2: number
-	private a1: number
-	private a2: number
+	private b0 = 0
+	private b1 = 0
+	private b2 = 0
+	private a1 = 0
+	private a2 = 0
 
-	private prevSample1 = 0
-	private prevSample2 = 0
+	private prevInput1 = 0
+	private prevInput2 = 0
 
-	private prevFilteredSample1 = 0
-	private prevFilteredSample2 = 0
+	private prevOutput1 = 0
+	private prevOutput2 = 0
 
 	constructor(coefficients: FilterCoefficients) {
-		this.b0 = coefficients.b0
-		this.b1 = coefficients.b1
-		this.b2 = coefficients.b2
-		this.a1 = coefficients.a1
-		this.a2 = coefficients.a2
+		this.setCoefficients(coefficients)
 	}
 
 	step(sample: number): number {
 		const filteredSample =
 			(this.b0 * sample) +
-			(this.b1 * this.prevSample1) +
-			(this.b2 * this.prevSample2) -
-			(this.a1 * this.prevFilteredSample1) -
-			(this.a2 * this.prevFilteredSample2)
+			(this.b1 * this.prevInput1) +
+			(this.b2 * this.prevInput2) -
+			(this.a1 * this.prevOutput1) -
+			(this.a2 * this.prevOutput2)
 
-		this.prevSample2 = this.prevSample1
-		this.prevSample1 = sample
+		this.prevInput2 = this.prevInput1
+		this.prevInput1 = sample
 
-		this.prevFilteredSample2 = this.prevFilteredSample1
-		this.prevFilteredSample1 = filteredSample
+		this.prevOutput2 = this.prevOutput1
+		this.prevOutput1 = filteredSample
 
 		return filteredSample
 	}
@@ -91,11 +87,26 @@ export class BiquadFilter {
 			samples[i] = this.step(samples[i])
 		}
 	}
+
+	reset() {
+		this.prevInput1 = 0
+		this.prevInput2 = 0
+		this.prevOutput1 = 0
+		this.prevOutput2 = 0
+	}
+
+	setCoefficients(coefficients: FilterCoefficients) {
+		this.b0 = coefficients.b0
+		this.b1 = coefficients.b1
+		this.b2 = coefficients.b2
+		this.a1 = coefficients.a1
+		this.a2 = coefficients.a2
+	}
 }
 
 export function getFilterCoefficients(filterType: FilterType, sampleRate: number, centerFrequency: number, q: number, gain: number) {
 	const nyquistFrequency = sampleRate / 2
-	const freqRatio = clip(centerFrequency / nyquistFrequency, 0, 1)
+	const freqRatio = clamp(centerFrequency / nyquistFrequency, 0, 1)
 
 	return filterCoefficientsFunction[filterType](freqRatio, q, gain) as FilterCoefficients
 }
@@ -438,7 +449,7 @@ export function qFactorToBandwidth(q: number) {
 	return bandwidth
 }
 
-export function clip(num: number, min: number, max: number) {
+export function clamp(num: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, num))
 }
 
