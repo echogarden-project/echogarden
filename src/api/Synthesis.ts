@@ -438,7 +438,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			const espeakRate = engineOptions.rate || speed * 150
 			const espeakPitch = engineOptions.pitch || options.pitch! * 50
 			const espeakPitchRange = engineOptions.pitchRange || options.pitchVariation! * 50
-			const klattEnabled = engineOptions.klatt || false
+			const espeakUseKlatt = engineOptions.useKlatt || false
 
 			const espeakOptions: EspeakOptions = {
 				voice: espeakVoice,
@@ -446,7 +446,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				rate: espeakRate,
 				pitch: espeakPitch,
 				pitchRange: espeakPitchRange,
-				klatt: klattEnabled
+				useKlatt: espeakUseKlatt
 			}
 
 			if (inputIsSSML) {
@@ -1004,7 +1004,7 @@ export interface SynthesisOptions {
 		rate?: number
 		pitch?: number
 		pitchRange?: number
-		klatt?: boolean
+		useKlatt?: boolean
 	}
 
 	sam?: {
@@ -1137,7 +1137,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		rate: undefined,
 		pitch: undefined,
 		pitchRange: undefined,
-		klatt: false
+		useKlatt: false
 	},
 
 	sam: {

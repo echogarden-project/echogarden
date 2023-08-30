@@ -72,7 +72,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			customLexiconPaths: options.customLexiconPaths,
 
 			espeak: {
-				klatt: false
+				useKlatt: false
 			}
 		}
 
@@ -161,7 +161,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
-			const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, klatt: false }
+			const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, useKlatt: false }
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 

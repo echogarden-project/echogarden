@@ -180,7 +180,7 @@
             "pitchRange": {
               "type": "number"
             },
-            "klatt": {
+            "useKlatt": {
               "type": "boolean"
             }
           },
@@ -972,7 +972,7 @@
             "pitchRange": {
               "type": "number"
             },
-            "klatt": {
+            "useKlatt": {
               "type": "boolean"
             }
           },

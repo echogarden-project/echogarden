@@ -100,7 +100,7 @@ export class VitsTTS {
 
 		logger.end()
 
-		const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, klatt: false }
+		const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, useKlatt: false }
 		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, languageCode, espeakOptions, lexicons)
 
 		if (phonemizedSentence.length == 0) {

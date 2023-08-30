@@ -375,7 +375,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 
 	logger.start("Synthesize with eSpeak")
 
-	if (espeakOptions.klatt) {
+	if (espeakOptions.useKlatt) {
 		await setVoice(`${espeakOptions.voice}+klatt6`)
 	} else {
 		await setVoice(espeakOptions.voice)
@@ -508,7 +508,7 @@ export interface EspeakOptions {
 	rate: number
 	pitch: number
 	pitchRange: number
-	klatt: boolean
+	useKlatt: boolean
 }
 
 export const defaultEspeakOptions: EspeakOptions = {
@@ -517,7 +517,7 @@ export const defaultEspeakOptions: EspeakOptions = {
 	rate: 1.0,
 	pitch: 1.0,
 	pitchRange: 1.0,
-	klatt: false
+	useKlatt: false
 }
 
 export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
