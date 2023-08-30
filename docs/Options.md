@@ -53,10 +53,11 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
 
-**eSpeak-ng**:
+**eSpeak**:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
 * `espeak.pitch`: pitch, in eSpeak units. Overrides `pitch` when set
 * `espeak.pitchRange`: pitch range, in eSpeak units. Overrides `pitchVariation` when set
+* `espeak.klatt`: enable or disable Klatt synthesis. Defaults to `false`
 
 **SAM**:
 * `sam.pitch`: pitch value, between `0`..`255`. Overrides `pitch` when set
