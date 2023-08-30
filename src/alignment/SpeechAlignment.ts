@@ -1,4 +1,3 @@
-import { splitToWords } from "../nlp/Segmentation.js"
 import { clip } from "../utilities/Utilities.js"
 
 import * as API from "../api/API.js"
@@ -8,11 +7,10 @@ import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from "./DTWMfccSequenceAlign
 import { Logger } from "../utilities/Logger.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
 import { getRawAudioDuration, RawAudio } from "../audio/AudioUtilities.js"
-import { preprocessAndSynthesize } from "../synthesis/EspeakTTS.js"
-import { Lexicon } from "../nlp/Lexicon.js"
+import { EspeakOptions } from "../synthesis/EspeakTTS.js"
 import chalk from "chalk"
 
-export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, windowDurations: number[], granularities: DtwGranularity[]) {
+export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[]) {
 	const logger = new Logger()
 
 	if (windowDurations.length == 0) {
@@ -124,7 +122,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, espeakVoice: string, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation", windowDurations: number[], granularities: DtwGranularity[]) {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[], espeakOptions: EspeakOptions, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation") {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
@@ -150,7 +148,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 	logger.start("Synthesize recognized transcript with eSpeak")
 	const recognizedWords = recognitionTimeline.map(entry => entry.text)
 
-	const { rawAudio: synthesizedRecognizedTranscriptRawAudio, timeline: synthesizedRecognitionTimeline } = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakVoice)
+	const { rawAudio: synthesizedRecognizedTranscriptRawAudio, timeline: synthesizedRecognitionTimeline } = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakOptions)
 
 	let recognitionTimelineWithPhones: Timeline
 
@@ -200,7 +198,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 
 	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
 	// Align the synthesized recognized transcript to the synthesized reference transcript
-	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, windowDurations, granularities)
+	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, granularities, windowDurations)
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 
@@ -360,27 +358,7 @@ export async function alignPhoneTimelines(sourceRawAudio: RawAudio, sourceWordTi
 	return alignedWordTimeline
 }
 
-export async function createAlignmentReferenceUsingEspeakPreprocessed(text: string, language: string, voice: string, lexicons?: Lexicon[], rate?: number, pitch?: number, pitchRange?: number) {
-	const { referenceSynthesizedAudio, referenceTimeline } = await preprocessAndSynthesize(text, voice, language, lexicons, rate, pitch, pitchRange)
-
-	const wordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
-
-	return { rawAudio: referenceSynthesizedAudio, timeline: wordTimeline }
-}
-
-export async function createAlignmentReferenceUsingEspeak(text: string, language: string, voice: string, insertSeparators = true, rate?: number, pitch?: number, pitchRange?: number) {
-	const progressLogger = new Logger()
-
-	progressLogger.start("Segment text to words")
-
-	const fragments = await splitToWords(text, language)
-
-	progressLogger.end()
-
-	return createAlignmentReferenceUsingEspeakForFragments(fragments, voice, insertSeparators, rate, pitch, pitchRange)
-}
-
-export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], voice: string, insertSeparators = true, rate?: number, pitch?: number, pitchRange?: number) {
+export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = true) {
 	const progressLogger = new Logger()
 
 	progressLogger.start("Load espeak module")
@@ -388,7 +366,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 
 	progressLogger.start("Create alignment reference with eSpeak")
 
-	const result = await Espeak.synthesizeFragments(fragments, voice, insertSeparators, rate, pitch, pitchRange)
+	const result = await Espeak.synthesizeFragments(fragments, espeakOptions, insertSeparators)
 
 	result.timeline = result.timeline.flatMap(clause => clause.timeline!)
 

@@ -16,7 +16,7 @@ const log = logToStderr
 let espeakInstance: any
 let espeakModule: any
 
-export async function preprocessAndSynthesize(text: string, espeakVoice: string, language: string, lexicons: Lexicon[] = [], rate?: number, pitch?: number, pitchRange?: number) {
+export async function preprocessAndSynthesize(text: string, language: string, espeakOptions: EspeakOptions, lexicons: Lexicon[] = []) {
 	const logger = new Logger()
 
 	await logger.startAsync("Tokenize and analyze text")
@@ -50,8 +50,8 @@ export async function preprocessAndSynthesize(text: string, espeakVoice: string,
 		}
 
 		phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
-		const referenceIPA = (await textToPhonemes(fragment, espeakVoice, true)).replaceAll("_", " ")
-		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakVoice, false)).replaceAll("_", "")
+		const referenceIPA = (await textToPhonemes(fragment, espeakOptions.voice, true)).replaceAll("_", " ")
+		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakOptions.voice, false)).replaceAll("_", "")
 
 		const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
 
@@ -67,7 +67,7 @@ export async function preprocessAndSynthesize(text: string, espeakVoice: string,
 
 	logger.start("Synthesize preprocessed fragments with eSpeak")
 
-	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakVoice, false, rate, pitch, pitchRange)
+	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakOptions)
 
 	await logger.startAsync("Build phonemized tokens")
 
@@ -113,7 +113,7 @@ export async function preprocessAndSynthesize(text: string, espeakVoice: string,
 	return { referenceSynthesizedAudio, referenceTimeline, fragments, preprocessedFragments, phonemizedFragmentsSubstitutions, phonemizedSentence }
 }
 
-export async function synthesizeFragments(fragments: string[], voice: string, insertSeparators = false, rate?: number, pitch?: number, pitchRange?: number) {
+export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = false) {
 	const logger = new Logger()
 
 	const sampleRate = await getSampleRate()
@@ -140,19 +140,19 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 			.replaceAll(">", "&gt;")
 
 		if (insertSeparators) {
-			textWithMarkers += `<mark name="wordstart-${i}"/> | ${fragment} | <mark name="wordend-${i}"/>`
+			textWithMarkers += `<mark name="s-${i}"/> | ${fragment} | <mark name="e-${i}"/>`
 		} else {
 			if (fragment.endsWith(".")) {
 				fragment += " ()"
 			}
 
-			textWithMarkers += `<mark name="wordstart-${i}"/>${fragment}<mark name="wordend-${i}"/> `
+			textWithMarkers += `<mark name="s-${i}"/>${fragment}<mark name="e-${i}"/> `
 		}
 	}
 
 	//log(textWithMarkers)
 
-	const { rawAudio, events } = await synthesize(textWithMarkers, voice, true, rate, pitch, pitchRange)
+	const { rawAudio, events } = await synthesize(textWithMarkers, { ...espeakOptions, ssml: true })
 
 	// Build word timeline from events
 	const wordTimeline: Timeline = fragments.map(word => ({
@@ -223,8 +223,8 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 		} else if (event.type == "mark") {
 			const markerName = event.id! as string
 
-			if (markerName.startsWith("wordstart-")) {
-				const markerIndex = parseInt(markerName.substring(10))
+			if (markerName.startsWith("s-")) {
+				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
 					throw new Error(`Word start marker for index ${wordIndex} is not consistent with word index. The words were: ${objToString(fragments)}`)
@@ -236,8 +236,8 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 
 				currentWordEntry.startTime = eventTime
 				currentTokenEntry.startTime = eventTime
-			} else if (markerName.startsWith("wordend-")) {
-				const markerIndex = parseInt(markerName.substring(8))
+			} else if (markerName.startsWith("e-")) {
+				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
 					throw new Error(`Word end marker for index ${wordIndex} is not consistent with word index. The words were: ${objToString(fragments)}`)
@@ -279,7 +279,7 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 			continue
 		}
 
-		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, voice, true)).split("_")
+		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, espeakOptions.voice, true)).split("_")
 
 		const wordReferenceIPA = wordReferencePhonemes.join(" ")
 
@@ -358,11 +358,11 @@ export async function synthesizeFragments(fragments: string[], voice: string, in
 	return { rawAudio, timeline: clauseTimeline, events }
 }
 
-export async function synthesize(text: string, voice: string, ssmlEnabled: boolean, rate = 150, pitch = 50, pitchRange = 50) {
+export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	const logger = new Logger()
 	logger.start("Get espeak WASM instance")
 
-	if (!ssmlEnabled) {
+	if (!espeakOptions.ssml) {
 		const { escape } = await import('html-escaper')
 
 		text = escape(text)
@@ -375,10 +375,15 @@ export async function synthesize(text: string, voice: string, ssmlEnabled: boole
 
 	logger.start("Synthesize with eSpeak")
 
-	await setVoice(voice)
-	await setRate(rate)
-	await setPitch(pitch)
-	await setPitchRange(pitchRange)
+	if (espeakOptions.klatt) {
+		await setVoice(`${espeakOptions.voice}+klatt6`)
+	} else {
+		await setVoice(espeakOptions.voice)
+	}
+
+	await setRate(espeakOptions.rate)
+	await setPitch(espeakOptions.pitch)
+	await setPitchRange(espeakOptions.pitchRange)
 
 	instance.synthesize(text, (samples: Int16Array, events: EspeakEvent[]) => {
 		if (samples && samples.length > 0) {
@@ -497,13 +502,22 @@ export interface EspeakEvent {
 	word_length: number
 	id?: string | number
 }
+export interface EspeakOptions {
+	voice: string
+	ssml: boolean
+	rate: number
+	pitch: number
+	pitchRange: number
+	klatt: boolean
+}
 
-type SynthesisOptions = {
-	format?: 'int16' | 'float32'
-	channels?: 1 | 2
-	ssml?: boolean
-	phonemes?: boolean
-	endpause?: boolean
+export const defaultEspeakOptions: EspeakOptions = {
+	voice: 'en-us',
+	ssml: false,
+	rate: 1.0,
+	pitch: 1.0,
+	pitchRange: 1.0,
+	klatt: false
 }
 
 export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
@@ -515,7 +529,7 @@ export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
 		word.map(phoneme =>
 			ipaPhoneToKirshenbaum(phoneme)).join("")).map(word => ` [[${word}]] `)
 
-	const { rawAudio, timeline } = await synthesizeFragments(fragments, 'en-us')
+	const { rawAudio, timeline } = await synthesizeFragments(fragments, defaultEspeakOptions)
 
 	await playAudioWithTimelinePhones(rawAudio, timeline)
 }

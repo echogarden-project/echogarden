@@ -179,6 +179,9 @@
             },
             "pitchRange": {
               "type": "number"
+            },
+            "klatt": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false
@@ -968,6 +971,9 @@
             },
             "pitchRange": {
               "type": "number"
+            },
+            "klatt": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false

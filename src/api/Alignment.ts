@@ -13,6 +13,7 @@ import chalk from "chalk"
 import { DtwGranularity } from "../alignment/SpeechAlignment.js"
 import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
 import { synthesize } from "./API.js"
+import { EspeakOptions, defaultEspeakOptions } from "../synthesis/EspeakTTS.js"
 
 const log = logToStderr
 
@@ -71,6 +72,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			customLexiconPaths: options.customLexiconPaths,
 
 			espeak: {
+				klatt: false
 			}
 		}
 
@@ -127,7 +129,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
-			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, windowDurations, granularities)
+			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, granularities, windowDurations)
 
 			break
 		}
@@ -157,11 +159,13 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			logger.end()
 
-			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
-
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
-			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, espeakVoice, phoneAlignmentMethod, windowDurations, granularities)
+			const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, klatt: false }
+
+			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
+
+			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, granularities, windowDurations, espeakOptions, phoneAlignmentMethod)
 
 			break
 		}

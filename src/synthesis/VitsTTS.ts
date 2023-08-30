@@ -6,6 +6,7 @@ import { Lexicon } from "../nlp/Lexicon.js"
 import { Timeline } from "../utilities/Timeline.js"
 import { readAndParseJsonFile, readdir } from "../utilities/FileSystem.js"
 import path from 'node:path'
+import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 
@@ -82,7 +83,7 @@ export class VitsTTS {
 
 		const metadata = this.metadata
 		const phonemeMap = this.phonemeMap!
-		const espeakVoice = metadata.espeak.voice
+		const espeakVoice = metadata.espeak.voice as string
 		const languageCode = espeakVoice
 		const outputSampleRate = metadata.audio.sample_rate
 		const baseLengthScale = metadata.inference.length_scale || 1.0
@@ -99,7 +100,8 @@ export class VitsTTS {
 
 		logger.end()
 
-		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, espeakVoice, languageCode, lexicons)
+		const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, klatt: false }
+		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, languageCode, espeakOptions, lexicons)
 
 		if (phonemizedSentence.length == 0) {
 			logger.end()
@@ -192,7 +194,7 @@ export class VitsTTS {
 		const referenceWordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
 
 		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
-		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, [dtwWindowDuration], ['high'])
+		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, ['high'], [dtwWindowDuration])
 
 		logger.end()
 

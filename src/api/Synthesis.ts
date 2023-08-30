@@ -21,6 +21,7 @@ import { EngineMetadata, appName } from "./Common.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
 import chalk from "chalk"
 import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { type EspeakOptions } from "../synthesis/EspeakTTS.js"
 
 const log = logToStderr
 
@@ -435,13 +436,23 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			const espeakVoice = voice
 			const espeakLanguage = selectedVoice.languages[0]
 			const espeakRate = engineOptions.rate || speed * 150
-			const espeakPitch = engineOptions.pitch
+			const espeakPitch = engineOptions.pitch || options.pitch! * 50
 			const espeakPitchRange = engineOptions.pitchRange || options.pitchVariation! * 50
+			const klattEnabled = engineOptions.klatt || false
+
+			const espeakOptions: EspeakOptions = {
+				voice: espeakVoice,
+				ssml: inputIsSSML,
+				rate: espeakRate,
+				pitch: espeakPitch,
+				pitchRange: espeakPitchRange,
+				klatt: klattEnabled
+			}
 
 			if (inputIsSSML) {
 				logger.end()
 
-				const { rawAudio } = await EspeakTTS.synthesize(text, espeakVoice, true, espeakRate, espeakPitch, espeakPitchRange)
+				const { rawAudio } = await EspeakTTS.synthesize(text, espeakOptions)
 
 				synthesizedAudio = rawAudio
 			} else {
@@ -449,7 +460,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 				logger.end()
 
-				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(text, espeakVoice, espeakLanguage, lexicons, espeakRate, espeakPitch, espeakPitchRange)
+				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(text, espeakLanguage, espeakOptions, lexicons)
 
 				synthesizedAudio = referenceSynthesizedAudio
 				timeline = referenceTimeline.flatMap(clause => clause.timeline!)
@@ -990,9 +1001,10 @@ export interface SynthesisOptions {
 	}
 
 	espeak?: {
-		rate?: number,
-		pitch?: number,
+		rate?: number
+		pitch?: number
 		pitchRange?: number
+		klatt?: boolean
 	}
 
 	sam?: {
@@ -1124,7 +1136,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	espeak: {
 		rate: undefined,
 		pitch: undefined,
-		pitchRange: undefined
+		pitchRange: undefined,
+		klatt: false
 	},
 
 	sam: {
