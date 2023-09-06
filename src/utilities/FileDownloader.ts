@@ -19,6 +19,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	await ensureDir(tempDirPath)
 
 	await downloadFile(options, tempTarballPath, `${chalk.cyanBright('Downloading')} ${chalk.greenBright(displayName)}`)
+	logger.end()
 
 	logger.start(`Extracting ${displayName}`)
 
