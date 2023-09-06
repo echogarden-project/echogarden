@@ -3,7 +3,7 @@ import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
 
 let speexResamplerInstance: any
 
-export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: number, quality = 0) {
+export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: number, quality = 1) {
 	const channelCount = rawAudio.audioChannels.length
 	const inSampleRate = rawAudio.sampleRate
 
@@ -35,18 +35,21 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 	for (let channelIndex = 0; channelIndex < channelCount; channelIndex++) {
 		const channelSamples = rawAudio.audioChannels[channelIndex]
 
+		const inputLatency = m._speex_resampler_get_input_latency(resamplerState)
+		const outputLatency = m._speex_resampler_get_output_latency(resamplerState)
+
 		const inSampleCount = channelSamples.length
 		const inSampleCountRef = wasmMemory.allocInt32()
-		inSampleCountRef.value = inSampleCount
+		inSampleCountRef.value = inSampleCount + inputLatency
+
+		const inSamplesRef = wasmMemory.allocFloat32Array(inSampleCountRef.value)
+		inSamplesRef.view.set(channelSamples)
 
 		const outSampleCount = Math.floor((inSampleCount / inSampleRate) * outSampleRate)
 		const outSampleCountRef = wasmMemory.allocInt32()
-		outSampleCountRef.value = outSampleCount
+		outSampleCountRef.value = outSampleCount + outputLatency
 
-		const inSamplesRef = wasmMemory.allocFloat32Array(inSampleCount)
-		inSamplesRef.view.set(channelSamples)
-
-		const outSamplesRef = wasmMemory.allocFloat32Array(outSampleCount)
+		const outSamplesRef = wasmMemory.allocFloat32Array(outSampleCountRef.value)
 
 		resultCode = m._speex_resampler_process_float(resamplerState, channelIndex, inSamplesRef.address, inSampleCountRef.address, outSamplesRef.address, outSampleCountRef.address)
 
@@ -54,7 +57,9 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 			throw new Error(`Speex resampler failed while resampling with code ${resultCode}: ${speexResultCodeToString(resultCode)}`)
 		}
 
-		resampledAudio.audioChannels.push(outSamplesRef.view.slice())
+		const resampledChannelAudio = outSamplesRef.view.slice(outputLatency)
+
+		resampledAudio.audioChannels.push(resampledChannelAudio)
 	}
 
 	m._speex_resampler_destroy(resamplerState)
