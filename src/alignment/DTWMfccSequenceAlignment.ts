@@ -6,7 +6,7 @@ const log = logToStderr
 
 export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunction: "eucledian" | "cosine" = "eucledian", centerIndexes?: number[]) {
 	if (distanceFunction == "eucledian") {
-		const { path } = await alignDTWWindowed(
+		const { path } = alignDTWWindowed(
 			mfccFrames1,
 			mfccFrames2,
 			eucledianDistance,
@@ -22,7 +22,7 @@ export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number
 		const magnitudes1 = mfccFrames1.map(magnitude)
 		const magnitudes2 = mfccFrames2.map(magnitude)
 
-		const { path } = await alignDTWWindowed(
+		const { path } = alignDTWWindowed(
 			indexes1,
 			indexes2,
 			(i, j) => cosineDistancePrecomputedMagnitudes(mfccFrames1[i], mfccFrames2[j], magnitudes1[i], magnitudes2[j]),
@@ -38,5 +38,6 @@ export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number
 
 export function getCostMatrixMemorySizeMB(sequence1Length: number, sequence2Length: number, windowLength: number) {
 	const costMatrixMemorySizeMB = sequence1Length * Math.min(sequence2Length, windowLength) * 4 / 1000000
+	
 	return costMatrixMemorySizeMB
 }
