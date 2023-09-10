@@ -3,7 +3,7 @@ import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
 
 let speexResamplerInstance: any
 
-export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: number, quality = 1) {
+export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: number, quality = 0) {
 	const channelCount = rawAudio.audioChannels.length
 	const inSampleRate = rawAudio.sampleRate
 
