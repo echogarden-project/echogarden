@@ -9,7 +9,7 @@ import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normal
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
 import { Logger, resetActiveLogger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
-import { encodeFromChannels, FFMpegOutputOptions, getDefaultFFMpegOptionsForSpeech } from "../codecs/FFMpegTranscoder.js"
+import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from "../codecs/FFMpegTranscoder.js"
 import path, { parse as parsePath } from "node:path"
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
