@@ -17,10 +17,34 @@ export function decodeWaveBuffer(waveFileBuffer: Buffer, ignoreTruncatedChunks =
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Audio trimming
 ////////////////////////////////////////////////////////////////////////////////////////////////
-export function trimAudioStart(audioSamples: Float32Array, targetStartSilenceSampleCount = 0, amplitudeThreshold = -40) {
-	let silentSampleCount = 0
+const defaultSilenceThresholdDecibels = -40
 
-	const minSampleValue = decibelsToPower(amplitudeThreshold)
+export function trimAudioStart(audioSamples: Float32Array, targetStartSilentSampleCount = 0, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
+	const silentSampleCount = getStartingSilentSampleCount(audioSamples, amplitudeThresholdDecibels)
+
+	const trimmedAudio = audioSamples.subarray(silentSampleCount, audioSamples.length)
+	const restoredSilence = new Float32Array(targetStartSilentSampleCount)
+
+	const trimmedAudioSamples = concatFloat32Arrays([restoredSilence, trimmedAudio])
+
+	return trimmedAudioSamples
+}
+
+export function trimAudioEnd(audioSamples: Float32Array, targetEndSilentSampleCount = 0, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
+	const silentSampleCount = getEndingSilentSampleCount(audioSamples, amplitudeThresholdDecibels)
+
+	const trimmedAudio = audioSamples.subarray(0, audioSamples.length - silentSampleCount)
+	const restoredSilence = new Float32Array(targetEndSilentSampleCount)
+
+	const trimmedAudioSamples = concatFloat32Arrays([trimmedAudio, restoredSilence])
+
+	return trimmedAudioSamples
+}
+
+export function getStartingSilentSampleCount(audioSamples: Float32Array, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
+	const minSampleValue = decibelsToGain(amplitudeThresholdDecibels)
+
+	let silentSampleCount = 0
 
 	for (let i = 0; i < audioSamples.length - 1; i++) {
 		if (Math.abs(audioSamples[i]) > minSampleValue) {
@@ -30,31 +54,23 @@ export function trimAudioStart(audioSamples: Float32Array, targetStartSilenceSam
 		silentSampleCount += 1
 	}
 
-	const trimmedAudio = audioSamples.subarray(silentSampleCount, audioSamples.length)
-	const restoredSilence = new Float32Array(targetStartSilenceSampleCount)
-
-	const trimmedAudioSamples = concatFloat32Arrays([restoredSilence, trimmedAudio])
-
-	return trimmedAudioSamples
+	return silentSampleCount
 }
 
-export function trimAudioEnd(audio: Float32Array, targetEndSilenceSampleCount = 0, amplitudeThreshold = -40) {
-	let silenceSampleCount = 0
+export function getEndingSilentSampleCount(audioSamples: Float32Array, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
+	const minSampleValue = decibelsToGain(amplitudeThresholdDecibels)
 
-	const minSampleValue = decibelsToPower(amplitudeThreshold)
+	let silentSampleCount = 0
 
-	for (let i = audio.length - 1; i >= 0; i--) {
-		if (Math.abs(audio[i]) > minSampleValue) {
+	for (let i = audioSamples.length - 1; i >= 0; i--) {
+		if (Math.abs(audioSamples[i]) > minSampleValue) {
 			break
 		}
 
-		silenceSampleCount += 1
+		silentSampleCount += 1
 	}
 
-	const trimmedAudio = audio.subarray(0, audio.length - silenceSampleCount)
-	const restoredSilence = new Float32Array(targetEndSilenceSampleCount)
-
-	return concatFloat32Arrays([trimmedAudio, restoredSilence])
+	return silentSampleCount
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,7 +256,6 @@ export function cloneRawAudio(rawAudio: RawAudio): RawAudio {
 		sampleRate: rawAudio.sampleRate
 	}
 }
-
 
 export function getSilentAudio(sampleCount: number, channelCount: number) {
 	const audioChannels: Float32Array[] = []

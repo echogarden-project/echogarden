@@ -158,7 +158,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentencetSynthesisOptions)
 
 			const endPause = sentenceIndex == sentences.length - 1 ? options.segmentEndPause! : options.sentenceEndPause!
-			sentenceRawAudio.audioChannels[0] = trimAudioEnd(sentenceRawAudio.audioChannels[0], endPause * sentenceRawAudio.sampleRate, -40)
+			sentenceRawAudio.audioChannels[0] = trimAudioEnd(sentenceRawAudio.audioChannels[0], endPause * sentenceRawAudio.sampleRate)
 
 			sentencesRawAudio.push(sentenceRawAudio)
 
@@ -820,7 +820,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	}
 
 	const preTrimSampleCount = synthesizedAudio.audioChannels[0].length
-	synthesizedAudio.audioChannels[0] = trimAudioStart(synthesizedAudio.audioChannels[0], 0, -40)
+	synthesizedAudio.audioChannels[0] = trimAudioStart(synthesizedAudio.audioChannels[0])
 
 	if (timeline) {
 		const oldDuration = preTrimSampleCount / synthesizedAudio.sampleRate

@@ -6,8 +6,8 @@ import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from "../dsp/MFCC
 import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from "./DTWMfccSequenceAlignment.js"
 import { Logger } from "../utilities/Logger.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
-import { getRawAudioDuration, RawAudio } from "../audio/AudioUtilities.js"
-import { EspeakOptions } from "../synthesis/EspeakTTS.js"
+import { getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from "../audio/AudioUtilities.js"
+import { type EspeakOptions } from "../synthesis/EspeakTTS.js"
 import chalk from "chalk"
 
 export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[]) {
@@ -104,12 +104,31 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 			innerTimeline = timelineEntry.timeline.map((entry) => getMappedTimelineEntry(entry))
 		}
 
+		// Trim silent samples from start and end of mapped entry range
+		const sourceSamplesPerFrame = Math.floor(sourceRawAudio.sampleRate / framesPerSecond)
+
+		let startSampleIndex = mappedStartFrameIndex * sourceSamplesPerFrame
+		let endSampleIndex = mappedEndFrameIndex * sourceSamplesPerFrame
+
+		const frameSamples = sourceRawAudio.audioChannels[0].subarray(startSampleIndex, endSampleIndex)
+
+		const silenceThresholdDecibels = -40
+
+		startSampleIndex += getStartingSilentSampleCount(frameSamples, silenceThresholdDecibels)
+		endSampleIndex -= getEndingSilentSampleCount(frameSamples, silenceThresholdDecibels)
+
+		endSampleIndex = Math.max(endSampleIndex, startSampleIndex)
+
+		// Build mapped timeline entry
+		const startTime = startSampleIndex / sourceRawAudio.sampleRate
+		const endTime = endSampleIndex / sourceRawAudio.sampleRate
+
 		return {
 			type: timelineEntry.type,
 			text: timelineEntry.text,
 
-			startTime: mappedStartFrameIndex / framesPerSecond,
-			endTime: mappedEndFrameIndex / framesPerSecond,
+			startTime,
+			endTime,
 
 			timeline: innerTimeline
 		}

@@ -27,7 +27,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
-	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
 

@@ -24,7 +24,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
-	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	options = extendDeep(defaultRecognitionOptions, options)
 

@@ -27,7 +27,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
-	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0], 0, -40)
+	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	options = extendDeep(defaultSpeechTranslationOptions, options)
 
