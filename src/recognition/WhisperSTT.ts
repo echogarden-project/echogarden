@@ -852,7 +852,7 @@ export class Whisper {
 		const groups: TimelineEntry[][] = []
 
 		for (const entry of timeline) {
-			if (entry.type != "word" || !isWordOrSymbolWord(entry.text)) {
+			if (entry.type != "word") {
 				continue
 			}
 
