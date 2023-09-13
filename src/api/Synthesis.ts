@@ -172,11 +172,13 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 			const sentenceTimelineWithOffset = addTimeOffsetToTimeline(sentenceTimeline, sentenceStartTime)
 
+			const sentenceEndTime = timeOffset - endPause
+
 			segmentEntry.timeline!.push({
 				type: "sentence",
 				text: sentenceText,
 				startTime: sentenceStartTime,
-				endTime: timeOffset,
+				endTime: sentenceEndTime,
 				timeline: sentenceTimelineWithOffset
 			})
 
@@ -197,7 +199,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			}
 		}
 
-		segmentEntry.endTime = timeOffset
+		segmentEntry.endTime = segmentEntry.timeline?.[segmentEntry.timeline.length - 1]?.endTime || timeOffset
 
 		logger.end()
 
