@@ -1,8 +1,8 @@
 # Echogarden
 
-Echogarden is an integrated speech system that provides a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users:
+Echogarden is an integrated speech toolset that provides a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users:
 
-* Easy to install and update
+* Easy to install, run, and update
 * Runs on Windows (x64), macOS (x64, ARM64) and Linux (x64)
 * Written in TypeScript, for the Node.js runtime
 * Doesn't require Python, Docker, or similar system-level dependencies
@@ -16,7 +16,7 @@ Echogarden is an integrated speech system that provides a variety of synthesis, 
 * Word-level timestamps for all synthesis and recognition outputs
 * Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods, including support for multi-pass (hierarchical) processing
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
-* Can translate speech in any one of 98 languages, transcribe it directly to English, and produce near word-level synchronized subtitles for the translated transcript
+* Can directly generate translated transcripts for 98 languages, transcribed directly to English, and produce near word-level synchronized subtitles for the translated transcript
 * Attempts to improve TTS pronunciation accuracy on some engines: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a rule-based model) and user-customizable pronunciation lexicons
 * Internal package system that auto-downloads and installs voices, models and other resources, as needed
 * Other features include: language detection (for both audio and text), voice activity detection, and speech denoising
@@ -46,7 +46,7 @@ npm update echogarden -g
 
 ## Interfacing with the system
 
-Currently, the software is operated mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
+Currently, the tools are accessible mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
 
 Development of more graphical and interactive tooling is [currently ongoing](https://github.com/echogarden-project/echogarden/issues/28).
 
@@ -67,7 +67,7 @@ If you are a developer, you can also [import the package as a module](docs/API.m
 
 This project consolidates, and builds upon the effort of many different individuals and companies, as well as contributing a number of original works.
 
-Designed and developed by Rotem Dan.
+Designed and developed by Rotem Dan (IPA: /ˈʁɒːtem ˈdän/).
 
 ## License
 
