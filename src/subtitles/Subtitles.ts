@@ -108,7 +108,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 	// Generate the cues from the given timeline
 	let cues: Cue[]
 
-	if (config.kind == 'segment' || config.kind == 'sentence') {
+	if (config.mode == 'segment' || config.mode == 'sentence') {
 		cues = getCuesFromTimeline_IsolateSegmentSentence(timeline, config)
 
 		// Extend cue end times to maximum duration set, if possible
@@ -120,7 +120,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 				previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
 			}
 		}
-	} else if (config.kind == 'word' || config.kind == 'phone' || config.kind == 'word-phone') {
+	} else if (config.mode == 'word' || config.mode == 'phone' || config.mode == 'word-phone') {
 		cues = getCuesFromTimeline_IsolateWordPhone(timeline, config)
 	} else {
 		throw new Error('Invalid subtitles mode.')
@@ -162,7 +162,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 	// Generate one or more cues from each segment or sentence in the timeline.
 	for (let entry of timeline) {
 		if (entry.type == 'segment' && entry.timeline?.[0].type == 'sentence') {
-			if (config.kind == 'segment') {
+			if (config.mode == 'segment') {
 				// If the mode is 'segment', flatten all sentences to a single word timeline
 				entry.timeline = entry.timeline!.flatMap(t => t.timeline!)
 			} else {
@@ -318,7 +318,7 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 		return []
 	}
 
-	const kind = config.kind!
+	const mode = config.mode!
 
 	const cues: Cue[] = []
 
@@ -327,8 +327,8 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 		const entryIsPhone = entry.type == 'phone'
 
 		const shouldIncludeEntry =
-			(entryIsWord && (kind == 'word' || kind == 'word-phone')) ||
-			(entryIsPhone && (kind == 'phone' || kind == 'word-phone'))
+			(entryIsWord && (mode == 'word' || mode == 'word-phone')) ||
+			(entryIsPhone && (mode == 'phone' || mode == 'word-phone'))
 
 		if (shouldIncludeEntry) {
 			cues.push({
@@ -433,12 +433,12 @@ export type Cue = {
 	endTime: number
 }
 
-export type SubtitlesKind = 'segment' | 'sentence' | 'word' | 'phone' | 'word-phone'
+export type SubtitlesMode = 'segment' | 'sentence' | 'word' | 'phone' | 'word-phone'
 
 export interface SubtitlesConfig {
 	format?: 'srt' | 'webvtt'
 	language?: string
-	kind?: SubtitlesKind
+	mode?: SubtitlesMode
 
 	maxLineCount?: number
 	maxLineWidth?: number
@@ -454,7 +454,7 @@ export interface SubtitlesConfig {
 
 export const defaultSubtitlesBaseConfig: SubtitlesConfig = {
 	format: 'srt',
-	kind: 'sentence',
+	mode: 'sentence',
 
 	maxLineCount: 2,
 	maxLineWidth: 42,

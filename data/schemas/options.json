@@ -525,8 +525,8 @@
         "language": {
           "type": "string"
         },
-        "kind": {
-          "$ref": "#/definitions/SubtitlesKind"
+        "mode": {
+          "$ref": "#/definitions/SubtitlesMode"
         },
         "maxLineCount": {
           "type": "number"
@@ -566,7 +566,7 @@
       },
       "additionalProperties": false
     },
-    "SubtitlesKind": {
+    "SubtitlesMode": {
       "type": "string",
       "enum": [
         "segment",
