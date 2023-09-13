@@ -1,7 +1,7 @@
 {
 	"name": "echogarden",
-	"version": "0.11.13",
-	"description": "An integrated speech system, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
+	"version": "0.11.14",
+	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
 	"keywords": [
