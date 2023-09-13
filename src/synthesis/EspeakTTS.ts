@@ -6,7 +6,7 @@ import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
 import { playAudioWithTimelinePhones } from "../audio/AudioPlayer.js"
 import { getNormalizedFragmentsForSpeech } from "../nlp/TextNormalizer.js"
 import { ipaPhoneToKirshenbaum } from "../nlp/PhoneConversion.js"
-import { splitToWords } from "../nlp/Segmentation.js"
+import { splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
 import { Lexicon, tryGetFirstLexiconSubstitution } from "../nlp/Lexicon.js"
 import { phonemizeSentence } from "../nlp/EspeakPhonemizer.js"
 import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
@@ -34,7 +34,26 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	fragments = []
 	preprocessedFragments = []
 
-	const words = (await splitToWords(text, language)).filter(word => word.trim() != "")
+	let words = await splitToWords(text, language)
+
+	// Merge repeating symbol words to a single word to work around eSpeak bug
+	const wordsWithMerges: string[] = []
+
+	for (let i = 0; i < words.length; i++) {
+		const currentWord = words[i]
+		const previousWord = words[i-1]
+
+		if (i > 0 && currentWord == previousWord && !wordCharacterPattern.test(currentWord)) {
+			wordsWithMerges[wordsWithMerges.length - 1] += currentWord
+		} else {
+			wordsWithMerges.push(currentWord)
+		}
+	}
+
+	words = wordsWithMerges
+
+	// Remove words containing only whitespace
+	words = words.filter(word => word.trim() != "")
 
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
