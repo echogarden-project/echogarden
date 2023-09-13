@@ -81,6 +81,8 @@ export function downmixToMonoAndNormalize(rawAudio: RawAudio, targetPeakDb = -3)
 }
 
 export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDb = -3, maxIncreaseDb = 30): RawAudio {
+	//rawAudio = correctDCBias(rawAudio)
+
 	const targetPeakSampleValue = decibelsToGain(targetPeakDb)
 	const maxMultiplier = decibelsToGain(maxIncreaseDb)
 
@@ -91,27 +93,54 @@ export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDb = -3, maxIn
 	return applyGain(rawAudio, multiplier)
 }
 
-export function applyGainDecibels(rawAudio: RawAudio, decibelGain: number): RawAudio {
-	return applyGain(rawAudio, decibelsToGain(decibelGain))
-}
-
-export function applyGain(rawAudio: RawAudio, gain: number): RawAudio {
-	const sampleCount = rawAudio.audioChannels[0].length
+export function correctDCBias(rawAudio: RawAudio): RawAudio {
 	const outputAudioChannels: Float32Array[] = []
 
-	const multiplier = gain
-
 	for (const channelSamples of rawAudio.audioChannels) {
+		const sampleCount = channelSamples.length
+
+		let sampleSum = 0
+
+		for (let i = 0; i < sampleCount; i++) {
+			sampleSum += channelSamples[i]
+		}
+
+		const sampleAverage = sampleSum / sampleCount
+
 		const outputChannelSamples = new Float32Array(sampleCount)
 
-		for (let j = 0; j < sampleCount; j++) {
-			outputChannelSamples[j] = channelSamples[j] * multiplier
+		for (let i = 0; i < sampleCount; i++) {
+			outputChannelSamples[i] = channelSamples[i] - sampleAverage
 		}
 
 		outputAudioChannels.push(outputChannelSamples)
 	}
 
-	return { audioChannels: outputAudioChannels, sampleRate: rawAudio.sampleRate }
+	return { audioChannels: outputAudioChannels, sampleRate: rawAudio.sampleRate } as RawAudio
+}
+
+export function applyGainDecibels(rawAudio: RawAudio, decibelGain: number): RawAudio {
+	return applyGain(rawAudio, decibelsToGain(decibelGain))
+}
+
+export function applyGain(rawAudio: RawAudio, gain: number): RawAudio {
+	const outputAudioChannels: Float32Array[] = []
+
+	const multiplier = gain
+
+	for (const channelSamples of rawAudio.audioChannels) {
+		const sampleCount = channelSamples.length
+
+		const outputChannelSamples = new Float32Array(sampleCount)
+
+		for (let i = 0; i < sampleCount; i++) {
+			outputChannelSamples[i] = channelSamples[i] * multiplier
+		}
+
+		outputAudioChannels.push(outputChannelSamples)
+	}
+
+	return { audioChannels: outputAudioChannels, sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
 export function downmixToMono(rawAudio: RawAudio): RawAudio {
@@ -119,13 +148,13 @@ export function downmixToMono(rawAudio: RawAudio): RawAudio {
 
 	const downmixedAudio = new Float32Array(sampleCount)
 
-	for (const channel of rawAudio.audioChannels) {
+	for (const channelSamples of rawAudio.audioChannels) {
 		for (let i = 0; i < sampleCount; i++) {
-			downmixedAudio[i] += channel[i]
+			downmixedAudio[i] += channelSamples[i]
 		}
 	}
 
-	return { audioChannels: [downmixedAudio], sampleRate: rawAudio.sampleRate }
+	return { audioChannels: [downmixedAudio], sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
 export function getAudioPeakDecibels(audioChannels: Float32Array[]) {
@@ -135,8 +164,8 @@ export function getAudioPeakDecibels(audioChannels: Float32Array[]) {
 export function getAudioPeakGain(audioChannels: Float32Array[]) {
 	let maxAbsoluteSampleValue = 0.00001
 
-	for (const channel of audioChannels) {
-		for (const sample of channel) {
+	for (const channelSamples of audioChannels) {
+		for (const sample of channelSamples) {
 			maxAbsoluteSampleValue = Math.max(maxAbsoluteSampleValue, Math.abs(sample))
 		}
 	}
@@ -186,7 +215,7 @@ export function sliceRawAudioByTime(rawAudio: RawAudio, startTime: number, endTi
 }
 
 export function sliceRawAudio(rawAudio: RawAudio, startSampleIndex: number, endSampleIndex: number): RawAudio {
-	return { audioChannels: sliceAudioChannels(rawAudio.audioChannels, startSampleIndex, endSampleIndex), sampleRate: rawAudio.sampleRate }
+	return { audioChannels: sliceAudioChannels(rawAudio.audioChannels, startSampleIndex, endSampleIndex), sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
 export function sliceAudioChannels(audioChannels: Float32Array[], startSampleIndex: number, endSampleIndex: number) {
@@ -247,7 +276,7 @@ export function fadeAudioInOut(rawAudio: RawAudio, fadeTime: number): RawAudio {
 		}
 	}
 
-	return { audioChannels: outAudioChannels, sampleRate: rawAudio.sampleRate }
+	return { audioChannels: outAudioChannels, sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
 export function cloneRawAudio(rawAudio: RawAudio): RawAudio {
