@@ -1,6 +1,6 @@
 import { convert as convertHtmlToText } from 'html-to-text'
 
-import { formatHMS, formatMS, secondsToHMS, secondsToMS, startsWithAnyOf } from "../utilities/Utilities.js"
+import { formatHMS, formatMS, secondsToHMS, secondsToMS, startsWithAnyOf } from '../utilities/Utilities.js'
 import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
 import { charactersToWriteAhead } from '../audio/AudioPlayer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
@@ -8,11 +8,11 @@ import { readFile } from '../utilities/FileSystem.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
 
 export async function subtitlesFileToText(filename: string) {
-	return subtitlesToText(await readFile(filename, "utf8"))
+	return subtitlesToText(await readFile(filename, 'utf8'))
 }
 
 export function subtitlesToText(subtitles: string) {
-	return subtitlesToTimeline(subtitles, true).map(entry => entry.text).join(" ")
+	return subtitlesToTimeline(subtitles, true).map(entry => entry.text).join(' ')
 }
 
 export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
@@ -22,82 +22,38 @@ export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
 
 	let isWithinCue = false
 
+	// Parse lines of subtitles text
 	for (let line of lines) {
 		line = line.trim()
 
 		if (line.length == 0) {
 			isWithinCue = false
+
 			continue
 		}
 
-		function tryParseTimeRangePatternWithHours() {
-			const timeRangePatternWithHours = /^(\d+)\:(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)\:(\d+)[\.,](\d+)/
-			const match = timeRangePatternWithHours.exec(line)
-
-			if (!match) {
-				return { startTime: -1, endTime: -1, succeeded: false }
-			}
-
-			const startHours = parseInt(match[1])
-			const startMinutes = parseInt(match[2])
-			const startSeconds = parseInt(match[3])
-			const startMilliseconds = parseInt(match[4])
-
-			const endHours = parseInt(match[5])
-			const endMinutes = parseInt(match[6])
-			const endSeconds = parseInt(match[7])
-			const endMilliseconds = parseInt(match[8])
-
-			const startTime = (startMilliseconds / 1000) + (startSeconds) + (startMinutes * 60) + (startHours * 60 * 60)
-			const endTime = (endMilliseconds / 1000) + (endSeconds) + (endMinutes * 60) + (endHours * 60 * 60)
-
-			return { startTime, endTime, succeeded: true }
-		}
-
-		function tryParseTimeRangePatternWithoutHours() {
-			const timeRangePatternWithHours = /^(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)[\.,](\d+)/
-			const match = timeRangePatternWithHours.exec(line)
-
-			if (!match) {
-				return { startTime: -1, endTime: -1, succeeded: false }
-			}
-
-			const startMinutes = parseInt(match[1])
-			const startSeconds = parseInt(match[2])
-			const startMilliseconds = parseInt(match[3])
-
-			const endMinutes = parseInt(match[4])
-			const endSeconds = parseInt(match[5])
-			const endMilliseconds = parseInt(match[6])
-
-			const startTime = (startMilliseconds / 1000) + (startSeconds) + (startMinutes * 60)
-			const endTime = (endMilliseconds / 1000) + (endSeconds) + (endMinutes * 60)
-
-			return { startTime, endTime, succeeded: true }
-		}
-
-		let result = tryParseTimeRangePatternWithHours()
+		let result = tryParseTimeRangePatternWithHours(line)
 
 		if (!result.succeeded) {
-			result = tryParseTimeRangePatternWithoutHours()
+			result = tryParseTimeRangePatternWithoutHours(line)
 		}
 
 		if (result.succeeded) {
 			timeline.push({
-				type: "segment",
+				type: 'segment',
 				startTime: result.startTime,
 				endTime: result.endTime,
-				text: ""
+				text: ''
 			})
 
 			isWithinCue = true
 		} else if (isWithinCue && timeline.length > 0) {
 			const lastEntry = timeline[timeline.length - 1]
 
-			if (lastEntry.text == "") {
+			if (lastEntry.text == '') {
 				lastEntry.text = line
 			} else {
-				lastEntry.text += " " + line
+				lastEntry.text += ' ' + line
 			}
 		}
 	}
@@ -106,247 +62,369 @@ export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
 		return timeline
 	}
 
-	const timelineWithPlainText = timeline.map((entry) => {
+	// Remove markup in each entry text
+	const timelineWithoutMarkup = timeline.map((entry) => {
 		let plainText: string = entry.text
-		plainText = plainText.replaceAll(/<[^>]*>/g, "")
+
+		plainText = plainText.replaceAll(/<[^>]*>/g, '')
+
 		plainText = convertHtmlToText(plainText, { wordwrap: false })
-		plainText = plainText.replaceAll(/\s+/g, " ").trim()
+
+		plainText = plainText.replaceAll(/\s+/g, ' ').trim()
 
 		return { ...entry, text: plainText }
 	})
 
-	return timelineWithPlainText
+	return timelineWithoutMarkup
 }
 
-export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: SubtitlesConfig, recurse = false) {
+export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: SubtitlesConfig) {
+	// Prepare subtitle configuration
 	timeline = deepClone(timeline)
 
 	let config = subtitlesConfig || {}
 
-	if (config.format && config.format == "webvtt") {
-		config = { ...webVttConfig, ...defaultSubtitlesConfig, ...config }
+	if (config.format && config.format == 'webvtt') {
+		config = { ...defaultSubtitlesBaseConfig, ...webVttConfigExtension, ...config }
 	} else {
-		config = { ...srtConfig, ...defaultSubtitlesConfig, ...config }
+		config = { ...defaultSubtitlesBaseConfig, ...srtConfigExtension, ...config }
 	}
 
+	// Initialize subtitle file content
 	const lineBreakString = config.lineBreakString
 
-	let cueIndex = 1
-	let result = ""
+	let outText = ''
 
-	if (config.format == "webvtt") {
-		result += `WEBVTT${lineBreakString}Kind: captions${lineBreakString}`
+	if (config.format == 'webvtt') {
+		outText += `WEBVTT${lineBreakString}Kind: captions${lineBreakString}`
 
 		if (config.language) {
-			result += `Language: ${config.language}${lineBreakString}`
+			outText += `Language: ${config.language}${lineBreakString}`
 		}
 
-		result += lineBreakString
+		outText += lineBreakString
 	}
 
-	function writeCue(cue: Cue) {
-		if (cue.lines.length == 0) {
-			return
+	// Generate the cues from the given timeline
+	let cues: Cue[]
+
+	if (config.kind == 'segment' || config.kind == 'sentence') {
+		cues = getCuesFromTimeline_IsolateSegmentSentence(timeline, config)
+
+		// Extend cue end times to maximum duration set, if possible
+		if (config.maxAddedDuration! > 0) {
+			for (let i = 1; i < cues.length; i++) {
+				const currentCue = cues[i]
+				const previousCue = cues[i - 1]
+
+				previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
+			}
+		}
+	} else if (config.kind == 'word' || config.kind == 'phone' || config.kind == 'word-phone') {
+		cues = getCuesFromTimeline_IsolateWordPhone(timeline, config)
+	} else {
+		throw new Error('Invalid subtitles mode.')
+	}
+
+	// Write cues to output text
+	for (let cueIndex = 0; cueIndex < cues.length; cueIndex++) {
+		outText += cueObjectToText(cues[cueIndex], cueIndex + 1, config)
+	}
+
+	return outText
+}
+
+// Generates subtitle cues from timeline. Ensures each segment or sentence starts in a new cue.
+function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: SubtitlesConfig) {
+	if (timeline.length == 0) {
+		return []
+	}
+
+	// If the given timeline is a word timeline, wrap it with a segment and call again
+	if (timeline[0].type == 'word') {
+		const wordTimeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+
+		const text = wordTimeline.map(entry => entry.text).join(' ')
+
+		const segmentEntry: TimelineEntry = {
+			type: 'segment',
+			text: text,
+			startTime: wordTimeline[0].startTime,
+			endTime: wordTimeline[wordTimeline.length - 1].endTime,
+			timeline: wordTimeline
 		}
 
-		if (config.includeCueIndexes) {
-			result += `${cueIndex}${lineBreakString}`
-		}
-
-		let formattedStartTime: string
-		let formattedEndTime: string
-
-		if (config.includeHours == true) {
-			formattedStartTime = formatHMS(secondsToHMS(cue.startTime), config.decimalSeparator)
-			formattedEndTime = formatHMS(secondsToHMS(cue.endTime), config.decimalSeparator)
-		} else {
-			formattedStartTime = formatMS(secondsToMS(cue.startTime), config.decimalSeparator)
-			formattedEndTime = formatMS(secondsToMS(cue.endTime), config.decimalSeparator)
-		}
-
-		result += `${formattedStartTime} --> ${formattedEndTime}`
-		result += `${lineBreakString}`
-
-		result += cue.lines.map(line => line.trim()).join(lineBreakString)
-
-		result += `${lineBreakString}`
-		result += `${lineBreakString}`
-
-		cueIndex += 1
+		return getCuesFromTimeline_IsolateSegmentSentence([segmentEntry], config)
 	}
 
 	const cues: Cue[] = []
 
-	function addCuesFromTimeline(timeline: Timeline, recurse = false) {
-		if (timeline.length == 0) {
-			return
-		}
+	// Generate one or more cues from each segment or sentence in the timeline.
+	for (let entry of timeline) {
+		if (entry.type == 'segment' && entry.timeline?.[0].type == 'sentence') {
+			if (config.kind == 'segment') {
+				// If the mode is 'segment', flatten all sentences to a single word timeline
+				entry.timeline = entry.timeline!.flatMap(t => t.timeline!)
+			} else {
+				cues.push(...getCuesFromTimeline_IsolateSegmentSentence(entry.timeline!, config))
 
-		if (timeline[0].type == "word") {
-			const wordTimeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
-
-			const text = wordTimeline.map(entry => entry.text).join(" ")
-
-			const segmentEntry: TimelineEntry = {
-				type: "segment",
-				text: text,
-				startTime: wordTimeline[0].startTime,
-				endTime: wordTimeline[wordTimeline.length - 1].endTime,
-				timeline: wordTimeline
-			}
-
-			addCuesFromTimeline([segmentEntry], recurse)
-
-			return
-		}
-
-		for (const entry of timeline) {
-			if (entry.type == 'segment' && entry.timeline?.[0].type == 'sentence') {
-				addCuesFromTimeline(entry.timeline!, recurse)
 				continue
 			}
+		}
 
-			const entryText = entry.text
-			const maxLineWidth = config.maxLineWidth!
+		const entryText = entry.text
+		const maxLineWidth = config.maxLineWidth!
 
-			if (entryText.length <= maxLineWidth) {
-				cues.push({
-					lines: [entryText],
-					startTime: entry.startTime,
-					endTime: entry.endTime
-				})
-			} else if (entry.timeline && entry.timeline?.[0].type == "word") {
-				const wordTimeline = entry.timeline!.filter(entry => isWord(entry.text))
+		if (entryText.length <= maxLineWidth) {
+			cues.push({
+				lines: [entryText],
+				startTime: entry.startTime,
+				endTime: entry.endTime
+			})
 
-				let lastWordEndOffset = 0
-				for (const wordEntry of wordTimeline) {
-					const wordStartOffset = entryText.indexOf(wordEntry.text, lastWordEndOffset)
+			continue
+		}
 
-					if (wordStartOffset == -1) {
-						throw new Error(`Couldn't find word '${wordEntry.text}' in its parent entry text`)
-					}
+		if (!entry.timeline || entry.timeline?.[0]?.type != 'word') {
+			continue
+		}
 
-					let wordEndOffset = wordStartOffset + wordEntry.text.length
-					lastWordEndOffset = wordEndOffset
+		const wordTimeline = entry.timeline!.filter(entry => isWord(entry.text))
 
-					wordEntry.startOffsetUtf16 = wordStartOffset
-					wordEntry.endOffsetUtf16 = wordEndOffset
-				}
+		// First, add word start and end offsets for all word entries
+		let lastWordEndOffset = 0
+		for (const wordEntry of wordTimeline) {
+			const wordStartOffset = entryText.indexOf(wordEntry.text, lastWordEndOffset)
 
-				let currentCue: Cue = {
-					lines: [],
-					startTime: -1,
-					endTime: -1
-				}
-
-				let lineStartWordOffset = 0
-				let lineStartOffset = 0
-
-				for (let wordIndex = 0; wordIndex < wordTimeline.length; wordIndex++) {
-					const isLastWord = wordIndex == wordTimeline.length - 1
-
-					const wordEntry = wordTimeline[wordIndex]
-					const wordEndOffset = wordEntry.endOffsetUtf16!
-
-					function getExtendedEndOffset(offset: number | undefined) {
-						if (offset == undefined) {
-							return entryText.length
-						}
-
-						while (charactersToWriteAhead.includes(entryText[offset])) {
-							offset += 1
-						}
-
-						return offset
-					}
-
-					const wordExtendedEndOffset = getExtendedEndOffset(wordEndOffset)
-
-					const nextWordEntry = wordTimeline[wordIndex + 1]
-					const nextWordExtendedEndOffset = getExtendedEndOffset(nextWordEntry?.endOffsetUtf16)
-
-					const lineLength = wordExtendedEndOffset - lineStartOffset
-					const lineLengthWithNextWord = nextWordExtendedEndOffset - lineStartOffset
-					const wordsRemaining = wordTimeline.length - wordIndex - 1
-
-					const phraseSeparators = [',', '，', '、', ';', ':', '),', '",', '”,']
-
-					const lineLengthWithNextWordExceedsMaxLineWidth = lineLengthWithNextWord >= maxLineWidth
-					const lineLengthExceedsHalfMaxLineWidth = lineLength >= maxLineWidth / 2
-
-					const wordsRemainingAreEqualOrLessToMinimumWordsInLine = wordsRemaining <= config.minWordsInLine!
-					const remainingTextExceedsMaxLineWidth = entryText.length - lineStartOffset > maxLineWidth
-					const followingSubstringIsPhraseSeparator = startsWithAnyOf(entryText.substring(wordEndOffset), phraseSeparators)
-
-					if (isLastWord ||
-						lineLengthWithNextWordExceedsMaxLineWidth ||
-							(remainingTextExceedsMaxLineWidth &&
-							lineLengthExceedsHalfMaxLineWidth &&
-							(wordsRemainingAreEqualOrLessToMinimumWordsInLine || followingSubstringIsPhraseSeparator))) {
-
-						let lineEndOffset
-
-						if (isLastWord) {
-							lineEndOffset = entryText.length
-						} else {
-							lineEndOffset = wordExtendedEndOffset
-						}
-
-						const lineText = entryText.substring(lineStartOffset, lineEndOffset)
-
-						const nextWordStartTime = isLastWord ? entry.endTime : wordTimeline[wordIndex + 1].startTime
-
-						const lineStartTime = wordTimeline[lineStartWordOffset].startTime
-						const lineEndTime = nextWordStartTime
-
-						currentCue.lines.push(lineText)
-						if (currentCue.startTime == -1) {
-							currentCue.startTime = lineStartTime
-						}
-
-						currentCue.endTime = lineEndTime
-
-						if (isLastWord || currentCue.lines.length == config.maxLineCount) {
-							cues.push(currentCue)
-
-							currentCue = {
-								lines: [],
-								startTime: -1,
-								endTime: -1
-							}
-						}
-
-						lineStartOffset = lineEndOffset
-						lineStartWordOffset = wordIndex + 1
-					}
-				}
-			} else {
-				throw new Error("Found an entry without a word timeline descendant")
-
-				//const lines = splitToFragments(entryText, config.maxLineWidth!, config.language!, true, true).map(line => line.text)
-				//writeCue(lines, entry.startTime, entry.endTime, config)
+			if (wordStartOffset == -1) {
+				throw new Error(`Couldn't find word '${wordEntry.text}' in its parent entry text`)
 			}
 
-			if (recurse && entry.timeline != null) {
-				addCuesFromTimeline(entry.timeline, true)
+			let wordEndOffset = wordStartOffset + wordEntry.text.length
+			lastWordEndOffset = wordEndOffset
+
+			wordEntry.startOffsetUtf16 = wordStartOffset
+			wordEntry.endOffsetUtf16 = wordEndOffset
+		}
+
+		// Add cues
+		let currentCue: Cue = {
+			lines: [],
+			startTime: -1,
+			endTime: -1
+		}
+
+		let lineStartWordOffset = 0
+		let lineStartOffset = 0
+
+		for (let wordIndex = 0; wordIndex < wordTimeline.length; wordIndex++) {
+			const isLastWord = wordIndex == wordTimeline.length - 1
+
+			const wordEntry = wordTimeline[wordIndex]
+			const wordEndOffset = wordEntry.endOffsetUtf16!
+
+			function getExtendedEndOffset(offset: number | undefined) {
+				if (offset == undefined) {
+					return entryText.length
+				}
+
+				while (charactersToWriteAhead.includes(entryText[offset])) {
+					offset += 1
+				}
+
+				return offset
+			}
+
+			const wordExtendedEndOffset = getExtendedEndOffset(wordEndOffset)
+
+			const nextWordEntry = wordTimeline[wordIndex + 1]
+			const nextWordExtendedEndOffset = getExtendedEndOffset(nextWordEntry?.endOffsetUtf16)
+
+			// Decide if to add to a new line
+			const lineLength = wordExtendedEndOffset - lineStartOffset
+			const lineLengthWithNextWord = nextWordExtendedEndOffset - lineStartOffset
+			const wordsRemaining = wordTimeline.length - wordIndex - 1
+
+			const phraseSeparators = [',', '，', '、', ';', ':', '),', '",', '”,', '.', '".', '”.', '."', '.”', '。']
+
+			const lineLengthWithNextWordExceedsMaxLineWidth = lineLengthWithNextWord >= maxLineWidth
+			const lineLengthExceedsHalfMaxLineWidth = lineLength >= maxLineWidth / 2
+
+			const wordsRemainingAreEqualOrLessToMinimumWordsInLine = wordsRemaining <= config.minWordsInLine!
+			const remainingTextExceedsMaxLineWidth = entryText.length - lineStartOffset > maxLineWidth
+			const followingSubstringIsPhraseSeparator = startsWithAnyOf(entryText.substring(wordEndOffset), phraseSeparators)
+
+			const shouldAddNewLine =
+				isLastWord ||
+				lineLengthWithNextWordExceedsMaxLineWidth ||
+					(remainingTextExceedsMaxLineWidth &&
+					lineLengthExceedsHalfMaxLineWidth &&
+					(wordsRemainingAreEqualOrLessToMinimumWordsInLine || (config.separatePhrases && followingSubstringIsPhraseSeparator)))
+
+			// If it was decided to add a new line
+			if (shouldAddNewLine) {
+				// Extend line end offset to end of sentence entry if last word encountered
+				let lineEndOffset: number
+
+				if (isLastWord) {
+					lineEndOffset = entryText.length
+				} else {
+					lineEndOffset = wordExtendedEndOffset
+				}
+
+				// Get line text
+				const lineText = entryText.substring(lineStartOffset, lineEndOffset)
+
+				// Find start and end times of line
+				const nextWordStartTime = isLastWord ? entry.endTime : wordTimeline[wordIndex + 1].startTime
+
+				const lineStartTime = wordTimeline[lineStartWordOffset].startTime
+				const lineEndTime = nextWordStartTime
+
+				// Add new line to cue
+				currentCue.lines.push(lineText)
+
+				// Update cue start and end times
+				if (currentCue.startTime == -1) {
+					currentCue.startTime = lineStartTime
+				}
+
+				currentCue.endTime = lineEndTime
+
+				// Finalize cue if needed
+				if (isLastWord || currentCue.lines.length == config.maxLineCount) {
+					cues.push(currentCue)
+
+					currentCue = {
+						lines: [],
+						startTime: -1,
+						endTime: -1
+					}
+				}
+
+				// Update offsets
+				lineStartOffset = lineEndOffset
+				lineStartWordOffset = wordIndex + 1
 			}
 		}
 	}
 
-	addCuesFromTimeline(timeline, recurse)
+	return cues
+}
 
-	for (let i = 1; i < cues.length; i++) {
-		const currentCue = cues[i]
-		const previousCue = cues[i - 1]
-
-		previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
+// Generates cues from timeline. Isolate words or phones in individual cues.
+function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: SubtitlesConfig) {
+	if (timeline.length == 0) {
+		return []
 	}
 
-	for (const cue of cues) {
-		writeCue(cue)
+	const kind = config.kind!
+
+	const cues: Cue[] = []
+
+	for (const entry of timeline) {
+		const entryIsWord = entry.type == 'word'
+		const entryIsPhone = entry.type == 'phone'
+
+		const shouldIncludeEntry =
+			(entryIsWord && (kind == 'word' || kind == 'word-phone')) ||
+			(entryIsPhone && (kind == 'phone' || kind == 'word-phone'))
+
+		if (shouldIncludeEntry) {
+			cues.push({
+				lines: [entry.text],
+				startTime: entry.startTime,
+				endTime: entry.endTime,
+			})
+		}
+
+		if (entry.timeline) {
+			cues.push(...getCuesFromTimeline_IsolateWordPhone(entry.timeline, config))
+		}
 	}
 
-	return result
+	return cues
+}
+
+function tryParseTimeRangePatternWithHours(line: string) {
+	const timeRangePatternWithHours = /^(\d+)\:(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)\:(\d+)[\.,](\d+)/
+	const match = timeRangePatternWithHours.exec(line)
+
+	if (!match) {
+		return { startTime: -1, endTime: -1, succeeded: false }
+	}
+
+	const startHours = parseInt(match[1])
+	const startMinutes = parseInt(match[2])
+	const startSeconds = parseInt(match[3])
+	const startMilliseconds = parseInt(match[4])
+
+	const endHours = parseInt(match[5])
+	const endMinutes = parseInt(match[6])
+	const endSeconds = parseInt(match[7])
+	const endMilliseconds = parseInt(match[8])
+
+	const startTime = (startMilliseconds / 1000) + (startSeconds) + (startMinutes * 60) + (startHours * 60 * 60)
+	const endTime = (endMilliseconds / 1000) + (endSeconds) + (endMinutes * 60) + (endHours * 60 * 60)
+
+	return { startTime, endTime, succeeded: true }
+}
+
+function tryParseTimeRangePatternWithoutHours(line: string) {
+	const timeRangePatternWithHours = /^(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)[\.,](\d+)/
+	const match = timeRangePatternWithHours.exec(line)
+
+	if (!match) {
+		return { startTime: -1, endTime: -1, succeeded: false }
+	}
+
+	const startMinutes = parseInt(match[1])
+	const startSeconds = parseInt(match[2])
+	const startMilliseconds = parseInt(match[3])
+
+	const endMinutes = parseInt(match[4])
+	const endSeconds = parseInt(match[5])
+	const endMilliseconds = parseInt(match[6])
+
+	const startTime = (startMilliseconds / 1000) + (startSeconds) + (startMinutes * 60)
+	const endTime = (endMilliseconds / 1000) + (endSeconds) + (endMinutes * 60)
+
+	return { startTime, endTime, succeeded: true }
+}
+
+function cueObjectToText(cue: Cue, cueIndex: number, config: SubtitlesConfig) {
+	if (!cue || !cue.lines || cue.lines.length == 0) {
+		throw new Error(`Cue is empty`)
+	}
+
+	const lineBreakString = config.lineBreakString
+
+	let outText = ''
+
+	if (config.includeCueIndexes) {
+		outText += `${cueIndex}${lineBreakString}`
+	}
+
+	let formattedStartTime: string
+	let formattedEndTime: string
+
+	if (config.includeHours == true) {
+		formattedStartTime = formatHMS(secondsToHMS(cue.startTime), config.decimalSeparator)
+		formattedEndTime = formatHMS(secondsToHMS(cue.endTime), config.decimalSeparator)
+	} else {
+		formattedStartTime = formatMS(secondsToMS(cue.startTime), config.decimalSeparator)
+		formattedEndTime = formatMS(secondsToMS(cue.endTime), config.decimalSeparator)
+	}
+
+	outText += `${formattedStartTime} --> ${formattedEndTime}`
+	outText += `${lineBreakString}`
+
+	outText += cue.lines.map(line => line.trim()).join(lineBreakString)
+
+	outText += `${lineBreakString}`
+	outText += `${lineBreakString}`
+
+	return outText
 }
 
 export type Cue = {
@@ -355,38 +433,46 @@ export type Cue = {
 	endTime: number
 }
 
-export const defaultSubtitlesConfig: SubtitlesConfig = {
-	format: "srt",
-	maxLineCount: 2,
-	maxLineWidth: 42,
-	minWordsInLine: 4,
-	maxAddedDuration: 3,
-}
-
-export const srtConfig: SubtitlesConfig = {
-	decimalSeparator: ",",
-	includeCueIndexes: true,
-	includeHours: true,
-	lineBreakString: "\n",
-}
-
-export const webVttConfig: SubtitlesConfig = {
-	decimalSeparator: ".",
-	includeCueIndexes: false,
-	includeHours: true,
-	lineBreakString: "\n",
-}
+export type SubtitlesKind = 'segment' | 'sentence' | 'word' | 'phone' | 'word-phone'
 
 export interface SubtitlesConfig {
-	format?: "srt" | "webvtt"
+	format?: 'srt' | 'webvtt'
 	language?: string
+	kind?: SubtitlesKind
+
 	maxLineCount?: number
 	maxLineWidth?: number
 	minWordsInLine?: number
+	separatePhrases?: boolean
 	maxAddedDuration?: number
 
-	decimalSeparator?: "," | "."
+	decimalSeparator?: ',' | '.'
 	includeCueIndexes?: boolean
 	includeHours?: boolean
-	lineBreakString?: "\n" | "\r\n"
+	lineBreakString?: '\n' | '\r\n'
+}
+
+export const defaultSubtitlesBaseConfig: SubtitlesConfig = {
+	format: 'srt',
+	kind: 'sentence',
+
+	maxLineCount: 2,
+	maxLineWidth: 42,
+	minWordsInLine: 4,
+	separatePhrases: true,
+	maxAddedDuration: 3.0,
+}
+
+export const srtConfigExtension: SubtitlesConfig = {
+	decimalSeparator: ',',
+	includeCueIndexes: true,
+	includeHours: true,
+	lineBreakString: '\n',
+}
+
+export const webVttConfigExtension: SubtitlesConfig = {
+	decimalSeparator: '.',
+	includeCueIndexes: false,
+	includeHours: true,
+	lineBreakString: '\n',
 }

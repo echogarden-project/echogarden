@@ -11,7 +11,7 @@ import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible,
 import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperSTT.js"
 import chalk from "chalk"
 import { DtwGranularity } from "../alignment/SpeechAlignment.js"
-import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { SubtitlesConfig, defaultSubtitlesBaseConfig } from "../subtitles/Subtitles.js"
 import { synthesize } from "./API.js"
 import { EspeakOptions, defaultEspeakOptions } from "../synthesis/EspeakTTS.js"
 
@@ -293,7 +293,7 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 		whitespace: 'collapse'
 	},
 
-	subtitles: defaultSubtitlesConfig,
+	subtitles: defaultSubtitlesBaseConfig,
 
 	dtw: {
 		granularity: 'auto',

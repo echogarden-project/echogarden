@@ -525,6 +525,9 @@
         "language": {
           "type": "string"
         },
+        "kind": {
+          "$ref": "#/definitions/SubtitlesKind"
+        },
         "maxLineCount": {
           "type": "number"
         },
@@ -533,6 +536,9 @@
         },
         "minWordsInLine": {
           "type": "number"
+        },
+        "separatePhrases": {
+          "type": "boolean"
         },
         "maxAddedDuration": {
           "type": "number"
@@ -559,6 +565,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "SubtitlesKind": {
+      "type": "string",
+      "enum": [
+        "segment",
+        "sentence",
+        "word",
+        "phone",
+        "word-phone"
+      ]
     },
     "DtwGranularity": {
       "type": "string",

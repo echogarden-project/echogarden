@@ -1310,7 +1310,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 
 			subtitlesConfig = extendDeep(subtitlesConfig, { format: "srt" })
 
-			const subtitles = timelineToSubtitles(timeline, subtitlesConfig, false)
+			const subtitles = timelineToSubtitles(timeline, subtitlesConfig)
 
 			return writeFileSafe(outputFilePath, subtitles)
 		}
@@ -1320,7 +1320,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 
 			subtitlesConfig = extendDeep(subtitlesConfig, { format: "webvtt" })
 
-			const subtitles = timelineToSubtitles(timeline, subtitlesConfig, false)
+			const subtitles = timelineToSubtitles(timeline, subtitlesConfig)
 
 			return writeFileSafe(outputFilePath, subtitles)
 		}

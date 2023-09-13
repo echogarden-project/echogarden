@@ -10,7 +10,7 @@ import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode
 import { EngineMetadata } from "./Common.js"
 import { SpeechLanguageDetectionOptions, detectSpeechLanguage } from "./API.js"
 import chalk from "chalk"
-import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { SubtitlesConfig, defaultSubtitlesBaseConfig } from "../subtitles/Subtitles.js"
 
 const log = logToStderr
 
@@ -128,7 +128,7 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	languageDetection: undefined,
 
-	subtitles: defaultSubtitlesConfig,
+	subtitles: defaultSubtitlesBaseConfig,
 
 	whisper: whisperOptionsDefaults,
 }

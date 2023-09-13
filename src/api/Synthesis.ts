@@ -20,7 +20,7 @@ import { loadPackage } from "../utilities/PackageManager.js"
 import { EngineMetadata, appName } from "./Common.js"
 import { shouldCancelCurrentTask } from "../server/Worker.js"
 import chalk from "chalk"
-import { SubtitlesConfig, defaultSubtitlesConfig } from "../subtitles/Subtitles.js"
+import { SubtitlesConfig, defaultSubtitlesBaseConfig } from "../subtitles/Subtitles.js"
 import { type EspeakOptions } from "../synthesis/EspeakTTS.js"
 
 const log = logToStderr
@@ -1123,7 +1123,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	languageDetection: undefined,
 
-	subtitles: defaultSubtitlesConfig,
+	subtitles: defaultSubtitlesBaseConfig,
 
 	vits: {
 		speakerId: undefined,
