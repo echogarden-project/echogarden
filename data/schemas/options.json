@@ -573,7 +573,7 @@
         "sentence",
         "word",
         "phone",
-        "word-phone"
+        "word+phone"
       ]
     },
     "DtwGranularity": {
