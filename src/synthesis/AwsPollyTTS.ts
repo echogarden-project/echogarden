@@ -1,4 +1,4 @@
-import type { SynthesizeSpeechCommandInput } from "@aws-sdk/client-polly"
+import type { LanguageCode, SynthesizeSpeechCommandInput, VoiceId } from "@aws-sdk/client-polly"
 import { IncomingMessage } from "http"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
@@ -20,9 +20,9 @@ export async function synthesize(text: string, language: string | undefined, voi
 	})
 
 	const params: SynthesizeSpeechCommandInput = {
-		VoiceId: voice,
+		VoiceId: voice as VoiceId,
 
-		LanguageCode: language,
+		LanguageCode: language as LanguageCode,
 
 		Engine: engine,
 		Text: text,

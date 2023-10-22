@@ -1,4 +1,4 @@
-import type { Item, StartStreamTranscriptionCommandInput } from "@aws-sdk/client-transcribe-streaming"
+import type { Item, LanguageCode, StartStreamTranscriptionCommandInput } from "@aws-sdk/client-transcribe-streaming"
 import { wordCharacterPattern } from "../nlp/Segmentation.js"
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
@@ -33,7 +33,7 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 	}
 
 	const params: StartStreamTranscriptionCommandInput = {
-		LanguageCode: languageCode,
+		LanguageCode: languageCode as LanguageCode,
 		MediaSampleRateHertz: rawAudio.sampleRate,
 		MediaEncoding: "flac",
 		AudioStream: audioStream(),
