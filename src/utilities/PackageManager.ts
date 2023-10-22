@@ -81,6 +81,7 @@ const defaultVersionTag = "20230718"
 
 const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	"sox-14.4.2-linux-minimal": "20230802",
+
 	"vits-de_DE-thorsten_emotional-medium": "20230808",
 	"vits-en_GB-semaine-medium": "20230808",
 	"vits-fr_FR-upmc-medium": "20230808",
@@ -88,10 +89,18 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	"vits-ro_RO-mihai-medium": "20230808",
 	"vits-sr_RS-serbski_institut-medium": "20230808",
 	"vits-tr_TR-dfki-medium": "20230808",
+
 	"vits-cs_CZ-jirka-medium": "20230824",
 	"vits-de_DE-thorsten-high": "20230824",
 	"vits-hu_HU-anna-medium": "20230824",
 	"vits-pt_PT-tugao-medium": "20230824",
 	"vits-sk_SK-lili-medium": "20230824",
 	"vits-tr_TR-fahrettin-medium": "20230824",
+
+	"vits-ar_JO-kareem-medium": "20231022",
+	"vits-cs_CZ-jirka-low": "20231022",
+	"vits-en_US-hfc_male-medium": "20231022",
+	"vits-en_US-libritts_r-medium": "20231022",
+	"vits-hu_HU-imre-medium": "20231022",
+	"vits-pl_PL-mc_speech-medium": "20231022",
 }

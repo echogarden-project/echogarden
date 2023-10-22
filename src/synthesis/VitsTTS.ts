@@ -204,6 +204,12 @@ export class VitsTTS {
 
 export const voiceList: SynthesisVoice[] = [
 	{
+		name: "ar_JO-kareem-medium",
+		languages: ["ar_JO", "ar"],
+		gender: "male",
+	},
+
+	{
 		name: "ca_ES-upc_ona-x_low",
 		languages: ["ca-ES", "ca"],
 		gender: "female",
@@ -219,6 +225,11 @@ export const voiceList: SynthesisVoice[] = [
 		gender: "male",
 	},
 
+	{
+		name: "cs_CZ-jirka-low",
+		languages: ["cs-CZ", "cs"],
+		gender: "male",
+	},
 	{
 		name: "cs_CZ-jirka-medium",
 		languages: ["cs-CZ", "cs"],
@@ -375,6 +386,12 @@ export const voiceList: SynthesisVoice[] = [
 		speakerCount: 904,
 	},
 	{
+		name: "en_US-libritts_r-medium",
+		languages: ["en-US", "en"],
+		gender: "unknown",
+		speakerCount: 904,
+	},
+	{
 		name: "en_US-ryan-low",
 		languages: ["en-US", "en"],
 		gender: "male",
@@ -410,6 +427,11 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["en-US", "en"],
 		gender: "unknown",
 		speakerCount: 24
+	},
+	{
+		name: "en_US-hfc_male-medium",
+		languages: ["en-US", "en"],
+		gender: "male",
 	},
 
 	{
@@ -487,6 +509,11 @@ export const voiceList: SynthesisVoice[] = [
 		name: "hu_HU-anna-medium",
 		languages: ["hu-HU", "hu"],
 		gender: "female",
+	},
+	{
+		name: "hu_HU-imre-medium",
+		languages: ["hu-HU", "hu"],
+		gender: "male",
 	},
 
 	{
@@ -611,6 +638,11 @@ export const voiceList: SynthesisVoice[] = [
 		name: "pl_PL-gosia-medium",
 		languages: ["pl-PL", "pl"],
 		gender: "female",
+	},
+	{
+		name: "pl_PL-mc_speech-medium",
+		languages: ["pl-PL", "pl"],
+		gender: "male",
 	},
 
 	{
