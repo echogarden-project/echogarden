@@ -120,7 +120,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 				previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
 			}
 		}
-	} else if (config.mode == 'word' || config.mode == 'phone' || config.mode == 'word-phone') {
+	} else if (config.mode == 'word' || config.mode == 'phone' || config.mode == 'word+phone') {
 		cues = getCuesFromTimeline_IsolateWordPhone(timeline, config)
 	} else {
 		throw new Error('Invalid subtitles mode.')
@@ -327,8 +327,8 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 		const entryIsPhone = entry.type == 'phone'
 
 		const shouldIncludeEntry =
-			(entryIsWord && (mode == 'word' || mode == 'word-phone')) ||
-			(entryIsPhone && (mode == 'phone' || mode == 'word-phone'))
+			(entryIsWord && (mode == 'word' || mode == 'word+phone')) ||
+			(entryIsPhone && (mode == 'phone' || mode == 'word+phone'))
 
 		if (shouldIncludeEntry) {
 			cues.push({
@@ -433,7 +433,7 @@ export type Cue = {
 	endTime: number
 }
 
-export type SubtitlesMode = 'segment' | 'sentence' | 'word' | 'phone' | 'word-phone'
+export type SubtitlesMode = 'segment' | 'sentence' | 'word' | 'phone' | 'word+phone'
 
 export interface SubtitlesConfig {
 	format?: 'srt' | 'webvtt'
