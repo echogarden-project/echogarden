@@ -86,7 +86,7 @@ This would align the audio file `speech.mp3` with the transcript provided in `tr
 echogarden speak-file text.txt transcript.txt result.srt result.json
 ```
 
-## Speech translation
+## Speech-to-text translation
 
 **Task**: given an audio file containing speech in one language, transcribe it to a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
 
@@ -101,6 +101,8 @@ echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --tar
 ```
 
 **Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
+
+**Note**: this operation is not the same as 'speech-to-speech' translation, which has become popular recently. It produces a translated transcript, not translated speech audio. In the future, if there are good quality and  open-source speech-to-speech models, a separate `translate-speech-to-speech` operation may be added.
 
 ## Using output templates to split the output to multiple files
 

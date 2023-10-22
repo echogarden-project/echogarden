@@ -56,7 +56,6 @@ Synthesizes the given input.
 ```
 * A `Buffer` containing the audio in encoded form, in the case a particular codec was specified in the `outputAudioFormat.codec` option.
 
-
 #### Segment and sentence event callbacks
 
 You can optionally pass two `async` callbacks to `synthesize`, `onSegment` and `onSentence`.
@@ -85,7 +84,7 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 
 ### `requestVoiceList(options)`
 
-Request a list of voices for a particular engine.
+Requests a list of voices for a particular engine.
 
 * `options`: Voice list request options object
 
@@ -101,6 +100,8 @@ Request a list of voices for a particular engine.
 ## Recognition
 
 ### `recognize(input, options)`
+
+Applies speech recognition to the input.
 
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Recognition options object
@@ -120,6 +121,8 @@ Request a list of voices for a particular engine.
 
 ### `align(input, transcript, options)`
 
+Aligns input audio with the given transcript.
+
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Alignment options object
 
@@ -134,9 +137,11 @@ Request a list of voices for a particular engine.
 }
 ```
 
-## Speech translation
+## Speech-to-text translation
 
 ### `translateSpeech(input, options)`
+
+Translates speech audio directly to English text.
 
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Speech translation options object
@@ -156,6 +161,8 @@ Request a list of voices for a particular engine.
 
 ### `detectSpeechLanguage(input, options)`
 
+Detects language of spoken audio.
+
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Speech language detection options object
 
@@ -169,6 +176,8 @@ Request a list of voices for a particular engine.
 ```
 
 ### `detectTextLanguage(input, options)`
+
+Detects language of text.
 
 * `input`: Input text as `string`
 * `options`: Text language detection options object
@@ -186,6 +195,8 @@ Request a list of voices for a particular engine.
 
 ### `detectVoiceActivity(input, options)`
 
+Detects voice activity in audio (non real-time).
+
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Voice activity detection options object
 
@@ -196,7 +207,9 @@ Request a list of voices for a particular engine.
 }
 ```
 
-## Denoising
+## Speech denoising
+
+Tries to reduce background noise in spoken audio.
 
 ### `denoise(input, options)`
 
@@ -210,6 +223,31 @@ Request a list of voices for a particular engine.
 }
 ```
 
+## Subtitles
+
+### `timelineToSubtitles(timeline, options)`
+
+Converts a timeline to subtitles.
+
+* `timeline`: Timeline object
+* `options`: Subtitles configuration object
+
+#### Returns:
+
+Subtitle file content, as a string.
+
+### `subtitlesToTimeline(subtitles)`
+
+Converts subtitles to a timeline.
+
+* `subtitles`: Timeline object
+
+**Note**: This function simply converts each individual cue to a segment entry in a timeline. Since subtitle cues may contain parts of sentences or phrases, this may not produce very useful results for your needs. However, you can use it as a means to parse a subtitle file (`srt` or `vtt`), and apply your own processing later.
+
+#### Returns:
+
+Timeline object.
+
 ## TODO
 
-Expose more methods that may be useful for developers, like subtitle manipulation, phonemization, etc.
+Expose more methods that may be useful for developers, like phonemization, etc.

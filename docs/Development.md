@@ -25,3 +25,9 @@ When you encounter an odd pronunciation in a VITS voice, there are several possi
 1. An issue with model training, which may need to be forwarded to the original authors.
 
 If the problem is serious, you can report it and we'll see what we can do.
+
+## Notes about licensing
+
+The code is currently licensed under the GPL-3, mainly due to one of its main dependencies, `eSpeak-NG`, being licensed with this license.
+
+In the future, I may want to re-license parts (or all) of the code to a more permissive license like MIT, if that is possible. If you make an external contribution, I would appreciate if you also agree to license it under the MIT license, so a future transition would be easier.

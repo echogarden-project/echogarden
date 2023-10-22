@@ -5,9 +5,6 @@
 ### Phoneme processing
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
 
-### Segmentation
-* eSpeak markers fail when given inputs like `**********` or `----------` due to the fact that eSpeak limits output of these special characters to only a few, so only some of the markers are output.
-
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
 * If a request is made and the server takes too much time to respond, the service worker may sleep and the request never canceled
@@ -69,7 +66,7 @@
 
 ### CLI / `speak-wikipedia`
 * Correctly detect language when a Wikipedia URL is passed instead of an article name
-* Add option to set language edition separately from language, since Wikipedia language editions has its own code system that is different from the standard one in some cases
+* Add option to set language edition separately from language, since Wikipedia language editions has its own code system that is slightly different from the standard one, in some cases
 
 ### CLI / `speak-url`
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
@@ -98,7 +95,6 @@
 * Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
 * See if it's possible to detect and include Emoji characters in timelines.
 * Add support for phrases in timelines
-* Time/pitch shifting for recognition and alignment results
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
@@ -115,17 +111,14 @@
 
 ### Subtitles
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
-* Option to output one cue per word
-* Option to disable sentence isolation (a new sentence can start in the same cue)
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
-* Add option to output word or phoneme-level caption files (investigate how it's done on YouTube auto-captions)
+* Add option to output usable word or phoneme-level caption files (investigate how it's done on YouTube auto-captions)
 * Parse VTT's language
-* Option to generate captions that have word-level timings
 
 ### Synthesis
-* Option to disable alignment (only for some engines).
+* Option to disable alignment (only for some engines). Alternative: use a low setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" as well
@@ -169,12 +162,12 @@
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
-* Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
+* Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
-* Way to specify general model size, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
+* Way to specify model size only, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 
 ### Alignment
@@ -256,6 +249,7 @@
 
 ## Possible new engines or platforms
 
+* [PlayHT](https://play.ht/) speech synthesis cloud service
 * OpenAI Whisper cloud service (`large-v2` model is available, at a price).
 * [Assembly AI cloud service](https://www.assemblyai.com/)
 * [Deepgram cloud service](https://deepgram.com/)
@@ -287,3 +281,4 @@
 * Special method to use time stretching to project between different utterances of the same text
 * Is it possible to combine the Silero speech recognizer and a language model and try to perform Viterbi decoding to find alignments?
 * Voice replacement
+* Speech-to-speech translation (need to find a good model)

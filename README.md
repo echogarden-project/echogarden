@@ -14,7 +14,7 @@ Echogarden is an integrated speech toolset that provides a variety of synthesis,
 * Accurate offline speech recognition using [OpenAI Whisper](https://openai.com/research/whisper) models
 * Supports a [large variety of offline and cloud engines](docs/Engines.md), including services by Google, Microsoft, Amazon, Elevenlabs and others
 * Word-level timestamps for all synthesis and recognition outputs
-* Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods, including support for multi-pass (hierarchical) processing
+* Speech-to-transcript alignment using dynamic time warping (DTW), and dynamic time warping with recognition assist (DTW-RA) methods, including support for multi-pass (hierarchical) processing. Supports 100+ languages.
 * Advanced subtitle generation, accounting for sentence and phrase boundaries
 * Can directly generate translated transcripts for 98 languages, transcribed directly to English, and produce near word-level synchronized subtitles for the translated transcript
 * Attempts to improve TTS pronunciation accuracy on some engines: adds text normalization (e.g. idiomatic date and currency pronunciation), heteronym disambiguation (based on a rule-based model) and user-customizable pronunciation lexicons
@@ -36,7 +36,7 @@ Additional required tools:
 
 Both tools are auto-downloaded as internal packages on Windows and Linux.
 
-On macOS, they are not currently auto-downloaded, due to security issues with unsigned binaries. It is recommended to install them via a package manager like [Homebrew](https://brew.sh/) (`brew install ffmpeg sox`) and ensure they are available on the system path.
+On macOS, they are not currently auto-downloaded due to security issues with unsigned binaries. It is recommended to install them via a package manager like [Homebrew](https://brew.sh/) (`brew install ffmpeg sox`) and ensure they are available on the system path.
 
 ### Updating to latest version
 
@@ -46,7 +46,7 @@ npm update echogarden -g
 
 ## Interfacing with the system
 
-Currently, the tools are accessible mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
+Currently, tools are accessible mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
 
 Development of more graphical and interactive tooling is [currently ongoing](https://github.com/echogarden-project/echogarden/issues/28).
 
@@ -67,7 +67,7 @@ If you are a developer, you can also [import the package as a module](docs/API.m
 
 This project consolidates, and builds upon the effort of many different individuals and companies, as well as contributing a number of original works.
 
-Designed and developed by Rotem Dan (IPA: /ˈʁɒːtem ˈdän/).
+Developed by Rotem Dan (IPA: /ˈʁɒːtem ˈdän/).
 
 ## License
 
