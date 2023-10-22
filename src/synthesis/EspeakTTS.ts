@@ -379,7 +379,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	const logger = new Logger()
-	logger.start("Get espeak WASM instance")
+	logger.start("Get eSpeak Emscripten instance")
 
 	if (!espeakOptions.ssml) {
 		const { escape } = await import('html-escaper')
