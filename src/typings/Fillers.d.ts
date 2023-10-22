@@ -39,3 +39,56 @@ declare module '@echogarden/sonic-wasm'
 declare module '@echogarden/kissfft-wasm'
 declare module '@echogarden/speex-resampler-wasm'
 declare module '@echogarden/vosk'
+
+declare module 'onnxruntime-node' {
+	// From index.d.ts
+	export * from 'onnxruntime-common'
+
+	// From backend.d.ts
+	import { Backend, InferenceSession, SessionHandler, OnnxValue } from 'onnxruntime-common'
+	declare class OnnxruntimeBackend implements Backend {
+		init(): Promise<void>
+		createSessionHandler(pathOrBuffer: string | Uint8Array, options?: InferenceSession.SessionOptions): Promise<SessionHandler>
+	}
+	export declare const onnxruntimeBackend: OnnxruntimeBackend
+
+	// From binding.d.ts
+	type SessionOptions = InferenceSession.SessionOptions
+
+	type FeedsType = {
+		[name: string]: OnnxValue
+	}
+
+	type FetchesType = {
+		[name: string]: OnnxValue | null
+	}
+
+	type ReturnType = {
+		[name: string]: OnnxValue
+	}
+
+	type RunOptions = InferenceSession.RunOptions
+
+	/**
+	 * Binding exports a simple synchronized inference session object wrap.
+	 */
+	export declare namespace Binding {
+		interface InferenceSession {
+			loadModel(modelPath: string, options: SessionOptions): void
+			loadModel(buffer: ArrayBuffer, byteOffset: number, byteLength: number, options: SessionOptions): void
+			readonly inputNames: string[]
+			readonly outputNames: string[]
+			run(feeds: FeedsType, fetches: FetchesType, options: RunOptions): ReturnType
+		}
+		interface InferenceSessionConstructor {
+			new(): InferenceSession
+		}
+	}
+
+	export declare const binding: {
+		InferenceSession: Binding.InferenceSessionConstructor
+	}
+
+	// From version.d.ts
+	export declare const version = '1.16.1'
+}
