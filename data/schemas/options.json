@@ -562,6 +562,12 @@
             "\n",
             "\r\n"
           ]
+        },
+        "originalText": {
+          "type": "string"
+        },
+        "totalDuration": {
+          "type": "number"
         }
       },
       "additionalProperties": false
@@ -569,6 +575,7 @@
     "SubtitlesMode": {
       "type": "string",
       "enum": [
+        "line",
         "segment",
         "sentence",
         "word",

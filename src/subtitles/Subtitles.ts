@@ -110,20 +110,31 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 
 	if (config.mode == 'segment' || config.mode == 'sentence') {
 		cues = getCuesFromTimeline_IsolateSegmentSentence(timeline, config)
-
-		// Extend cue end times to maximum duration set, if possible
-		if (config.maxAddedDuration! > 0) {
-			for (let i = 1; i < cues.length; i++) {
-				const currentCue = cues[i]
-				const previousCue = cues[i - 1]
-
-				previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
-			}
-		}
 	} else if (config.mode == 'word' || config.mode == 'phone' || config.mode == 'word+phone') {
 		cues = getCuesFromTimeline_IsolateWordPhone(timeline, config)
+	} else if (config.mode == 'line') {
+		cues = getCuesFromTimeline_IsolateLines(timeline, config)
 	} else {
 		throw new Error('Invalid subtitles mode.')
+	}
+
+	// Extend cue end times with maximum added duration, if possible
+	if (cues.length > 0 &&
+		config.maxAddedDuration! > 0 &&
+		(config.mode === 'segment' || config.mode === 'sentence' || config.mode === 'line')) {
+
+		for (let i = 1; i < cues.length; i++) {
+			const currentCue = cues[i]
+			const previousCue = cues[i - 1]
+
+			previousCue.endTime = Math.min(previousCue.endTime + config.maxAddedDuration!, currentCue.startTime)
+		}
+
+		if (config.totalDuration != null) {
+			const lastCue = cues[cues.length - 1]
+
+			lastCue.endTime = Math.min(lastCue.endTime + config.maxAddedDuration!, config.totalDuration)
+		}
 	}
 
 	// Write cues to output text
@@ -257,7 +268,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 			const shouldAddNewLine =
 				isLastWord ||
 				lineLengthWithNextWordExceedsMaxLineWidth ||
-					(remainingTextExceedsMaxLineWidth &&
+				(remainingTextExceedsMaxLineWidth &&
 					lineLengthExceedsHalfMaxLineWidth &&
 					(wordsRemainingAreEqualOrLessToMinimumWordsInLine || (config.separatePhrases && followingSubstringIsPhraseSeparator)))
 
@@ -312,7 +323,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 	return cues
 }
 
-// Generates cues from timeline. Isolate words or phones in individual cues.
+// Generates cues from timeline. Isolates words or phones in individual cues.
 function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: SubtitlesConfig) {
 	if (timeline.length == 0) {
 		return []
@@ -343,6 +354,81 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 		}
 	}
 
+	return cues
+}
+
+// Generates cues from timeline. Isolates lines in individual cues.
+function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesConfig) {
+	if (timeline.length == 0) {
+		return []
+	}
+
+	const originalText = config.originalText
+
+	if (originalText == null) {
+		throw new Error(`'line' subtitles mode requires passing the original text in the 'originalText' property of the configuration object.`)
+	}
+
+	const lines = originalText.split(/(\r?\n)/g)
+
+	const charOffsetToLineNumber: number[] = []
+
+	for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+		const line = lines[lineNumber]
+
+		for (let i = 0; i < line.length; i++) {
+			charOffsetToLineNumber.push(lineNumber)
+		}
+	}
+
+	const cues: Cue[] = []
+
+	let currentCueWords: Timeline = []
+
+	function addCueFromCurrentWords() {
+		if (currentCueWords.length == 0) {
+			return
+		}
+
+		const firstWordEntry = currentCueWords[0]
+		const lastWordEntry = currentCueWords[currentCueWords.length - 1]
+
+		const lineNumber = charOffsetToLineNumber[firstWordEntry.startOffsetUtf16!]
+		const line = lines[lineNumber].trim()
+
+		cues.push({
+			lines: [line],
+			startTime: firstWordEntry.startTime,
+			endTime: lastWordEntry.endTime
+		})
+
+		currentCueWords = []
+	}
+
+	function addCuesFrom(timeline: Timeline) {
+		for (const entry of timeline) {
+			if (entry.type == 'word') {
+				const currentWordLineNumber = charOffsetToLineNumber[entry.startOffsetUtf16!]
+				const previousWordEntry = currentCueWords[currentCueWords.length - 1]
+
+				if (previousWordEntry) {
+					const previousWordLineNumber = charOffsetToLineNumber[previousWordEntry.startOffsetUtf16!]
+
+					if (currentWordLineNumber > previousWordLineNumber) {
+						addCueFromCurrentWords()
+					}
+				}
+
+				currentCueWords.push(entry)
+			} else if (entry.timeline) {
+				addCuesFrom(entry.timeline)
+			}
+		}
+	}
+
+	addCuesFrom(timeline)
+	addCueFromCurrentWords() // Add any remaining words
+	
 	return cues
 }
 
@@ -433,7 +519,7 @@ export type Cue = {
 	endTime: number
 }
 
-export type SubtitlesMode = 'segment' | 'sentence' | 'word' | 'phone' | 'word+phone'
+export type SubtitlesMode = 'line' | 'segment' | 'sentence' | 'word' | 'phone' | 'word+phone'
 
 export interface SubtitlesConfig {
 	format?: 'srt' | 'webvtt'
@@ -450,6 +536,9 @@ export interface SubtitlesConfig {
 	includeCueIndexes?: boolean
 	includeHours?: boolean
 	lineBreakString?: '\n' | '\r\n'
+
+	originalText?: string
+	totalDuration?: number
 }
 
 export const defaultSubtitlesBaseConfig: SubtitlesConfig = {

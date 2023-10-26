@@ -5,7 +5,7 @@ import { getOptionTypeFromSchema, SchemaTypeDefinition } from "./CLIOptionsSchem
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from "./CLIConfigFile.js"
 
 import chalk from 'chalk'
-import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, normalizeAudioLevel, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
+import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime } from "../audio/AudioUtilities.js"
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from "../subtitles/Subtitles.js"
 import { Logger, resetActiveLogger } from "../utilities/Logger.js"
 import { isMainThread, parentPort } from 'node:worker_threads'
@@ -1308,7 +1308,13 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 		fileSaver = async (audio, timeline, text, subtitlesConfig) => {
 			await ensureDir(fileDir)
 
-			subtitlesConfig = extendDeep(subtitlesConfig, { format: "srt" })
+			const extraSubtitleConfigOptions: SubtitlesConfig = {
+				format: "srt",
+				referenceText: text,
+				totalDuration: getRawAudioDuration(audio)
+			}
+
+			subtitlesConfig = extendDeep(subtitlesConfig, extraSubtitleConfigOptions)
 
 			const subtitles = timelineToSubtitles(timeline, subtitlesConfig)
 
@@ -1318,7 +1324,13 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 		fileSaver = async (audio, timeline, text, subtitlesConfig) => {
 			await ensureDir(fileDir)
 
-			subtitlesConfig = extendDeep(subtitlesConfig, { format: "webvtt" })
+			const extraSubtitleConfigOptions: SubtitlesConfig = {
+				format: "webvtt",
+				referenceText: text,
+				totalDuration: getRawAudioDuration(audio)
+			}
+
+			subtitlesConfig = extendDeep(subtitlesConfig, extraSubtitleConfigOptions)
 
 			const subtitles = timelineToSubtitles(timeline, subtitlesConfig)
 
