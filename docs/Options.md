@@ -131,12 +131,14 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
 **Subtitles**
-* `subtitles.mode`: subtitle generation mode. Can be `segment` (ensures each segment starts at a new cue), `sentence` (ensures each sentence starts at a new cue), `word` (one word per cue), `phone` (one phone per cue), `word+phone` (include both `word` and `phone` cues, with overlapping time ranges). Defaults to `sentence`
+* `subtitles.mode`: subtitle generation mode. Can be `line` (each text line is made a separate cue) ,`segment` (ensures each segment starts at a new cue), `sentence` (ensures each sentence starts at a new cue), `word` (one word per cue, no punctuation included), `phone` (one phone per cue), `word+phone` (include both `word` and `phone` cues, with overlapping time ranges). Defaults to `sentence`
 * `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
 * `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
 * `subtitles.minWordsInLine`: minimum number of remaining words to break to a new line. Defaults to `4`
 * `subtitles.separatePhrases`: try to separate phrases or sentences in new lines or cues, if possible. Defaults to `true`
 * `subtitles.maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's end time. This gives the reader additional time to read the cue, and also ensures that very short duration cues aren't shown in a flash. Defaults to `3.0`
+
+_Note_: options `maxLineCount`, `maxLineWidth`, `minWordsInLine`, `separatePhrases`, are only effective when using the `segment` and `sentence` modes, and are ignored in all other modes. `subtitles.maxAddedDuration` doesn't apply to modes `word`, `phone` and `word+phone` (they always use the exact start and end timestamps).
 
 **Whisper**:
 * `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`. Defaults to `tiny` or `tiny.en`
