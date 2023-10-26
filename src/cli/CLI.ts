@@ -1310,7 +1310,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 
 			const extraSubtitleConfigOptions: SubtitlesConfig = {
 				format: "srt",
-				referenceText: text,
+				originalText: text,
 				totalDuration: getRawAudioDuration(audio)
 			}
 
@@ -1326,7 +1326,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 
 			const extraSubtitleConfigOptions: SubtitlesConfig = {
 				format: "webvtt",
-				referenceText: text,
+				originalText: text,
 				totalDuration: getRawAudioDuration(audio)
 			}
 
