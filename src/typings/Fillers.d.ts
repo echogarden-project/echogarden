@@ -11,9 +11,9 @@ declare module 'sam-js'
 declare module 'winax'
 
 declare module 'tinyld' {
-	export declare function detect(text: string, opts?: any): string
+	export function detect(text: string, opts?: any): string
 
-	export declare function detectAll(text: string, opts?: any): {
+	export function detectAll(text: string, opts?: any): {
 		lang: string
 		accuracy: number
 	}[]
@@ -46,11 +46,11 @@ declare module 'onnxruntime-node' {
 
 	// From backend.d.ts
 	import { Backend, InferenceSession, SessionHandler, OnnxValue } from 'onnxruntime-common'
-	declare class OnnxruntimeBackend implements Backend {
+	class OnnxruntimeBackend implements Backend {
 		init(): Promise<void>
 		createSessionHandler(pathOrBuffer: string | Uint8Array, options?: InferenceSession.SessionOptions): Promise<SessionHandler>
 	}
-	export declare const onnxruntimeBackend: OnnxruntimeBackend
+	export const onnxruntimeBackend: OnnxruntimeBackend
 
 	// From binding.d.ts
 	type SessionOptions = InferenceSession.SessionOptions
@@ -72,7 +72,7 @@ declare module 'onnxruntime-node' {
 	/**
 	 * Binding exports a simple synchronized inference session object wrap.
 	 */
-	export declare namespace Binding {
+	export namespace Binding {
 		interface InferenceSession {
 			loadModel(modelPath: string, options: SessionOptions): void
 			loadModel(buffer: ArrayBuffer, byteOffset: number, byteLength: number, options: SessionOptions): void
@@ -85,10 +85,10 @@ declare module 'onnxruntime-node' {
 		}
 	}
 
-	export declare const binding: {
+	export const binding: {
 		InferenceSession: Binding.InferenceSessionConstructor
 	}
 
 	// From version.d.ts
-	export declare const version = '1.16.1'
+	export const version = '1.16.1'
 }
