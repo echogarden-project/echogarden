@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.11.15",
+	"version": "0.11.16",
 	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -54,8 +54,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.433.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.433.0",
+		"@aws-sdk/client-polly": "^3.436.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.436.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -100,7 +100,7 @@
 	"peerDependencies": {
 		"@echogarden/vosk": "^0.3.39-patched.1",
 		"speaker": "^0.5.4",
-		"winax": "^3.3.4"
+		"winax": "^3.4.1"
 	},
 	"peerDependenciesMeta": {
 		"@echogarden/vosk": {
@@ -116,17 +116,17 @@
 	"devDependencies": {
 		"@types/buffer-split": "^1.0.1",
 		"@types/fs-extra": "^11.0.3",
+		"@types/graceful-fs": "^4.1.8",
 		"@types/jsdom": "^21.1.4",
 		"@types/msgpack-lite": "^0.1.10",
 		"@types/ndarray": "^1.0.13",
 		"@types/ndarray-ops": "^1.2.6",
-		"@types/node": "^20.8.7",
+		"@types/node": "^20.8.9",
 		"@types/recursive-readdir": "^2.2.3",
 		"@types/tar": "^6.1.7",
 		"@types/ws": "^8.5.8",
-		"@typescript-eslint/eslint-plugin": "^6.8.0",
-		"@typescript-eslint/parser": "^6.8.0",
-		"@types/graceful-fs": "^4.1.8",
+		"@typescript-eslint/eslint-plugin": "^6.9.0",
+		"@typescript-eslint/parser": "^6.9.0",
 		"eslint": "^8.52.0",
 		"ts-json-schema-generator": "^1.4.0",
 		"typescript": "^5.2.2"
