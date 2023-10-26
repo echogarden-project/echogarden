@@ -63,6 +63,8 @@ export function tryMatchInLexicons(term: CompromiseParsedTerm, lexicons: Lexicon
 			return match
 		}
 	}
+
+	return undefined
 }
 
 export function tryMatchInLexicon(term: CompromiseParsedTerm, lexicon: Lexicon, espeakVoice: string) {

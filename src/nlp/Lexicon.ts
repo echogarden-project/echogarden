@@ -62,6 +62,8 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 			return substitutionPhonemes
 		}
 	}
+
+	return
 }
 
 export async function loadLexiconFile(jsonFilePath: string): Promise<Lexicon> {
