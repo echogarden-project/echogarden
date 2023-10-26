@@ -16,8 +16,10 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 
 		const { default: WinAX } = await import("winax")
 
+		const ActiveXObject = (global as any).ActiveXObject
+
 		logger.start("Create SAPI COM object")
-		const sapiVoice = new global.ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
+		const sapiVoice = new ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
 		sapiVoice.EventInterests = 33790
 
 		logger.start("Get SAPI voice list and select best match")
@@ -38,7 +40,7 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 		sapiVoice.Rate = rate
 
 		// Create phone converter for language
-		const sapiPhoneConverter = new global.ActiveXObject(useSpeechPlatform ? "Speech.SpPhoneConverter" : "SAPI.SpPhoneConverter")
+		const sapiPhoneConverter = new ActiveXObject(useSpeechPlatform ? "Speech.SpPhoneConverter" : "SAPI.SpPhoneConverter")
 		const sapiLanguageCodeHex = sapiVoice.Voice.GetAttribute('Language')
 		const sapiLanguageCode = parseInt(sapiLanguageCodeHex, 16)
 
@@ -49,7 +51,7 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 		const sampleRate = 22050
 		const bytesPerSecond = sampleRate * 2
 
-		const sapiOutputStream = new global.ActiveXObject('SAPI.SpMemoryStream')
+		const sapiOutputStream = new ActiveXObject('SAPI.SpMemoryStream')
 		sapiOutputStream.Format.Type = 22 // format code code for SAFT22kHz16BitMono
 		sapiVoice.AudioOutputStream = sapiOutputStream
 
@@ -124,7 +126,9 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 export async function getVoiceList(useSpeechPlatform = false) {
 	const { default: WinAX } = await import("winax")
 
-	const sapiVoice = new global.ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
+	const ActiveXObject = (global as any).ActiveXObject
+
+	const sapiVoice = new ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
 
 	const voiceObjects = sapiVoice.GetVoices()
 
@@ -180,14 +184,16 @@ export async function AssertSAPIAvailable(testForSpeechPlatform = false) {
 		throw new Error(`winax package, which is required for SAPI support, was not found. You can install it by running 'npm install winax -g'.`)
 	}
 
+	const ActiveXObject = (global as any).ActiveXObject
+
 	try {
-		const voice = new global.ActiveXObject("SAPI.SPVoice")
+		const voice = new ActiveXObject("SAPI.SPVoice")
 	} catch (e) {
 		throw new Error(`Failed creating a SAPI instance: ${e}`)
 	}
 
 	try {
-		const voice = new global.ActiveXObject("Speech.SPVoice")
+		const voice = new ActiveXObject("Speech.SPVoice")
 	} catch(e) {
 		throw new Error(`Failed creating an msspeech instance. Please ensure you installed the Microsoft Speech Platform runtime correctly.`)
 	}
