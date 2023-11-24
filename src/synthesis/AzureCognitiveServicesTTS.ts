@@ -1,4 +1,4 @@
-import SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 

@@ -1,4 +1,4 @@
-import SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
 import { RawAudio, encodeWaveBuffer } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
