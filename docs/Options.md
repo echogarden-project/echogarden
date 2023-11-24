@@ -131,7 +131,7 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `languageDetection`: prefix to provide custom options for language detection. Options detailed in section for speech language detection
 
 **Subtitles**
-* `subtitles.mode`: subtitle generation mode. Can be `line` (each text line is made a separate cue) ,`segment` (ensures each segment starts at a new cue), `sentence` (ensures each sentence starts at a new cue), `word` (one word per cue, no punctuation included), `phone` (one phone per cue), `word+phone` (include both `word` and `phone` cues, with overlapping time ranges). Defaults to `sentence`
+* `subtitles.mode`: subtitle generation mode. Can be `segment` (ensures each segment starts at a new cue), `sentence` (ensures each sentence starts at a new cue), `word` (one word per cue, no punctuation included), `phone` (one phone per cue), `word+phone` (include both `word` and `phone` cues, with overlapping time ranges), `line` (each text line is made a separate cue). Defaults to `sentence`
 * `subtitles.maxLineCount`: maximum number of lines per cue. Defaults to `2`
 * `subtitles.maxLineWidth`: maximum characters in a line. Defaults to `42`
 * `subtitles.minWordsInLine`: minimum number of remaining words to break to a new line. Defaults to `4`

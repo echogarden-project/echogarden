@@ -102,8 +102,6 @@ echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --tar
 
 **Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
 
-**Note**: this operation is not the same as 'speech-to-speech' translation, which has become popular recently. It produces a translated transcript, not translated speech audio. In the future, if there are good quality and  open-source speech-to-speech models, a separate `translate-speech-to-speech` operation may be added.
-
 ## Using output templates to split the output to multiple files
 
 Echogarden can split the output to multiple parts based on the segment boundaries detected. For example:
