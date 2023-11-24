@@ -57,6 +57,8 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 	const { WASI } = await import('wasi')
 
 	const wasi = new WASI({
+		version: 'preview1',
+
 		env: {
 		},
 
