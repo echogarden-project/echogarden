@@ -204,8 +204,13 @@ export class VitsTTS {
 
 export const voiceList: SynthesisVoice[] = [
 	{
+		name: "ar_JO-kareem-low",
+		languages: ["ar-JO", "ar"],
+		gender: "male",
+	},
+	{
 		name: "ar_JO-kareem-medium",
-		languages: ["ar_JO", "ar"],
+		languages: ["ar-JO", "ar"],
 		gender: "male",
 	},
 
@@ -432,6 +437,11 @@ export const voiceList: SynthesisVoice[] = [
 		name: "en_US-hfc_male-medium",
 		languages: ["en-US", "en"],
 		gender: "male",
+	},
+	{
+		name: "en_US-hfc_female-medium",
+		languages: ["en-US", "en"],
+		gender: "female",
 	},
 
 	{
