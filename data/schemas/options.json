@@ -775,7 +775,8 @@
         "medium.en",
         "large",
         "large-v1",
-        "large-v2"
+        "large-v2",
+        "large-v3"
       ]
     },
     "TimePitchShiftingMethod": {
