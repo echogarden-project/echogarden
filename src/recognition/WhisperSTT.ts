@@ -1081,7 +1081,7 @@ export class Whisper {
 			return [24, groupCount, length, 768]
 		} else if (modelName == "medium" || modelName == "medium.en") {
 			return [48, groupCount, length, 1024]
-		} else if (modelName == "large" || modelName == "large-v1" || modelName == "large-v2") {
+		} else if (modelName == "large" || modelName == "large-v1" || modelName == "large-v2" || modelName == "large-v3") {
 			return [64, groupCount, length, 1280]
 		} else {
 			throw new Error(`Unsupported model: ${modelName}`)
@@ -1358,7 +1358,7 @@ export function isMultiligualModel(modelName: WhisperModelName) {
 	return !modelName.endsWith(".en")
 }
 
-export type WhisperModelName = "tiny" | "tiny.en" | "base" | "base.en" | "small" | "small.en" | "medium" | "medium.en" | "large" | "large-v1" | "large-v2"
+export type WhisperModelName = "tiny" | "tiny.en" | "base" | "base.en" | "small" | "small.en" | "medium" | "medium.en" | "large" | "large-v1" | "large-v2" | "large-v3"
 export type WhisperTask = "transcribe" | "translate"
 
 export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
@@ -1370,9 +1370,10 @@ export const modelNameToPackageName: { [modelName in WhisperModelName]: string }
 	"small.en": "whisper-small.en",
 	"medium": "whisper-medium",
 	"medium.en": "whisper-medium.en",
-	"large": "whisper-large-v2",
+	"large": "whisper-large-v3",
 	"large-v1": "whisper-large-v1",
-	"large-v2": "whisper-large-v2"
+	"large-v2": "whisper-large-v2",
+	"large-v3": "whisper-large-v3"
 }
 
 export const tokenizerPackageName = "whisper-tokenizer"
@@ -1496,6 +1497,7 @@ const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
 	"medium": [223, 244, 255, 257, 320, 372],
 	"large-v1": [199, 222, 224, 237, 447, 451, 457, 462, 475],
 	"large-v2": [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
+	"large-v3": [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555], // Temporary (may not be correct)
 	"large": [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
 }
 
