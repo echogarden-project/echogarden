@@ -103,4 +103,17 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	"vits-en_US-libritts_r-medium": "20231022",
 	"vits-hu_HU-imre-medium": "20231022",
 	"vits-pl_PL-mc_speech-medium": "20231022",
+
+	"whisper-tiny": "20231126",
+	"whisper-tiny.en": "20231126",
+	"whisper-base": "20231126",
+	"whisper-base.en": "20231126",
+	"whisper-small": "20231126",
+	"whisper-small.en": "20231126",
+	"whisper-medium": "20231126",
+	"whisper-medium.en": "20231126",
+	"whisper-large-v3": "20231126",
+
+	"vits-ar_JO-kareem-low": "20231126",
+	"vits-en_US-hfc_female-medium": "20231126",
 }
