@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.11.18",
+	"version": "0.11.19",
 	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -54,8 +54,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.454.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.454.0",
+		"@aws-sdk/client-polly": "^3.515.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.518.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -66,41 +66,42 @@
 		"@echogarden/sonic-wasm": "^0.1.1",
 		"@echogarden/speex-resampler-wasm": "^0.1.1",
 		"@echogarden/svoxpico-wasm": "^0.1.0",
-		"@mozilla/readability": "^0.4.4",
+		"@mozilla/readability": "^0.5.0",
 		"alawmulaw": "^6.0.0",
 		"buffer-split": "^1.0.0",
 		"chalk": "^5.3.0",
 		"cldr-segmentation": "^2.2.0",
 		"command-exists": "^1.2.9",
-		"compromise": "^14.10.1",
-		"compromise-dates": "^3.4.2",
-		"fs-extra": "^11.1.1",
-		"gaxios": "^6.1.1",
+		"compromise": "^14.12.0",
+		"compromise-dates": "^3.5.0",
+		"fs-extra": "^11.2.0",
+		"gaxios": "^6.3.0",
 		"graceful-fs": "^4.2.11",
 		"html-escaper": "^3.0.3",
 		"html-to-text": "^9.0.5",
 		"import-meta-resolve": "^4.0.0",
 		"jieba-wasm": "^0.0.2",
-		"jsdom": "^22.1.0",
+		"jsdom": "^24.0.0",
 		"json5": "^2.2.3",
 		"kuromoji": "^0.1.2",
-		"microsoft-cognitiveservices-speech-sdk": "^1.33.1",
+		"microsoft-cognitiveservices-speech-sdk": "^1.35.0",
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
 		"ndarray": "^1.0.19",
 		"ndarray-ops": "^1.2.2",
-		"onnxruntime-node": "^1.16.3",
+		"onnxruntime-node": "^1.17.0",
 		"sam-js": "^0.2.1",
 		"strip-ansi": "^7.1.0",
 		"tar": "^6.2.0",
 		"tinyld": "^1.3.4",
-		"ws": "^8.14.2",
-		"wtf_wikipedia": "^10.2.1"
+
+		"ws": "^8.16.0",
+		"wtf_wikipedia": "^10.3.0"
 	},
 	"peerDependencies": {
 		"@echogarden/vosk": "^0.3.39-patched.1",
 		"speaker": "^0.5.4",
-		"winax": "^3.4.1"
+		"winax": "^3.4.2"
 	},
 	"peerDependenciesMeta": {
 		"@echogarden/vosk": {
@@ -121,14 +122,14 @@
 		"@types/msgpack-lite": "^0.1.11",
 		"@types/ndarray": "^1.0.14",
 		"@types/ndarray-ops": "^1.2.7",
-		"@types/node": "^20.10.0",
+		"@types/node": "^20.11.20",
 		"@types/recursive-readdir": "^2.2.4",
-		"@types/tar": "^6.1.10",
+		"@types/tar": "^6.1.11",
 		"@types/ws": "^8.5.10",
-		"@typescript-eslint/eslint-plugin": "^6.12.0",
-		"@typescript-eslint/parser": "^6.12.0",
-		"eslint": "^8.54.0",
-		"ts-json-schema-generator": "^1.4.0",
-		"typescript": "^5.3.2"
+		"@typescript-eslint/eslint-plugin": "^7.0.2",
+		"@typescript-eslint/parser": "^7.0.2",
+		"eslint": "^8.56.0",
+		"ts-json-schema-generator": "^1.5.0",
+		"typescript": "^5.3.3"
 	}
 }
