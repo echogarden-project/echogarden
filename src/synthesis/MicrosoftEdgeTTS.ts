@@ -10,7 +10,7 @@ import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 import { Logger } from "../utilities/Logger.js"
 import { OpenPromise } from "../utilities/OpenPromise.js"
 import { getRandomHexString, logToStderr } from "../utilities/Utilities.js"
-import { getRawAudioDuration } from "../audio/AudioUtilities.js"
+import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
 
 const traceEnabled = false
 
@@ -19,7 +19,7 @@ const log: typeof logToStderr = traceEnabled ? logToStderr : () => { }
 export async function synthesize(
 	text: string,
 	trustedClientToken: string,
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)",
+	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)",
 	ssmlPitchString = "+0Hz",
 	ssmlRateString = "+0%",
 	ssmlVolumeString = "+0%") {
@@ -30,7 +30,17 @@ export async function synthesize(
 	const { audioData, events } = await requestSynthesis(text, trustedClientToken, voice, ssmlPitchString, ssmlRateString, ssmlVolumeString)
 	logger.end()
 
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData, 24000, 1)
+	//logToStderr(`Audio length: ${audioData.length}`)
+
+	let rawAudio: RawAudio
+
+	try {
+		rawAudio = await FFMpegTranscoder.decodeToChannels(audioData, 24000, 1)
+	} catch (e) {
+		rawAudio = getEmptyRawAudio(1, 24000)
+	}
+
+	//logToStderr(`Raw audio length: ${rawAudio.audioChannels[0].length}`)
 
 	logger.start("Convert boundary events to timeline")
 	const timeline = AzureCognitiveServicesTTS.boundaryEventsToTimeline(events, getRawAudioDuration(rawAudio))
