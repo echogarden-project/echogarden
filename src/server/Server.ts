@@ -4,7 +4,7 @@ import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { readFile, existsSync } from '../utilities/FileSystem.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread } from './Worker.js'
+import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread, startMessageChannel } from './Worker.js'
 import { Worker } from 'node:worker_threads'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import { Logger } from '../utilities/Logger.js'
@@ -87,6 +87,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 		workerThread = await startNewWorkerThread()
 		workerThread.on('message', onWorkerMessage)
 	} else {
+		startMessageChannel()
 		addListenerToWorkerMessages(onWorkerMessage)
 	}
 

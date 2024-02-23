@@ -14,29 +14,38 @@ import chalk from "chalk"
 
 const log = logToStderr
 
-const messageChannel = new MessageChannel()
-messageChannel.port1.start()
-messageChannel.port2.start()
+let messageChannel: MessageChannel | undefined = undefined
 
 const canceledRequests = new Set<string>()
+
 let cancelCurrentTask = false
+
+const messageQueue = new Queue<any>()
+let isProcessing = false
+
+export function startMessageChannel() {
+	if (messageChannel != null) {
+		return
+	}
+
+	messageChannel = new MessageChannel()
+	messageChannel.port1.start()
+	messageChannel.port2.start()
+
+	addListenerToClientMessages((message) => {
+		if (message.messageType == "CancelationRequest") {
+			//log(`CANCEL REQUESTED FOR ${message.requestId}`)
+			canceledRequests.add(message.requestId)
+			return
+		}
+
+		enqueueAndProcessIfIdle(message)
+	})
+}
 
 export function shouldCancelCurrentTask() {
 	return cancelCurrentTask
 }
-
-addListenerToClientMessages((message) => {
-	if (message.messageType == "CancelationRequest") {
-		//log(`CANCEL REQUESTED FOR ${message.requestId}`)
-		canceledRequests.add(message.requestId)
-		return
-	}
-
-	enqueueAndProcessIfIdle(message)
-})
-
-const messageQueue = new Queue<any>()
-let isProcessing = false
 
 function enqueueAndProcessIfIdle(message: any) {
 	messageQueue.enqueue(message)
@@ -344,23 +353,37 @@ export interface TextLanguageDetectionResponseMessage extends WorkerMessageBase,
 // Messaging methods
 ///////////////////////////////////////////////////////////////////////////////////////////////
 export function sendMessageToWorker(message: any) {
-	messageChannel.port1.postMessage(message)
+	ensureMessageChannelCreated()
+
+	messageChannel?.port1.postMessage(message)
 }
 
 export function addListenerToWorkerMessages(handler: MessageFunc) {
-	messageChannel.port1.addEventListener('message', (event) => {
+	ensureMessageChannelCreated()
+
+	messageChannel?.port1.addEventListener('message', (event) => {
 		handler(event.data)
 	})
 }
 
 function sendMessageToClient(message: any) {
-	messageChannel.port2.postMessage(message)
+	ensureMessageChannelCreated()
+
+	messageChannel?.port2.postMessage(message)
 }
 
 function addListenerToClientMessages(handler: MessageFunc) {
-	messageChannel.port2.addEventListener('message', (event) => {
+	ensureMessageChannelCreated()
+
+	messageChannel?.port2.addEventListener('message', (event) => {
 		handler(event.data)
 	})
+}
+
+function ensureMessageChannelCreated() {
+	if (messageChannel == null) {
+		throw new Error(`Message channel has not been created`)
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

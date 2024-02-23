@@ -1,11 +1,13 @@
 import { isMainThread, parentPort } from 'node:worker_threads'
-import { sendMessageToWorker, addListenerToWorkerMessages } from './Worker.js'
+import { sendMessageToWorker, addListenerToWorkerMessages, startMessageChannel } from './Worker.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 
 async function startIfInWorkerThread() {
 	if (isMainThread || !parentPort) {
 		return
 	}
+
+	startMessageChannel()
 
 	addListenerToWorkerMessages((message) => {
 		parentPort?.postMessage(message)
