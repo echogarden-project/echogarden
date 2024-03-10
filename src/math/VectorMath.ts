@@ -688,24 +688,24 @@ export function softmax(logits: number[], temperature = 1.0) {
 		}
 	}
 
-	const temperatureMultiplier = 1 / temperature
+	const temperatureReciprocal = 1 / (temperature + 1e-40)
 
 	const result: number[] = []
 
 	let sumOfExponentiatedValues = 0.0
 
 	for (const value of logits) {
-		const eToValue = Math.exp((value - maxValue) * temperatureMultiplier)
+		const eToValue = Math.exp((value - maxValue) * temperatureReciprocal)
 
 		sumOfExponentiatedValues += eToValue
 
 		result.push(eToValue)
 	}
 
-	const sumOfExponentiatedValuesMultiplier = 1 / (sumOfExponentiatedValues + 1e-40)
+	const sumOfExponentiatedValuesReciprocal = 1 / (sumOfExponentiatedValues + 1e-40)
 
 	for (let i = 0; i < result.length; i++) {
-		result[i] *= sumOfExponentiatedValuesMultiplier
+		result[i] *= sumOfExponentiatedValuesReciprocal
 	}
 
 	return result
@@ -789,6 +789,7 @@ export function sumExp(values: number[]) {
 
 export function logSoftmax(values: number[], minVal = 1e-40) {
 	const softMaxOfValues = softmax(values)
+	
 	return logOfVector(softMaxOfValues, minVal)
 }
 
