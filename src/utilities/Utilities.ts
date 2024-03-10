@@ -4,6 +4,8 @@ import { inspect } from 'node:util'
 
 import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
+import { Logger } from './Logger.js'
+import chalk from 'chalk'
 
 const log = logToStderr
 
@@ -445,9 +447,9 @@ export function splitFilenameOnExtendedExtension(filenameWithExtension: string) 
 				splitPoint = i
 
 				continue
-			 } else {
-			 	break
-			 }
+			} else {
+				break
+			}
 		}
 	}
 
@@ -566,9 +568,40 @@ export function getConsecutiveRepetitionScoreRelativeToFirstSubstring(tokens: st
 export async function resolveModuleScriptPath(moduleName: string) {
 	const { resolve } = await import('import-meta-resolve')
 
-	const scriptPath = await resolve(moduleName, import.meta.url)
+	const scriptPath = resolve(moduleName, import.meta.url)
 
 	const { fileURLToPath } = await import('url')
 
 	return fileURLToPath(scriptPath)
+}
+
+export async function runOperationWithRetries<R>(
+	operationFunc: () => Promise<R>,
+	logger: Logger,
+	opreationName = "Operation",
+	delayBetweenRetries = 2000,
+	maxRetries = 1000) {
+
+	for (let retryIndex = 1; retryIndex <= maxRetries; retryIndex++) {
+		try {
+			const result = await operationFunc()
+
+			return result
+		} catch (e: any) {
+			logger.setAsActiveLogger()
+
+			logger.logTitledMessage(`Error`, e.message, chalk.redBright)
+			logger.log(``)
+			logger.logTitledMessage(`${opreationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, chalk.redBright)
+
+			await delay(delayBetweenRetries)
+
+			logger.log(``)
+			logger.logTitledMessage(`Starting attempt`, `${retryIndex} / ${maxRetries}`)
+
+			logger.unsetAsActiveLogger()
+		}
+	}
+
+	throw new Error(`${opreationName} failed after ${maxRetries} retry attempts`)
 }

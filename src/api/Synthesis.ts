@@ -4,7 +4,7 @@ import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
 
 import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
+import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, delay, runOperationWithRetries } from "../utilities/Utilities.js"
 import { RawAudio, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 
@@ -727,7 +727,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: segmentTimeline } = await GoogleTranslateTTS.synthesizeLongText(text, language, options.googleTranslate?.tld, options.sentenceEndPause, options.segmentEndPause)
+			const { rawAudio, timeline: segmentTimeline } =
+				await runOperationWithRetries(
+					() => GoogleTranslateTTS.synthesizeLongText(text, language, options.googleTranslate?.tld, options.sentenceEndPause, options.segmentEndPause),
+					logger)
 
 			synthesizedAudio = rawAudio
 
@@ -777,7 +780,10 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: edgeTimeline } = await MicrosoftEdgeTTS.synthesize(text, trustedClientToken, voice, ssmlPitch, ssmlRate)
+			const { rawAudio, timeline: edgeTimeline } =
+				await runOperationWithRetries(
+					() => MicrosoftEdgeTTS.synthesize(text, trustedClientToken!, voice, ssmlPitch, ssmlRate),
+					logger)
 
 			synthesizedAudio = rawAudio
 			timeline = edgeTimeline
@@ -1212,6 +1218,8 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 export async function requestVoiceList(options: VoiceListRequestOptions): Promise<RequestVoiceListResult> {
 	options = extendDeep(defaultVoiceListRequestOptions, options)
 
+	const logger = new Logger()
+
 	const cacheOptions = options.cache!
 
 	let cacheDir = cacheOptions?.path
@@ -1456,7 +1464,10 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					throw new Error("No trusted client token provided")
 				}
 
-				const voices = await MicrosoftEdgeTTS.getVoiceList(trustedClientToken)
+				const voices =
+					await runOperationWithRetries(
+						() => MicrosoftEdgeTTS.getVoiceList(trustedClientToken),
+						logger)
 
 				voiceList = voices.map((voice: any) => ({
 					name: voice.Name,

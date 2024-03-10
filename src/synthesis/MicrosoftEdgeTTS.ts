@@ -11,6 +11,7 @@ import { Logger } from "../utilities/Logger.js"
 import { OpenPromise } from "../utilities/OpenPromise.js"
 import { getRandomHexString, logToStderr } from "../utilities/Utilities.js"
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
+import { Timer } from "../utilities/Timer.js"
 
 const traceEnabled = false
 
@@ -61,15 +62,55 @@ async function requestSynthesis(
 
 	const synthesisOpenPromise = new OpenPromise<SynthesisRequestResult>()
 
+	let connectionFailed = false
+	let responseComplete = false
+
+	let lastReceievedMessageTime = Timer.currentTime
+
+	function checkForRequestTimeout() {
+		if (responseComplete || connectionFailed) {
+			clearInterval(timeoutCheckInterval)
+
+			return
+		}
+
+		if (!webSocket) {
+			return
+		}
+
+		if (Timer.currentTime - lastReceievedMessageTime > 10000) {
+			clearInterval(timeoutCheckInterval)
+
+			removeWebSocketHandlers()
+			webSocket.close()
+
+			synthesisOpenPromise.reject(new Error(`WebSocket request timed out after 10 seconds without a message from the server`))
+
+			return
+		}
+	}
+
+	let webSocket: WebSocket = undefined as any
+
+	const timeoutCheckInterval = setInterval(checkForRequestTimeout, 1000)
+
 	const requestId = getRandomHexString()
 
-	const webSocket = await initializeWebsocketConnection(trustedClientToken)
+	try {
+		webSocket = await initializeWebsocketConnection(trustedClientToken)
+	} catch(e) {
+		connectionFailed = true
+
+		throw e
+	}
 
 	const receivedBinaryMessages: Buffer[] = []
 	const receivedEventMessages: any[] = []
 	const audioChunks: Buffer[] = []
 
 	const onMessage = (messageData: Buffer, isBinary: boolean) => {
+		lastReceievedMessageTime = Timer.currentTime
+
 		if (isBinary) {
 			const [header, audioChunk] = parseBinaryMessage(messageData)
 
@@ -108,17 +149,22 @@ async function requestSynthesis(
 			else if (header["Path"] == "turn.end") {
 				const result: SynthesisRequestResult = { audioData: Buffer.concat(audioChunks), events: receivedEventMessages }
 
-				webSocket.off("message", onMessage)
-				webSocket.off("error", onError)
-				webSocket.off("close", onClose)
+				removeWebSocketHandlers()
 
 				synthesisOpenPromise.resolve(result)
+				responseComplete = true
 			}
 		}
 	}
 
 	const onError = (err: Error) => {
 		synthesisOpenPromise.reject(err)
+
+		removeWebSocketHandlers()
+
+		if (webSocket) {
+			webSocket.close()
+		}
 	}
 
 	const onClose = async (code: number, reason: Buffer) => {
@@ -127,7 +173,15 @@ async function requestSynthesis(
 		log(reason.toString())
 
 		if (reason.length > 0) {
-			synthesisOpenPromise.reject(`Websocket closed with code ${code}, reason: ${reason}`)
+			synthesisOpenPromise.reject(new Error(`Websocket closed with code ${code}, reason: ${reason}`))
+		}
+	}
+
+	function removeWebSocketHandlers() {
+		if (webSocket) {
+			webSocket.off("message", onMessage)
+			webSocket.off("error", onError)
+			webSocket.off("close", onClose)
 		}
 	}
 
@@ -234,7 +288,7 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		log(reason.toString())
 
 		if (reason.length > 0) {
-			requestOpenPromise.reject(`Websocket closed with code ${code}, reason: ${reason}`)
+			requestOpenPromise.reject(new Error(`Websocket closed with code ${code}, reason: ${reason}`))
 		}
 	}
 
