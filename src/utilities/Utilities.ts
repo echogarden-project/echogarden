@@ -580,7 +580,7 @@ export async function runOperationWithRetries<R>(
 	logger: Logger,
 	opreationName = "Operation",
 	delayBetweenRetries = 2000,
-	maxRetries = 1000) {
+	maxRetries = 200) {
 
 	for (let retryIndex = 1; retryIndex <= maxRetries; retryIndex++) {
 		try {
@@ -597,7 +597,8 @@ export async function runOperationWithRetries<R>(
 			await delay(delayBetweenRetries)
 
 			logger.log(``)
-			logger.logTitledMessage(`Starting attempt`, `${retryIndex} / ${maxRetries}`)
+			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, chalk.yellowBright)
+			logger.log(``)
 
 			logger.unsetAsActiveLogger()
 		}
