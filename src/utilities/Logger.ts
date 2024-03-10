@@ -24,9 +24,20 @@ export class Logger {
 		}
 
 		writeToStderr(`${titleColor(title)}.. `)
+
+		this.setAsActiveLogger()
+		
+		this.timer.restart()
+	}
+
+	setAsActiveLogger() {
 		this.active = true
 		currentActiveLogger = this
-		this.timer.restart()
+	}
+
+	unsetAsActiveLogger() {
+		this.active = false
+		currentActiveLogger = null
 	}
 
 	end() {
