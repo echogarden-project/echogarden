@@ -13,7 +13,7 @@ export async function synthesize(
 	subscriptionKey: string,
 	serviceRegion: string,
 	languageCode = "en-US",
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)",
+	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)",
 	ssmlEnabled = false,
 	ssmlPitchString = "+0Hz",
 	ssmlRateString = "+0%") {
