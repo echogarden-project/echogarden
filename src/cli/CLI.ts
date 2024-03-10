@@ -186,6 +186,8 @@ const commandHelp = [
 	`    List installed Echogarden packages\n`,
 	`${executableName} ${chalk.magentaBright('serve')} [options...]`,
 	`    Start a server\n`,
+	`Options reference: ${chalk.blueBright('https://bit.ly/echogarden-options')}`
+	//`    ${chalk.blueBright('https://github.com/echogarden-project/echogarden/blob/main/docs/Options.md')}`
 ]
 
 async function startWithArgs(parsedArgs: CLIArguments) {
