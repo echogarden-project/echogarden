@@ -249,8 +249,9 @@
 
 ## Possible new engines or platforms
 
+* OpenAI Whisper cloud service (`large-v3` model is available, at a price).
+* OpenAI Text-to-Speech cloud service.
 * [PlayHT](https://play.ht/) speech synthesis cloud service
-* OpenAI Whisper cloud service (`large-v2` model is available, at a price).
 * [Assembly AI cloud service](https://www.assemblyai.com/)
 * [Deepgram cloud service](https://deepgram.com/)
 * `whisper.cpp` CLI and WASM support
@@ -260,7 +261,6 @@
 * Any way to support RHVoice?
 * Silero text enhancement engine can be ported to ONNX
 * Investigate Raspberry Pi support. In particular, see if `onnxruntime-node` can be built for this environment
-* Reimplement KNN model in ONNX for better performance
 
 ## Maybe?
 
