@@ -6,6 +6,7 @@ import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
 import chalk from 'chalk'
+import { shouldCancelCurrentTask } from '../server/Worker.js'
 
 const log = logToStderr
 
@@ -588,6 +589,10 @@ export async function runOperationWithRetries<R>(
 
 			return result
 		} catch (e: any) {
+			if (shouldCancelCurrentTask()) {
+				throw new Error("Canceled")
+			}
+
 			logger.setAsActiveLogger()
 
 			logger.logTitledMessage(`Error`, e.message, chalk.redBright)
