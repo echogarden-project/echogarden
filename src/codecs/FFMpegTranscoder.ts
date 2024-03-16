@@ -6,6 +6,7 @@ import { Logger } from "../utilities/Logger.js"
 import { commandExists, logToStderr } from "../utilities/Utilities.js"
 import path from "node:path"
 import { loadPackage } from "../utilities/PackageManager.js"
+import { getGlobalOption } from "../api/GlobalOptions.js"
 
 const log = logToStderr
 
@@ -147,25 +148,53 @@ function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegO
 }
 
 async function getFFMpegExecutablePath() {
-	if (process.platform == "win32") {
-		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-essentials-win64")
-
-		return path.join(ffmpegPackagePath, "ffmpeg.exe")
-	}
-	/* else if (process.platform == "darwin" && process.arch == "x64") {
-		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-macos64")
-
-		return path.join(ffmpegPackagePath, "ffmpeg")
-	}
-	*/ else if (process.platform == "linux" && process.arch == "x64") {
-		const ffmpegPackagePath = await loadPackage("ffmpeg-6.0-linux-amd64")
-
-		return path.join(ffmpegPackagePath, "ffmpeg")
-	} else if (await commandExists("ffmpeg")) {
-		return "ffmpeg"
+	// If a global option set for the path, use it
+	if (getGlobalOption('ffmpegPath')) {
+		return getGlobalOption('ffmpegPath')
 	}
 
-	return undefined
+	// If an 'ffmpeg' command exist in system path, use it
+	if (await commandExists('ffmpeg')) {
+		return 'ffmpeg'
+	}
+
+	// Otherwise, download and use an internal ffmpeg package
+	const platform = process.platform
+	const arch = process.arch
+
+	let packageName: string
+
+	if (platform === 'win32' && arch === 'x64') {
+		packageName = 'ffmpeg-6.0-win32-x64'
+	} else if (platform === 'win32' && arch === 'ia32') {
+		packageName = 'ffmpeg-6.0-win32-ia32'
+	} else if (platform === 'darwin' && arch === 'x64') {
+		packageName = 'ffmpeg-6.0-darwin-x64'
+	} else if (platform === 'darwin' && arch === 'arm64') {
+		packageName = 'ffmpeg-6.0-darwin-arm64'
+	} else if (platform === 'linux' && arch === 'x64') {
+		packageName = 'ffmpeg-6.0-linux-x64'
+	} else if (platform === 'linux' && arch === 'ia32') {
+		packageName = 'ffmpeg-6.0-linux-ia32'
+	} else if (platform === 'linux' && arch === 'arm64') {
+		packageName = 'ffmpeg-6.0-linux-arm64'
+	} else if (platform === 'linux' && arch === 'arm') {
+		packageName = 'ffmpeg-6.0-linux-arm'
+	} else if (platform === 'freebsd' && arch === 'x64') {
+		packageName = 'ffmpeg-6.0-freebsd-x64'
+	} else {
+		return undefined
+	}
+
+	const ffmpegPackagePath = await loadPackage(packageName)
+
+	let filename = packageName
+
+	if (platform === 'win32') {
+		filename += '.exe'
+	}
+
+	return path.join(ffmpegPackagePath, filename)
 }
 
 export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBitrate?: number) {

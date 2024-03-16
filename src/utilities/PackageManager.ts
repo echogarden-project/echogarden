@@ -1,8 +1,8 @@
-import path from "node:path"
-import { downloadAndExtractTarball } from "./FileDownloader.js"
-import { getAppDataDir, getAppTempDir, ensureDir, existsSync, remove } from "./FileSystem.js"
-import { appName } from "../api/Common.js"
-import { GaxiosOptions } from "gaxios"
+import path from 'node:path'
+import { downloadAndExtractTarball } from './FileDownloader.js'
+import { getAppDataDir, getAppTempDir, ensureDir, existsSync, remove } from './FileSystem.js'
+import { appName } from '../api/Common.js'
+import { GaxiosOptions } from 'gaxios'
 
 export async function loadPackage(packageName: string) {
 	packageName = resolveToVersionedPackageNameIfNeeded(packageName)
@@ -48,7 +48,7 @@ export async function removePackage(packageName: string) {
 export async function ensureAndGetPackagesDir() {
 	const dataPath = getAppDataDir(appName)
 
-	const packagesPath = path.join(dataPath, "packages")
+	const packagesPath = path.join(dataPath, 'packages')
 
 	await ensureDir(packagesPath)
 
@@ -75,45 +75,69 @@ export function resolveVersionTagForUnversionedPackageName(unversionedPackageNam
 	return packageVersionTagResolutionLookup[unversionedPackageName] || defaultVersionTag
 }
 
-const basePackageUrl = "https://huggingface.co/echogarden/echogarden-packages/resolve/main/"
+const basePackageUrl = 'https://huggingface.co/echogarden/echogarden-packages/resolve/main/'
 
-const defaultVersionTag = "20230718"
+const defaultVersionTag = '20230718'
 
 const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
-	"sox-14.4.2-linux-minimal": "20230802",
+	'sox-14.4.2-linux-minimal': '20230802',
 
-	"vits-de_DE-thorsten_emotional-medium": "20230808",
-	"vits-en_GB-semaine-medium": "20230808",
-	"vits-fr_FR-upmc-medium": "20230808",
-	"vits-lb_LU-marylux-medium": "20230808",
-	"vits-ro_RO-mihai-medium": "20230808",
-	"vits-sr_RS-serbski_institut-medium": "20230808",
-	"vits-tr_TR-dfki-medium": "20230808",
+	'vits-de_DE-thorsten_emotional-medium': '20230808',
+	'vits-en_GB-semaine-medium': '20230808',
+	'vits-fr_FR-upmc-medium': '20230808',
+	'vits-lb_LU-marylux-medium': '20230808',
+	'vits-ro_RO-mihai-medium': '20230808',
+	'vits-sr_RS-serbski_institut-medium': '20230808',
+	'vits-tr_TR-dfki-medium': '20230808',
 
-	"vits-cs_CZ-jirka-medium": "20230824",
-	"vits-de_DE-thorsten-high": "20230824",
-	"vits-hu_HU-anna-medium": "20230824",
-	"vits-pt_PT-tugao-medium": "20230824",
-	"vits-sk_SK-lili-medium": "20230824",
-	"vits-tr_TR-fahrettin-medium": "20230824",
+	'vits-cs_CZ-jirka-medium': '20230824',
+	'vits-de_DE-thorsten-high': '20230824',
+	'vits-hu_HU-anna-medium': '20230824',
+	'vits-pt_PT-tugao-medium': '20230824',
+	'vits-sk_SK-lili-medium': '20230824',
+	'vits-tr_TR-fahrettin-medium': '20230824',
 
-	"vits-ar_JO-kareem-medium": "20231022",
-	"vits-cs_CZ-jirka-low": "20231022",
-	"vits-en_US-hfc_male-medium": "20231022",
-	"vits-en_US-libritts_r-medium": "20231022",
-	"vits-hu_HU-imre-medium": "20231022",
-	"vits-pl_PL-mc_speech-medium": "20231022",
+	'vits-ar_JO-kareem-medium': '20231022',
+	'vits-cs_CZ-jirka-low': '20231022',
+	'vits-en_US-hfc_male-medium': '20231022',
+	'vits-en_US-libritts_r-medium': '20231022',
+	'vits-hu_HU-imre-medium': '20231022',
+	'vits-pl_PL-mc_speech-medium': '20231022',
 
-	"whisper-tiny": "20231126",
-	"whisper-tiny.en": "20231126",
-	"whisper-base": "20231126",
-	"whisper-base.en": "20231126",
-	"whisper-small": "20231126",
-	"whisper-small.en": "20231126",
-	"whisper-medium": "20231126",
-	"whisper-medium.en": "20231126",
-	"whisper-large-v3": "20231126",
+	'whisper-tiny': '20231126',
+	'whisper-tiny.en': '20231126',
+	'whisper-base': '20231126',
+	'whisper-base.en': '20231126',
+	'whisper-small': '20231126',
+	'whisper-small.en': '20231126',
+	'whisper-medium': '20231126',
+	'whisper-medium.en': '20231126',
+	'whisper-large-v3': '20231126',
 
-	"vits-ar_JO-kareem-low": "20231126",
-	"vits-en_US-hfc_female-medium": "20231126",
+	'vits-ar_JO-kareem-low': '20231126',
+	'vits-en_US-hfc_female-medium': '20231126',
+
+	'ffmpeg-6.0-win32-x64': '20240316',
+	'ffmpeg-6.0-win32-ia32': '20240316',
+	'ffmpeg-6.0-darwin-x64': '20240316',
+	'ffmpeg-6.0-darwin-arm64': '20240316',
+	'ffmpeg-6.0-linux-x64': '20240316',
+	'ffmpeg-6.0-linux-ia32': '20240316',
+	'ffmpeg-6.0-linux-arm64': '20240316',
+	'ffmpeg-6.0-linux-arm': '20240316',
+	'ffmpeg-6.0-freebsd-x64': '20240316',
+
+	'vits-de_DE-mls-medium': '20240316',
+	'vits-en_GB-cori-high': '20240316',
+	'vits-en_US-kristin-medium': '20240316',
+	'vits-en_US-ljspeech-high': '20240316',
+	'vits-en_US-ljspeech-medium': '20240316',
+	'vits-es_MX-claude-high': '20240316',
+	'vits-fa_IR-amir-medium': '20240316',
+	'vits-fa_IR-gyro-medium': '20240316',
+	'vits-fr_FR-mls-medium': '20240316',
+	'vits-fr_FR-tom-medium': '20240316',
+	'vits-nl_NL-mls-medium': '20240316',
+	'vits-sl_SI-artur-medium': '20240316',
+	'vits-tr_TR-fettah-medium': '20240316',
 }

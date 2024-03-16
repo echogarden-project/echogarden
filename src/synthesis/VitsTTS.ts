@@ -293,6 +293,12 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["de-DE", "de"],
 		gender: "male",
 	},
+	{
+		name: "de_DE-mls-medium",
+		languages: ["de-DE", "de"],
+		gender: "unknown",
+		speakerCount: 236
+	},
 
 	{
 		name: "el_GR-rapunzelina-low",
@@ -353,6 +359,12 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["en-GB", "en"],
 		gender: "female",
 	},
+	{
+		name: "en_GB-cori-high",
+		languages: ["en-GB", "en"],
+		gender: "female",
+	},
+
 
 	{
 		name: "en_US-amy-low",
@@ -443,6 +455,21 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["en-US", "en"],
 		gender: "female",
 	},
+	{
+		name: "en_US-kristin-medium",
+		languages: ["en-US", "en"],
+		gender: "female",
+	},
+	{
+		name: "en_US-ljspeech-high",
+		languages: ["en-US", "en"],
+		gender: "female",
+	},
+	{
+		name: "en_US-ljspeech-medium",
+		languages: ["en-US", "en"],
+		gender: "female",
+	},
 
 	{
 		name: "es_ES-carlfm-x_low",
@@ -476,6 +503,23 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["es-MX", "es"],
 		gender: "male",
 	},
+	{
+		name: "es_MX-claude-high",
+		languages: ["es-MX", "es"],
+		gender: "female",
+	},
+
+	{
+		name: "fa_IR-amir-medium",
+		languages: ["fa_IR", "fa"],
+		gender: "male",
+	},
+	{
+		name: "fa_IR-gyro-medium",
+		languages: ["fa_IR", "fa"],
+		gender: "male",
+	},
+
 
 	{
 		name: "fi_FI-harri-low",
@@ -513,6 +557,17 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ["fr-FR", "fr"],
 		gender: "unknown",
 		speakerCount: 2
+	},
+	{
+		name: "fr_FR-mls-medium",
+		languages: ["fr-FR", "fr"],
+		gender: "unknown",
+		speakerCount: 125
+	},
+	{
+		name: "fr_FR-tom-medium",
+		languages: ["fr-FR", "fr"],
+		gender: "male",
 	},
 
 	{
@@ -604,6 +659,12 @@ export const voiceList: SynthesisVoice[] = [
 		name: "nl_NL-mls_7432-low",
 		languages: ["nl-NL", "nl"],
 		gender: "female",
+	},
+	{
+		name: "nl_NL-mls-medium",
+		languages: ["nl-NL", "nl"],
+		gender: "unknown",
+		speakerCount: 52,
 	},
 
 	{
@@ -706,6 +767,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: "sl_SI-artur-medium",
+		languages: ["sl_SI", "sl"],
+		gender: "male",
+	},
+
+	{
 		name: "sr_RS-serbski_institut-medium",
 		languages: ["sr-RS", "sr"],
 		gender: "male",
@@ -731,6 +798,11 @@ export const voiceList: SynthesisVoice[] = [
 	},
 	{
 		name: "tr_TR-fahrettin-medium",
+		languages: ["tr-TR", "tr"],
+		gender: "male",
+	},
+	{
+		name: "tr_TR-fettah-medium",
 		languages: ["tr-TR", "tr"],
 		gender: "male",
 	},

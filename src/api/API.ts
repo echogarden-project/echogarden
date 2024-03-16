@@ -1,6 +1,7 @@
 /// <reference path="../typings/Fillers.d.ts" />
 
 export * from "./Common.js"
+export * from "./GlobalOptions.js"
 export * from "./Synthesis.js"
 export * from "./Recognition.js"
 export * from "./Alignment.js"
