@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "0.11.22",
+	"version": "0.12.0",
 	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -54,8 +54,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.529.1",
-		"@aws-sdk/client-transcribe-streaming": "^3.529.1",
+		"@aws-sdk/client-polly": "^3.535.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.535.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -121,12 +121,12 @@
 		"@types/msgpack-lite": "^0.1.11",
 		"@types/ndarray": "^1.0.14",
 		"@types/ndarray-ops": "^1.2.7",
-		"@types/node": "^20.11.25",
+		"@types/node": "^20.11.28",
 		"@types/recursive-readdir": "^2.2.4",
 		"@types/tar": "^6.1.11",
 		"@types/ws": "^8.5.10",
-		"@typescript-eslint/eslint-plugin": "^7.1.1",
-		"@typescript-eslint/parser": "^7.1.1",
+		"@typescript-eslint/eslint-plugin": "^7.2.0",
+		"@typescript-eslint/parser": "^7.2.0",
 		"eslint": "^8.57.0",
 		"ts-json-schema-generator": "^1.5.0",
 		"typescript": "^5.4.2"
