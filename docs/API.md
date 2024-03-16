@@ -248,6 +248,31 @@ Converts subtitles to a timeline.
 
 Timeline object.
 
+## Global options
+
+### `setGlobalOption(key, value)`
+
+Set a global option.
+
+Supported keys:
+
+* `'ffmpegPath'`: override FFMpeg executable path
+* `'soxPath'`: override SoX executable path
+
+### `getGlobalOption(key)`
+
+Get a global option.
+
+Supported keys:
+
+* `'ffmpegPath'`: get FFMpeg executable path
+* `'soxPath'`: get SoX executable path
+
+#### Returns:
+
+The value associated with the given key.
+
 ## TODO
 
 Expose more methods that may be useful for developers, like phonemization, etc.
+
