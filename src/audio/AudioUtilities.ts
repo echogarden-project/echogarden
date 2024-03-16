@@ -42,12 +42,12 @@ export function trimAudioEnd(audioSamples: Float32Array, targetEndSilentSampleCo
 }
 
 export function getStartingSilentSampleCount(audioSamples: Float32Array, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
-	const minSampleValue = decibelsToGain(amplitudeThresholdDecibels)
+	const minSampleAmplitude = decibelsToGainFactor(amplitudeThresholdDecibels)
 
 	let silentSampleCount = 0
 
 	for (let i = 0; i < audioSamples.length - 1; i++) {
-		if (Math.abs(audioSamples[i]) > minSampleValue) {
+		if (Math.abs(audioSamples[i]) > minSampleAmplitude) {
 			break
 		}
 
@@ -58,12 +58,12 @@ export function getStartingSilentSampleCount(audioSamples: Float32Array, amplitu
 }
 
 export function getEndingSilentSampleCount(audioSamples: Float32Array, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
-	const minSampleValue = decibelsToGain(amplitudeThresholdDecibels)
+	const minSampleAmplitude = decibelsToGainFactor(amplitudeThresholdDecibels)
 
 	let silentSampleCount = 0
 
 	for (let i = audioSamples.length - 1; i >= 0; i--) {
-		if (Math.abs(audioSamples[i]) > minSampleValue) {
+		if (Math.abs(audioSamples[i]) > minSampleAmplitude) {
 			break
 		}
 
@@ -83,14 +83,14 @@ export function downmixToMonoAndNormalize(rawAudio: RawAudio, targetPeakDb = -3)
 export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDb = -3, maxIncreaseDb = 30): RawAudio {
 	//rawAudio = correctDCBias(rawAudio)
 
-	const targetPeakSampleValue = decibelsToGain(targetPeakDb)
-	const maxMultiplier = decibelsToGain(maxIncreaseDb)
+	const targetPeakAmplitude = decibelsToGainFactor(targetPeakDb)
+	const maxGainFactor = decibelsToGainFactor(maxIncreaseDb)
 
-	const maxAbsoluteSampleValue = getAudioPeakGain(rawAudio.audioChannels)
+	const peakAmplitude = getAudioPeakAmplitude(rawAudio.audioChannels)
 
-	const multiplier = Math.min(targetPeakSampleValue / maxAbsoluteSampleValue, maxMultiplier)
+	const gainFactor = Math.min(targetPeakAmplitude / peakAmplitude, maxGainFactor)
 
-	return applyGain(rawAudio, multiplier)
+	return applyGain(rawAudio, gainFactor)
 }
 
 export function correctDCBias(rawAudio: RawAudio): RawAudio {
@@ -120,13 +120,11 @@ export function correctDCBias(rawAudio: RawAudio): RawAudio {
 }
 
 export function applyGainDecibels(rawAudio: RawAudio, decibelGain: number): RawAudio {
-	return applyGain(rawAudio, decibelsToGain(decibelGain))
+	return applyGain(rawAudio, decibelsToGainFactor(decibelGain))
 }
 
-export function applyGain(rawAudio: RawAudio, gain: number): RawAudio {
+export function applyGain(rawAudio: RawAudio, gainFactor: number): RawAudio {
 	const outputAudioChannels: Float32Array[] = []
-
-	const multiplier = gain
 
 	for (const channelSamples of rawAudio.audioChannels) {
 		const sampleCount = channelSamples.length
@@ -134,7 +132,7 @@ export function applyGain(rawAudio: RawAudio, gain: number): RawAudio {
 		const outputChannelSamples = new Float32Array(sampleCount)
 
 		for (let i = 0; i < sampleCount; i++) {
-			outputChannelSamples[i] = channelSamples[i] * multiplier
+			outputChannelSamples[i] = channelSamples[i] * gainFactor
 		}
 
 		outputAudioChannels.push(outputChannelSamples)
@@ -158,19 +156,19 @@ export function downmixToMono(rawAudio: RawAudio): RawAudio {
 }
 
 export function getAudioPeakDecibels(audioChannels: Float32Array[]) {
-	return gainToDecibels(getAudioPeakGain(audioChannels))
+	return gainFactorToDecibels(getAudioPeakAmplitude(audioChannels))
 }
 
-export function getAudioPeakGain(audioChannels: Float32Array[]) {
-	let maxAbsoluteSampleValue = 0.00001
+export function getAudioPeakAmplitude(audioChannels: Float32Array[]) {
+	let maxAmplitude = 0.00001
 
 	for (const channelSamples of audioChannels) {
 		for (const sample of channelSamples) {
-			maxAbsoluteSampleValue = Math.max(maxAbsoluteSampleValue, Math.abs(sample))
+			maxAmplitude = Math.max(maxAmplitude, Math.abs(sample))
 		}
 	}
 
-	return maxAbsoluteSampleValue
+	return maxAmplitude
 }
 
 export function mixAudio(rawAudio1: RawAudio, rawAudio2: RawAudio) {
@@ -252,7 +250,7 @@ export function fadeAudioInOut(rawAudio: RawAudio, fadeTime: number): RawAudio {
 	const fadeSampleCount = Math.floor(rawAudio.sampleRate * fadeTime)
 	const gainReductionPerFrameDecibels = -60 / fadeSampleCount
 
-	const gainReductionPerFrameMultiplier = decibelsToGain(gainReductionPerFrameDecibels)
+	const gainReductionPerFrameFactor = decibelsToGainFactor(gainReductionPerFrameDecibels)
 
 	const outAudioChannels = rawAudio.audioChannels.map(channel => channel.slice())
 
@@ -261,18 +259,20 @@ export function fadeAudioInOut(rawAudio: RawAudio, fadeTime: number): RawAudio {
 			continue
 		}
 
-		let multiplier = 1.0
+		let factor = 1.0
 
 		for (let i = fadeSampleCount - 1; i >= 0; i--) {
-			channel[i] *= multiplier
-			multiplier *= gainReductionPerFrameMultiplier
+			channel[i] *= factor
+
+			factor *= gainReductionPerFrameFactor
 		}
 
-		multiplier = 1.0
+		factor = 1.0
 
 		for (let i = channel.length - fadeSampleCount; i < channel.length; i++) {
-			channel[i] *= multiplier
-			multiplier *= gainReductionPerFrameMultiplier
+			channel[i] *= factor
+
+			factor *= gainReductionPerFrameFactor
 		}
 	}
 
@@ -352,11 +352,11 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 // Unit conversion
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-export function gainToDecibels(gain: number) {
-	return gain <= 0.00001 ? -100 : (20.0 * Math.log10(gain))
+export function gainFactorToDecibels(gainFactor: number) {
+	return gainFactor <= 0.00001 ? -100 : (20.0 * Math.log10(gainFactor))
 }
 
-export function decibelsToGain(decibels: number) {
+export function decibelsToGainFactor(decibels: number) {
 	return decibels <= -100.0 ? 0 : Math.pow(10, 0.05 * decibels)
 }
 
