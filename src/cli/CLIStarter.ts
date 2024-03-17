@@ -1,4 +1,4 @@
-import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
+import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { setupProgramTerminationListeners, setupUnhandledExceptionListeners, writeToStderr } from '../utilities/Utilities.js'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
 

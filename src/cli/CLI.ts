@@ -15,7 +15,7 @@ import { splitToParagraphs, splitToWords, wordCharacterPattern } from "../nlp/Se
 import { playAudioSamples, playAudioWithWordTimeline } from "../audio/AudioPlayer.js"
 import { extendDeep } from "../utilities/ObjectUtilities.js"
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
-import { ensureDir, existsSync, getLowercaseFileExtension, readAndParseJsonFile, readFile, readdir, resolveToModuleRootDir, writeFileSafe } from '../utilities/FileSystem.js'
+import { ensureDir, existsSync, readAndParseJsonFile, readFile, readdir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
@@ -24,6 +24,7 @@ import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import JSON5 from 'json5'
+import { getLowercaseFileExtension, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 
 //const log = logToStderr
 

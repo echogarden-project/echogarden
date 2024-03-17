@@ -2,9 +2,10 @@ import { SynthesisVoice } from "../api/API.js"
 import { decodeWaveBuffer } from "../audio/AudioUtilities.js"
 import { Logger } from "../utilities/Logger.js"
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from "../utilities/Utilities.js"
-import { getAppTempDir, readFile, open, close, remove, ensureDir } from "../utilities/FileSystem.js"
+import { readFile, open, close, remove, ensureDir } from "../utilities/FileSystem.js"
 import path from "node:path"
 import { escape } from 'html-escaper'
+import { getAppTempDir } from "../utilities/PathUtilities.js"
 
 const log = logToStderr
 

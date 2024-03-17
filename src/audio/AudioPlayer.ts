@@ -11,12 +11,13 @@ import { getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Uti
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
-import { getAppTempDir, outputFile, readAndParseJsonFile, readFile, remove } from '../utilities/FileSystem.js'
+import { outputFile, readAndParseJsonFile, readFile, remove } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
 import { appName } from '../api/Common.js'
 import path from 'node:path'
+import { getAppTempDir } from '../utilities/PathUtilities.js'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string) {
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)

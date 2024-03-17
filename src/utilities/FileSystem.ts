@@ -3,11 +3,11 @@ import gracefulFS from 'graceful-fs'
 import * as os from 'node:os'
 
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { OpenPromise } from './OpenPromise.js'
-import { getRandomHexString, sha256AsHex } from './Utilities.js'
+import { getRandomHexString } from './Utilities.js'
 import { appName } from '../api/Common.js'
+import { getAppTempDir } from './PathUtilities.js'
 
 export const readFile = promisify(gracefulFS.readFile)
 //export const writeFile = promisify(gracefulFS.writeFile)
@@ -18,7 +18,6 @@ export const close = promisify(gracefulFS.close)
 export const chmod = promisify(gracefulFS.chmod)
 export const copyFile = promisify(gracefulFS.copyFile)
 export const access = promisify(gracefulFS.access)
-
 
 export const createReadStream = gracefulFS.createReadStream
 export const createWriteStream = gracefulFS.createWriteStream
@@ -71,25 +70,6 @@ export async function isFileIsUpToDate(filePath: string, timeRangeSeconds: numbe
 	return differenceInSeconds <= timeRangeSeconds
 }
 
-export function getModuleRootDir() {
-	const currentScriptDir = path.dirname(fileURLToPath(import.meta.url))
-	return path.resolve(currentScriptDir, '..', '..')
-}
-
-export function resolveToModuleRootDir(relativePath: string) {
-	return path.resolve(getModuleRootDir(), relativePath)
-}
-
-export function getLowercaseFileExtension(filename: string) {
-	const fileExtensionIndex = filename.lastIndexOf(".")
-
-	if (fileExtensionIndex == -1) {
-		return ""
-	}
-
-	return filename.substring(fileExtensionIndex + 1).toLowerCase()
-}
-
 export async function computeFileSha256Hex(filePath: string) {
 	const resultOpenPromise = new OpenPromise<string>()
 
@@ -128,25 +108,6 @@ export async function writeFileSafe(filePath: string, data: string | NodeJS.Arra
 	await writeFile(tempFilePath, data, options)
 
 	await move(tempFilePath, filePath)
-}
-
-export function getAppTempDir(appName: string) {
-	let tempDir: string
-
-	const platform = process.platform
-	const homeDir = os.homedir()
-
-	if (platform == "win32") {
-		tempDir = path.join(homeDir, "AppData", "Local", "Temp", appName)
-	} else if (platform == "darwin") {
-		tempDir = path.join(homeDir, "Library", "Caches", appName)
-	} else if (platform == "linux") {
-		tempDir = path.join(homeDir, ".cache", appName)
-	} else {
-		throw new Error(`Unsupport platform ${platform}`)
-	}
-
-	return tempDir
 }
 
 export function getAppDataDir(appName: string) {

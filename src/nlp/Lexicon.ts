@@ -1,5 +1,6 @@
-import { readAndParseJsonFile, resolveToModuleRootDir } from "../utilities/FileSystem.js"
+import { readAndParseJsonFile } from "../utilities/FileSystem.js"
 import { getShortLanguageCode } from "../utilities/Locale.js"
+import { resolveToModuleRootDir } from "../utilities/PathUtilities.js"
 
 export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], languageCode: string) {
 	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons

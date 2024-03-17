@@ -5,8 +5,6 @@ import { inspect } from 'node:util'
 import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
-import chalk from 'chalk'
-import { shouldCancelCurrentTask } from '../server/Worker.js'
 
 const log = logToStderr
 
@@ -583,12 +581,16 @@ export async function runOperationWithRetries<R>(
 	delayBetweenRetries = 2000,
 	maxRetries = 200) {
 
+	const { default: chalk } = await import('chalk')
+
 	for (let retryIndex = 1; retryIndex <= maxRetries; retryIndex++) {
 		try {
 			const result = await operationFunc()
 
 			return result
 		} catch (e: any) {
+			const { shouldCancelCurrentTask } = await import('../server/Worker.js')
+
 			if (shouldCancelCurrentTask()) {
 				throw new Error("Canceled")
 			}

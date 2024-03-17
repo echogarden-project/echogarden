@@ -2,7 +2,7 @@
 
 import { spawn } from 'child_process'
 import { setupUnhandledExceptionListeners } from '../utilities/Utilities.js'
-import { resolveToModuleRootDir } from '../utilities/FileSystem.js'
+import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 
 setupUnhandledExceptionListeners()
 

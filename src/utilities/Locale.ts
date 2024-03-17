@@ -1,4 +1,5 @@
-import { readAndParseJsonFile, resolveToModuleRootDir } from "./FileSystem.js"
+import { readAndParseJsonFile } from "./FileSystem.js"
+import { resolveToModuleRootDir } from "./PathUtilities.js"
 
 export function languageCodeToName(languageCode: string) {
 	const languageNames = new Intl.DisplayNames(['en'], { type: 'language' })

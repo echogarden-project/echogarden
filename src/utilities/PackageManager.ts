@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { downloadAndExtractTarball } from './FileDownloader.js'
-import { getAppDataDir, getAppTempDir, ensureDir, existsSync, remove } from './FileSystem.js'
+import { getAppDataDir, ensureDir, existsSync, remove } from './FileSystem.js'
 import { appName } from '../api/Common.js'
 import { GaxiosOptions } from 'gaxios'
+import { getAppTempDir } from './PathUtilities.js'
 
 export async function loadPackage(packageName: string) {
 	packageName = resolveToVersionedPackageNameIfNeeded(packageName)

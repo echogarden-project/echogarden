@@ -1,5 +1,5 @@
 import ndarray from 'ndarray'
-import ops from 'ndarray-ops'
+// import ops from 'ndarray-ops'
 import { medianFilter, softmax } from '../math/VectorMath.js'
 
 export function ndarraySoftMax(vector: ndarray.NdArray, temperature = 1.0) {
