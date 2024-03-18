@@ -147,7 +147,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 	}
 
-	let textWithMarkers = '() | '
+	let textWithMarkers = '() '
 
 	for (let i = 0; i < fragments.length; i++) {
 		let fragment = fragments[i]
@@ -159,6 +159,9 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			.replaceAll(">", "&gt;")
 
 		if (insertSeparators) {
+			// Note: `|` separators are pronounced literally in eSpeak's Polish TTS,
+			// which breaks this approach
+
 			textWithMarkers += `<mark name="s-${i}"/> | ${fragment} | <mark name="e-${i}"/>`
 		} else {
 			if (fragment.endsWith(".")) {
