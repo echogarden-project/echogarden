@@ -122,7 +122,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		}
 
 		const targetSentenceEntry = charIndexToSentenceEntryMapping[indexOfWordInText]
-		targetSentenceEntry.timeline!.push(wordEntry)
+		targetSentenceEntry.timeline!.push(deepClone(wordEntry))
 
 		wordSearchStartOffset = indexOfWordInText + wordText.length
 	}
