@@ -17,14 +17,14 @@ export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFo
 	const formatSubChunkBuffer = formatSubChunk.serialize(shouldUseExtensibleFormat)
 
 	const dataSubChunkBuffer = Buffer.alloc(4 + 4 + audioDataLength)
-	dataSubChunkBuffer.write("data", 0, "ascii")
+	dataSubChunkBuffer.write('data', 0, 'ascii')
 	dataSubChunkBuffer.writeUint32LE(audioDataLength, 4)
 	dataSubChunkBuffer.set(audioBuffer, 8)
 
 	const riffChunkHeaderBuffer = Buffer.alloc(12)
-	riffChunkHeaderBuffer.write("RIFF", 0, "ascii")
+	riffChunkHeaderBuffer.write('RIFF', 0, 'ascii')
 	riffChunkHeaderBuffer.writeUint32LE(4 + formatSubChunkBuffer.length + dataSubChunkBuffer.length, 4)
-	riffChunkHeaderBuffer.write("WAVE", 8, "ascii")
+	riffChunkHeaderBuffer.write('WAVE', 8, 'ascii')
 
 	return Buffer.concat([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
 }
@@ -32,10 +32,10 @@ export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFo
 export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 	let readOffset = 0
 
-	const riffId = waveData.subarray(readOffset, readOffset + 4).toString("ascii")
+	const riffId = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
 
-	if (riffId != "RIFF") {
-		throw new Error("Not a valid wave file. No RIFF id found at offset 0.")
+	if (riffId != 'RIFF') {
+		throw new Error('Not a valid wave file. No RIFF id found at offset 0.')
 	}
 
 	readOffset += 4
@@ -44,10 +44,10 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 
 	readOffset += 4
 
-	const waveId = waveData.subarray(readOffset, readOffset + 4).toString("ascii")
+	const waveId = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
 
-	if (waveId != "WAVE") {
-		throw new Error("Not a valid wave file. No WAVE id found at offset 8.")
+	if (waveId != 'WAVE') {
+		throw new Error('Not a valid wave file. No WAVE id found at offset 8.')
 	}
 
 	if (riffChunkSize < waveData.length - 8) {
@@ -64,7 +64,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 	const dataBuffers: Buffer[] = []
 
 	while (true) {
-		const subChunkIdentifier = waveData.subarray(readOffset, readOffset + 4).toString("ascii")
+		const subChunkIdentifier = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
 		readOffset += 4
 
 		const subChunkSize = waveData.readUInt32LE(readOffset)
@@ -74,11 +74,11 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 			throw new Error(`Encountered a '${subChunkIdentifier}' subchunk with a size of ${subChunkSize} which is greater than the remaining size of the buffer (${waveData.length - readOffset})`)
 		}
 
-		if (subChunkIdentifier == "fmt ") {
+		if (subChunkIdentifier == 'fmt ') {
 			formatSubChunkBodyBuffer = waveData.subarray(readOffset, readOffset + subChunkSize)
-		} else if (subChunkIdentifier == "data") {
+		} else if (subChunkIdentifier == 'data') {
 			if (!formatSubChunkBodyBuffer) {
-				throw new Error("A data subchunk was encountered before a format subchunk")
+				throw new Error('A data subchunk was encountered before a format subchunk')
 			}
 
 			// If the data chunk is truncated, but truncations are ignored,
@@ -98,7 +98,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 	}
 
 	if (!formatSubChunkBodyBuffer) {
-		throw new Error("No format subchunk was found in the wave file")
+		throw new Error('No format subchunk was found in the wave file')
 	}
 
 	const waveFormat = WaveFormat.deserializeFrom(formatSubChunkBodyBuffer)
@@ -161,7 +161,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 
 		const result = Buffer.alloc(serializedSize)
 
-		result.write("fmt ", 0, "ascii") // + 4
+		result.write('fmt ', 0, 'ascii') // + 4
 		result.writeUint32LE(serializedSize - 8, 4) // + 4
 
 		result.writeUint16LE(sampleFormatId, 8) // + 2
@@ -177,7 +177,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 			result.writeUint32LE(this.speakerPositionMask, 28) // + 2 (speaker position mask)
 
 			if (this.sampleFormat == SampleFormat.PCM || this.sampleFormat == SampleFormat.Float) {
-				result.set(Buffer.from(this.guid, "hex"), 32)
+				result.set(Buffer.from(this.guid, 'hex'), 32)
 			} else {
 				throw new Error(`Extensible format is not supported for sample format ${this.sampleFormat}`)
 			}
@@ -200,7 +200,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 
 			speakerPositionMask = formatChunkBody.readUint16LE(20)
 
-			const guid = formatChunkBody.subarray(24, 40).toString("hex")
+			const guid = formatChunkBody.subarray(24, 40).toString('hex')
 
 			if (guid == sampleFormatToGuid[SampleFormat.PCM]) {
 				sampleFormat = SampleFormat.PCM
@@ -237,7 +237,7 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 
 export enum SampleFormat {
 	PCM = 1,
-	Float = 2,
+	Float = 3,
 	Alaw = 6,
 	Mulaw = 7,
 }
@@ -253,8 +253,8 @@ const sampleFormatToSerializedSize = {
 }
 
 const sampleFormatToGuid = {
-	[SampleFormat.PCM]: "0100000000001000800000aa00389b71",
-	[SampleFormat.Float]: "0300000000001000800000aa00389b71",
-	[SampleFormat.Alaw]: "",
-	[SampleFormat.Mulaw]: "",
+	[SampleFormat.PCM]: '0100000000001000800000aa00389b71',
+	[SampleFormat.Float]: '0300000000001000800000aa00389b71',
+	[SampleFormat.Alaw]: '',
+	[SampleFormat.Mulaw]: '',
 }
