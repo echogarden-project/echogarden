@@ -1,5 +1,5 @@
 import { SynthesisVoice } from '../api/API.js'
-import { decodeWaveBuffer } from '../audio/AudioUtilities.js'
+import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from '../utilities/Utilities.js'
 import { readFile, open, close, remove, ensureDir } from '../utilities/FileSystem.js'
@@ -107,7 +107,7 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 
 	const events = parseEventsFromTrace(stdOutString)
 
-	const { rawAudio } = decodeWaveBuffer(waveData)
+	const { rawAudio } = decodeWaveToRawAudio(waveData)
 
 	logger.end()
 

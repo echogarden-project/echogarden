@@ -1,6 +1,6 @@
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
-import { RawAudio, encodeWaveBuffer } from '../audio/AudioUtilities.js'
+import { RawAudio, encodeRawAudioToWave } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 
@@ -39,7 +39,7 @@ export async function recognize(rawAudio: RawAudio, subscriptionKey: string, ser
 }
 
 async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw) {
-	const encodedAudio = encodeWaveBuffer(rawAudio)
+	const encodedAudio = encodeRawAudioToWave(rawAudio)
 
 	return new Promise<SpeechSDK.SpeechRecognitionResult>((resolve, reject) => {
 		const audioFormat = SpeechSDK.AudioStreamFormat.getWaveFormat(16000, 16, 1, SpeechSDK.AudioFormatTag.PCM)
@@ -71,7 +71,7 @@ async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, s
 
 			(error) => {
 				recognizer.close()
-				
+
 				reject(error)
 			})
 	})

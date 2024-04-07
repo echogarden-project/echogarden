@@ -1,5 +1,5 @@
 import { request } from 'gaxios'
-import { decodeWaveBuffer } from '../audio/AudioUtilities.js'
+import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 const log = logToStderr
@@ -21,7 +21,7 @@ export async function synthesize(text: string, speakerId: string | null, serverU
 
 	const waveData = Buffer.from(response.data)
 
-	const rawAudio = decodeWaveBuffer(waveData).rawAudio
+	const rawAudio = decodeWaveToRawAudio(waveData).rawAudio
 
 	logger.end()
 

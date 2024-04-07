@@ -5,7 +5,7 @@ import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
 import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, delay, runOperationWithRetries } from '../utilities/Utilities.js'
-import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
+import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
@@ -184,7 +184,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 				timeline: sentenceTimelineWithOffset
 			})
 
-			peakDecibelsSoFar = Math.max(peakDecibelsSoFar, getAudioPeakDecibels(sentenceRawAudio.audioChannels))
+			peakDecibelsSoFar = Math.max(peakDecibelsSoFar, getSamplePeakDecibels(sentenceRawAudio.audioChannels))
 
 			const sentenceAudio = await convertToTargetCodecIfNeeded(sentenceRawAudio)
 
@@ -264,7 +264,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			logger.start(`Convert to ${targetCodec} codec`)
 
 			if (targetCodec == 'wav') {
-				output = encodeWaveBuffer(rawAudio)
+				output = encodeRawAudioToWave(rawAudio)
 			} else {
 				const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech(targetCodec, options.outputAudioFormat?.bitrate)
 				output = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions)

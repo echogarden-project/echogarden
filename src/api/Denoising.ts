@@ -1,6 +1,6 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { AudioSourceParam, RawAudio, applyGainDecibels, ensureRawAudio, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, applyGainDecibels, ensureRawAudio, getSamplePeakDecibels, mixAudio, normalizeAudioLevel } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
@@ -60,9 +60,9 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const maxGainIncreaseDecibels = options.postProcessing!.maxGainIncrease!
 	const dryMixGainDecibels = options.postProcessing!.dryMixGain!
 
-	const preMixPeakDecibels = getAudioPeakDecibels(denoisedAudio.audioChannels)
+	const preMixPeakDecibels = getSamplePeakDecibels(denoisedAudio.audioChannels)
 	denoisedAudio = mixAudio(denoisedAudio, applyGainDecibels(resampledRawAudio, dryMixGainDecibels))
-	const postMixPeakDecibels = getAudioPeakDecibels(denoisedAudio.audioChannels)
+	const postMixPeakDecibels = getSamplePeakDecibels(denoisedAudio.audioChannels)
 
 	if (shouldNormalize) {
 		denoisedAudio = normalizeAudioLevel(denoisedAudio, targetPeakDecibels, maxGainIncreaseDecibels)

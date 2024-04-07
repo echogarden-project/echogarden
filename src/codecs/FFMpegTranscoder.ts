@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
 
-import { encodeWaveBuffer, decodeWaveBuffer, RawAudio } from '../audio/AudioUtilities.js'
+import { encodeRawAudioToWave, decodeWaveToRawAudio, RawAudio } from '../audio/AudioUtilities.js'
 
 import { Logger } from '../utilities/Logger.js'
 import { commandExists, logToStderr } from '../utilities/Utilities.js'
@@ -23,7 +23,7 @@ export type FFMpegOutputOptions = {
 }
 
 export async function encodeFromChannels(rawAudio: RawAudio, outputOptions: FFMpegOutputOptions) {
-	return transcode(encodeWaveBuffer(rawAudio), outputOptions)
+	return transcode(encodeRawAudioToWave(rawAudio), outputOptions)
 }
 
 export async function decodeToChannels(input: string | Buffer, outSampleRate?: number, outChannelCount?: number) {
@@ -37,7 +37,7 @@ export async function decodeToChannels(input: string | Buffer, outSampleRate?: n
 
 	const waveAudio = await transcode(input, outputOptions)
 
-	const { rawAudio } = decodeWaveBuffer(waveAudio, true)
+	const { rawAudio } = decodeWaveToRawAudio(waveAudio, true)
 
 	return rawAudio
 }

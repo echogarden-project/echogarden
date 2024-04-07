@@ -7,11 +7,11 @@ import { concatFloat32Arrays } from '../utilities/Utilities.js'
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Wave encoding and decoding
 ////////////////////////////////////////////////////////////////////////////////////////////////
-export function encodeWaveBuffer(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
+export function encodeRawAudioToWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
 	return encodeWave(rawAudio, bitDepth, sampleFormat, speakerPositionMask)
 }
 
-export function decodeWaveBuffer(waveFileBuffer: Buffer, ignoreTruncatedChunks = false) {
+export function decodeWaveToRawAudio(waveFileBuffer: Buffer, ignoreTruncatedChunks = false) {
 	return decodeWave(waveFileBuffer, ignoreTruncatedChunks)
 }
 
@@ -95,11 +95,11 @@ export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDecibels = -3,
 	const targetPeakAmplitude = decibelsToGainFactor(targetPeakDecibels)
 	const maxGainFactor = decibelsToGainFactor(maxGainIncreaseDecibels)
 
-	const peakAmplitude = getAudioPeakAmplitude(rawAudio.audioChannels)
+	const peakAmplitude = getSamplePeakAmplitude(rawAudio.audioChannels)
 
 	const gainFactor = Math.min(targetPeakAmplitude / peakAmplitude, maxGainFactor)
 
-	return applyGain(rawAudio, gainFactor)
+	return applyGainFactor(rawAudio, gainFactor)
 }
 
 export function correctDCBias(rawAudio: RawAudio): RawAudio {
@@ -128,11 +128,11 @@ export function correctDCBias(rawAudio: RawAudio): RawAudio {
 	return { audioChannels: outputAudioChannels, sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
-export function applyGainDecibels(rawAudio: RawAudio, decibelGain: number): RawAudio {
-	return applyGain(rawAudio, decibelsToGainFactor(decibelGain))
+export function applyGainDecibels(rawAudio: RawAudio, gainDecibels: number): RawAudio {
+	return applyGainFactor(rawAudio, decibelsToGainFactor(gainDecibels))
 }
 
-export function applyGain(rawAudio: RawAudio, gainFactor: number): RawAudio {
+export function applyGainFactor(rawAudio: RawAudio, gainFactor: number): RawAudio {
 	const outputAudioChannels: Float32Array[] = []
 
 	for (const channelSamples of rawAudio.audioChannels) {
@@ -164,11 +164,11 @@ export function downmixToMono(rawAudio: RawAudio): RawAudio {
 	return { audioChannels: [downmixedAudio], sampleRate: rawAudio.sampleRate } as RawAudio
 }
 
-export function getAudioPeakDecibels(audioChannels: Float32Array[]) {
-	return gainFactorToDecibels(getAudioPeakAmplitude(audioChannels))
+export function getSamplePeakDecibels(audioChannels: Float32Array[]) {
+	return gainFactorToDecibels(getSamplePeakAmplitude(audioChannels))
 }
 
-export function getAudioPeakAmplitude(audioChannels: Float32Array[]) {
+export function getSamplePeakAmplitude(audioChannels: Float32Array[]) {
 	let maxAmplitude = 0.00001
 
 	for (const channelSamples of audioChannels) {

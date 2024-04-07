@@ -2,7 +2,7 @@ import { parentPort } from 'node:worker_threads'
 
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 
-import { RawAudio, encodeWaveBuffer, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from './AudioUtilities.js'
+import { RawAudio, encodeRawAudioToWave, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from './AudioUtilities.js'
 import * as AudioBufferConversion from './AudioBufferConversion.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
@@ -200,7 +200,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 			)
 		} else {
 			tempFilePath = path.join(getAppTempDir(appName), `${getRandomHexString(16)}.wav`)
-			const waveFileBuffer = encodeWaveBuffer(rawAudio)
+			const waveFileBuffer = encodeRawAudioToWave(rawAudio)
 			await outputFile(tempFilePath, waveFileBuffer)
 
 			playerProcess = spawn(

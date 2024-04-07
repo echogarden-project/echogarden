@@ -5,7 +5,7 @@ import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchem
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
 import chalk from 'chalk'
-import { RawAudio, applyGainDecibels, encodeWaveBuffer, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime } from '../audio/AudioUtilities.js'
+import { RawAudio, applyGainDecibels, encodeRawAudioToWave, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime } from '../audio/AudioUtilities.js'
 import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from '../subtitles/Subtitles.js'
 import { Logger, resetActiveLogger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
@@ -1492,7 +1492,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 		fileSaver = async (audio) => {
 			await ensureDir(fileDir)
 
-			return writeFileSafe(outputFilePath, encodeWaveBuffer(audio))
+			return writeFileSafe(outputFilePath, encodeRawAudioToWave(audio))
 		}
 	} else if (supportedOutputMediaFileExtensions.includes(fileExtension)) {
 		fileSaver = async (audio) => {
