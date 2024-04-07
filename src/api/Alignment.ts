@@ -1,35 +1,62 @@
-import { extendDeep } from "../utilities/ObjectUtilities.js"
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from "../utilities/Utilities.js"
-import { AudioSourceParam, RawAudio, downmixToMonoAndNormalize, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
+import { logToStderr } from '../utilities/Utilities.js'
+import { AudioSourceParam, RawAudio, downmixToMonoAndNormalize, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
+import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 
-import * as API from "./API.js"
-import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from "../utilities/Timeline.js"
-import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from "../utilities/Locale.js"
-import { WhisperOptions, whisperOptionsDefaults } from "../recognition/WhisperSTT.js"
-import chalk from "chalk"
-import { DtwGranularity } from "../alignment/SpeechAlignment.js"
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from "../subtitles/Subtitles.js"
-import { synthesize } from "./API.js"
-import { EspeakOptions, defaultEspeakOptions } from "../synthesis/EspeakTTS.js"
+import * as API from './API.js'
+import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
+import { WhisperOptions, defaultWhisperOptions } from '../recognition/WhisperSTT.js'
+import chalk from 'chalk'
+import { DtwGranularity } from '../alignment/SpeechAlignment.js'
+import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
+import { synthesize } from './API.js'
+import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 
 const log = logToStderr
 
 export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
 	const logger = new Logger()
+
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start("Prepare for alignment")
+	options = extendDeep(defaultAlignmentOptions, options)
 
 	const inputRawAudio = await ensureRawAudio(input)
 
-	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	let sourceRawAudio: RawAudio
+	let isolatedRawAudio: RawAudio | undefined
+	let backgroundRawAudio: RawAudio | undefined
+
+	if (options.isolate) {
+		logger.log(``)
+		logger.end();
+
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.separation!))
+
+		logger.end()
+		logger.log(``)
+
+		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
+	} else {
+		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	}
+
+	let sourceUncropTimeline: Timeline | undefined
+
+	if (options.crop) {
+		logger.start('Crop using voice activity detection');
+		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+
+		logger.end()
+	}
+
+	logger.start('Prepare for alignment')
+
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
-
-	options = extendDeep(defaultAlignmentOptions, options)
 
 	if (options.dtw!.windowDuration == null) {
 		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
@@ -48,7 +75,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	if (options.language) {
 		language = normalizeLanguageCode(options.language!)
 	} else {
-		logger.start("No language specified. Detecting language")
+		logger.start('No language specified. Detecting language')
 		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
 		language = detectedLanguage
 
@@ -58,15 +85,15 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	language = getDefaultDialectForLanguageCodeIfPossible(language)
 
-	logger.start("Load alignment module")
+	logger.start('Load alignment module')
 
-	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import("../alignment/SpeechAlignment.js")
+	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
 	async function getAlignmentReference() {
-		logger.start("Create alignment reference with eSpeak")
+		logger.start('Create alignment reference with eSpeak')
 
 		const synthesisOptions: API.SynthesisOptions = {
-			engine: "espeak",
+			engine: 'espeak',
 			language,
 			plainText: options.plainText,
 			customLexiconPaths: options.customLexiconPaths,
@@ -123,7 +150,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	let mappedTimeline: Timeline
 
 	switch (options.engine) {
-		case "dtw": {
+		case 'dtw': {
 			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
 			logger.end()
 
@@ -134,18 +161,17 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			break
 		}
 
-		case "dtw-ra": {
+		case 'dtw-ra': {
 			/*
 			const promptWords = (await splitToWords(prompt, language)).filter(word => isWord(word))
 
 			shuffleArrayInPlace(promptWords, this.randomGen)
-			//promptWords.reverse()
 
-			prompt = promptWords.join(" ")
+			prompt = promptWords.join(' ')
 			*/
 
 			const recognitionOptionsDefaults: API.RecognitionOptions = {
-				engine: "whisper",
+				engine: 'whisper',
 				language,
 			}
 
@@ -170,8 +196,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			break
 		}
 
-		case "whisper": {
-			const WhisperSTT = await import("../recognition/WhisperSTT.js")
+		case 'whisper': {
+			const WhisperSTT = await import('../recognition/WhisperSTT.js')
 
 			const whisperOptions = options.whisper!
 
@@ -179,12 +205,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, language)
 
-			if (modelName.endsWith(".en") && shortLanguageCode != "en") {
-				throw new Error(`The model '${modelName}' is English only and cannot transcribe language '${shortLanguageCode}'`)
-			}
-
 			if (getRawAudioDuration(sourceRawAudio) > 30) {
-				throw new Error("Whisper based alignment currently only supports audio inputs that are 30s or less")
+				throw new Error('Whisper based alignment currently only supports audio inputs that are 30s or less')
 			}
 
 			logger.end()
@@ -199,8 +221,15 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		}
 	}
 
+	// If the audio was cropped before recognition, map the timestamps back to the original audio
+	if (sourceUncropTimeline && sourceUncropTimeline.length > 0) {
+		API.convertCroppedToUncroppedTimeline(mappedTimeline, sourceUncropTimeline)
+	}
+
+	// Add text offsets
 	addWordTextOffsetsToTimeline(mappedTimeline, transcript)
 
+	// Make segment timeline
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
 	logger.end()
@@ -209,9 +238,13 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	return {
 		timeline: segmentTimeline,
 		wordTimeline: mappedTimeline,
-		inputRawAudio,
+
 		transcript,
-		language
+		language,
+
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio,
 	}
 }
 
@@ -246,22 +279,32 @@ export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: T
 export interface AlignmentResult {
 	timeline: Timeline
 	wordTimeline: Timeline
+
 	transcript: string
 	language: string
+
 	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
 }
 
-export type AlignmentEngine = "dtw" | "dtw-ra" | "whisper"
-export type PhoneAlignmentMethod = "interpolation" | "dtw"
+export type AlignmentEngine = 'dtw' | 'dtw-ra' | 'whisper'
+export type PhoneAlignmentMethod = 'interpolation' | 'dtw'
 
 export interface AlignmentOptions {
 	engine?: AlignmentEngine
 
 	language?: string
 
-	languageDetection?: API.TextLanguageDetectionOptions
+	isolate?: boolean
+
+	crop?: boolean
 
 	customLexiconPaths?: string[]
+
+	languageDetection?: API.TextLanguageDetectionOptions
+
+	vad?: API.VADOptions
 
 	plainText?: API.PlainTextOptions
 
@@ -275,18 +318,24 @@ export interface AlignmentOptions {
 
 	recognition?: API.RecognitionOptions
 
+	separation?: API.SourceSeparationOptions
+
 	whisper?: WhisperOptions
 }
 
 export const defaultAlignmentOptions: AlignmentOptions = {
-	engine: "dtw",
+	engine: 'dtw',
 
 	language: undefined,
 
-	languageDetection: {
-	},
+	isolate: false,
+
+	crop: true,
 
 	customLexiconPaths: undefined,
+
+	languageDetection: {
+	},
 
 	plainText: {
 		paragraphBreaks: 'double',
@@ -302,28 +351,44 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	},
 
 	recognition: {
+		whisper: {
+			temperature: 0.15,
+			topCandidateCount: 5,
+			punctuationThreshold: 0.2,
+			maxTokensPerPart: 200,
+			autoPromptParts: false,
+			suppressRepetition: true,
+		}
 	},
 
-	whisper: whisperOptionsDefaults
+	vad: {
+		engine: 'adaptive-gate'
+	},
+
+	separation: {
+	},
+
+	whisper: {
+	}
 }
 
 export const alignmentEngines: API.EngineMetadata[] = [
 	{
 		id: 'dtw',
 		name: 'Dynamic Time Warping',
-		description: 'Makes use of synthesis to find the best mapping between the original audio and its transcript.',
+		description: 'Makes use of a synthesized reference to find the best mapping between the spoken audio and its transcript.',
 		type: 'local'
 	},
 	{
 		id: 'dtw-ra',
 		name: 'Dynamic Time Warping with Recognition Assist',
-		description: 'Makes use of both synthesis and recognition to find the best mapping between the original audio and its transcript.',
+		description: 'Makes use of both a synthesized reference and a synthsized recognized transcript to find the best mapping between the spoken audio and its transcript.',
 		type: 'local'
 	},
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'Extracts timestamps from the internal state of the Whisper recognition model (note: currently limited to a maximum of 30s audio length).',
+		description: 'Extracts timestamps from the internal state of the Whisper recognition model (note: currently limited to a maximum audio duration of 30 seconds).',
 		type: 'local'
 	}
 ]
