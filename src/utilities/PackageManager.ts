@@ -141,4 +141,39 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'vits-nl_NL-mls-medium': '20240316',
 	'vits-sl_SI-artur-medium': '20240316',
 	'vits-tr_TR-fettah-medium': '20240316',
+
+	'mdxnet-UVR_MDXNET_1_9703': '20240330',
+	'mdxnet-UVR_MDXNET_2_9682': '20240330',
+	'mdxnet-UVR_MDXNET_3_9662': '20240330',
+	'mdxnet-UVR_MDXNET_KARA': '20240330',
+
+	'whisper.cpp-tiny': '20240405',
+	'whisper.cpp-tiny-q5_1': '20240405',
+	'whisper.cpp-tiny.en': '20240405',
+	'whisper.cpp-tiny.en-q5_1': '20240405',
+	'whisper.cpp-tiny.en-q8_0': '20240405',
+
+	'whisper.cpp-base': '20240405',
+	'whisper.cpp-base-q5_1': '20240405',
+	'whisper.cpp-base.en': '20240405',
+	'whisper.cpp-base.en-q5_1': '20240405',
+
+	'whisper.cpp-small': '20240405',
+	'whisper.cpp-small-q5_1': '20240405',
+	'whisper.cpp-small.en': '20240405',
+	'whisper.cpp-small.en-q5_1': '20240405',
+
+	'whisper.cpp-medium': '20240405',
+	'whisper.cpp-medium-q5_0': '20240405',
+	'whisper.cpp-medium.en': '20240405',
+	'whisper.cpp-medium.en-q5_0': '20240405',
+
+	'whisper.cpp-large-v1': '20240405',
+	'whisper.cpp-large-v2': '20240405',
+	'whisper.cpp-large-v2-q5_0': '20240405',
+	'whisper.cpp-large-v3': '20240405',
+	'whisper.cpp-large-v3-q5_0': '20240405',
+
+	'whisper.cpp-binaries-linux-x64-latest-patched': '20240405',
+	'whisper.cpp-binaries-windows-x64-latest-patched': '20240405',
 }
