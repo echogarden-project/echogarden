@@ -428,11 +428,11 @@ function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesC
 
 	addCuesFrom(timeline)
 	addCueFromCurrentWords() // Add any remaining words
-	
+
 	return cues
 }
 
-function tryParseTimeRangePatternWithHours(line: string) {
+export function tryParseTimeRangePatternWithHours(line: string) {
 	const timeRangePatternWithHours = /^(\d+)\:(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)\:(\d+)[\.,](\d+)/
 	const match = timeRangePatternWithHours.exec(line)
 
@@ -456,7 +456,7 @@ function tryParseTimeRangePatternWithHours(line: string) {
 	return { startTime, endTime, succeeded: true }
 }
 
-function tryParseTimeRangePatternWithoutHours(line: string) {
+export function tryParseTimeRangePatternWithoutHours(line: string) {
 	const timeRangePatternWithHours = /^(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)[\.,](\d+)/
 	const match = timeRangePatternWithHours.exec(line)
 
