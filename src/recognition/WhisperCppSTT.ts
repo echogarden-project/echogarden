@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { RawAudio, encodeWaveBuffer } from '../audio/AudioUtilities.js'
+import { RawAudio, encodeRawAudioToWave, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { type WhisperTask, type WhisperModelName } from './WhisperSTT.js'
 import { getRandomHexString, writeToStdinInChunks, writeToStderr } from '../utilities/Utilities.js'
@@ -36,7 +36,7 @@ export async function recognize(
 		logger.log('')
 		logger.log('')
 
-		const sourceAsWave = encodeWaveBuffer(sourceRawAudio)
+		const sourceAsWave = encodeRawAudioToWave(sourceRawAudio)
 
 		const tempDirPath = getAppTempDir(appName)
 		const outJsonFilePathWithoutExtension = path.join(tempDirPath, `${getRandomHexString(16)}`)
@@ -142,7 +142,7 @@ export async function recognize(
 				const resultObject: WhisperCppVerboseResult = await readAndParseJsonFile(outJsonFilePath)
 				await remove(outJsonFilePath)
 
-				const parsedResultObject = parseResultObject(resultObject, options.enableDTW!)
+				const parsedResultObject = parseResultObject(resultObject, getRawAudioDuration(sourceRawAudio), options.enableDTW!)
 
 				resolve(parsedResultObject)
 			} else {
@@ -157,7 +157,7 @@ export async function recognize(
 	})
 }
 
-function parseResultObject(resultObject: WhisperCppVerboseResult, useDTWTimestamps: boolean): RecognitionResult {
+function parseResultObject(resultObject: WhisperCppVerboseResult, totalDuration: number, useDTWTimestamps: boolean): RecognitionResult {
 	const transcript = resultObject.transcription.map(partEntry => partEntry.text).join('').trim()
 
 	const timeline: Timeline = []
@@ -178,7 +178,7 @@ function parseResultObject(resultObject: WhisperCppVerboseResult, useDTWTimestam
 			const nextTokenEntry = tokens[tokenIndex + 1]
 
 			const tokenEntryDtwStartTime = tokenEntry.t_dtw / 100
-			const nextTokenEntryDtwStartTime = nextTokenEntry ? nextTokenEntry.t_dtw / 100 : -1
+			const nextTokenEntryDtwStartTime = nextTokenEntry ? nextTokenEntry.t_dtw / 100 : totalDuration
 
 			startTime = Math.max(tokenEntryDtwStartTime, 0)
 			endTime = nextTokenEntryDtwStartTime
