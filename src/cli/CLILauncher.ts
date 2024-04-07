@@ -9,18 +9,18 @@ setupUnhandledExceptionListeners()
 const cmd = process.argv[0]
 const scriptArgs = process.argv.slice(2)
 
-const cliScriptPath = resolveToModuleRootDir("dist/cli/CLIStarter.js")
+const cliScriptPath = resolveToModuleRootDir('dist/cli/CLIStarter.js')
 
 const args = [
-	"--no-warnings",
-	"--no-experimental-fetch",
-	"--experimental-wasi-unstable-preview1",
+	'--no-warnings',
+	'--no-experimental-fetch',
+	'--experimental-wasi-unstable-preview1',
 	cliScriptPath,
 	...scriptArgs
 ]
 
-const child = spawn(cmd, args, { stdio: "inherit" })
+const child = spawn(cmd, args, { stdio: 'inherit' })
 
-child.on("close", code => {
+child.on('close', code => {
 	process.exit(code as number)
 })

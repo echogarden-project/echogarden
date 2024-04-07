@@ -1,7 +1,7 @@
-import { ParagraphBreakType, WhitespaceProcessing } from "../api/Common.js"
-import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
-import { deepClone } from "./ObjectUtilities.js"
-import { getUTF32Chars, roundToDigits } from "./Utilities.js"
+import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
+import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
+import { deepClone } from './ObjectUtilities.js'
+import { getUTF32Chars, roundToDigits } from './Utilities.js'
 
 export function addTimeOffsetToTimeline(targetTimeline: Timeline, timeOffset: number) {
 	if (!targetTimeline) {
@@ -62,14 +62,14 @@ export function roundTimelineProperties(targetTimeline: Timeline, decimalDigits 
 }
 
 export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string, paragraphBreaks: ParagraphBreakType = 'double', whitespace: WhitespaceProcessing = 'collapse') {
-	const paragraphs = await splitToParagraphs(transcript, paragraphBreaks, whitespace)
+	const paragraphs = splitToParagraphs(transcript, paragraphBreaks, whitespace)
 
 	const segments = paragraphs
 		.map(segment =>
 			splitToSentences(segment, language).map(sentence =>
 				sentence.trim()))
 
-	let text = ""
+	let text = ''
 	const charIndexToSentenceEntryMapping: TimelineEntry[] = []
 
 	const segmentTimeline: Timeline = []
@@ -78,8 +78,8 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		const sentencesInSegment: Timeline = []
 
 		const segmentEntry: TimelineEntry = {
-			type: "segment",
-			text: "",
+			type: 'segment',
+			text: '',
 			startTime: -1,
 			endTime: -1,
 			timeline: sentencesInSegment
@@ -87,14 +87,14 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 
 		for (const sentence of segment) {
 			const sentenceEntry: TimelineEntry = {
-				type: "sentence",
+				type: 'sentence',
 				text: sentence,
 				startTime: -1,
 				endTime: -1,
 				timeline: []
 			}
 
-			for (const char of sentence + " ") {
+			for (const char of sentence + ' ') {
 				text += char
 				charIndexToSentenceEntryMapping.push(sentenceEntry)
 			}
@@ -151,7 +151,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 			continue
 		}
 
-		segmentEntry.text = newSentenceTimeline.map(sentenceEntry => sentenceEntry.text).join(" ")
+		segmentEntry.text = newSentenceTimeline.map(sentenceEntry => sentenceEntry.text).join(' ')
 
 		segmentEntry.startTime = newSentenceTimeline[0].startTime
 		segmentEntry.endTime = newSentenceTimeline[newSentenceTimeline.length - 1].endTime
@@ -207,7 +207,7 @@ export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, c
 	return currentOffset
 }
 
-export type TimelineEntryType = "segment" | "paragraph" | "sentence" | "clause" | "phrase" | "word" | "token" | "letter" | "phone" | "subphone"
+export type TimelineEntryType = 'segment' | 'paragraph' | 'sentence' | 'clause' | 'phrase' | 'word' | 'token' | 'letter' | 'phone' | 'subphone'
 
 export type TimelineEntry = {
 	type: TimelineEntryType

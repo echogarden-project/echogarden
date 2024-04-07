@@ -1,9 +1,9 @@
 import { spawn } from 'child_process'
 
-import { RawAudio, concatAudioSegments } from "./AudioUtilities.js"
+import { RawAudio, concatAudioSegments } from './AudioUtilities.js'
 import * as AudioBufferConversion from './AudioBufferConversion.js'
 
-import { Timer } from "../utilities/Timer.js"
+import { Timer } from '../utilities/Timer.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { SampleFormat } from '../codecs/WaveCodec.js'
@@ -37,7 +37,7 @@ export function captureAudioInput(channelCount = 1, sampleRate = 48000, maxTime 
 		const soxPath = await tryResolvingSoxPath()
 
 		if (!soxPath) {
-			throw new Error("Could not resolve a SoX executable")
+			throw new Error('Could not resolve a SoX executable')
 		}
 
 		let args: string[]
@@ -51,7 +51,7 @@ export function captureAudioInput(channelCount = 1, sampleRate = 48000, maxTime 
 				'-c', `${channelCount}`, '-r', `${sampleRate}`, '-e', 'signed',
 				'-t', 'raw', '-']
 		} else {
-			throw new Error("")
+			throw new Error('')
 		}
 
 		const recorder = spawn(
@@ -60,7 +60,7 @@ export function captureAudioInput(channelCount = 1, sampleRate = 48000, maxTime 
 			{}
 		)
 
-		recorder.once("spawn", () => {
+		recorder.once('spawn', () => {
 			recorderSpawnedOpenPromise.resolve(null)
 			timer.restart()
 		})

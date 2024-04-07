@@ -196,7 +196,7 @@ export class WasmMemoryManager {
 	}
 
 	allocNullTerminatedUtf8String(str: string) {
-		const strBuffer = Buffer.concat([Buffer.from(str, "utf8"), Buffer.alloc(1)])
+		const strBuffer = Buffer.concat([Buffer.from(str, 'utf8'), Buffer.alloc(1)])
 		const ref = this.allocUint8Array(strBuffer.length)
 		ref.view.set(strBuffer)
 		return ref
@@ -266,7 +266,7 @@ abstract class ValueRef<T extends number | string> {
 		if (typeof this.value == 'number') {
 			this.value = 0 as any
 		} else if (typeof this.value == 'string') {
-			throw new Error("Unimplemented")
+			throw new Error('Unimplemented')
 		}
 
 		return this
@@ -284,7 +284,7 @@ abstract class ValueRef<T extends number | string> {
 
 	protected assertNotFreed() {
 		if (this.isFreed) {
-			throw new Error("Attempt to read a freed WASM value reference.")
+			throw new Error('Attempt to read a freed WASM value reference.')
 		}
 	}
 }
@@ -381,13 +381,13 @@ export class NullTerminatedUtf8StringRef extends ValueRef<string> {
 
 		const strBytes = heapU8.subarray(ptr, ptr + endByteOffset)
 
-		const str = Buffer.from(strBytes).toString("utf8")
+		const str = Buffer.from(strBytes).toString('utf8')
 
 		return str
 	}
 
 	setValue(newValue: string) {
-		throw new Error("Unimplemented")
+		throw new Error('Unimplemented')
 	}
 }
 
@@ -437,7 +437,7 @@ abstract class TypedArrayRef<T extends TypedArray> {
 
 	protected assertNotFreed() {
 		if (this.isFreed) {
-			throw new Error("Attempt to read a freed WASM typed array reference.")
+			throw new Error('Attempt to read a freed WASM typed array reference.')
 		}
 	}
 }
@@ -464,7 +464,7 @@ export class Uint8ArrayRef extends TypedArrayRef<Uint8Array> {
 			strBytes = strBytes.subarray(0, indexOfFirstZero)
 		}
 
-		const str = Buffer.from(strBytes).toString("utf8")
+		const str = Buffer.from(strBytes).toString('utf8')
 
 		return str
 	}

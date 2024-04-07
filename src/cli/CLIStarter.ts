@@ -9,7 +9,7 @@ setupProgramTerminationListeners(() => {
 	process.kill(process.pid, 'SIGKILL')
 })
 
-const worker = new Worker(resolveToModuleRootDir("dist/cli/CLI.js"), {
+const worker = new Worker(resolveToModuleRootDir('dist/cli/CLI.js'), {
 	argv: process.argv.slice(2),
 	env: SHARE_ENV
 })
@@ -29,12 +29,12 @@ process.stdin.on('keypress', (str, key) => {
 	})
 })
 
-worker.on("message", (message) => {
-	if (message.name == "writeToStdErr") {
+worker.on('message', (message) => {
+	if (message.name == 'writeToStdErr') {
 		writeToStderr(message.text)
 	}
 })
 
-worker.on("exit", (err) => {
+worker.on('exit', (err) => {
 	process.exit(err ? 1 : 0)
 })

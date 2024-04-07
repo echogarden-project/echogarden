@@ -15,7 +15,7 @@ async function startIfInWorkerThread() {
 
 	const initOpenPromise = new OpenPromise<void>()
 
-	parentPort.once("message", (message) => {
+	parentPort.once('message', (message) => {
 		if (message.name == 'init') {
 			process.stderr.isTTY = message.stdErrIsTTY
 			process.stderr.hasColors = () => message.hasColors
@@ -31,7 +31,7 @@ async function startIfInWorkerThread() {
 
 	await initOpenPromise.promise
 
-	parentPort.on("message", (message: any) => {
+	parentPort.on('message', (message: any) => {
 		sendMessageToWorker(message)
 	})
 }

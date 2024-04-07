@@ -1,12 +1,12 @@
-import { spawn } from "child_process"
+import { spawn } from 'child_process'
 
-import { encodeWaveBuffer, decodeWaveBuffer, RawAudio } from "../audio/AudioUtilities.js"
+import { encodeWaveBuffer, decodeWaveBuffer, RawAudio } from '../audio/AudioUtilities.js'
 
-import { Logger } from "../utilities/Logger.js"
-import { commandExists, logToStderr } from "../utilities/Utilities.js"
-import path from "node:path"
-import { loadPackage } from "../utilities/PackageManager.js"
-import { getGlobalOption } from "../api/GlobalOptions.js"
+import { Logger } from '../utilities/Logger.js'
+import { commandExists, logToStderr } from '../utilities/Utilities.js'
+import path from 'node:path'
+import { loadPackage } from '../utilities/PackageManager.js'
+import { getGlobalOption } from '../api/GlobalOptions.js'
 
 const log = logToStderr
 
@@ -15,7 +15,7 @@ export type FFMpegOutputOptions = {
 	codec?: string
 	format?: string
 	sampleRate?: number
-	sampleFormat?: "u8" | "s16" | "s32" | "s64" | "flt" | "dbl"
+	sampleFormat?: 'u8' | 's16' | 's32' | 's64' | 'flt' | 'dbl'
 	channelCount?: number
 	bitrate?: number
 	audioOnly?: boolean
@@ -28,8 +28,8 @@ export async function encodeFromChannels(rawAudio: RawAudio, outputOptions: FFMp
 
 export async function decodeToChannels(input: string | Buffer, outSampleRate?: number, outChannelCount?: number) {
 	const outputOptions: FFMpegOutputOptions = {
-		codec: "pcm_f32le",
-		format: "wav",
+		codec: 'pcm_f32le',
+		format: 'wav',
 		sampleRate: outSampleRate,
 		channelCount: outChannelCount,
 		audioOnly: true
@@ -46,7 +46,7 @@ export async function transcode(input: string | Buffer, outputOptions: FFMpegOut
 	const executablePath = await getFFMpegExecutablePath()
 
 	if (!executablePath) {
-		throw new Error("The ffmpeg utility wasn't found. Please ensure it is available on the system path.")
+		throw new Error(`The ffmpeg utility wasn't found. Please ensure it is available on the system path.`)
 	}
 
 	return transcode_CLI(executablePath, input, outputOptions)
@@ -55,9 +55,9 @@ export async function transcode(input: string | Buffer, outputOptions: FFMpegOut
 async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outputOptions: FFMpegOutputOptions) {
 	return new Promise<Buffer>((resolve, reject) => {
 		const logger = new Logger()
-		logger.start("Transcode with command-line ffmpeg")
+		logger.start('Transcode with command-line ffmpeg')
 
-		const args = buildCommandLineArguments(Buffer.isBuffer(input) ? "-" : input, outputOptions)
+		const args = buildCommandLineArguments(Buffer.isBuffer(input) ? '-' : input, outputOptions)
 
 		const process = spawn(ffmpegCommand, args)
 
@@ -65,29 +65,29 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 			process.stdin.end(input)
 		}
 
-		const stdOutChunks: Buffer[] = []
-		let stdErrOutput = ""
+		const stdoutChunks: Buffer[] = []
+		let stderrOutput = ''
 
 		process.stdout.on('data', (data) => {
-			stdOutChunks.push(data)
+			stdoutChunks.push(data)
 		})
 
-		process.stderr.setEncoding("utf8")
+		process.stderr.setEncoding('utf8')
 		process.stderr.on('data', (data) => {
 			//log(data)
-			stdErrOutput += data
+			stderrOutput += data
 		})
 
-		process.on("error", (e) => {
+		process.on('error', (e) => {
 			reject(e)
 		})
 
 		process.on('close', (exitCode) => {
 			if (exitCode == 0) {
-				resolve(Buffer.concat(stdOutChunks))
+				resolve(Buffer.concat(stdoutChunks))
 			} else {
 				reject(`ffmpeg exited with code ${exitCode}`)
-				log(stdErrOutput)
+				log(stderrOutput)
 			}
 
 			logger.end()
@@ -99,7 +99,7 @@ function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegO
 	outputOptions = { ...outputOptions }
 
 	if (!outputOptions.filename) {
-		outputOptions.filename = "-"
+		outputOptions.filename = '-'
 	}
 
 	const args: string[] = []
@@ -200,36 +200,36 @@ async function getFFMpegExecutablePath() {
 export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBitrate?: number) {
 	let ffmpegOptions: FFMpegOutputOptions
 
-	if (fileExtension == "mp3") {
+	if (fileExtension == 'mp3') {
 		ffmpegOptions = {
-			format: "mp3",
-			codec: "libmp3lame",
+			format: 'mp3',
+			codec: 'libmp3lame',
 			bitrate: 64,
 			customOptions: []
 		}
-	} else if (fileExtension == "opus") {
+	} else if (fileExtension == 'opus') {
 		ffmpegOptions = {
-			codec: "libopus",
+			codec: 'libopus',
 			bitrate: 48,
 			customOptions: []
 		}
-	} else if (fileExtension == "m4a") {
+	} else if (fileExtension == 'm4a') {
 		ffmpegOptions = {
-			format: "mp4",
-			codec: "aac",
+			format: 'mp4',
+			codec: 'aac',
 			bitrate: 48,
-			customOptions: ["-profile:a", "aac_low", "-movflags", "frag_keyframe+empty_moov"]
+			customOptions: ['-profile:a', 'aac_low', '-movflags', 'frag_keyframe+empty_moov']
 		}
-	} else if (fileExtension == "ogg") {
+	} else if (fileExtension == 'ogg') {
 		ffmpegOptions = {
-			codec: "libvorbis",
+			codec: 'libvorbis',
 			bitrate: 48,
 			customOptions: []
 		}
-	} else if (fileExtension == "flac") {
+	} else if (fileExtension == 'flac') {
 		ffmpegOptions = {
-			format: "flac",
-			customOptions: ["-compression_level", "6"]
+			format: 'flac',
+			customOptions: ['-compression_level', '6']
 		}
 	} else {
 		throw new Error(`Unsupported codec extension: '${fileExtension}'`)

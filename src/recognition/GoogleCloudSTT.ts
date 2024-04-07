@@ -1,21 +1,21 @@
-import { request } from "gaxios"
+import { request } from 'gaxios'
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { Logger } from "../utilities/Logger.js"
-import { Timeline } from "../utilities/Timeline.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Logger } from '../utilities/Logger.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
 
-export type AudioEncoding = "LINEAR16" | "FLAC" | "MULAW" | "AMR" | "AMR" | "AMR_WB" | "OGG_OPUS" | "SPEEX_WITH_HEADER_BYTE" | "MP3" | "WEBM_OPUS"
+export type AudioEncoding = 'LINEAR16' | 'FLAC' | 'MULAW' | 'AMR' | 'AMR' | 'AMR_WB' | 'OGG_OPUS' | 'SPEEX_WITH_HEADER_BYTE' | 'MP3' | 'WEBM_OPUS'
 
-export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode = "en-US") {
-	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: "flac", sampleRate: 16000, sampleFormat: "s16", channelCount: 1 })
+export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode = 'en-US') {
+	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 })
 
 	const logger = new Logger()
-	logger.start("Request recognition from Google Cloud")
+	logger.start('Request recognition from Google Cloud')
 
 	const requestBody = {
 		config: {
-			encoding: "FLAC",
+			encoding: 'FLAC',
 			sampleRateHertz: 16000,
 			audioChannelCount: 1,
 			languageCode,
@@ -25,35 +25,35 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 			enableWordTimeOffsets: true,
 			enableWordConfidence: true,
 			enableAutomaticPunctuation: true,
-			model: "latest_long",
+			model: 'latest_long',
 			useEnhanced: true
 		},
 
 		audio: {
-			content: flac16Khz16bitMonoAudio.toString("base64")
+			content: flac16Khz16bitMonoAudio.toString('base64')
 		}
 	}
 
 	const response = await request<any>({
-		method: "POST",
+		method: 'POST',
 
 		url: `https://speech.googleapis.com/v1p1beta1/speech:recognize`,
 
 		params: {
-			"key": apiKey
+			'key': apiKey
 		},
 
 		headers: {
-			"User-Agent": ""
+			'User-Agent': ''
 		},
 
 		data: requestBody,
 
 
-		responseType: "json"
+		responseType: 'json'
 	})
 
-	logger.start("Parse response body")
+	logger.start('Parse response body')
 
 	const result = parseResponseBody(response.data)
 
@@ -65,7 +65,7 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 function parseResponseBody(responseBody: any) {
 	const results = responseBody.results
 
-	let transcript = ""
+	let transcript = ''
 	const timeline: Timeline = []
 
 	for (const result of results) {
@@ -79,10 +79,10 @@ function parseResponseBody(responseBody: any) {
 
 		for (const wordEvent of firstAlternative.words) {
 			timeline.push({
-				type: "word",
+				type: 'word',
 				text: wordEvent.word,
-				startTime: parseFloat(wordEvent.startTime.replace("s","")),
-				endTime: parseFloat(wordEvent.endTime.replace("s", "")),
+				startTime: parseFloat(wordEvent.startTime.replace('s','')),
+				endTime: parseFloat(wordEvent.endTime.replace('s', '')),
 				confidence: wordEvent.confidence
 			})
 		}

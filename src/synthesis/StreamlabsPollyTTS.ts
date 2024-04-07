@@ -1,11 +1,11 @@
-import { request } from "gaxios"
-import { SynthesisVoice } from "../api/API.js"
-import { trimAudioEnd } from "../audio/AudioUtilities.js"
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { Phrase, splitToFragments } from "../nlp/Segmentation.js"
-import { Logger } from "../utilities/Logger.js"
-import { concatFloat32Arrays, logToStderr } from "../utilities/Utilities.js"
-import { Timeline } from "../utilities/Timeline.js"
+import { request } from 'gaxios'
+import { SynthesisVoice } from '../api/API.js'
+import { trimAudioEnd } from '../audio/AudioUtilities.js'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Phrase, splitToFragments } from '../nlp/Segmentation.js'
+import { Logger } from '../utilities/Logger.js'
+import { concatFloat32Arrays, logToStderr } from '../utilities/Utilities.js'
+import { Timeline } from '../utilities/Timeline.js'
 
 const log = logToStderr
 
@@ -13,11 +13,11 @@ const maxTextLengthPerRequest = 200
 
 export async function synthesizeLongText(text: string, voice: string, languageCode: string, sentenceEndPause = 0.75, segmentEndPause = 1.0) {
 	if (text.length == 0) {
-		throw new Error("Text is empty")
+		throw new Error('Text is empty')
 	}
 
 	const logger = new Logger()
-	logger.start("Prepare and split text")
+	logger.start('Prepare and split text')
 
 	const fragments = await splitToFragments(text, maxTextLengthPerRequest, languageCode)
 
@@ -57,7 +57,7 @@ export async function synthesizeLongText(text: string, voice: string, languageCo
 		const endTime = startTime + (trimmedAudio.length / fragmentsSampleRate)
 
 		timeline.push({
-			type: "segment",
+			type: 'segment',
 			text: fragment.text,
 			startTime,
 			endTime
@@ -78,37 +78,37 @@ export async function synthesizeFragment(text: string, voice: string) {
 	const response = await request<any>({
 		url: `https://streamlabs.com/polly/speak`,
 
-		method: "POST",
+		method: 'POST',
 
 		data: {
 			voice,
 			text,
 		},
 
-		responseType: "json"
+		responseType: 'json'
 	})
 
 	const responseObject = response.data
 	const audioUrl = responseObject.speak_url
-	const audioUrlResponse = await request<ArrayBuffer>({ url: audioUrl, responseType: "arraybuffer" })
+	const audioUrlResponse = await request<ArrayBuffer>({ url: audioUrl, responseType: 'arraybuffer' })
 
 	return Buffer.from(audioUrlResponse.data)
 }
 
 export const voiceList: SynthesisVoice[] = [
-	{ name: "Brian", languages: ["en-GB", "en"], gender: "male" },
-	{ name: "Emma", languages: ["en-GB", "en"], gender: "female" },
-	{ name: "Russell", languages: ["en-AU", "en"], gender: "male" },
-	{ name: "Joey", languages: ["en-US", "en"], gender: "male" },
-	{ name: "Matthew", languages: ["en-US", "en"], gender: "male" },
-	{ name: "Joanna", languages: ["en-US", "en"], gender: "female" },
-	{ name: "Kimberly", languages: ["en-US", "en"], gender: "female" },
-	{ name: "Amy", languages: ["en-GB", "en"], gender: "female" },
-	{ name: "Geraint", languages: ["en-GB-WLS", "en-GB", "en"], gender: "male" },
-	{ name: "Nicole", languages: ["en-AU", "en"], gender: "female" },
-	{ name: "Justin", languages: ["en-US", "en"], gender: "male" },
-	{ name: "Ivy", languages: ["en-US", "en"], gender: "female" },
-	{ name: "Kendra", languages: ["en-US", "en"], gender: "female" },
-	{ name: "Salli", languages: ["en-US", "en"], gender: "female" },
-	{ name: "Raveena", languages: ["en-IN", "en"], gender: "female" },
+	{ name: 'Brian', languages: ['en-GB', 'en'], gender: 'male' },
+	{ name: 'Emma', languages: ['en-GB', 'en'], gender: 'female' },
+	{ name: 'Russell', languages: ['en-AU', 'en'], gender: 'male' },
+	{ name: 'Joey', languages: ['en-US', 'en'], gender: 'male' },
+	{ name: 'Matthew', languages: ['en-US', 'en'], gender: 'male' },
+	{ name: 'Joanna', languages: ['en-US', 'en'], gender: 'female' },
+	{ name: 'Kimberly', languages: ['en-US', 'en'], gender: 'female' },
+	{ name: 'Amy', languages: ['en-GB', 'en'], gender: 'female' },
+	{ name: 'Geraint', languages: ['en-GB-WLS', 'en-GB', 'en'], gender: 'male' },
+	{ name: 'Nicole', languages: ['en-AU', 'en'], gender: 'female' },
+	{ name: 'Justin', languages: ['en-US', 'en'], gender: 'male' },
+	{ name: 'Ivy', languages: ['en-US', 'en'], gender: 'female' },
+	{ name: 'Kendra', languages: ['en-US', 'en'], gender: 'female' },
+	{ name: 'Salli', languages: ['en-US', 'en'], gender: 'female' },
+	{ name: 'Raveena', languages: ['en-IN', 'en'], gender: 'female' },
 ]

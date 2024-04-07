@@ -1,16 +1,16 @@
-import { GaxiosOptions, request } from "gaxios"
-import { Readable } from "stream"
-import { getRandomHexString, writeToStderr } from "./Utilities.js"
-import { OpenPromise } from "./OpenPromise.js"
+import { GaxiosOptions, request } from 'gaxios'
+import { Readable } from 'stream'
+import { getRandomHexString, writeToStderr } from './Utilities.js'
+import { OpenPromise } from './OpenPromise.js'
 
-import { Timer } from "./Timer.js"
-import { Logger } from "./Logger.js"
-import path from "node:path"
-import { extractTarball } from "./Compression.js"
-import { createWriteStream, move, remove, readdir, ensureDir } from "./FileSystem.js"
-import chalk from "chalk"
+import { Timer } from './Timer.js'
+import { Logger } from './Logger.js'
+import path from 'node:path'
+import { extractTarball } from './Compression.js'
+import { createWriteStream, move, remove, readdir, ensureDir } from './FileSystem.js'
+import chalk from 'chalk'
 
-export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = "archive") {
+export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = 'archive') {
 	const logger = new Logger()
 
 	const randomID = getRandomHexString(16).toLowerCase()
@@ -39,7 +39,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	logger.end()
 }
 
-export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = "Downloading") {
+export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = 'Downloading') {
 	const write = writeToStderr
 
 	const downloadPromise = new OpenPromise<void>()
@@ -140,13 +140,13 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	}
 
 	const partialFilePath = `${targetFilePath}.${getRandomHexString(16)}.partial`
-	const fileWriteStream = createWriteStream(partialFilePath, { encoding: "binary", autoClose: true })
+	const fileWriteStream = createWriteStream(partialFilePath, { encoding: 'binary', autoClose: true })
 
 	let statusInterval = setInterval(() => {
 		updateStatus()
 	}, statusUpdateInterval)
 
-	response.data.on("data", (chunk: Uint8Array) => {
+	response.data.on('data', (chunk: Uint8Array) => {
 		try {
 			const contentLengthString = response.headers['content-length']
 
@@ -168,14 +168,14 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		}
 	})
 
-	response.data.on("end", async () => {
+	response.data.on('end', async () => {
 		try {
 			clearInterval(statusInterval)
 			updateStatus()
 
 			fileWriteStream.end()
 
-			write("\n")
+			write('\n')
 
 			await move(partialFilePath, targetFilePath)
 
@@ -186,7 +186,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		}
 	})
 
-	response.data.on("error", async (err: any) => {
+	response.data.on('error', async (err: any) => {
 		try {
 			clearInterval(statusInterval)
 

@@ -1,17 +1,17 @@
-import type { Item, LanguageCode, StartStreamTranscriptionCommandInput } from "@aws-sdk/client-transcribe-streaming"
-import { wordCharacterPattern } from "../nlp/Segmentation.js"
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { Logger } from "../utilities/Logger.js"
-import { Timeline } from "../utilities/Timeline.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
+import type { Item, LanguageCode, StartStreamTranscriptionCommandInput } from '@aws-sdk/client-transcribe-streaming'
+import { wordCharacterPattern } from '../nlp/Segmentation.js'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Logger } from '../utilities/Logger.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
 
 export async function recgonize(rawAudio: RawAudio, languageCode: string, region: string, accessKeyId: string, secretAccessKey: string) {
-	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: "flac", sampleRate: 16000, sampleFormat: "s16", channelCount: 1 })
+	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 })
 
 	const logger = new Logger()
-	logger.start("Initialize Amazon Transcribe streaming client module")
+	logger.start('Initialize Amazon Transcribe streaming client module')
 
-	const streamingTranscribeSdk = await import("@aws-sdk/client-transcribe-streaming")
+	const streamingTranscribeSdk = await import('@aws-sdk/client-transcribe-streaming')
 
 	const streamingTranscribeClient = new streamingTranscribeSdk.TranscribeStreamingClient({
 		region,
@@ -23,7 +23,6 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 	const audioStream = async function* () {
 		const chunkSize = 2 ** 12
-		//const audioSamples = encodeToAudioBuffer(rawAudio.audioChannels, 16, SampleFormat.PCM)
 
 		for (let i = 0; i < flac16Khz16bitMonoAudio.length; i += chunkSize) {
 			const chunk = flac16Khz16bitMonoAudio.subarray(i, i + chunkSize)
@@ -35,17 +34,17 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 	const params: StartStreamTranscriptionCommandInput = {
 		LanguageCode: languageCode as LanguageCode,
 		MediaSampleRateHertz: rawAudio.sampleRate,
-		MediaEncoding: "flac",
+		MediaEncoding: 'flac',
 		AudioStream: audioStream(),
 	}
 
-	logger.start("Request recognition from Amazon Transcribe..")
+	logger.start('Request recognition from Amazon Transcribe')
 
 	const command = new streamingTranscribeSdk.StartStreamTranscriptionCommand(params)
 
 	const response = await streamingTranscribeClient.send(command)
 
-	let transcript = ""
+	let transcript = ''
 	let events: Item[] = []
 
 	for await (const event of response.TranscriptResultStream!) {
@@ -73,13 +72,13 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 		if (firstResult.IsPartial === false) {
 			events = [...events, ...firstAlternative.Items!]
-			transcript += " " + firstAlternative.Transcript!
+			transcript += ' ' + firstAlternative.Transcript!
 		}
 	}
 
-	logger.start("Process result")
+	logger.start('Process result')
 
-	transcript = transcript.replace(/ +/g, " ").trim()
+	transcript = transcript.replace(/ +/g, ' ').trim()
 
 	const timeline: Timeline = []
 
@@ -98,7 +97,7 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 		timeline.push(
 			{
-				type: "word",
+				type: 'word',
 				text,
 				startTime,
 				endTime,

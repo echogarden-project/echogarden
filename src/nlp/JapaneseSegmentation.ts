@@ -1,6 +1,6 @@
-import path from "path"
-import { OpenPromise } from "../utilities/OpenPromise.js"
-import { resolveModuleScriptPath } from "../utilities/Utilities.js"
+import path from 'path'
+import { OpenPromise } from '../utilities/OpenPromise.js'
+import { resolveModuleScriptPath } from '../utilities/Utilities.js'
 
 export async function splitJapaneseTextToWords_Kuromoji(text: string) {
 	const tokenizer = await getKuromojiTokenizer()
@@ -18,12 +18,12 @@ async function getKuromojiTokenizer() {
 		return kuromojiTokenizer
 	}
 
-	const { default: kuromoji } = await import("kuromoji")
+	const { default: kuromoji } = await import('kuromoji')
 
 	const resultOpenPromise = new OpenPromise<any>()
 
 	const kuromojiScriptPath = await resolveModuleScriptPath('kuromoji')
-	const dictionaryPath = path.join(path.dirname(kuromojiScriptPath), "..", '/dict')
+	const dictionaryPath = path.join(path.dirname(kuromojiScriptPath), '..', '/dict')
 
 	kuromoji.builder({ dicPath: dictionaryPath }).build(function (error: any, tokenizer: any) {
 		if (error) {
@@ -41,7 +41,7 @@ async function getKuromojiTokenizer() {
 
 /*
 export async function splitJapaneseTextToWords_Sudachi(text: string, mode: 0 | 1 | 2) {
-	const { TokenizeMode, tokenize } = await import("sudachi")
+	const { TokenizeMode, tokenize } = await import('sudachi')
 
 	const resultString = tokenize(text, mode)
 

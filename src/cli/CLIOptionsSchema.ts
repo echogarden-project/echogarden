@@ -11,10 +11,10 @@ export function getOptionTypeFromSchema(path: string[], schema: any): SchemaType
 		currentObject = currentObject[key]
 
 		if (!currentObject) {
-			throw new Error(`'${key}' is not a valid property of '${path.slice(0, keyIndex).join(".")}'.`)
+			throw new Error(`'${key}' is not a valid property of '${path.slice(0, keyIndex).join('.')}'.`)
 		}
 
-		if ("$ref" in currentObject) {
+		if ('$ref' in currentObject) {
 			const refString = currentObject['$ref'] as string
 			const parsedRef = refString.substring(refString.lastIndexOf('/') + 1)
 

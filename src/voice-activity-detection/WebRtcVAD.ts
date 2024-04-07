@@ -1,10 +1,10 @@
-import * as AudioBufferConversion from "../audio/AudioBufferConversion.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
+import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 export async function detectVoiceActivity(rawAudio: RawAudio, frameDuration: 10 | 20 | 30 = 10, mode: 0 | 1 | 2 | 3 = 0) {
 	if (rawAudio.sampleRate != 16000) {
-		throw new Error("Audio sample rate must be 16KHz")
+		throw new Error('Audio sample rate must be 16KHz')
 	}
 
 	const frameClassifications: (0 | 1)[] = await fvad(AudioBufferConversion.float32ToInt16Pcm(rawAudio.audioChannels[0]), rawAudio.sampleRate, frameDuration, mode)
@@ -52,7 +52,7 @@ export async function fvad(samples: Int16Array, sampleRate: number, frameDuratio
 		const fvadResult = fvad_process(instancePtr, frameSamplesRef.address, frameSampleCount)
 
 		if (fvadResult == -1) {
-			throw new Error("fvad_process failed")
+			throw new Error('fvad_process failed')
 		}
 
 		result.push(fvadResult)

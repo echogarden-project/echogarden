@@ -1,5 +1,5 @@
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 let sonicInstance: any
 
@@ -22,13 +22,13 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const writeSuccess = m._sonicWriteFloatToStream(streamPtr, inputSamplesRef.address, inputSampleCount)
 
 	if (writeSuccess != 1) {
-		throw new Error("Sonic error: failed write to stream")
+		throw new Error('Sonic error: failed write to stream')
 	}
 
 	const flushSuccess = m._sonicFlushStream(streamPtr)
 
 	if (flushSuccess != 1) {
-		throw new Error("Sonic error: failed flushing stream")
+		throw new Error('Sonic error: failed flushing stream')
 	}
 
 	const samplesAvailable = m._sonicSamplesAvailable(streamPtr)

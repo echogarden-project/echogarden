@@ -1,6 +1,6 @@
-import AlawMulaw from "alawmulaw"
+import AlawMulaw from 'alawmulaw'
 import * as BinaryArrayConversion from '../utilities/BinaryArrayConversion.js'
-import { BitDepth, SampleFormat } from "../codecs/WaveCodec.js"
+import { BitDepth, SampleFormat } from '../codecs/WaveCodec.js'
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Low level audio sample conversions
@@ -186,7 +186,7 @@ export function interleaveChannels(channels: Float32Array[]) {
 	const channelCount = channels.length
 
 	if (channelCount == 0) {
-		throw new Error("Empty channel array received")
+		throw new Error('Empty channel array received')
 	}
 
 	if (channelCount == 1) {
@@ -210,7 +210,7 @@ export function interleaveChannels(channels: Float32Array[]) {
 
 export function deInterleaveChannels(interleavedChannels: Float32Array, channelCount: number) {
 	if (channelCount == 0) {
-		throw new Error("0 channel count received")
+		throw new Error('0 channel count received')
 	}
 
 	if (channelCount == 1) {

@@ -30,7 +30,7 @@ export function deepClone<T>(val: T) {
 }
 
 function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
-	if (val == null || typeof val !== "object") {
+	if (val == null || typeof val !== 'object') {
 		return val
 	}
 
@@ -38,9 +38,9 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 	const prototypeIdentifier = toString.call(obj)
 
 	switch (prototypeIdentifier) {
-		case "[object Array]": {
+		case '[object Array]': {
 			if (seenObjects.includes(obj)) {
-				throw new Error("deepClone: encountered a cyclic object")
+				throw new Error('deepClone: encountered a cyclic object')
 			}
 
 			seenObjects.push(obj)
@@ -60,81 +60,81 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 			return <any>clonedArray
 		}
 
-		case "[object ArrayBuffer]": {
+		case '[object ArrayBuffer]': {
 			const clonedArray = new Uint8Array(obj.byteLength)
 			clonedArray.set(new Uint8Array(obj))
 			return <any>clonedArray.buffer
 		}
 
-		case "[object Int8Array]": {
+		case '[object Int8Array]': {
 			const clonedArray = new Int8Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Uint8Array]": {
+		case '[object Uint8Array]': {
 			const clonedArray = new Uint8Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Uint8ClampedArray]": {
+		case '[object Uint8ClampedArray]': {
 			const clonedArray = new Uint8ClampedArray(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Int16Array]": {
+		case '[object Int16Array]': {
 			const clonedArray = new Int16Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Uint16Array]": {
+		case '[object Uint16Array]': {
 			const clonedArray = new Uint16Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Int32Array]": {
+		case '[object Int32Array]': {
 			const clonedArray = new Int32Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Uint32Array]": {
+		case '[object Uint32Array]': {
 			const clonedArray = new Uint32Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Float32Array]": {
+		case '[object Float32Array]': {
 			const clonedArray = new Float32Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Float64Array]": {
+		case '[object Float64Array]': {
 			const clonedArray = new Float64Array(obj.length)
 			clonedArray.set(obj)
 			return <any>clonedArray
 		}
 
-		case "[object Date]": {
+		case '[object Date]': {
 			return <any>new Date(obj.valueOf())
 		}
 
-		case "[object RegExp]": {
+		case '[object RegExp]': {
 			return obj
 		}
 
-		case "[object Function]": {
+		case '[object Function]': {
 			return obj
 		}
 
-		case "[object Object]": {
+		case '[object Object]': {
 			if (seenObjects.includes(obj)) {
-				throw new Error("deepClone: encountered a cyclic object")
+				throw new Error('deepClone: encountered a cyclic object')
 			}
 
 			seenObjects.push(obj)
@@ -165,5 +165,5 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 }
 
 export function isPlainObject(val: any) {
-	return val != null && typeof val === "object" && toString.call(val) === "[object Object]"
+	return val != null && typeof val === 'object' && toString.call(val) === '[object Object]'
 }

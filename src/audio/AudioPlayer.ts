@@ -2,11 +2,11 @@ import { parentPort } from 'node:worker_threads'
 
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 
-import { RawAudio, encodeWaveBuffer, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from "./AudioUtilities.js"
+import { RawAudio, encodeWaveBuffer, fadeAudioInOut, getRawAudioDuration, sliceRawAudioByTime } from './AudioUtilities.js'
 import * as AudioBufferConversion from './AudioBufferConversion.js'
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { Timer } from "../utilities/Timer.js"
+import { Timer } from '../utilities/Timer.js'
 import { getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
@@ -26,7 +26,7 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 
 	let transcript: string | undefined
 	if (transcriptFileName) {
-		transcript = await readFile(transcriptFileName, "utf8")
+		transcript = await readFile(transcriptFileName, 'utf8')
 	}
 
 	await playAudioWithWordTimeline(rawAudio, timeline, transcript)
@@ -58,7 +58,7 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline
 			let wordEndOffset = entry.endOffsetUtf16
 
 			if (wordStartOffset == null || wordEndOffset == null) {
-				//writeToStderr(` [No offset availble for '${entry.text}'] `)
+				//writeToStderr(` [No offset available for '${entry.text}'] `)
 
 				continue
 			}
@@ -75,18 +75,18 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline
 		}
 	}
 
-	writeToStderr("\n")
+	writeToStderr('\n')
 
 	const signalChannel = new SignalChannel()
 
 	const keypressListenerStartTimestamp = Date.now()
 
 	function keypressHandler(message: any) {
-		if (message.name == "keypress" &&
+		if (message.name == 'keypress' &&
 			message.key.name == 'return' &&
 			message.timestamp >= keypressListenerStartTimestamp) {
 
-			signalChannel.send("abort")
+			signalChannel.send('abort')
 		}
 	}
 
@@ -96,7 +96,7 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline
 
 	parentPort?.off('message', keypressHandler)
 
-	writeToStderr("\n")
+	writeToStderr('\n')
 }
 
 export async function playAudioWithTimelinePhones(rawAudio: RawAudio, timeline: Timeline) {
@@ -108,7 +108,7 @@ export async function playAudioWithTimelinePhones(rawAudio: RawAudio, timeline: 
 			const wordEntry = timeline[wordIndex]
 			const phoneTimeline = wordEntry.timeline!
 
-			if (phoneTimeline.every(phoneEntry => phoneEntry.text == "")) {
+			if (phoneTimeline.every(phoneEntry => phoneEntry.text == '')) {
 				continue
 			}
 
@@ -127,17 +127,17 @@ export async function playAudioWithTimelinePhones(rawAudio: RawAudio, timeline: 
 		}
 	}
 
-	writeToStderr("\n")
+	writeToStderr('\n')
 
 	await playAudioSamples(rawAudio, onTimePosition)
 
-	writeToStderr("\n")
+	writeToStderr('\n')
 }
 
 
 export async function playAudioPairWithTimelineInterleaved(rawAudio1: RawAudio, rawAudio2: RawAudio, timeline1: Timeline, timeline2: Timeline) {
 	if (timeline1.length != timeline2.length) {
-		throw new Error("Timelines have different lengths")
+		throw new Error('Timelines have different lengths')
 	}
 
 	for (let i = 0; i < timeline1.length; i++) {
@@ -149,7 +149,7 @@ export async function playAudioPairWithTimelineInterleaved(rawAudio1: RawAudio, 
 		await waitTimeout(500)
 	}
 
-	writeToStderr("\n")
+	writeToStderr('\n')
 }
 
 export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, signalChannel?: SignalChannel, microFadeInOut = true) {
@@ -167,15 +167,15 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 		const soxPath = await tryResolvingSoxPath()
 
-		let aborted = false
-
 		if (!soxPath) {
 			throw new Error(`Couldn't find or install the SoX utility. Please install the SoX utility on your system path to enable audio playback.`)
 		}
 
+		let aborted = false
+
 		let streamToStdin = true
 
-		if (process.platform == "darwin") {
+		if (process.platform == 'darwin') {
 			streamToStdin = false
 		}
 
@@ -211,32 +211,32 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 		}
 
 		if (signalChannel) {
-			signalChannel.on("abort", () => {
+			signalChannel.on('abort', () => {
 				aborted = true
 				playerProcess.kill('SIGKILL')
 			})
 		}
 
 		// Required to work around SoX bug:
-		playerProcess.stderr.on("data", (data) => {
+		playerProcess.stderr.on('data', (data) => {
 			//writeToStderr(data.toString('utf-8'))
 		})
 
-		playerProcess.stdout.on("data", (data) => {
+		playerProcess.stdout.on('data', (data) => {
 			//writeToStderr(data.toString('utf-8'))
 		})
 
-		playerProcess.once("spawn", () => {
+		playerProcess.once('spawn', () => {
 			if (audioBuffer != undefined) {
 				playerProcess.stdin!.write(audioBuffer)
 				playerProcess.stdin!.end()
-				playerProcess.stdin!.on("error", () => { })
+				playerProcess.stdin!.on('error', () => { })
 			}
 
 			playerSpawnedOpenPromise.resolve(null)
 		})
 
-		playerProcess.once("error", async (e) => {
+		playerProcess.once('error', async (e) => {
 			await cleanup()
 			playerProcessClosed = true
 
@@ -291,7 +291,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 			sampleRate: rawAudio.sampleRate,
 		})
 
-		speaker.on("error", (e: any) => {
+		speaker.on('error', (e: any) => {
 			reject(e)
 		})
 
@@ -306,7 +306,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 		let mpg123AudioBufferSize: number
 		let mpg123AudioBufferDuration: number
 
-		if (process.platform == "win32") {
+		if (process.platform == 'win32') {
 			mpg123AudioBufferSize = 65536
 			mpg123AudioBufferDuration = byteCountToDuration(mpg123AudioBufferSize)
 		} else {
@@ -356,4 +356,4 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 }
 
 export const charactersToWriteAhead =
-	[",", ".", "，", "、", "：", "；", "。", ":", ";", "?", "!", ")", "]", "}", "\"", "'", "”", "’", "-", "—", "»"]
+	[',', '.', '，', '、', '：', '；', '。', ':', ';', '?', '!', ')', ']', '}', `"`, `'`, '”', '’', '-', '—', '»']

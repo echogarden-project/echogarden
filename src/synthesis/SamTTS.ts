@@ -9,17 +9,17 @@ import { Logger } from '../utilities/Logger.js'
 
 export async function synthesize(text: string, pitch = 64, speed = 72, mouth = 128, throat = 128) {
 	const logger = new Logger()
-	logger.start("Initialize sam module")
+	logger.start('Initialize sam module')
 
 	const { default: SamJs } = await import('sam-js')
 
 	const sam = new SamJs({ pitch, speed, mouth, throat })
 
-	logger.start("Synthesize with sam")
+	logger.start('Synthesize with sam')
 	const samples: Float32Array = sam.buf32(text) as Float32Array
 
 	if (!samples) {
-		throw new Error("Sam TTS failed")
+		throw new Error('Sam TTS failed')
 	}
 
 	const rawAudio: RawAudio = { audioChannels: [samples], sampleRate: 22050 }

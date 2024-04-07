@@ -1,16 +1,16 @@
-import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { Logger } from "../utilities/Logger.js"
-import { resampleAudioSpeex } from "./SpeexResampler.js"
-import { computeMelSpectogram } from "./MelSpectogram.js"
-import { RawAudio, powerToDecibels } from "../audio/AudioUtilities.js"
-import { normalizeVectors } from "../math/VectorMath.js"
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { Logger } from '../utilities/Logger.js'
+import { resampleAudioSpeex } from './SpeexResampler.js'
+import { computeMelSpectogram } from './MelSpectogram.js'
+import { RawAudio, powerToDecibels } from '../audio/AudioUtilities.js'
+import { normalizeVectors } from '../math/VectorMath.js'
 
 export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {}) {
 	const logger = new Logger()
-	logger.start("Initialize options")
+	logger.start('Initialize options')
 
 	if (monoAudio.audioChannels.length != 1) {
-		throw new Error("Audio must be mono")
+		throw new Error('Audio must be mono')
 	}
 
 	options = extendDefaultMfccOptions(options)
@@ -39,20 +39,20 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	let mfccs: number[][]
 
 	if (emphasisFactor > 0) {
-		logger.start("Apply emphasis")
+		logger.start('Apply emphasis')
 		resampledAudio.audioChannels[0] = applyEmphasis(resampledAudio.audioChannels[0], emphasisFactor)
 	}
 
-	logger.start("Compute Mel spectogram")
+	logger.start('Compute Mel spectogram')
 	const { melSpectogram } = await computeMelSpectogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
 
-	logger.start("Extract MFCCs from Mel spectogram")
+	logger.start('Extract MFCCs from Mel spectogram')
 	const mfccsFloat32 = melSpectogramToMFCCs(melSpectogram, featureCount)
 
 	mfccs = mfccsFloat32.map(mfcc => Array.from(mfcc))
 
 	if (options.normalize!) {
-		logger.start("Normalize MFCCs")
+		logger.start('Normalize MFCCs')
 
 		const { normalizedVectors, mean, stdDeviation } = normalizeVectors(mfccs)
 		mfccs = normalizedVectors
@@ -60,7 +60,7 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	}
 
 	if (lifteringFactor > 0) {
-		logger.start("Apply liftering to MFCCs")
+		logger.start('Apply liftering to MFCCs')
 		mfccs = applyLiftering(mfccs, lifteringFactor)
 	}
 
@@ -84,13 +84,13 @@ export function melSpectogramToMFCCs(melSpectogram: Float32Array[], mfccFeatureC
 	return mfccs
 }
 
-export function melSpectrumToMFCC(melSpectrum: Float32Array, mfccFeatureCount: number, dctMatrix: Float32Array[], normalization: "none" | "orthonormal" = "orthonormal") {
+export function melSpectrumToMFCC(melSpectrum: Float32Array, mfccFeatureCount: number, dctMatrix: Float32Array[], normalization: 'none' | 'orthonormal' = 'orthonormal') {
 	const melBandCount = melSpectrum.length
 
 	let firstFeatureNormalizationFactor: number
 	let nonfirstFeatureNormalizationFactor: number
 
-	if (normalization == "orthonormal") {
+	if (normalization == 'orthonormal') {
 		firstFeatureNormalizationFactor = Math.sqrt(1 / (4 * mfccFeatureCount))
 		nonfirstFeatureNormalizationFactor = Math.sqrt(1 / (2 * mfccFeatureCount))
 	} else {

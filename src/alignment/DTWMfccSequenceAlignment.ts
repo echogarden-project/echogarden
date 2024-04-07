@@ -1,21 +1,21 @@
-import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, eucledianDistance, magnitude } from "../math/VectorMath.js"
-import { logToStderr } from "../utilities/Utilities.js"
-import { alignDTWWindowed } from "./DTWSequenceAlignmentWindowed.js"
+import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclidianDistance, magnitude } from '../math/VectorMath.js'
+import { logToStderr } from '../utilities/Utilities.js'
+import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 
 const log = logToStderr
 
-export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunction: "eucledian" | "cosine" = "eucledian", centerIndexes?: number[]) {
-	if (distanceFunction == "eucledian") {
+export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunction: 'euclidian' | 'cosine' = 'euclidian', centerIndexes?: number[]) {
+	if (distanceFunction == 'euclidian') {
 		const { path } = alignDTWWindowed(
 			mfccFrames1,
 			mfccFrames2,
-			eucledianDistance,
+			euclidianDistance,
 			windowLength,
 			centerIndexes
 		)
 
 		return path
-	} else if (distanceFunction == "cosine") {
+	} else if (distanceFunction == 'cosine') {
 		const indexes1 = createVectorForIntegerRange(0, mfccFrames1.length)
 		const indexes2 = createVectorForIntegerRange(0, mfccFrames2.length)
 
@@ -32,12 +32,12 @@ export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number
 
 		return path
 	} else {
-		throw new Error("Invalid distance function")
+		throw new Error('Invalid distance function')
 	}
 }
 
 export function getCostMatrixMemorySizeMB(sequence1Length: number, sequence2Length: number, windowLength: number) {
 	const costMatrixMemorySizeMB = sequence1Length * Math.min(sequence2Length, windowLength) * 4 / 1000000
-	
+
 	return costMatrixMemorySizeMB
 }

@@ -1,7 +1,7 @@
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { concatFloat32Arrays } from "../utilities/Utilities.js"
-import { Float32ArrayRef, WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { Float32ArrayRef, WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 let rubberbandInstance: any
 
@@ -123,51 +123,51 @@ export async function getRubberbandInstance() {
 export function rubberBandOptionsToFlags(options: RubberbandOptions) {
 	let flags = 0
 
-	if (options.stretch == "precise") {
+	if (options.stretch == 'precise') {
 		flags += RubberBandOptionFlag.StretchPrecise
 	}
 
-	if (options.transients == "mixed") {
+	if (options.transients == 'mixed') {
 		flags += RubberBandOptionFlag.TransientsMixed
-	} else if (options.transients == "smooth") {
+	} else if (options.transients == 'smooth') {
 		flags += RubberBandOptionFlag.TransientsSmooth
 	}
 
-	if (options.detector == "percussive") {
+	if (options.detector == 'percussive') {
 		flags += RubberBandOptionFlag.DetectorPercussive
-	} else if (options.detector == "soft") {
+	} else if (options.detector == 'soft') {
 		flags += RubberBandOptionFlag.DetectorSoft
 	}
 
-	if (options.phase == "independent") {
+	if (options.phase == 'independent') {
 		flags += RubberBandOptionFlag.PhaseIndependent
 	}
 
-	if (options.window == "short") {
+	if (options.window == 'short') {
 		flags += RubberBandOptionFlag.WindowShort
-	} else if (options.window == "long") {
+	} else if (options.window == 'long') {
 		flags += RubberBandOptionFlag.WindowLong
 	}
 
-	if (options.smoothing == "on") {
+	if (options.smoothing == 'on') {
 		flags += RubberBandOptionFlag.SmoothingOn
 	}
 
-	if (options.formant == "preserved") {
+	if (options.formant == 'preserved') {
 		flags += RubberBandOptionFlag.FormantPreserved
 	}
 
-	if (options.pitch == "high-quality") {
+	if (options.pitch == 'high-quality') {
 		flags += RubberBandOptionFlag.PitchHighQuality
-	} else if (options.pitch == "high-consistency") {
+	} else if (options.pitch == 'high-consistency') {
 		flags += RubberBandOptionFlag.PitchHighConsistency
 	}
 
-	if (options.channels == "together") {
+	if (options.channels == 'together') {
 		flags += RubberBandOptionFlag.ChannelsTogether
 	}
 
-	if (options.engine == "finer") {
+	if (options.engine == 'finer') {
 		flags += RubberBandOptionFlag.EngineFiner
 	}
 
@@ -223,27 +223,27 @@ export enum RubberBandPresetOption {
 }
 
 export const defaultRubberbandOptions: RubberbandOptions = {
-	stretch: "elastic",
-	transients: "crisp",
-	detector: "compound",
-	phase: "laminar",
-	window: "standard",
-	smoothing: "off",
-	formant: "shited",
-	pitch: "high-speed",
-	channels: "apart",
-	engine: "faster"
+	stretch: 'elastic',
+	transients: 'crisp',
+	detector: 'compound',
+	phase: 'laminar',
+	window: 'standard',
+	smoothing: 'off',
+	formant: 'shited',
+	pitch: 'high-speed',
+	channels: 'apart',
+	engine: 'faster'
 }
 
 export type RubberbandOptions = {
-	stretch?: "elastic" | "precise"
-	transients?: "crisp" | "mixed" | "smooth"
-	detector?: "compound" | "percussive" | "soft"
-	phase?: "laminar" | "independent"
-	window?: "standard" | "long" | "short"
-	smoothing?: "off" | "on"
-	formant?: "shited" | "preserved"
-	pitch?: "high-speed" | "high-quality" | "high-consistency"
-	channels?: "apart" | "together"
-	engine?: "faster" | "finer"
+	stretch?: 'elastic' | 'precise'
+	transients?: 'crisp' | 'mixed' | 'smooth'
+	detector?: 'compound' | 'percussive' | 'soft'
+	phase?: 'laminar' | 'independent'
+	window?: 'standard' | 'long' | 'short'
+	smoothing?: 'off' | 'on'
+	formant?: 'shited' | 'preserved'
+	pitch?: 'high-speed' | 'high-quality' | 'high-consistency'
+	channels?: 'apart' | 'together'
+	engine?: 'faster' | 'finer'
 }

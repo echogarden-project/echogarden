@@ -1,6 +1,6 @@
-import { readAndParseJsonFile } from "../utilities/FileSystem.js"
-import { getShortLanguageCode } from "../utilities/Locale.js"
-import { resolveToModuleRootDir } from "../utilities/PathUtilities.js"
+import { readAndParseJsonFile } from '../utilities/FileSystem.js'
+import { getShortLanguageCode } from '../utilities/Locale.js'
+import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 
 export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], languageCode: string) {
 	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons
@@ -45,8 +45,8 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 			continue
 		}
 
-		const precedingWord = sentenceWords[wordIndex - 1] || ""
-		const succeedingWord = sentenceWords[wordIndex + 1] || ""
+		const precedingWord = sentenceWords[wordIndex - 1] || ''
+		const succeedingWord = sentenceWords[wordIndex + 1] || ''
 
 		const precededBy = substitutionEntry?.precededBy || []
 		const notPrecededBy = substitutionEntry?.notPrecededBy || []
@@ -76,8 +76,8 @@ export async function loadLexiconFile(jsonFilePath: string): Promise<Lexicon> {
 export async function loadLexiconsForLanguage(language: string, customLexiconPaths?: string[]) {
 	const lexicons: Lexicon[] = []
 
-	if (getShortLanguageCode(language) == "en") {
-		const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir("data/lexicons/heteronyms.en.json"))
+	if (getShortLanguageCode(language) == 'en') {
+		const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir('data/lexicons/heteronyms.en.json'))
 		lexicons.push(heteronymsLexicon)
 	}
 
@@ -118,5 +118,5 @@ export type LexiconEntry = {
 	example?: string
 }
 
-export type LexiconWordCase = "any" | "capitalized" | "uppercase" | "lowercase" | "titlecase" | "camelcase" | "pascalcase"
+export type LexiconWordCase = 'any' | 'capitalized' | 'uppercase' | 'lowercase' | 'titlecase' | 'camelcase' | 'pascalcase'
 export type LexiconPronunciationForLanguageCodes = { [languageCode: string]: string }

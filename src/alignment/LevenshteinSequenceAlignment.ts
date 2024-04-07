@@ -1,5 +1,5 @@
-import { logToStderr } from "../utilities/Utilities.js"
-import { AlignmentPath } from "./SpeechAlignment.js"
+import { logToStderr } from '../utilities/Utilities.js'
+import { AlignmentPath } from './SpeechAlignment.js'
 
 const log = logToStderr
 

@@ -1,9 +1,9 @@
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
-import { Logger } from "../utilities/Logger.js"
-import { logToStderr } from "../utilities/Utilities.js"
-import { Timeline } from "../utilities/Timeline.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
+import { Logger } from '../utilities/Logger.js'
+import { logToStderr } from '../utilities/Utilities.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
 
 const log = logToStderr
 
@@ -14,7 +14,7 @@ export async function recognizeFile(filename: string, modelPath: string, verbose
 
 export async function recognize(rawAudio: RawAudio, modelPath: string, verbose = true) {
 	const logger = new Logger()
-	logger.start("Initialize vosk recognizer")
+	logger.start('Initialize vosk recognizer')
 
 	const audioChannels = rawAudio.audioChannels
 	const sampleRate = rawAudio.sampleRate
@@ -31,7 +31,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 	recognizer.setWords(true)
 	recognizer.setPartialWords(true)
 
-	logger.start("Recognize with vosk")
+	logger.start('Recognize with vosk')
 
 	const recognitionStartTimestamp = logger.getTimestamp()
 
@@ -42,7 +42,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 
 	const maxChunkSize = sampleRate * 2.0
 
-	let previousResultText = ""
+	let previousResultText = ''
 
 	for (let readOffset = 0; readOffset < pcmAudioByteCount; readOffset += maxChunkSize) {
 		const chunkSize = Math.min(maxChunkSize, pcmAudioByteCount - readOffset)
@@ -56,7 +56,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 
 			if (partialResultText != previousResultText) {
 				//logger.log(partialResultText)
-				//logger.log("")
+				//logger.log('')
 
 				previousResultText = partialResultText
 			}
@@ -89,7 +89,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 		const eventConfidence = event.conf
 
 		timeline.push({
-			type: "word",
+			type: 'word',
 			text: eventText,
 			startTime: eventStart,
 			endTime: eventEnd,

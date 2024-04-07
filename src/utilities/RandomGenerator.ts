@@ -1,5 +1,5 @@
-import { sumVector } from "../math/VectorMath.js"
-import { logToStderr } from "./Utilities.js"
+import { sumVector } from '../math/VectorMath.js'
+import { logToStderr } from './Utilities.js'
 
 export abstract class RandomGenerator {
 	getIntInRange(min: number, max: number) {
@@ -85,7 +85,7 @@ export abstract class RandomGenerator {
 		const randomTarget = this.getFloatInRange(0, sum)
 
 		let cumSum = 0
-		
+
 		for (let i = 0; i < distribution.length; i++) {
 			const element = distribution[i]
 

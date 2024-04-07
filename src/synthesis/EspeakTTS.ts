@@ -1,15 +1,15 @@
-import { concatFloat32Arrays, logToStderr, objToString, simplifyPunctuationCharacters } from "../utilities/Utilities.js"
-import { int16PcmToFloat32 } from "../audio/AudioBufferConversion.js"
+import { concatFloat32Arrays, logToStderr, objToString, simplifyPunctuationCharacters } from '../utilities/Utilities.js'
+import { int16PcmToFloat32 } from '../audio/AudioBufferConversion.js'
 import { Logger } from '../utilities/Logger.js'
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
-import { RawAudio, getEmptyRawAudio } from "../audio/AudioUtilities.js"
-import { playAudioWithTimelinePhones } from "../audio/AudioPlayer.js"
-import { getNormalizedFragmentsForSpeech } from "../nlp/TextNormalizer.js"
-import { ipaPhoneToKirshenbaum } from "../nlp/PhoneConversion.js"
-import { splitToWords, wordCharacterPattern } from "../nlp/Segmentation.js"
-import { Lexicon, tryGetFirstLexiconSubstitution } from "../nlp/Lexicon.js"
-import { phonemizeSentence } from "../nlp/EspeakPhonemizer.js"
-import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
+import { playAudioWithTimelinePhones } from '../audio/AudioPlayer.js'
+import { getNormalizedFragmentsForSpeech } from '../nlp/TextNormalizer.js'
+import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
+import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
+import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
+import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
+import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 
 const log = logToStderr
 
@@ -19,12 +19,12 @@ let espeakModule: any
 export async function preprocessAndSynthesize(text: string, language: string, espeakOptions: EspeakOptions, lexicons: Lexicon[] = []) {
 	const logger = new Logger()
 
-	await logger.startAsync("Tokenize and analyze text")
+	await logger.startAsync('Tokenize and analyze text')
 
 	let lowerCaseLanguageCode = language.toLowerCase()
 
-	if (lowerCaseLanguageCode == "en-gb") {
-		lowerCaseLanguageCode = "en-gb-x-rp"
+	if (lowerCaseLanguageCode == 'en-gb') {
+		lowerCaseLanguageCode = 'en-gb-x-rp'
 	}
 
 	let fragments: string[]
@@ -53,7 +53,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	words = wordsWithMerges
 
 	// Remove words containing only whitespace
-	words = words.filter(word => word.trim() != "")
+	words = words.filter(word => word.trim() != '')
 
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
@@ -69,12 +69,12 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 		}
 
 		phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
-		const referenceIPA = (await textToPhonemes(fragment, espeakOptions.voice, true)).replaceAll("_", " ")
-		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakOptions.voice, false)).replaceAll("_", "")
+		const referenceIPA = (await textToPhonemes(fragment, espeakOptions.voice, true)).replaceAll('_', ' ')
+		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakOptions.voice, false)).replaceAll('_', '')
 
-		const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join("")
+		const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join('')
 
-		logger.logTitledMessage(`\nLexicon substitution for '${fragment}'`, `IPA: ${substitutionPhonemes.join(" ")} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
+		logger.logTitledMessage(`\nLexicon substitution for '${fragment}'`, `IPA: ${substitutionPhonemes.join(' ')} (original: ${referenceIPA}), Kirshenbaum: ${kirshenbaumPhonemes} (reference: ${referenceKirshenbaum})`)
 
 		const substitutionPhonemesFragment = ` [[${kirshenbaumPhonemes}]] `
 
@@ -84,11 +84,11 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	fragments = referenceFragments
 	preprocessedFragments = normalizedFragments
 
-	logger.start("Synthesize preprocessed fragments with eSpeak")
+	logger.start('Synthesize preprocessed fragments with eSpeak')
 
 	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakOptions)
 
-	await logger.startAsync("Build phonemized tokens")
+	await logger.startAsync('Build phonemized tokens')
 
 	const phonemizedSentence: string[][][] = []
 
@@ -125,7 +125,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 		}
 	}
 
-	logger.log(phonemizedSentence.map(phrase => phrase.map(word => word.join(" ")).join(" | ")).join(" || "))
+	logger.log(phonemizedSentence.map(phrase => phrase.map(word => word.join(' ')).join(' | ')).join(' || '))
 
 	logger.end()
 
@@ -137,7 +137,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 	const sampleRate = await getSampleRate()
 
-	//fragments = fragments.filter(fragment => fragment.trim() != "")
+	//fragments = fragments.filter(fragment => fragment.trim() != '')
 
 	if (fragments.length == 0) {
 		return {
@@ -155,8 +155,8 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		fragment = simplifyPunctuationCharacters(fragment)
 
 		fragment = fragment
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;")
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;')
 
 		if (insertSeparators) {
 			// Note: `|` separators are pronounced literally in eSpeak's Polish TTS,
@@ -164,8 +164,8 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 			textWithMarkers += `<mark name="s-${i}"/> | ${fragment} | <mark name="e-${i}"/>`
 		} else {
-			if (fragment.endsWith(".")) {
-				fragment += " ()"
+			if (fragment.endsWith('.')) {
+				fragment += ' ()'
 			}
 
 			textWithMarkers += `<mark name="s-${i}"/>${fragment}<mark name="e-${i}"/> `
@@ -178,13 +178,13 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 	// Build word timeline from events
 	const wordTimeline: Timeline = fragments.map(word => ({
-		type: "word",
+		type: 'word',
 		text: word,
 		startTime: -1,
 		endTime: -1,
 		timeline: [{
-			type: "token",
-			text: "",
+			type: 'token',
+			text: '',
 			startTime: -1,
 			endTime: -1,
 			timeline: []
@@ -210,7 +210,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			lastPhoneEntry.endTime = eventTime
 		}
 
-		if (event.type == "word") {
+		if (event.type == 'word') {
 			if (!event.id || currentPhoneTimeline.length == 0) {
 				continue
 			}
@@ -220,21 +220,21 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			}
 
 			currentTokenTimeline.push({
-				type: "token",
-				text: "",
+				type: 'token',
+				text: '',
 				startTime: eventTime,
 				endTime: -1,
 				timeline: []
 			})
-		} else if (event.type == "phoneme") {
+		} else if (event.type == 'phoneme') {
 			const phoneText = event.id as string
 
-			if (!phoneText || phoneText.startsWith("(")) {
+			if (!phoneText || phoneText.startsWith('(')) {
 				continue
 			}
 
 			currentPhoneTimeline.push({
-				type: "phone",
+				type: 'phone',
 				text: phoneText,
 				startTime: eventTime,
 				endTime: -1
@@ -242,10 +242,10 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 			currentTokenEntry.text += phoneText
 			currentTokenEntry.startTime = currentPhoneTimeline[0].startTime
-		} else if (event.type == "mark") {
+		} else if (event.type == 'mark') {
 			const markerName = event.id! as string
 
-			if (markerName.startsWith("s-")) {
+			if (markerName.startsWith('s-')) {
 				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
@@ -258,7 +258,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 				currentWordEntry.startTime = eventTime
 				currentTokenEntry.startTime = eventTime
-			} else if (markerName.startsWith("e-")) {
+			} else if (markerName.startsWith('e-')) {
 				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
@@ -278,7 +278,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			} else {
 				continue
 			}
-		} else if (event.type == "end") {
+		} else if (event.type == 'end') {
 			clauseEndIndexes.push(wordIndex)
 		}
 	}
@@ -294,22 +294,22 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 
 		if (!tokenTimeline || tokenTimeline.length == 0) {
-			throw new Error("Unexpected: token timeline should exist and have at least one token")
+			throw new Error('Unexpected: token timeline should exist and have at least one token')
 		}
 
 		if (tokenTimeline[0].text != '') {
 			continue
 		}
 
-		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, espeakOptions.voice, true)).split("_")
+		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, espeakOptions.voice, true)).split('_')
 
-		const wordReferenceIPA = wordReferencePhonemes.join(" ")
+		const wordReferenceIPA = wordReferencePhonemes.join(' ')
 
 		if (wordReferenceIPA.trim().length == 0) {
 			continue
 		}
 
-		const wordReferenceIPAWithoutStress = wordReferenceIPA.replaceAll("ˈ", "").replaceAll("ˌ", "")
+		const wordReferenceIPAWithoutStress = wordReferenceIPA.replaceAll('ˈ', '').replaceAll('ˌ', '')
 
 		const previousWordEntry = wordTimeline[index - 1]
 
@@ -323,7 +323,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			continue
 		}
 
-		const previousWordTokenIPAWithoutStress = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text.replaceAll("ˈ", "").replaceAll("ˌ", "")).join(" ")
+		const previousWordTokenIPAWithoutStress = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text.replaceAll('ˈ', '').replaceAll('ˌ', '')).join(' ')
 
 		if (!previousWordTokenIPAWithoutStress.endsWith(wordReferenceIPAWithoutStress)) {
 			continue
@@ -332,14 +332,14 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		const tokenEntry = tokenTimeline[0]
 
 		tokenEntry.timeline = previousWordTokenEntry.timeline.splice(previousWordTokenEntry.timeline.length - wordReferencePhonemes.length)
-		tokenEntry.text = tokenEntry.timeline.map(phoneEntry => phoneEntry.text).join("")
+		tokenEntry.text = tokenEntry.timeline.map(phoneEntry => phoneEntry.text).join('')
 
 		tokenEntry.startTime = tokenEntry.timeline[0].startTime
 		tokenEntry.endTime = tokenEntry.timeline[tokenEntry.timeline.length - 1].endTime
 		wordEntry.startTime = tokenEntry.startTime
 		wordEntry.endTime = tokenEntry.endTime
 
-		previousWordTokenEntry.text = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text).join("")
+		previousWordTokenEntry.text = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text).join('')
 		previousWordTokenEntry.endTime = previousWordTokenEntry.timeline[previousWordTokenEntry.timeline.length - 1].endTime
 		previousWordEntry.endTime = previousWordTokenEntry.endTime
 	}
@@ -351,8 +351,8 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 	for (const clauseEndIndex of clauseEndIndexes) {
 		const newClause: TimelineEntry = {
-			type: "clause",
-			text: "",
+			type: 'clause',
+			text: '',
 			startTime: -1,
 			endTime: -1,
 			timeline: []
@@ -382,7 +382,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	const logger = new Logger()
-	logger.start("Get eSpeak Emscripten instance")
+	logger.start('Get eSpeak Emscripten instance')
 
 	if (!espeakOptions.ssml) {
 		const { escape } = await import('html-escaper')
@@ -395,7 +395,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	const sampleChunks: Float32Array[] = []
 	const allEvents: EspeakEvent[] = []
 
-	logger.start("Synthesize with eSpeak")
+	logger.start('Synthesize with eSpeak')
 
 	if (espeakOptions.useKlatt) {
 		await setVoice(`${espeakOptions.voice}+klatt6`)
@@ -413,9 +413,9 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 		}
 
 		for (const event of events) {
-			if (event.type == "word") {
+			if (event.type == 'word') {
 				const textPosition = event.text_position - 1;
-				(event as any)["text"] = text.substring(textPosition, textPosition + event.word_length)
+				(event as any)['text'] = text.substring(textPosition, textPosition + event.word_length)
 			}
 		}
 
@@ -515,7 +515,7 @@ async function getEspeakInstance() {
 	return { instance: espeakInstance, module: espeakModule }
 }
 
-export type EspeakEventType = "sentence" | "word" | "phoneme" | "end" | "mark" | "play" | "msg_terminated" | "list_terminated" | "samplerate"
+export type EspeakEventType = 'sentence' | 'word' | 'phoneme' | 'end' | 'mark' | 'play' | 'msg_terminated' | 'list_terminated' | 'samplerate'
 
 export interface EspeakEvent {
 	audio_position: number
@@ -543,13 +543,13 @@ export const defaultEspeakOptions: EspeakOptions = {
 }
 
 export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
-	const ipaPhonemizedSentence = (await phonemizeSentence(text, "en-us")).flatMap(clause => clause)
-	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, "en-us", undefined, false)).flatMap(clause => clause)
+	const ipaPhonemizedSentence = (await phonemizeSentence(text, 'en-us')).flatMap(clause => clause)
+	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, 'en-us', undefined, false)).flatMap(clause => clause)
 	log(kirshenbaumPhonemizedSentence)
 
 	const fragments = ipaPhonemizedSentence.map(word =>
 		word.map(phoneme =>
-			ipaPhoneToKirshenbaum(phoneme)).join("")).map(word => ` [[${word}]] `)
+			ipaPhoneToKirshenbaum(phoneme)).join('')).map(word => ` [[${word}]] `)
 
 	const { rawAudio, timeline } = await synthesizeFragments(fragments, defaultEspeakOptions)
 
@@ -557,16 +557,16 @@ export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
 }
 
 export async function testKirshenbaumPhonemization(text: string) {
-	const ipaPhonemizedSentence = (await phonemizeSentence(text, "en-us")).flatMap(clause => clause)
-	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, "en-us", undefined, false)).flatMap(clause => clause)
+	const ipaPhonemizedSentence = (await phonemizeSentence(text, 'en-us')).flatMap(clause => clause)
+	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, 'en-us', undefined, false)).flatMap(clause => clause)
 
-	const ipaFragments = ipaPhonemizedSentence.map(word => word.join(""))
+	const ipaFragments = ipaPhonemizedSentence.map(word => word.join(''))
 
-	const kirshenbaumFragments = kirshenbaumPhonemizedSentence.map(word => word.join(""))
+	const kirshenbaumFragments = kirshenbaumPhonemizedSentence.map(word => word.join(''))
 
 	const fragments = ipaPhonemizedSentence.map(word =>
 		word.map(phoneme =>
-			ipaPhoneToKirshenbaum(phoneme)).join(""))
+			ipaPhoneToKirshenbaum(phoneme)).join(''))
 
 	for (let i = 0; i < fragments.length; i++) {
 		log(`IPA: ${ipaFragments[i]} | converted: ${fragments[i]} | ground truth: ${kirshenbaumFragments[i]}`)

@@ -1,21 +1,21 @@
-import { indexOfMax } from "../math/VectorMath.js"
+import { indexOfMax } from '../math/VectorMath.js'
 import { wordCharacterPattern } from '../nlp/Segmentation.js'
 import Onnx from 'onnxruntime-node'
 import { Logger } from '../utilities/Logger.js'
-import { logToStderr } from "../utilities/Utilities.js"
-import { Timeline } from "../utilities/Timeline.js"
-import { RawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
-import { readAndParseJsonFile, readFile } from "../utilities/FileSystem.js"
-import path from "path"
+import { logToStderr } from '../utilities/Utilities.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
+import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
+import path from 'path'
 
 const log = logToStderr
 
 export async function recognize(rawAudio: RawAudio, modelDirectory: string) {
 	const logger = new Logger()
-	logger.start("Create ONNX inference session")
+	logger.start('Create ONNX inference session')
 
-	const modelPath = path.join(modelDirectory, "model.onnx")
-	const labelsPath = path.join(modelDirectory, "labels.json")
+	const modelPath = path.join(modelDirectory, 'model.onnx')
+	const labelsPath = path.join(modelDirectory, 'labels.json')
 
 	const labels: string[] = await readAndParseJsonFile(labelsPath)
 
@@ -25,7 +25,7 @@ export async function recognize(rawAudio: RawAudio, modelDirectory: string) {
 
 	const recognition = await Onnx.InferenceSession.create(modelPath, onnxOptions)
 
-	logger.start("Prepare input data")
+	logger.start('Prepare input data')
 
 	const audioSamples = rawAudio.audioChannels[0]
 
@@ -33,11 +33,11 @@ export async function recognize(rawAudio: RawAudio, modelDirectory: string) {
 
 	const inputs = { input: inputTensor }
 
-	logger.start("Recognize with silero model")
+	logger.start('Recognize with silero model')
 
 	const results = await recognition.run(inputs)
 
-	const rawResultValues = results["output"].data as Float32Array
+	const rawResultValues = results['output'].data as Float32Array
 
 	const tokenResults: Float32Array[] = []
 
@@ -52,7 +52,7 @@ export async function recognize(rawAudio: RawAudio, modelDirectory: string) {
 		tokens.push(labels[bestCandidateIndex])
 	}
 
-	//log(tokens.join("|"))
+	//log(tokens.join('|'))
 
 	const result = processTokens(tokens, getRawAudioDuration(rawAudio))
 
@@ -70,41 +70,41 @@ function processTokens(tokens: string[], totalDuration: number) {
 	for (let i = 0; i < tokenCount; i++) {
 		const token = tokens[i]
 
-		if (token == "2") {
+		if (token == '2') {
 			if (decodedTokens.length > 0) {
 				const previousDecodedToken = decodedTokens[decodedTokens.length - 1]
-				decodedTokens.push("$")
+				decodedTokens.push('$')
 				decodedTokens.push(previousDecodedToken)
 
 				tokenGroupIndexes[tokenGroupIndexes.length - 1].push(i)
 			} else {
-				decodedTokens.push(" ")
+				decodedTokens.push(' ')
 				tokenGroupIndexes.push([])
 			}
 
 			continue
 		}
 
-		if (token == "_") {
+		if (token == '_') {
 			continue
 		}
 
 		decodedTokens.push(token)
 
-		if (token == " ") {
+		if (token == ' ') {
 			tokenGroupIndexes.push([])
 		} else {
 			tokenGroupIndexes[tokenGroupIndexes.length - 1].push(i)
 		}
 	}
 
-	let decodedString = ""
+	let decodedString = ''
 
 	for (let i = 0; i < decodedTokens.length; i++) {
 		const currentToken = decodedTokens[i]
 		const previousToken = decodedTokens[i - 1]
 
-		if (currentToken != "$" && (previousToken != currentToken || previousToken == undefined)) {
+		if (currentToken != '$' && (previousToken != currentToken || previousToken == undefined)) {
 			decodedString += currentToken
 		}
 	}
@@ -135,7 +135,7 @@ function processTokens(tokens: string[], totalDuration: number) {
 		}
 	}
 
-	const words = decodedString.split(" ")
+	const words = decodedString.split(' ')
 
 	const timeMultiplier = totalDuration / tokenCount
 
@@ -153,7 +153,7 @@ function processTokens(tokens: string[], totalDuration: number) {
 		const endTime = group[group.length - 1] * timeMultiplier
 
 		timeline.push({
-			type: "word",
+			type: 'word',
 			text: text,
 			startTime,
 			endTime,
@@ -166,8 +166,8 @@ function processTokens(tokens: string[], totalDuration: number) {
 }
 
 export const languageCodeToPackageName: { [languageCode: string]: string } = {
-	"en": "silero-en-v5",
-	"es": "silero-es-v1",
-	"de": "silero-de-v1",
-	"uk": "silero-ua-v3",
+	'en': 'silero-en-v5',
+	'es': 'silero-es-v1',
+	'de': 'silero-de-v1',
+	'uk': 'silero-ua-v3',
 }

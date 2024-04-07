@@ -86,7 +86,7 @@ export async function computeFileSha256Hex(filePath: string) {
 }
 
 export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
-	const fileContent = await readFile(jsonFilePath, { encoding: "utf-8" })
+	const fileContent = await readFile(jsonFilePath, { encoding: 'utf-8' })
 
 	if (useJson5) {
 		const { default: JSON5 } = await import('json5')
@@ -116,12 +116,12 @@ export function getAppDataDir(appName: string) {
 	const platform = process.platform
 	const homeDir = os.homedir()
 
-	if (platform == "win32") {
-		dataDir = path.join(homeDir, "AppData", "Local", appName)
-	} else if (platform == "darwin") {
-		dataDir = path.join(homeDir, "Library", "Application Support", appName)
-	} else if (platform == "linux") {
-		dataDir = path.join(homeDir, ".local", "share", appName)
+	if (platform == 'win32') {
+		dataDir = path.join(homeDir, 'AppData', 'Local', appName)
+	} else if (platform == 'darwin') {
+		dataDir = path.join(homeDir, 'Library', 'Application Support', appName)
+	} else if (platform == 'linux') {
+		dataDir = path.join(homeDir, '.local', 'share', appName)
 	} else {
 		throw new Error(`Unsupport platform ${platform}`)
 	}

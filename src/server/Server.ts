@@ -22,7 +22,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 	function onHttpRequest(request: IncomingMessage, response: ServerResponse) {
 		response.writeHead(200, { 'Content-Type': 'text/plain' })
-		response.end("This is the Echogarden HTTP server!")
+		response.end('This is the Echogarden HTTP server!')
 	}
 
 	if (serverOptions.secure) {
@@ -59,7 +59,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 	const requestIdToWebSocket = new Map<string, WebSocket>()
 
 	function onWorkerMessage(message: any) {
-		if (message.name == "writeToStdErr") {
+		if (message.name == 'writeToStdErr') {
 			return
 		}
 
@@ -67,7 +67,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 		message['inputRawAudio'] = undefined
 
 		if (!message.requestId) {
-			throw new Error("Worker message doesn't have a request ID")
+			throw new Error(`Worker message doesn't have a request ID`)
 		}
 
 		const ws = requestIdToWebSocket.get(message.requestId)
@@ -93,12 +93,12 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 	const serverOpenPromise = new OpenPromise<void>
 
-	wss.on("listening", () => {
+	wss.on('listening', () => {
 		log(chalk.gray(`Started Echogarden WebSocket server on port ${serverOptions.port}`))
 		onStarted(serverOptions)
 	})
 
-	wss.on("close", () => {
+	wss.on('close', () => {
 		serverOpenPromise.resolve()
 	})
 
@@ -107,7 +107,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 		ws.on('message', (messageData, isBinary) => {
 			if (!isBinary) {
-				log(chalk.gray((`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)))
+				log(chalk.gray(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString('utf-8')}'`))
 				return
 			}
 
@@ -123,7 +123,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 			const requestId = incomingMessage.requestId
 
 			if (!requestId) {
-				log(chalk.gray(("Received a WebSocket message without a request ID")))
+				log(chalk.gray('Received a WebSocket message without a request ID'))
 				return
 			}
 
@@ -140,7 +140,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 			log(`${chalk.redBright('WebSocket error')}: ${e.message}`)
 		})
 
-		ws.on("close", () => {
+		ws.on('close', () => {
 			const keysToDelete: string[] = []
 
 			requestIdToWebSocket.forEach((value, key) => {
@@ -151,7 +151,7 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 			keysToDelete.forEach(key => requestIdToWebSocket.delete(key))
 
-			log(chalk.gray((`Incoming connection from ${ req.socket.remoteAddress } was closed`)))
+			log(chalk.gray(`Incoming connection from ${ req.socket.remoteAddress } was closed`))
 		})
 	})
 

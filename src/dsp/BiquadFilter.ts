@@ -11,35 +11,35 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
 
 export function createLowpassFilter(sampleRate: number, cutoffFrequency: number, q = 0.7071) {
-	return createFilter("lowpass", sampleRate, cutoffFrequency, q, 0)
+	return createFilter('lowpass', sampleRate, cutoffFrequency, q, 0)
 }
 
 export function createHighpassFilter(sampleRate: number, cutoffFrequency: number, q = 0.7071) {
-	return createFilter("highpass", sampleRate, cutoffFrequency, q, 0)
+	return createFilter('highpass', sampleRate, cutoffFrequency, q, 0)
 }
 
 export function createBandpassFilter(sampleRate: number, centerFrequency: number, q = 1) {
-	return createFilter("bandpass", sampleRate, centerFrequency, q, 0)
+	return createFilter('bandpass', sampleRate, centerFrequency, q, 0)
 }
 
 export function createLowshelfFilter(sampleRate: number, midpointFrequency: number, gain: number) {
-	return createFilter("lowshelf", sampleRate, midpointFrequency, 0, gain)
+	return createFilter('lowshelf', sampleRate, midpointFrequency, 0, gain)
 }
 
 export function createHighshelfFilter(sampleRate: number, midpointFrequency: number, gain: number) {
-	return createFilter("highshelf", sampleRate, midpointFrequency, 0, gain)
+	return createFilter('highshelf', sampleRate, midpointFrequency, 0, gain)
 }
 
 export function createPeakingFilter(sampleRate: number, centerFrequency: number, q = 1, gain = 0) {
-	return createFilter("peaking", sampleRate, centerFrequency, q, gain)
+	return createFilter('peaking', sampleRate, centerFrequency, q, gain)
 }
 
 export function createNotchFilter(sampleRate: number, centerFrequency: number, q = 1) {
-	return createFilter("notch", sampleRate, centerFrequency, q, 0)
+	return createFilter('notch', sampleRate, centerFrequency, q, 0)
 }
 
 export function createAllpassFilter(sampleRate: number, centerFrequency: number, q = 1) {
-	return createFilter("allpass", sampleRate, centerFrequency, q, 0)
+	return createFilter('allpass', sampleRate, centerFrequency, q, 0)
 }
 
 export function createFilter(filterType: FilterType, sampleRate: number, frequency: number, q: number, gain: number) {
@@ -65,7 +65,7 @@ export class BiquadFilter {
 		this.setCoefficients(coefficients)
 	}
 
-	step(sample: number): number {
+	filter(sample: number): number {
 		const filteredSample =
 			(this.b0 * sample) +
 			(this.b1 * this.prevInput1) +
@@ -82,9 +82,9 @@ export class BiquadFilter {
 		return filteredSample
 	}
 
-	apply(samples: Float32Array) {
+	filterSamplesInPlace(samples: Float32Array) {
 		for (let i = 0; i < samples.length; i++) {
-			samples[i] = this.step(samples[i])
+			samples[i] = this.filter(samples[i])
 		}
 	}
 
@@ -485,4 +485,12 @@ export type FilterCoefficients = {
 	b2: number
 	a1: number
 	a2: number
+}
+
+export const emptyBiquadCoefficients: FilterCoefficients = {
+	b0: 0,
+	b1: 0,
+	b2: 0,
+	a1: 0,
+	a2: 0,
 }

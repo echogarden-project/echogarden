@@ -32,12 +32,12 @@ export async function parse(text: string): Promise<CompromiseParsedDocument> {
 				endOffset: term.offset.start + term.offset.length
 			}
 
-			if (parsedTerm.text == "") {
+			if (parsedTerm.text == '') {
 				if (parsedSentence.length > 0) {
 					parsedSentence[parsedSentence.length - 1].postText += parsedTerm.preText + parsedTerm.postText
 				}
-			} else if (parsedTerm.tags.includes("Abbreviation") && parsedTerm.postText.startsWith(".")) {
-				parsedTerm.text += "."
+			} else if (parsedTerm.tags.includes('Abbreviation') && parsedTerm.postText.startsWith('.')) {
+				parsedTerm.text += '.'
 				parsedTerm.endOffset += 1
 				parsedSentence.push(parsedTerm)
 			} else {

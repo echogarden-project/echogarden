@@ -1,14 +1,14 @@
-import { clip } from "../utilities/Utilities.js"
+import { clip } from '../utilities/Utilities.js'
 
-import * as API from "../api/API.js"
+import * as API from '../api/API.js'
 
-import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from "../dsp/MFCC.js"
-import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from "./DTWMfccSequenceAlignment.js"
-import { Logger } from "../utilities/Logger.js"
-import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
-import { getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from "../audio/AudioUtilities.js"
-import { type EspeakOptions } from "../synthesis/EspeakTTS.js"
-import chalk from "chalk"
+import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from '../dsp/MFCC.js'
+import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from './DTWMfccSequenceAlignment.js'
+import { Logger } from '../utilities/Logger.js'
+import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from '../audio/AudioUtilities.js'
+import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
+import chalk from 'chalk'
 
 export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[]) {
 	const logger = new Logger()
@@ -38,11 +38,11 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 		framesPerSecond = 1 / mfccOptions.hopDuration!
 
 		// Compute reference MFCCs
-		logger.start("Compute reference MFCC features")
+		logger.start('Compute reference MFCC features')
 		const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions)
 
 		// Compute source MFCCs
-		logger.start("Compute source MFCC features")
+		logger.start('Compute source MFCC features')
 		const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
 		logger.end()
 
@@ -57,7 +57,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 			}
 		}
 
-		logger.start("Align MFCC features using DTW")
+		logger.start('Align MFCC features using DTW')
 		const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
 
 		let centerIndexes: number[] | undefined
@@ -85,18 +85,18 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 		logger.end()
 	}
 
-	logger.start("\nConvert path to timeline")
+	logger.start('\nConvert path to timeline')
 
 	function getMappedTimelineEntry(timelineEntry: TimelineEntry, recurse = true): TimelineEntry {
 		const referenceStartFrameIndex = Math.floor(timelineEntry.startTime * framesPerSecond)
 		const referenceEndFrameIndex = Math.floor(timelineEntry.endTime * framesPerSecond)
 
 		if (referenceStartFrameIndex < 0 || referenceEndFrameIndex < 0) {
-			throw new Error("Unexpected: encountered a negative timestamp in timeline")
+			throw new Error('Unexpected: encountered a negative timestamp in timeline')
 		}
 
-		const mappedStartFrameIndex = getMappedFrameIndexForPath(referenceStartFrameIndex, compactedPath, "first")
-		const mappedEndFrameIndex = getMappedFrameIndexForPath(referenceEndFrameIndex, compactedPath, "first")
+		const mappedStartFrameIndex = getMappedFrameIndexForPath(referenceStartFrameIndex, compactedPath, 'first')
+		const mappedEndFrameIndex = getMappedFrameIndexForPath(referenceEndFrameIndex, compactedPath, 'first')
 
 		let innerTimeline: Timeline | undefined
 
@@ -141,7 +141,7 @@ export async function alignUsingDtw(sourceRawAudio: RawAudio, referenceRawAudio:
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[], espeakOptions: EspeakOptions, phoneAlignmentMethod: API.PhoneAlignmentMethod = "interpolation") {
+export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, referenceRawAudio: RawAudio, referenceTimeline: Timeline, recognitionTimeline: Timeline, granularities: DtwGranularity[], windowDurations: number[], espeakOptions: EspeakOptions, phoneAlignmentMethod: API.PhoneAlignmentMethod = 'interpolation') {
 	const logger = new Logger()
 
 	if (recognitionTimeline.length == 0) {
@@ -164,32 +164,32 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 	}
 
 	// Synthesize the recognized transcript and get its timeline
-	logger.start("Synthesize recognized transcript with eSpeak")
+	logger.start('Synthesize recognized transcript with eSpeak')
 	const recognizedWords = recognitionTimeline.map(entry => entry.text)
 
 	const { rawAudio: synthesizedRecognizedTranscriptRawAudio, timeline: synthesizedRecognitionTimeline } = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakOptions)
 
 	let recognitionTimelineWithPhones: Timeline
 
-	if (phoneAlignmentMethod == "interpolation") {
+	if (phoneAlignmentMethod == 'interpolation') {
 		// Add phone timelines by interpolating from reference words
-		logger.start("Interpolate phone timing")
+		logger.start('Interpolate phone timing')
 
 		recognitionTimelineWithPhones = await interpolatePhoneTimelines(recognitionTimeline, synthesizedRecognitionTimeline)
-	} else if (phoneAlignmentMethod == "dtw") {
-		logger.start("Align phone timing")
+	} else if (phoneAlignmentMethod == 'dtw') {
+		logger.start('Align phone timing')
 
 		// Add phone timelines by aligning each individual recognized word with the corresponding word
 		// in the reference timeline
 		recognitionTimelineWithPhones = await alignPhoneTimelines(sourceRawAudio, recognitionTimeline, synthesizedRecognizedTranscriptRawAudio, synthesizedRecognitionTimeline)
-	} else if (phoneAlignmentMethod == "dtw-knn") {
-		logger.start("Align phone timing")
-		throw new Error("Not implemented")
+	} else if (phoneAlignmentMethod == 'dtw-knn') {
+		logger.start('Align phone timing')
+		throw new Error('Not implemented')
 	} else {
 		throw new Error(`Unknown phone alignment method: ${phoneAlignmentMethod}`)
 	}
 
-	logger.start("Map from the synthesized recognized timeline to the recognized timeline")
+	logger.start('Map from the synthesized recognized timeline to the recognized timeline')
 	// Create a mapping from the synthesized recognized timeline to the recognized timeline
 	type SynthesizedToRecognizedTimeMapping = SynthesizedToRecognizedTimeMappingEntry[]
 	type SynthesizedToRecognizedTimeMappingEntry = { synthesized: number, recognized: number }
@@ -215,7 +215,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 		synthesizedToRecognizedTimeMapping.push({ synthesized: synthesizedTimelineEntry.endTime, recognized: recognitionTimelineEntry.endTime })
 	}
 
-	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
+	logger.start('Align the synthesized recognized transcript with the synthesized ground-truth transcript')
 	// Align the synthesized recognized transcript to the synthesized reference transcript
 	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(synthesizedRecognizedTranscriptRawAudio, referenceRawAudio, referenceTimeline, granularities, windowDurations)
 
@@ -234,7 +234,7 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 			}
 
 			if (left > right) {
-				throw new Error("left is larger than right!")
+				throw new Error('left is larger than right!')
 			}
 
 			if (Math.abs(synthesizedTime - left) < Math.abs(synthesizedTime - right)) {
@@ -279,7 +279,7 @@ export async function interpolatePhoneTimelines(sourceTimeline: Timeline, refere
 		const interpolatedEntry = { ...sourceTimeline[i] }
 		interpolatedTimeline.push(interpolatedEntry)
 
-		if (interpolatedEntry.type != "word") {
+		if (interpolatedEntry.type != 'word') {
 			continue
 		}
 
@@ -326,7 +326,7 @@ export async function alignPhoneTimelines(sourceRawAudio: RawAudio, sourceWordTi
 		const alignedWordEntry = { ...sourceWordTimeline[i] }
 		alignedWordTimeline.push(alignedWordEntry)
 
-		if (alignedWordEntry.type != "word") {
+		if (alignedWordEntry.type != 'word') {
 			continue
 		}
 
@@ -380,10 +380,10 @@ export async function alignPhoneTimelines(sourceRawAudio: RawAudio, sourceWordTi
 export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = true) {
 	const progressLogger = new Logger()
 
-	progressLogger.start("Load espeak module")
-	const Espeak = await import("../synthesis/EspeakTTS.js")
+	progressLogger.start('Load espeak module')
+	const Espeak = await import('../synthesis/EspeakTTS.js')
 
-	progressLogger.start("Create alignment reference with eSpeak")
+	progressLogger.start('Create alignment reference with eSpeak')
 
 	const result = await Espeak.synthesizeFragments(fragments, espeakOptions, insertSeparators)
 
@@ -414,7 +414,7 @@ function compactPath(path: AlignmentPath) {
 	return compactedPath
 }
 
-function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: CompactedPath, mappingKind: "first" | "last" = "first") {
+function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: CompactedPath, mappingKind: 'first' | 'last' = 'first') {
 	if (compactedPath.length == 0) {
 		return 0
 	}
@@ -425,7 +425,7 @@ function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: 
 
 	let mappedFrameIndex: number
 
-	if (mappingKind == "first") {
+	if (mappingKind == 'first') {
 		mappedFrameIndex = compactedPathEntry.first
 	} else {
 		mappedFrameIndex = compactedPathEntry.last

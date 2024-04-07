@@ -4,14 +4,14 @@ import { Logger } from './Logger.js'
 export async function parseWikipediaArticle(articleName: string, language: string) {
 	const logger = new Logger()
 
-	logger.startAsync("Fetching Wikipedia article")
+	logger.startAsync('Fetching Wikipedia article')
 
 	const { default: wtf } = await import('wtf_wikipedia')
 
 	const document = await wtf.fetch(articleName, language)
 
 	if (!document) {
-		throw new Error("Error fetching Wikipedia article")
+		throw new Error('Error fetching Wikipedia article')
 	}
 
 	const sections = document.sections()

@@ -9,9 +9,9 @@ import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
 const log = logToStderr
 
 export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
-export const phraseSeparators = [",", ";", ":"]
-export const sentenceSeparators = [".", "?", "!"]
-export const symbolWords = ["$", "€", "¢", "£", "¥", "©", "®", "™", "%", "&", "#", "~", "@", "+", "±", "÷", "/", "*", "=", "¼", "½", "¾"]
+export const phraseSeparators = [',', ';', ':']
+export const sentenceSeparators = ['.', '?', '!']
+export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '=', '¼', '½', '¾']
 
 export function isWordOrSymbolWord(str: string) {
 	return isWord(str) || symbolWords.includes(str)
@@ -29,7 +29,7 @@ export class Sentence {
 
 	get length() { return sumArray(this.phrases, (phrase) => phrase.length) }
 
-	get text() { return this.phrases.reduce<string>((result, phrase) => result + phrase.text, "") }
+	get text() { return this.phrases.reduce<string>((result, phrase) => result + phrase.text, '') }
 }
 
 export class Phrase {
@@ -37,7 +37,7 @@ export class Phrase {
 
 	get length() { return sumArray(this.words, (word) => word.length) }
 
-	get text() { return this.words.reduce<string>((result, word) => result + word.text, "") }
+	get text() { return this.words.reduce<string>((result, word) => result + word.text, '') }
 
 	get lastWord() {
 		if (this.words.length == 0) {
@@ -75,7 +75,7 @@ export class Fragment {
 
 	get length() { return sumArray(this.segments, (phrase) => phrase.length) }
 
-	get text() { return this.segments.reduce<string>((result, segment) => result + segment.text, "") }
+	get text() { return this.segments.reduce<string>((result, segment) => result + segment.text, '') }
 
 	get isEmpty() { return this.length == 0 }
 
@@ -196,17 +196,17 @@ export async function parse(text: string, langCode: string) {
 }
 
 export function splitToSentences(text: string, langCode: string): string[] {
-	const shortLangCode = getShortLanguageCode(langCode || "")
+	const shortLangCode = getShortLanguageCode(langCode || '')
 
 	return CldrSegmentation.sentenceSplit(text, CldrSegmentation.suppressions[shortLangCode])
 }
 
 export async function splitToWords(text: string, langCode: string): Promise<string[]> {
-	const shortLangCode = getShortLanguageCode(langCode || "")
+	const shortLangCode = getShortLanguageCode(langCode || '')
 
-	if (shortLangCode == "zh" || shortLangCode == "cmn") {
+	if (shortLangCode == 'zh' || shortLangCode == 'cmn') {
 		return splitChineseTextToWords_Jieba(text, undefined, true)
-	} else if (shortLangCode == "ja") {
+	} else if (shortLangCode == 'ja') {
 		return splitJapaneseTextToWords_Kuromoji(text)
 	} else {
 		return CldrSegmentation.wordSplit(text, CldrSegmentation.suppressions[shortLangCode])
@@ -224,14 +224,18 @@ export function splitToParagraphs(text: string, paragraphBreaks: ParagraphBreakT
 		throw new Error(`Invalid paragraph break type: ${paragraphBreaks}`)
 	}
 
-	if (whitespace == "removeLineBreaks") {
-		paragraphs = paragraphs.map(p => p.replaceAll(/(\r?\n)+/g, " "))
-	} else if (whitespace == "collapse") {
-		paragraphs = paragraphs.map(p => p.replaceAll(/\s+/g, " "))
+	if (whitespace == 'removeLineBreaks') {
+		paragraphs = paragraphs.map(p => p.replaceAll(/(\r?\n)+/g, ' '))
+	} else if (whitespace == 'collapse') {
+		paragraphs = paragraphs.map(p => p.replaceAll(/\s+/g, ' '))
 	}
 
 	paragraphs = paragraphs.map(p => p.trim())
 	paragraphs = paragraphs.filter(p => p.length > 0)
 
 	return paragraphs
+}
+
+export function splitToLines(text: string) {
+	return text.split(/\r?\n/g)
 }

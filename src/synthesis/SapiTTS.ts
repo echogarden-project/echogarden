@@ -1,28 +1,28 @@
-import { SynthesisVoice } from "../api/API.js"
-import { decodeToChannels } from "../audio/AudioBufferConversion.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { SampleFormat } from "../codecs/WaveCodec.js"
-import { getShortLanguageCode, lcidToIsoLanguageCode } from "../utilities/Locale.js"
-import { Logger } from "../utilities/Logger.js"
-import { Timeline, TimelineEntry } from "../utilities/Timeline.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { SynthesisVoice } from '../api/API.js'
+import { decodeToChannels } from '../audio/AudioBufferConversion.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { SampleFormat } from '../codecs/WaveCodec.js'
+import { getShortLanguageCode, lcidToIsoLanguageCode } from '../utilities/Locale.js'
+import { Logger } from '../utilities/Logger.js'
+import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
 export function synthesize(text: string, voiceName: string, rate = 0, useSpeechPlatform = false) {
 	return new Promise<{ rawAudio: RawAudio, timeline: Timeline }>(async (resolve, reject) => {
 		const logger = new Logger()
-		logger.start("Initialize winax module")
+		logger.start('Initialize winax module')
 
-		const { default: WinAX } = await import("winax")
+		const { default: WinAX } = await import('winax')
 
 		const ActiveXObject = (global as any).ActiveXObject
 
-		logger.start("Create SAPI COM object")
-		const sapiVoice = new ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
+		logger.start('Create SAPI COM object')
+		const sapiVoice = new ActiveXObject(useSpeechPlatform ? 'Speech.SPVoice' : 'SAPI.SPVoice')
 		sapiVoice.EventInterests = 33790
 
-		logger.start("Get SAPI voice list and select best match")
+		logger.start('Get SAPI voice list and select best match')
 
 		if (voiceName) {
 			const voiceObjects = sapiVoice.GetVoices()
@@ -40,13 +40,13 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 		sapiVoice.Rate = rate
 
 		// Create phone converter for language
-		const sapiPhoneConverter = new ActiveXObject(useSpeechPlatform ? "Speech.SpPhoneConverter" : "SAPI.SpPhoneConverter")
+		const sapiPhoneConverter = new ActiveXObject(useSpeechPlatform ? 'Speech.SpPhoneConverter' : 'SAPI.SpPhoneConverter')
 		const sapiLanguageCodeHex = sapiVoice.Voice.GetAttribute('Language')
 		const sapiLanguageCode = parseInt(sapiLanguageCodeHex, 16)
 
 		sapiPhoneConverter.LanguageId = sapiLanguageCode
 
-		logger.start("Synthesize with SAPI")
+		logger.start('Synthesize with SAPI')
 
 		const sampleRate = 22050
 		const bytesPerSecond = sampleRate * 2
@@ -80,7 +80,7 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 				const wordText = text.substring(charPos, charPos + length)
 				const startTime = streamPos / bytesPerSecond
 
-				const wordEvent = { type: "word", text: wordText, startTime, endTime: -1, timeline: [] } as TimelineEntry
+				const wordEvent = { type: 'word', text: wordText, startTime, endTime: -1, timeline: [] } as TimelineEntry
 				events.push(wordEvent)
 
 				lastWordEvent = wordEvent
@@ -94,14 +94,14 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 
 				const phoneText = sapiPhoneConverter.IdToPhone(currentPhoneId)
 
-				if (phoneText == "," || phoneText == "_") {
+				if (phoneText == ',' || phoneText == '_') {
 					return
 				}
 
 				const startTime = streamPos / bytesPerSecond
 				const endTime = startTime + (duration / 1000)
 
-				events.push({ type: "phone", text: phoneText, startTime, endTime })
+				events.push({ type: 'phone', text: phoneText, startTime, endTime })
 			},
 
 			EndStream: (streamId: number, streamPos: number) => {
@@ -124,11 +124,11 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 }
 
 export async function getVoiceList(useSpeechPlatform = false) {
-	const { default: WinAX } = await import("winax")
+	const { default: WinAX } = await import('winax')
 
 	const ActiveXObject = (global as any).ActiveXObject
 
-	const sapiVoice = new ActiveXObject(useSpeechPlatform ? "Speech.SPVoice" : "SAPI.SPVoice")
+	const sapiVoice = new ActiveXObject(useSpeechPlatform ? 'Speech.SPVoice' : 'SAPI.SPVoice')
 
 	const voiceObjects = sapiVoice.GetVoices()
 
@@ -137,7 +137,7 @@ export async function getVoiceList(useSpeechPlatform = false) {
 	for (let i = 0; i < voiceObjects.Count; i++) {
 		const voiceObject = voiceObjects.Item(i)
 		const voiceName = voiceObject.GetDescription()
-		const voiceGender = voiceObject.GetAttribute("Gender")?.toLowerCase()
+		const voiceGender = voiceObject.GetAttribute('Gender')?.toLowerCase()
 
 		const sapiLanguageCodeHex = voiceObject.GetAttribute('Language')
 		const sapiLanguageCode = parseInt(sapiLanguageCodeHex, 16)
@@ -164,7 +164,7 @@ export async function getVoiceList(useSpeechPlatform = false) {
 		voices.push({
 			name: voiceName,
 			languages: resultLanguageCodes,
-			gender: voiceGender || "unknown"
+			gender: voiceGender || 'unknown'
 		})
 	}
 
@@ -174,12 +174,12 @@ export async function getVoiceList(useSpeechPlatform = false) {
 }
 
 export async function AssertSAPIAvailable(testForSpeechPlatform = false) {
-	if (process.platform != "win32") {
+	if (process.platform != 'win32') {
 		throw new Error(`SAPI is not available on your platform. SAPI is a Microsoft Windows technology that is only runs on a Windows OS.`)
 	}
 
 	try {
-		const { default: WinAX } = await import("winax")
+		const { default: WinAX } = await import('winax')
 	} catch (e) {
 		throw new Error(`winax package, which is required for SAPI support, was not found. You can install it by running 'npm install winax -g'.`)
 	}
@@ -187,13 +187,13 @@ export async function AssertSAPIAvailable(testForSpeechPlatform = false) {
 	const ActiveXObject = (global as any).ActiveXObject
 
 	try {
-		const voice = new ActiveXObject("SAPI.SPVoice")
+		const voice = new ActiveXObject('SAPI.SPVoice')
 	} catch (e) {
 		throw new Error(`Failed creating a SAPI instance: ${e}`)
 	}
 
 	try {
-		const voice = new ActiveXObject("Speech.SPVoice")
+		const voice = new ActiveXObject('Speech.SPVoice')
 	} catch(e) {
 		throw new Error(`Failed creating an msspeech instance. Please ensure you installed the Microsoft Speech Platform runtime correctly.`)
 	}
@@ -203,11 +203,11 @@ function eventsToTimeline(events: Timeline, totalDuration: number): Timeline {
 	const timeline: Timeline = []
 
 	for (const event of events) {
-		if (event.type == "word") {
+		if (event.type == 'word') {
 			timeline.push(event)
-		} else if (event.type == "phone") {
+		} else if (event.type == 'phone') {
 			if (timeline.length == 0) {
-				throw new Error("Unexpected: phone event preceded a word event")
+				throw new Error('Unexpected: phone event preceded a word event')
 			}
 
 			const lastWordEntry = timeline[timeline.length - 1]

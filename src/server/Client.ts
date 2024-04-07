@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
-import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesisResult, VoiceListRequestOptions } from "../api/Synthesis.js"
+import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesisResult, VoiceListRequestOptions } from '../api/Synthesis.js'
 import { SynthesisResponseMessage, SynthesisSegmentEventMessage, SynthesisSentenceEventMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage, SpeechLanguageDetectionRequestMessage, SpeechLanguageDetectionResponseMessage, TextLanguageDetectionResponseMessage, TextLanguageDetectionRequestMessage, SynthesisRequestMessage } from './Worker.js'
 import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
@@ -20,9 +20,9 @@ export class Client {
 
 	constructor(sourceChannel: WebSocket | WorkerThread) {
 		if (sourceChannel instanceof WebSocket) {
-			sourceChannel.on("message", (messageData, isBinary) => {
+			sourceChannel.on('message', (messageData, isBinary) => {
 				if (!isBinary) {
-					log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString("utf-8")}'`)
+					log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString('utf-8')}'`)
 					return
 				}
 
@@ -44,11 +44,11 @@ export class Client {
 				sourceChannel.send(encodedMessage)
 			}
 		} else if (sourceChannel instanceof WorkerThread) {
-			sourceChannel.on("message", (message) => {
+			sourceChannel.on('message', (message) => {
 				this.onMessage(message)
 			})
 
-			sourceChannel.on("error", (e) => {
+			sourceChannel.on('error', (e) => {
 				throw e
 			})
 
@@ -64,17 +64,17 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<SynthesisResult>()
 
 		const requestMessage: SynthesisRequestMessage = {
-			messageType: "SynthesisRequest",
+			messageType: 'SynthesisRequest',
 			input,
 			options
 		}
 
 		function onResponse(responseMessage: SynthesisResponseMessage | SynthesisSegmentEventMessage | SynthesisSentenceEventMessage) {
-			if (responseMessage.messageType == "SynthesisResponse") {
+			if (responseMessage.messageType == 'SynthesisResponse') {
 				requestOpenPromise.resolve(responseMessage)
-			} else if (responseMessage.messageType == "SynthesisSegmentEvent" && onSegment) {
+			} else if (responseMessage.messageType == 'SynthesisSegmentEvent' && onSegment) {
 				onSegment(responseMessage)
-			} else if (responseMessage.messageType == "SynthesisSentenceEvent" && onSentence) {
+			} else if (responseMessage.messageType == 'SynthesisSentenceEvent' && onSentence) {
 				onSentence(responseMessage)
 			}
 		}
@@ -96,12 +96,12 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<RequestVoiceListResult>()
 
 		const requestMessage: VoiceListRequestMessage = {
-			messageType: "VoiceListRequest",
+			messageType: 'VoiceListRequest',
 			options
 		}
 
 		function onResponse(responseMessage: VoiceListResponseMessage) {
-			if (responseMessage.messageType == "VoiceListResponse") {
+			if (responseMessage.messageType == 'VoiceListResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -123,13 +123,13 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<RecognitionResult>()
 
 		const requestMessage: RecognitionRequestMessage = {
-			messageType: "RecognitionRequest",
+			messageType: 'RecognitionRequest',
 			input,
 			options
 		}
 
 		function onResponse(responseMessage: RecognitionResponseMessage) {
-			if (responseMessage.messageType == "RecognitionResponse") {
+			if (responseMessage.messageType == 'RecognitionResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -150,14 +150,14 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<AlignmentResult>()
 
 		const requestMessage: AlignmentRequestMessage = {
-			messageType: "AlignmentRequest",
+			messageType: 'AlignmentRequest',
 			input,
 			transcript,
 			options
 		}
 
 		function onResponse(responseMessage: AlignmentResponseMessage) {
-			if (responseMessage.messageType == "AlignmentResponse") {
+			if (responseMessage.messageType == 'AlignmentResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -179,13 +179,13 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<SpeechTranslationResult>()
 
 		const requestMessage: SpeechTranslationRequestMessage = {
-			messageType: "SpeechTranslationRequest",
+			messageType: 'SpeechTranslationRequest',
 			input,
 			options
 		}
 
 		function onResponse(responseMessage: SpeechTranslationResponseMessage) {
-			if (responseMessage.messageType == "SpeechTranslationResponse") {
+			if (responseMessage.messageType == 'SpeechTranslationResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -207,13 +207,13 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<SpeechLanguageDetectionResult>()
 
 		const requestMessage: SpeechLanguageDetectionRequestMessage = {
-			messageType: "SpeechLanguageDetectionRequest",
+			messageType: 'SpeechLanguageDetectionRequest',
 			input,
 			options
 		}
 
 		function onResponse(responseMessage: SpeechLanguageDetectionResponseMessage) {
-			if (responseMessage.messageType == "SpeechLanguageDetectionResponse") {
+			if (responseMessage.messageType == 'SpeechLanguageDetectionResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -235,13 +235,13 @@ export class Client {
 		const requestOpenPromise = new OpenPromise<TextLanguageDetectionResult>()
 
 		const requestMessage: TextLanguageDetectionRequestMessage = {
-			messageType: "TextLanguageDetectionRequest",
+			messageType: 'TextLanguageDetectionRequest',
 			input,
 			options
 		}
 
 		function onResponse(responseMessage: TextLanguageDetectionResponseMessage) {
-			if (responseMessage.messageType == "TextLanguageDetectionResponse") {
+			if (responseMessage.messageType == 'TextLanguageDetectionResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
@@ -270,7 +270,7 @@ export class Client {
 		this.sendMessage(request)
 
 		function onResponseMessage(message: any) {
-			if (message.messageType == "Error") {
+			if (message.messageType == 'Error') {
 				onErrorResponse(message.error)
 			} else {
 				onResponse(message)
@@ -284,7 +284,7 @@ export class Client {
 		const requestId = incomingMessage.requestId
 
 		if (!requestId) {
-			log("Received a WebSocket message without a request ID")
+			log('Received a WebSocket message without a request ID')
 			return
 		}
 

@@ -1,22 +1,22 @@
-import { request } from "gaxios"
-import { decodeWaveBuffer } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { request } from 'gaxios'
+import { decodeWaveBuffer } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
+import { logToStderr } from '../utilities/Utilities.js'
 const log = logToStderr
 
-export async function synthesize(text: string, speakerId: string | null, serverURL = "http://[::1]:5002") {
+export async function synthesize(text: string, speakerId: string | null, serverURL = 'http://[::1]:5002') {
 	const logger = new Logger()
-	logger.start("Request synthesis from Coqui Server")
+	logger.start('Request synthesis from Coqui Server')
 
 	const response = await request<Buffer>({
 		url: `${serverURL}/api/tts`,
 
 		params: {
-			"text": text,
-			"speaker_id": speakerId
+			'text': text,
+			'speaker_id': speakerId
 		},
 
-		responseType: "arraybuffer"
+		responseType: 'arraybuffer'
 	})
 
 	const waveData = Buffer.from(response.data)

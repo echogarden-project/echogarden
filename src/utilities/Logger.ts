@@ -1,6 +1,6 @@
-import chalk from "chalk"
-import { Timer } from "./Timer.js"
-import { logToStderr, writeToStderr, yieldToEventLoop } from "./Utilities.js"
+import chalk from 'chalk'
+import { Timer } from './Timer.js'
+import { logToStderr, writeToStderr, yieldToEventLoop } from './Utilities.js'
 
 let currentActiveLogger: Logger | null = null
 
@@ -26,7 +26,7 @@ export class Logger {
 		writeToStderr(`${titleColor(title)}.. `)
 
 		this.setAsActiveLogger()
-		
+
 		this.timer.restart()
 	}
 

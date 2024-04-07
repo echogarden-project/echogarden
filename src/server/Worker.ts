@@ -1,16 +1,16 @@
-import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEventData, SynthesisResult, VoiceListRequestOptions, requestVoiceList, synthesize } from "../api/Synthesis.js"
-import { Queue } from "../utilities/Queue.js"
-import { logToStderr, yieldToEventLoop } from "../utilities/Utilities.js"
-import { AudioSourceParam } from "../audio/AudioUtilities.js"
-import { RecognitionOptions, RecognitionResult, recognize } from "../api/Recognition.js"
-import { AlignmentOptions, AlignmentResult, align } from "../api/Alignment.js"
-import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from "../api/Translation.js"
-import { resetActiveLogger } from "../utilities/Logger.js"
+import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEventData, SynthesisResult, VoiceListRequestOptions, requestVoiceList, synthesize } from '../api/Synthesis.js'
+import { Queue } from '../utilities/Queue.js'
+import { logToStderr, yieldToEventLoop } from '../utilities/Utilities.js'
+import { AudioSourceParam } from '../audio/AudioUtilities.js'
+import { RecognitionOptions, RecognitionResult, recognize } from '../api/Recognition.js'
+import { AlignmentOptions, AlignmentResult, align } from '../api/Alignment.js'
+import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from '../api/Translation.js'
+import { resetActiveLogger } from '../utilities/Logger.js'
 import { writeToStderr } from '../utilities/Utilities.js'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
-import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, TextLanguageDetectionOptions, TextLanguageDetectionResult, detectSpeechLanguage, detectTextLanguage } from "../api/LanguageDetection.js"
-import chalk from "chalk"
-import { resolveToModuleRootDir } from "../utilities/PathUtilities.js"
+import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, TextLanguageDetectionOptions, TextLanguageDetectionResult, detectSpeechLanguage, detectTextLanguage } from '../api/LanguageDetection.js'
+import chalk from 'chalk'
+import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -33,7 +33,7 @@ export function startMessageChannel() {
 	messageChannel.port2.start()
 
 	addListenerToClientMessages((message) => {
-		if (message.messageType == "CancelationRequest") {
+		if (message.messageType == 'CancelationRequest') {
 			//log(`CANCEL REQUESTED FOR ${message.requestId}`)
 			canceledRequests.add(message.requestId)
 			return
@@ -85,16 +85,16 @@ async function processQueueIfIdle() {
 		try {
 			if (cancelCurrentTask) {
 				//log(`******* CANCELED BEFORE START: ${requestId} *******`)
-				throw new Error("Canceled")
+				throw new Error('Canceled')
 			}
 
 			await processMessage(incomingMessage, sendMessage)
 		} catch (e: any) {
-			log(`${chalk.redBright("Error")}: ${e.message}`)
+			log(`${chalk.redBright('Error')}: ${e.message}`)
 
 			sendMessageToClient({
 				requestId,
-				messageType: "Error",
+				messageType: 'Error',
 				error: e
 			})
 		} finally {
@@ -110,37 +110,37 @@ async function processQueueIfIdle() {
 
 export async function processMessage(message: WorkerRequestMessage, sendMessage: MessageFunc) {
 	switch (message.messageType) {
-		case "SynthesisRequest": {
+		case 'SynthesisRequest': {
 			await processSynthesisRequest(message, sendMessage)
 			break
 		}
 
-		case "VoiceListRequest": {
+		case 'VoiceListRequest': {
 			await processVoiceListRequest(message, sendMessage)
 			break
 		}
 
-		case "RecognitionRequest": {
+		case 'RecognitionRequest': {
 			await processRecognitionRequest(message, sendMessage)
 			break
 		}
 
-		case "AlignmentRequest": {
+		case 'AlignmentRequest': {
 			await processAlignmentRequest(message, sendMessage)
 			break
 		}
 
-		case "SpeechTranslationRequest": {
+		case 'SpeechTranslationRequest': {
 			await processSpeechTranslationRequest(message, sendMessage)
 			break
 		}
 
-		case "SpeechLanguageDetectionRequest": {
+		case 'SpeechLanguageDetectionRequest': {
 			await processSpeechLanguageDetectionRequest(message, sendMessage)
 			break
 		}
 
-		case "TextLanguageDetectionRequest": {
+		case 'TextLanguageDetectionRequest': {
 			await processTextLanguageDetectionRequest(message, sendMessage)
 			break
 		}
@@ -157,7 +157,7 @@ export async function processMessage(message: WorkerRequestMessage, sendMessage:
 async function processSynthesisRequest(message: SynthesisRequestMessage, sendMessage: MessageFunc) {
 	async function onSegment(eventData: SynthesisSegmentEventData) {
 		const responseMessage: SynthesisSegmentEventMessage = {
-			messageType: "SynthesisSegmentEvent",
+			messageType: 'SynthesisSegmentEvent',
 			...eventData
 		}
 
@@ -166,7 +166,7 @@ async function processSynthesisRequest(message: SynthesisRequestMessage, sendMes
 
 	async function onSentence(eventData: SynthesisSegmentEventData) {
 		const responseMessage: SynthesisSentenceEventMessage = {
-			messageType: "SynthesisSentenceEvent",
+			messageType: 'SynthesisSentenceEvent',
 			...eventData
 		}
 
@@ -176,7 +176,7 @@ async function processSynthesisRequest(message: SynthesisRequestMessage, sendMes
 	const result = await synthesize(message.input, message.options, onSegment, onSentence)
 
 	const responseMessage: SynthesisResponseMessage = {
-		messageType: "SynthesisResponse",
+		messageType: 'SynthesisResponse',
 		...result
 	}
 
@@ -185,28 +185,28 @@ async function processSynthesisRequest(message: SynthesisRequestMessage, sendMes
 
 // Synthesis message types
 export interface SynthesisRequestMessage extends WorkerMessageBase {
-	messageType: "SynthesisRequest"
+	messageType: 'SynthesisRequest'
 	input: string | string[]
 	options: SynthesisOptions
 }
 
 export interface SynthesisResponseMessage extends WorkerMessageBase, SynthesisResult {
-	messageType: "SynthesisResponse"
+	messageType: 'SynthesisResponse'
 }
 
 export interface SynthesisSegmentEventMessage extends WorkerMessageBase, SynthesisSegmentEventData {
-	messageType: "SynthesisSegmentEvent"
+	messageType: 'SynthesisSegmentEvent'
 }
 
 export interface SynthesisSentenceEventMessage extends WorkerMessageBase, SynthesisSegmentEventData {
-	messageType: "SynthesisSentenceEvent"
+	messageType: 'SynthesisSentenceEvent'
 }
 
 async function processVoiceListRequest(message: VoiceListRequestMessage, sendMessage: MessageFunc) {
 	const result = await requestVoiceList(message.options)
 
 	const responseMessage: VoiceListResponseMessage = {
-		messageType: "VoiceListResponse",
+		messageType: 'VoiceListResponse',
 		...result
 	}
 
@@ -215,12 +215,12 @@ async function processVoiceListRequest(message: VoiceListRequestMessage, sendMes
 
 // Voice list message types
 export interface VoiceListRequestMessage extends WorkerMessageBase {
-	messageType: "VoiceListRequest"
+	messageType: 'VoiceListRequest'
 	options: VoiceListRequestOptions
 }
 
 export interface VoiceListResponseMessage extends WorkerMessageBase, RequestVoiceListResult {
-	messageType: "VoiceListResponse"
+	messageType: 'VoiceListResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ async function processRecognitionRequest(message: RecognitionRequestMessage, sen
 	const result = await recognize(message.input, message.options)
 
 	const responseMessage: RecognitionResponseMessage = {
-		messageType: "RecognitionResponse",
+		messageType: 'RecognitionResponse',
 		...result
 	}
 
@@ -239,13 +239,13 @@ async function processRecognitionRequest(message: RecognitionRequestMessage, sen
 
 // Recognition message types
 export interface RecognitionRequestMessage extends WorkerMessageBase {
-	messageType: "RecognitionRequest"
+	messageType: 'RecognitionRequest'
 	input: AudioSourceParam
 	options: RecognitionOptions
 }
 
 export interface RecognitionResponseMessage extends WorkerMessageBase, RecognitionResult {
-	messageType: "RecognitionResponse"
+	messageType: 'RecognitionResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,7 +255,7 @@ async function processAlignmentRequest(message: AlignmentRequestMessage, sendMes
 	const result = await align(message.input, message.transcript, message.options)
 
 	const responseMessage: AlignmentResponseMessage = {
-		messageType: "AlignmentResponse",
+		messageType: 'AlignmentResponse',
 		...result
 	}
 
@@ -264,14 +264,14 @@ async function processAlignmentRequest(message: AlignmentRequestMessage, sendMes
 
 // Alignment message types
 export interface AlignmentRequestMessage extends WorkerMessageBase {
-	messageType: "AlignmentRequest"
+	messageType: 'AlignmentRequest'
 	input: AudioSourceParam
 	transcript: string
 	options: AlignmentOptions
 }
 
 export interface AlignmentResponseMessage extends WorkerMessageBase, AlignmentResult {
-	messageType: "AlignmentResponse"
+	messageType: 'AlignmentResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -281,7 +281,7 @@ async function processSpeechTranslationRequest(message: SpeechTranslationRequest
 	const result = await translateSpeech(message.input, message.options)
 
 	const responseMessage: SpeechTranslationResponseMessage = {
-		messageType: "SpeechTranslationResponse",
+		messageType: 'SpeechTranslationResponse',
 		...result
 	}
 
@@ -290,13 +290,13 @@ async function processSpeechTranslationRequest(message: SpeechTranslationRequest
 
 // Speech translation message types
 export interface SpeechTranslationRequestMessage extends WorkerMessageBase {
-	messageType: "SpeechTranslationRequest"
+	messageType: 'SpeechTranslationRequest'
 	input: AudioSourceParam
 	options: SpeechTranslationOptions
 }
 
 export interface SpeechTranslationResponseMessage extends WorkerMessageBase, SpeechTranslationResult {
-	messageType: "SpeechTranslationResponse"
+	messageType: 'SpeechTranslationResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,7 +306,7 @@ async function processSpeechLanguageDetectionRequest(message: SpeechLanguageDete
 	const result = await detectSpeechLanguage(message.input, message.options)
 
 	const responseMessage: SpeechLanguageDetectionResponseMessage = {
-		messageType: "SpeechLanguageDetectionResponse",
+		messageType: 'SpeechLanguageDetectionResponse',
 		...result
 	}
 
@@ -315,13 +315,13 @@ async function processSpeechLanguageDetectionRequest(message: SpeechLanguageDete
 
 // Speech language detection message types
 export interface SpeechLanguageDetectionRequestMessage extends WorkerMessageBase {
-	messageType: "SpeechLanguageDetectionRequest"
+	messageType: 'SpeechLanguageDetectionRequest'
 	input: AudioSourceParam
 	options: SpeechLanguageDetectionOptions
 }
 
 export interface SpeechLanguageDetectionResponseMessage extends WorkerMessageBase, SpeechLanguageDetectionResult {
-	messageType: "SpeechLanguageDetectionResponse"
+	messageType: 'SpeechLanguageDetectionResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -331,7 +331,7 @@ async function processTextLanguageDetectionRequest(message: TextLanguageDetectio
 	const result = await detectTextLanguage(message.input, message.options)
 
 	const responseMessage: TextLanguageDetectionResponseMessage = {
-		messageType: "TextLanguageDetectionResponse",
+		messageType: 'TextLanguageDetectionResponse',
 		...result
 	}
 
@@ -340,13 +340,13 @@ async function processTextLanguageDetectionRequest(message: TextLanguageDetectio
 
 // Text language detection message types
 export interface TextLanguageDetectionRequestMessage extends WorkerMessageBase {
-	messageType: "TextLanguageDetectionRequest"
+	messageType: 'TextLanguageDetectionRequest'
 	input: string
 	options: TextLanguageDetectionOptions
 }
 
 export interface TextLanguageDetectionResponseMessage extends WorkerMessageBase, TextLanguageDetectionResult {
-	messageType: "TextLanguageDetectionResponse"
+	messageType: 'TextLanguageDetectionResponse'
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -395,8 +395,8 @@ export async function startNewWorkerThread() {
 		env: SHARE_ENV
 	})
 
-	workerThread.on("message", (message) => {
-		if (message.name == "writeToStdErr") {
+	workerThread.on('message', (message) => {
+		if (message.name == 'writeToStdErr') {
 			writeToStderr(message.text)
 		}
 	})

@@ -1,5 +1,5 @@
-import { readAndParseJsonFile } from "./FileSystem.js"
-import { resolveToModuleRootDir } from "./PathUtilities.js"
+import { readAndParseJsonFile } from './FileSystem.js'
+import { resolveToModuleRootDir } from './PathUtilities.js'
 
 export function languageCodeToName(languageCode: string) {
 	const languageNames = new Intl.DisplayNames(['en'], { type: 'language' })
@@ -11,7 +11,7 @@ export function languageCodeToName(languageCode: string) {
 	} catch (e) {
 	}
 
-	return translatedLanguageName || "Unknown"
+	return translatedLanguageName || 'Unknown'
 }
 
 export function formatLanguageCodeWithName(languageCode: string, styleId: 1 | 2 = 1) {
@@ -23,7 +23,7 @@ export function formatLanguageCodeWithName(languageCode: string, styleId: 1 | 2 
 }
 
 export function getShortLanguageCode(langCode: string) {
-	const dashIndex = langCode.indexOf("-")
+	const dashIndex = langCode.indexOf('-')
 
 	if (dashIndex == -1) {
 		return langCode
@@ -35,7 +35,7 @@ export function getShortLanguageCode(langCode: string) {
 export function normalizeLanguageCode(langCode: string) {
 	langCode = langCode.trim()
 
-	const parts = langCode.split("-")
+	const parts = langCode.split('-')
 
 	const result = [parts[0].toLowerCase()]
 
@@ -43,7 +43,7 @@ export function normalizeLanguageCode(langCode: string) {
 		result.push(parts[i].toUpperCase())
 	}
 
-	return result.join("-")
+	return result.join('-')
 }
 
 const isoToLcidLookup = new Map<string, number>()
@@ -67,7 +67,7 @@ async function loadLcidLookupIfNeeded() {
 		return lcidEntries
 	}
 
-	const lcidLookup: LCIDLookup = await readAndParseJsonFile(resolveToModuleRootDir("data/tables/lcid-table.json"))
+	const lcidLookup: LCIDLookup = await readAndParseJsonFile(resolveToModuleRootDir('data/tables/lcid-table.json'))
 
 	for (const isoName in lcidLookup) {
 		const lcidEntry = lcidLookup[isoName]
@@ -97,24 +97,24 @@ export function getDefaultDialectForLanguageCodeIfPossible(langCode: string) {
 }
 
 export const defaultDialectForLanguageCode: { [lang: string]: string } = {
-	"en": "en-US",
-	"zh": "zh-CN",
-	"ar": "ar-EG",
-	"fr": "fr-FR",
-	"de": "de-DE",
-	"pt": "pt-BR",
-	"es": "es-ES",
-	"nl": "nl-NL"
+	'en': 'en-US',
+	'zh': 'zh-CN',
+	'ar': 'ar-EG',
+	'fr': 'fr-FR',
+	'de': 'de-DE',
+	'pt': 'pt-BR',
+	'es': 'es-ES',
+	'nl': 'nl-NL'
 }
 
 type LCIDLookup = { [isoLangCode: string]: LCIDEntry }
 
 export interface LCIDEntry {
-	"LCID": number
-	"Name": string
-	"TwoLetterISOLanguageName": string,
-	"ThreeLetterISOLanguageName": string,
-	"ThreeLetterWindowsLanguageName": string,
-	"EnglishName": string
-	"ANSICodePage": string
+	'LCID': number
+	'Name': string
+	'TwoLetterISOLanguageName': string,
+	'ThreeLetterISOLanguageName': string,
+	'ThreeLetterWindowsLanguageName': string,
+	'EnglishName': string
+	'ANSICodePage': string
 }

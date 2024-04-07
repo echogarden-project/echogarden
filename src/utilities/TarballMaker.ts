@@ -1,12 +1,12 @@
-import path from "path"
-import { createTarball } from "./Compression.js"
-import { ensureDir, existsSync, move, readdir, stat } from "./FileSystem.js"
-import { ensureAndGetPackagesDir } from "./PackageManager.js"
-import { appName } from "../api/Common.js"
-import { getRandomHexString } from "./Utilities.js"
-import { getAppTempDir } from "./PathUtilities.js"
+import path from 'path'
+import { createTarball } from './Compression.js'
+import { ensureDir, existsSync, move, readdir, stat } from './FileSystem.js'
+import { ensureAndGetPackagesDir } from './PackageManager.js'
+import { appName } from '../api/Common.js'
+import { getRandomHexString } from './Utilities.js'
+import { getAppTempDir } from './PathUtilities.js'
 
-const tarballDir = "../resources/tarballs"
+const tarballDir = '../resources/tarballs'
 
 export async function makeTarballsForInstalledPackages(skipIfExists = false) {
 	const packagesDir = await ensureAndGetPackagesDir()

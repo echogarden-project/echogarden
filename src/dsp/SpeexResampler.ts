@@ -1,5 +1,5 @@
-import { RawAudio, cloneRawAudio } from "../audio/AudioUtilities.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
+import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 let speexResamplerInstance: any
 

@@ -1,4 +1,4 @@
-import { roundToDigits, writeToStderr } from "./Utilities.js"
+import { roundToDigits, writeToStderr } from './Utilities.js'
 
 declare const chrome: any
 declare const process: any
@@ -56,7 +56,7 @@ export class Timer {
 	}
 
 	private static createGlobalTimestampFunction() {
-		if (typeof process === "object" && typeof process.hrtime === "function") {
+		if (typeof process === 'object' && typeof process.hrtime === 'function') {
 			let baseTimestamp = 0
 
 			this.timestampFunc = () => {
@@ -68,7 +68,7 @@ export class Timer {
 
 			baseTimestamp = Date.now() - this.timestampFunc()
 		}
-		else if (typeof chrome === "object" && chrome.Interval) {
+		else if (typeof chrome === 'object' && chrome.Interval) {
 			const baseTimestamp = Date.now()
 
 			const chromeIntervalObject = new chrome.Interval()
@@ -76,7 +76,7 @@ export class Timer {
 
 			this.timestampFunc = () => baseTimestamp + chromeIntervalObject.microseconds() / 1000
 		}
-		else if (typeof performance === "object" && performance.now) {
+		else if (typeof performance === 'object' && performance.now) {
 			const baseTimestamp = Date.now() - performance.now()
 
 			this.timestampFunc = () => baseTimestamp + performance.now()

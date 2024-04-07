@@ -5,9 +5,9 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 
 let sileroVad: SileroVAD
 
-export async function detectVoiceActivity(rawAudio: RawAudio, modelPath: string, frameDuration: 30 | 60 | 90 = 30) {
+export async function detectVoiceActivity(rawAudio: RawAudio, modelPath: string, frameDuration: 30 | 60 | 90) {
 	if (rawAudio.sampleRate != 16000) {
-		throw new Error("Audio sample rate must be 16KHz")
+		throw new Error('Audio sample rate must be 16KHz')
 	}
 
 	const audioSamples = rawAudio.audioChannels[0]
@@ -68,10 +68,10 @@ export class SileroVAD {
 
 		const results = await this.session!.run(inputs)
 
-		const probability = results["output"].data[0] as number
+		const probability = results['output'].data[0] as number
 
-		this.modelStateH = results["hn"]
-		this.modelStateC = results["cn"]
+		this.modelStateH = results['hn']
+		this.modelStateC = results['cn']
 
 		return probability
 	}

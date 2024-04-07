@@ -4,7 +4,7 @@ export async function splitChineseTextToWords_Jieba(text: string, fineGrained = 
 	if (!fineGrained) {
 		return jieba.cut(text, useHMM)
 	} else {
-		const results = jieba.tokenize(text, "search", useHMM)
+		const results = jieba.tokenize(text, 'search', useHMM)
 
 		const startOffsetsSet = new Set<number>()
 		const endOffsetsSet = new Set<number>()
@@ -57,10 +57,10 @@ export async function splitChineseTextToWords_Jieba(text: string, fineGrained = 
 	}
 }
 
-let JiebaWasmInstance: typeof import("jieba-wasm")
+let JiebaWasmInstance: typeof import('jieba-wasm')
 async function getWasmInstance() {
 	if (!JiebaWasmInstance) {
-		const { default: JibeaWasm } = await import("jieba-wasm")
+		const { default: JibeaWasm } = await import('jieba-wasm')
 		JiebaWasmInstance = JibeaWasm
 	}
 

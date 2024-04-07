@@ -1,9 +1,9 @@
-import { getShortLanguageCode } from "../utilities/Locale.js"
+import { getShortLanguageCode } from '../utilities/Locale.js'
 
 export function getNormalizedFragmentsForSpeech(words: string[], language: string) {
 	language = getShortLanguageCode(language)
 
-	if (language != "en") {
+	if (language != 'en') {
 		return { normalizedFragments: [...words], referenceFragments: [...words] }
 	}
 
@@ -15,26 +15,26 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
 
 	const wordsPrecedingAYear = [
-		"in", "the", "a", "to", "of", "since", "from", "between", "by", "until", "around", "before", "after",
-		"his", "her", "year", "years", "during", "copyright", "©", "early", "mid", "late",
-		"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
-		"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
+		'in', 'the', 'a', 'to', 'of', 'since', 'from', 'between', 'by', 'until', 'around', 'before', 'after',
+		'his', 'her', 'year', 'years', 'during', 'copyright', '©', 'early', 'mid', 'late',
+		'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+		'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
 	]
 
 	const wordsPrecedingADecade = [
-		"the", "in", "early", "mid", "late", "a"
+		'the', 'in', 'early', 'mid', 'late', 'a'
 	]
 
 	const symbolsPrecedingACurrency = [
-		"$", "€", "£", "¥"
+		'$', '€', '£', '¥'
 	]
 
 	const symbolsPrecedingACurrencyAsWords = [
-		"dollars", "euros", "pounds", "yen"
+		'dollars', 'euros', 'pounds', 'yen'
 	]
 
 	const wordsSucceedingACurrency = [
-		"million", "billion", "trillion"
+		'million', 'billion', 'trillion'
 	]
 
 	const normalizedFragments: string[] = []
@@ -47,7 +47,7 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 		const nextWords = words.slice(wordIndex + 1)
 		const nextWord = nextWords[0]
 
-		if ( // Normalize a four digit year pattern, e.g. "in 1995".
+		if ( // Normalize a four digit year pattern, e.g. 'in 1995'.
 			wordsPrecedingAYear.includes(lowerCaseWord) &&
 			fourDigitYearPattern.test(nextWord)) {
 
@@ -60,7 +60,7 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 			referenceFragments.push(nextWord)
 
 			wordIndex += 1
-		} else if ( // Normalize a four digit decade pattern, e.g. "the 1980s".
+		} else if ( // Normalize a four digit decade pattern, e.g. 'the 1980s'.
 			wordsPrecedingADecade.includes(lowerCaseWord) &&
 			fourDigitDecadePattern.test(nextWord)) {
 
@@ -73,20 +73,20 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 			referenceFragments.push(nextWord)
 
 			wordIndex += 1
-		} else if ( // Normalize a year range pattern, e.g. "1835-1896"
-			fourDigitYearRangePattern.test(words.slice(wordIndex, wordIndex + 3).join(""))) {
+		} else if ( // Normalize a year range pattern, e.g. '1835-1896'
+			fourDigitYearRangePattern.test(words.slice(wordIndex, wordIndex + 3).join(''))) {
 
 			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex]))
 			referenceFragments.push(words[wordIndex])
 
-			normalizedFragments.push("to")
+			normalizedFragments.push('to')
 			referenceFragments.push(words[wordIndex + 1])
 
 			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex + 2]))
 			referenceFragments.push(words[wordIndex + 2])
 
 			wordIndex += 2
-		} else if ( // Normalize a currency pattern, e.g. "$53.1 million", "€3.53"
+		} else if ( // Normalize a currency pattern, e.g. '$53.1 million', '€3.53'
 			symbolsPrecedingACurrency.includes(lowerCaseWord) &&
 			numberPattern.test(nextWord)) {
 

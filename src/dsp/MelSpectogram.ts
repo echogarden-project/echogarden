@@ -1,11 +1,11 @@
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
-import * as FFT from "./FFT.js"
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
+import * as FFT from './FFT.js'
 
 export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number) {
 	const logger = new Logger()
 
-	logger.start("Compute mel filterbank")
+	logger.start('Compute mel filterbank')
 	const binCount = (fftOrder / 2) + 2
 	const nyquistFrequency = rawAudio.sampleRate / 2
 	const binFrequencies = FFT.getBinFrequencies(binCount, nyquistFrequency)
@@ -24,11 +24,11 @@ export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number,
 export async function computeMelSpectogramUsingFilterbanks(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbanks: Filterbank[]) {
 	const logger = new Logger()
 
-	logger.start("Compute short-time FFTs")
+	logger.start('Compute short-time FFTs')
 	const audioSamples = rawAudio.audioChannels[0]
-	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, "hann")
+	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, 'hann')
 
-	logger.start("Convert FFT frames to a mel spectogram")
+	logger.start('Convert FFT frames to a mel spectogram')
 	const melSpectogram = fftFramesToMelSpectogram(fftFrames, filterbanks)
 
 	logger.end()

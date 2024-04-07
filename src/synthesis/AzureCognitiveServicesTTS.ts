@@ -1,6 +1,6 @@
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
 import { escape } from 'html-escaper'
 
@@ -12,15 +12,15 @@ export async function synthesize(
 	text: string,
 	subscriptionKey: string,
 	serviceRegion: string,
-	languageCode = "en-US",
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)",
+	languageCode = 'en-US',
+	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)',
 	ssmlEnabled = false,
-	ssmlPitchString = "+0Hz",
-	ssmlRateString = "+0%") {
+	ssmlPitchString = '+0Hz',
+	ssmlRateString = '+0%') {
 
 	return new Promise<{ rawAudio: RawAudio, timeline: Timeline }>((resolve, reject) => {
 		const logger = new Logger()
-		logger.start("Request synthesis from Azure Cognitive Services")
+		logger.start('Request synthesis from Azure Cognitive Services')
 
 		const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion)
 
@@ -72,7 +72,7 @@ export async function synthesize(
 
 			const rawAudio = await FFMpegTranscoder.decodeToChannels(encodedAudio, 24000, 1)
 
-			logger.start("Convert boundary events to a timeline")
+			logger.start('Convert boundary events to a timeline')
 
 			const timeline = boundaryEventsToTimeline(events, getRawAudioDuration(rawAudio))
 
@@ -85,7 +85,7 @@ export async function synthesize(
 			reject(error)
 		}
 
-		if (!ssmlEnabled && ssmlPitchString != "+0%" || ssmlRateString != "+0Hz") {
+		if (!ssmlEnabled && ssmlPitchString != '+0%' || ssmlRateString != '+0Hz') {
 			ssmlEnabled = true
 			text = escape(text)
 		}
@@ -123,7 +123,7 @@ export function boundaryEventsToTimeline(events: any[], totalDuration: number) {
 	for (const event of events) {
 		const boundaryType = event.boundaryType != null ? event.boundaryType : event.Type
 
-		if (boundaryType != "WordBoundary") {
+		if (boundaryType != 'WordBoundary') {
 			continue
 		}
 
@@ -135,7 +135,7 @@ export function boundaryEventsToTimeline(events: any[], totalDuration: number) {
 		const endTime = (offset + duration) / 10000000
 
 		timeline.push({
-			type: "word",
+			type: 'word',
 			text,
 			startTime,
 			endTime

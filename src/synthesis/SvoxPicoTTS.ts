@@ -1,21 +1,21 @@
-import { SynthesisVoice } from "../api/API.js"
-import { decodeToChannels } from "../audio/AudioBufferConversion.js"
-import { SampleFormat } from "../codecs/WaveCodec.js"
-import { bandwidthToQFactor } from "../dsp/BiquadFilter.js"
-import { Logger } from "../utilities/Logger.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { readFile } from "../utilities/FileSystem.js"
+import { SynthesisVoice } from '../api/API.js'
+import { decodeToChannels } from '../audio/AudioBufferConversion.js'
+import { SampleFormat } from '../codecs/WaveCodec.js'
+import { bandwidthToQFactor } from '../dsp/BiquadFilter.js'
+import { Logger } from '../utilities/Logger.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { readFile } from '../utilities/FileSystem.js'
 
 let svoxPicoInstance: any
 
 export async function synthesize(text: string, textAnalysisFilePath: string, signalGenerationFilePath: string, postprocessOutput = true) {
 	const logger = new Logger()
-	logger.start("Get pico WASM instance")
+	logger.start('Get pico WASM instance')
 
 	const m = await getInstance()
 
-	logger.start("Initialize pico engine")
+	logger.start('Initialize pico engine')
 
 	const wasmMemory = new WasmMemoryManager(m)
 
@@ -44,12 +44,12 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	let resultCode = pico_initialize(picoMemAreaRef.address, picoMemAreaRef.length, systemPtrRef.address)
 	const systemPtr = systemPtrRef.value
 
-	throwErrorIfFailed(resultCode, "Failed Pico initialization.")
+	throwErrorIfFailed(resultCode, 'Failed Pico initialization.')
 
 	picoext_setTraceLevel(systemPtr, 5)
 
 	async function loadResource(localFilePath: string) {
-		const virtualFilePath = "." + localFilePath.substring(localFilePath.lastIndexOf("/"))
+		const virtualFilePath = '.' + localFilePath.substring(localFilePath.lastIndexOf('/'))
 
 		const fileData = await readFile(localFilePath)
 		m.FS.writeFile(virtualFilePath, fileData)
@@ -82,7 +82,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	const { resourceName: textAnalysisResourceName, resourceNameRef: textAnalysisResourceNameRef } = getResourceName(textAnalysisResourcePtr)
 	const { resourceName: signalGenerationResourceName, resourceNameRef: signalGenerationResourceNameRef } = getResourceName(signalGenerationResourcePtr)
 
-	const voiceNameRef = wasmMemory.allocNullTerminatedUtf8String("PicoVoice")
+	const voiceNameRef = wasmMemory.allocNullTerminatedUtf8String('PicoVoice')
 
 	resultCode = pico_createVoiceDefinition(systemPtr, voiceNameRef.address)
 
@@ -102,7 +102,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 
 	const enginePtr = enginePtrRef.value
 
-	logger.start("Synthesize with pico")
+	logger.start('Synthesize with pico')
 
 	const textRef = wasmMemory.allocNullTerminatedUtf8String(text)
 
@@ -199,14 +199,14 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	let rawAudio: RawAudio = { audioChannels, sampleRate: 16000 }
 
 	if (postprocessOutput) {
-		logger.start("Apply EQ to synthesized audio")
+		logger.start('Apply EQ to synthesized audio')
 
-		const Biquad = await import("../dsp/BiquadFilter.js")
+		const Biquad = await import('../dsp/BiquadFilter.js')
 
-		Biquad.createLowshelfFilter(rawAudio.sampleRate, 177, -2.6).apply(rawAudio.audioChannels[0])
-		Biquad.createPeakingFilter(rawAudio.sampleRate, 440, bandwidthToQFactor(2), -9.7).apply(rawAudio.audioChannels[0])
-		//Biquad.createPeakingFilter(rawAudio.sampleRate, 1639, bandwidthToQFactor(2), 5.2).apply(rawAudio.audioChannels[0])
-		Biquad.createHighshelfFilter(rawAudio.sampleRate, 5180, 10.6).apply(rawAudio.audioChannels[0])
+		Biquad.createLowshelfFilter(rawAudio.sampleRate, 177, -2.6).filterSamplesInPlace(rawAudio.audioChannels[0])
+		Biquad.createPeakingFilter(rawAudio.sampleRate, 440, bandwidthToQFactor(2), -9.7).filterSamplesInPlace(rawAudio.audioChannels[0])
+		//Biquad.createPeakingFilter(rawAudio.sampleRate, 1639, bandwidthToQFactor(2), 5.2).filterSamplesInPlace(rawAudio.audioChannels[0])
+		Biquad.createHighshelfFilter(rawAudio.sampleRate, 5180, 10.6).filterSamplesInPlace(rawAudio.audioChannels[0])
 	}
 
 	logger.end()
@@ -229,44 +229,44 @@ export function getResourceFilenamesForLanguage(language: string) {
 	let signalGenerationFilename: string
 
 	switch (language) {
-		case "en-US":
-		case "en": {
-			textAnalysisFilename = "en-US_ta.bin"
-			signalGenerationFilename = "en-US_lh0_sg.bin"
+		case 'en-US':
+		case 'en': {
+			textAnalysisFilename = 'en-US_ta.bin'
+			signalGenerationFilename = 'en-US_lh0_sg.bin'
 			break
 		}
 
-		case "en-GB": {
-			textAnalysisFilename = "en-GB_ta.bin"
-			signalGenerationFilename = "en-GB_kh0_sg.bin"
+		case 'en-GB': {
+			textAnalysisFilename = 'en-GB_ta.bin'
+			signalGenerationFilename = 'en-GB_kh0_sg.bin'
 			break
 		}
 
-		case "de-DE":
-		case "de": {
-			textAnalysisFilename = "de-DE_ta.bin"
-			signalGenerationFilename = "de-DE_gl0_sg.bin"
+		case 'de-DE':
+		case 'de': {
+			textAnalysisFilename = 'de-DE_ta.bin'
+			signalGenerationFilename = 'de-DE_gl0_sg.bin'
 			break
 		}
 
-		case "es-ES":
-		case "es": {
-			textAnalysisFilename = "es-ES_ta.bin"
-			signalGenerationFilename = "es-ES_zl0_sg.bin"
+		case 'es-ES':
+		case 'es': {
+			textAnalysisFilename = 'es-ES_ta.bin'
+			signalGenerationFilename = 'es-ES_zl0_sg.bin'
 			break
 		}
 
-		case "fr-FR":
-		case "fr": {
-			textAnalysisFilename = "fr-FR_ta.bin"
-			signalGenerationFilename = "fr-FR_nk0_sg.bin"
+		case 'fr-FR':
+		case 'fr': {
+			textAnalysisFilename = 'fr-FR_ta.bin'
+			signalGenerationFilename = 'fr-FR_nk0_sg.bin'
 			break
 		}
 
-		case "it-IT":
-		case "it": {
-			textAnalysisFilename = "it-IT_ta.bin"
-			signalGenerationFilename = "it-IT_cm0_sg.bin"
+		case 'it-IT':
+		case 'it': {
+			textAnalysisFilename = 'it-IT_ta.bin'
+			signalGenerationFilename = 'it-IT_cm0_sg.bin'
 			break
 		}
 
@@ -280,39 +280,39 @@ export function getResourceFilenamesForLanguage(language: string) {
 
 export const voiceList: SynthesisVoice[] = [
 	{
-		name: "en-US",
-		languages: ["en-US", "en"],
-		gender: "female",
-		packageName: "pico-en-US"
+		name: 'en-US',
+		languages: ['en-US', 'en'],
+		gender: 'female',
+		packageName: 'pico-en-US'
 	},
 	{
-		name: "en-GB",
-		languages: ["en-GB", "en"],
-		gender: "female",
-		packageName: "pico-en-GB"
+		name: 'en-GB',
+		languages: ['en-GB', 'en'],
+		gender: 'female',
+		packageName: 'pico-en-GB'
 	},
 	{
-		name: "de-DE",
-		languages: ["de-DE", "de"],
-		gender: "female",
-		packageName: "pico-de-DE"
+		name: 'de-DE',
+		languages: ['de-DE', 'de'],
+		gender: 'female',
+		packageName: 'pico-de-DE'
 	},
 	{
-		name: "es-ES",
-		languages: ["es-ES", "es"],
-		gender: "female",
-		packageName: "pico-es-ES"
+		name: 'es-ES',
+		languages: ['es-ES', 'es'],
+		gender: 'female',
+		packageName: 'pico-es-ES'
 	},
 	{
-		name: "fr-FR",
-		languages: ["fr-FR", "fr"],
-		gender: "female",
-		packageName: "pico-fr-FR"
+		name: 'fr-FR',
+		languages: ['fr-FR', 'fr'],
+		gender: 'female',
+		packageName: 'pico-fr-FR'
 	},
 	{
-		name: "it-IT",
-		languages: ["it-IT", "it"],
-		gender: "female",
-		packageName: "pico-it-IT"
+		name: 'it-IT',
+		languages: ['it-IT', 'it'],
+		gender: 'female',
+		packageName: 'pico-it-IT'
 	},
 ]

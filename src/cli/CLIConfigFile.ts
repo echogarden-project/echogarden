@@ -1,7 +1,7 @@
-import { readAndParseJsonFile, readFile } from "../utilities/FileSystem.js"
+import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
 
 export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
-	const fileContent = await readFile(path, { encoding: "utf-8" })
+	const fileContent = await readFile(path, { encoding: 'utf-8' })
 
 	const lines = fileContent
 		.split(/\r?\n/g)
@@ -11,12 +11,12 @@ export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
 
 	const sectionMap = new Map<string, Map<string, string>>()
 
-	let currentSectionName = ""
+	let currentSectionName = ''
 
 	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 		const line = lines[lineIndex]
 
-		if (line.length == 0 || line.startsWith("#")) {
+		if (line.length == 0 || line.startsWith('#')) {
 			continue
 		}
 
@@ -31,7 +31,7 @@ export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
 			sectionMap.set(currentSectionName, new Map())
 		}
 
-		const splitPoint = line.indexOf("=")
+		const splitPoint = line.indexOf('=')
 
 		let key: string
 		let value: string
@@ -65,10 +65,10 @@ export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFil
 			for (const propertyName in obj) {
 				const propertyValue = obj[propertyName]
 
-				const propertyPath = pathPrefix == "" ? propertyName : `${pathPrefix}.${propertyName}`
+				const propertyPath = pathPrefix == '' ? propertyName : `${pathPrefix}.${propertyName}`
 
 
-				if (typeof propertyValue == "object") {
+				if (typeof propertyValue == 'object') {
 					if (Array.isArray(propertyValue)) {
 						commandMap.set(propertyPath, JSON.stringify(propertyValue))
 					} else {
@@ -80,7 +80,7 @@ export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFil
 			}
 		}
 
-		addFromObject(commandObj, "")
+		addFromObject(commandObj, '')
 
 		result.set(command, commandMap)
 	}

@@ -1,32 +1,32 @@
-import { logToStderr } from "../utilities/Utilities.js"
+import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
 const consonant = {
-	plosive: ["p", "b", "t", "d", "ʈ", "ɖ", "c", "ɟ", "k", "g", "q", "ɢ", "ʔ", /* extensions */ "ɡ"],
-	nasal: ["m", "ɱ", "n", "ɳ", "ɲ", "ŋ", "ɴ", "n̩"],
-	trill: ["ʙ", "r", "ʀ"],
-	tapOrFlap: ["ⱱ", "ɾ", "ɽ"],
-	fricative: ["ɸ", "β", "f", "v", "θ", "ð", "s", "z", "ʃ", "ʒ", "ʂ", "ʐ", "ç", "ʝ", "x", "ɣ", "χ", "ʁ", "ħ", "ʕ", "h", "ɦ"],
-	lateralFricative: ["ɬ", "ɮ"],
-	affricate: ["tʃ", "ʈʃ", "dʒ"], // very incomplete, there are many others
-	approximant: ["ʋ", "ɹ", "ɻ", "j", "ɰ", /* extensions */ "w"],
-	lateralApproximant: ["l", "ɭ", "ʎ", "ʟ"]
+	plosive: ['p', 'b', 't', 'd', 'ʈ', 'ɖ', 'c', 'ɟ', 'k', 'g', 'q', 'ɢ', 'ʔ', /* extensions */ 'ɡ'],
+	nasal: ['m', 'ɱ', 'n', 'ɳ', 'ɲ', 'ŋ', 'ɴ', 'n̩'],
+	trill: ['ʙ', 'r', 'ʀ'],
+	tapOrFlap: ['ⱱ', 'ɾ', 'ɽ'],
+	fricative: ['ɸ', 'β', 'f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'ʂ', 'ʐ', 'ç', 'ʝ', 'x', 'ɣ', 'χ', 'ʁ', 'ħ', 'ʕ', 'h', 'ɦ'],
+	lateralFricative: ['ɬ', 'ɮ'],
+	affricate: ['tʃ', 'ʈʃ', 'dʒ'], // very incomplete, there are many others
+	approximant: ['ʋ', 'ɹ', 'ɻ', 'j', 'ɰ', /* extensions */ 'w'],
+	lateralApproximant: ['l', 'ɭ', 'ʎ', 'ʟ']
 }
 
 const vowel = {
-	close: ["i", "yɨ", "ʉɯ", "u", "iː"],
-	closeOther: ["ɪ", "ʏ", "ʊ", "ɨ", "ᵻ"],
-	closeMid: ["e", "ø", "ɘ", "ɵ", "ɤ", "o", "ə", "oː"],
-	openMid: ["ɛ", "œ", "ɜ", "ɞ", "ʌ", "ɔ", "ɜː", "uː", "ɔː", "ɛː"],
-	open: ["æ", "a", "ɶ", "ɐ", "ɑ", "ɒ", "ɑː"],
+	close: ['i', 'yɨ', 'ʉɯ', 'u', 'iː'],
+	closeOther: ['ɪ', 'ʏ', 'ʊ', 'ɨ', 'ᵻ'],
+	closeMid: ['e', 'ø', 'ɘ', 'ɵ', 'ɤ', 'o', 'ə', 'oː'],
+	openMid: ['ɛ', 'œ', 'ɜ', 'ɞ', 'ʌ', 'ɔ', 'ɜː', 'uː', 'ɔː', 'ɛː'],
+	open: ['æ', 'a', 'ɶ', 'ɐ', 'ɑ', 'ɒ', 'ɑː'],
 
-	rhotic: ["◌˞", "ɚ", "ɝ", "ɹ̩"],
+	rhotic: ['◌˞', 'ɚ', 'ɝ', 'ɹ̩'],
 
 	diphtongs: [
-		"eɪ", "əʊ", "oʊ", "aɪ", "ɔɪ", "aʊ", "iə",
-		"ɜr", "ɑr", "ɔr", "oʊr", "oːɹ", "ir", "ɪɹ", "ɔːɹ", "ɑːɹ", "ʊɹ", "ʊr", "ɛr", "ɛɹ",
-		"əl", "aɪɚ", "aɪə"
+		'eɪ', 'əʊ', 'oʊ', 'aɪ', 'ɔɪ', 'aʊ', 'iə',
+		'ɜr', 'ɑr', 'ɔr', 'oʊr', 'oːɹ', 'ir', 'ɪɹ', 'ɔːɹ', 'ɑːɹ', 'ʊɹ', 'ʊr', 'ɛr', 'ɛɹ',
+		'əl', 'aɪɚ', 'aɪə'
 	],
 }
 
@@ -42,7 +42,7 @@ for (const p in vowel) {
 	vowels = [...vowels, ...(vowel as any)[p]]
 }
 
-const all = [" ", ...consonants, ...vowels]
+const all = [' ', ...consonants, ...vowels]
 
 export function getPhoneSubstitutionCost1(ipa1: string, ipa2: string) {
 	if (ipa1 == ipa2) {

@@ -1,4 +1,4 @@
-export const appName = "echogarden"
+export const appName = 'echogarden'
 
 export interface EngineMetadata {
 	id: string

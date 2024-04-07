@@ -2,7 +2,7 @@ import createMedianFilter from 'moving-median'
 
 export function covarianceMatrixOfSamples(samples: number[][], weights?: number[], biased = false) {
 	if (samples.length == 0) {
-		throw new Error("No vectors given")
+		throw new Error('No vectors given')
 	}
 
 	const { centeredVectors: centeredSamples, mean } = centerVectors(samples, weights)
@@ -22,7 +22,7 @@ export function covarianceMatrixOfCenteredSamples(centeredSamples: number[][], b
 	const sampleCount = centeredSamples.length
 
 	if (sampleCount == 0) {
-		throw new Error("No vectors given")
+		throw new Error('No vectors given')
 	}
 
 	const sampleSizeMetric = biased || sampleCount == 1 ? sampleCount : sampleCount - 1
@@ -64,7 +64,7 @@ export function weightedCovarianceMatrixOfCenteredSamples(centeredSamples: numbe
 	const sampleCount = centeredSamples.length
 
 	if (sampleCount == 0) {
-		throw new Error("No vectors given")
+		throw new Error('No vectors given')
 	}
 
 	const featureCount = centeredSamples[0].length
@@ -165,7 +165,7 @@ export function scaleToSumTo1(vector: number[]) {
 	}
 
 	if (sum == Infinity) {
-		throw new Error("Vector sum is infinite")
+		throw new Error('Vector sum is infinite')
 	}
 
 	for (let i = 0; i < vector.length; i++) {
@@ -177,9 +177,9 @@ export function scaleToSumTo1(vector: number[]) {
 	return scaledVector
 }
 
-export function normalizeVector(vector: number[], kind: "population" | "sample" = "population") {
+export function normalizeVector(vector: number[], kind: 'population' | 'sample' = 'population') {
 	if (vector.length == 0) {
-		throw new Error("Vector is empty")
+		throw new Error('Vector is empty')
 	}
 
 	const mean = meanOfVector(vector)
@@ -196,7 +196,7 @@ export function normalizeVector(vector: number[], kind: "population" | "sample" 
 	return { normalizedVector, mean, stdDeviation }
 }
 
-export function normalizeVectors(vectors: number[][], kind: "population" | "sample" = "population") {
+export function normalizeVectors(vectors: number[][], kind: 'population' | 'sample' = 'population') {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
@@ -296,18 +296,18 @@ export function weightedMeanOfVectors(vectors: number[][], weights: number[]) {
 	return result
 }
 
-export function stdDeviationOfVectors(vectors: number[][], kind: "population" | "sample" = "population", mean?: number[]) {
+export function stdDeviationOfVectors(vectors: number[][], kind: 'population' | 'sample' = 'population', mean?: number[]) {
 	return varianceOfVectors(vectors, kind, mean).map(v => Math.sqrt(v))
 }
 
-export function varianceOfVectors(vectors: number[][], kind: "population" | "sample" = "population", mean?: number[]) {
+export function varianceOfVectors(vectors: number[][], kind: 'population' | 'sample' = 'population', mean?: number[]) {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
 		return []
 	}
 
-	const sampleSizeMetric = kind == "population" || vectorCount == 1 ? vectorCount : vectorCount - 1
+	const sampleSizeMetric = kind == 'population' || vectorCount == 1 ? vectorCount : vectorCount - 1
 	const featureCount = vectors[0].length
 
 	if (!mean) {
@@ -331,7 +331,7 @@ export function varianceOfVectors(vectors: number[][], kind: "population" | "sam
 
 export function meanOfVector(vector: number[]) {
 	if (vector.length == 0) {
-		throw new Error("Vector is empty")
+		throw new Error('Vector is empty')
 	}
 
 	return sumVector(vector) / vector.length
@@ -339,22 +339,22 @@ export function meanOfVector(vector: number[]) {
 
 export function medianOfVector(vector: number[]) {
 	if (vector.length == 0) {
-		throw new Error("Vector is empty")
+		throw new Error('Vector is empty')
 	}
 
 	return vector[Math.floor(vector.length / 2)]
 }
 
-export function stdDeviationOfVector(vector: number[], kind: "population" | "sample" = "population", mean?: number) {
+export function stdDeviationOfVector(vector: number[], kind: 'population' | 'sample' = 'population', mean?: number) {
 	return Math.sqrt(varianceOfVector(vector, kind, mean))
 }
 
-export function varianceOfVector(vector: number[], kind: "population" | "sample" = "population", mean?: number) {
+export function varianceOfVector(vector: number[], kind: 'population' | 'sample' = 'population', mean?: number) {
 	if (vector.length == 0) {
-		throw new Error("Vector is empty")
+		throw new Error('Vector is empty')
 	}
 
-	const sampleSizeMetric = kind == "population" || vector.length == 1 ? vector.length : vector.length - 1
+	const sampleSizeMetric = kind == 'population' || vector.length == 1 ? vector.length : vector.length - 1
 
 	if (mean == null) {
 		mean = meanOfVector(vector)
@@ -418,7 +418,7 @@ export function movingAverageOfWindow3(vector: number[]) {
 
 export function averageMeanSquaredError(actual: number[][], expected: number[][]) {
 	if (actual.length != expected.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const vectorCount = actual.length
@@ -438,7 +438,7 @@ export function averageMeanSquaredError(actual: number[][], expected: number[][]
 
 export function meanSquaredError(actual: number[], expected: number[]) {
 	if (actual.length != expected.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const featureCount = actual.length
@@ -456,13 +456,13 @@ export function meanSquaredError(actual: number[], expected: number[]) {
 	return sum / featureCount
 }
 
-export function eucledianDistance(vector1: number[], vector2: number[]) {
-	return Math.sqrt(squaredEucledianDistance(vector1, vector2))
+export function euclidianDistance(vector1: number[], vector2: number[]) {
+	return Math.sqrt(squaredEuclidianDistance(vector1, vector2))
 }
 
-export function squaredEucledianDistance(vector1: number[], vector2: number[]) {
+export function squaredEuclidianDistance(vector1: number[], vector2: number[]) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const elementCount = vector1.length
@@ -486,7 +486,7 @@ export function cosineDistance(vector1: number[], vector2: number[]) {
 
 export function cosineSimilarity(vector1: number[], vector2: number[]) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	if (vector1.length == 0) {
@@ -514,7 +514,7 @@ export function cosineSimilarity(vector1: number[], vector2: number[]) {
 
 export function minkowskiDistance(vector1: number[], vector2: number[], power: number) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const elementCount = vector1.length
@@ -538,7 +538,7 @@ export function cosineDistancePrecomputedMagnitudes(vector1: number[], vector2: 
 
 export function cosineSimilarityPrecomputedMagnitudes(vector1: number[], vector2: number[], magnitude1: number, magnitude2: number) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	if (vector1.length == 0) {
@@ -561,7 +561,7 @@ export function cosineSimilarityPrecomputedMagnitudes(vector1: number[], vector2
 
 export function subtractVectors(vector1: number[], vector2: number[]) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const result = createVector(vector1.length)
@@ -585,7 +585,7 @@ export function sumVector(vector: number[]) {
 
 export function dotProduct(vector1: number[], vector2: number[]) {
 	if (vector1.length != vector2.length) {
-		throw new Error("Vectors are not the same length")
+		throw new Error('Vectors are not the same length')
 	}
 
 	const elementCount = vector1.length
@@ -789,7 +789,7 @@ export function sumExp(values: number[]) {
 
 export function logSoftmax(values: number[], minVal = 1e-40) {
 	const softMaxOfValues = softmax(values)
-	
+
 	return logOfVector(softMaxOfValues, minVal)
 }
 
@@ -811,3 +811,8 @@ export class IncrementalMean {
 }
 
 export type DistanceFunction = (a: number[], b: number[]) => number
+
+export interface ComplexNumber {
+	real: number
+	imaginary: number
+}

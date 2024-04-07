@@ -1,7 +1,7 @@
 import Onnx from 'onnxruntime-node'
 import { softmax } from '../math/VectorMath.js'
-import { Logger } from "../utilities/Logger.js"
-import { RawAudio } from "../audio/AudioUtilities.js"
+import { Logger } from '../utilities/Logger.js'
+import { RawAudio } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
 import { detectSpeechLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
@@ -41,7 +41,7 @@ export class SileroLanguageDetection {
 
 	async initialize() {
 		const logger = new Logger()
-		logger.start("Initialize ONNX inference session")
+		logger.start('Initialize ONNX inference session')
 
 		this.languageDictionary = await readAndParseJsonFile(this.languageDictionaryPath)
 		this.languageGroupDictionary = await readAndParseJsonFile(this.languageGroupDictionaryPath)
@@ -58,7 +58,7 @@ export class SileroLanguageDetection {
 	async detectLanguage(rawAudio: RawAudio) {
 		const logger = new Logger()
 
-		logger.start("Detect language with Silero")
+		logger.start('Detect language with Silero')
 
 		const audioSamples = rawAudio.audioChannels[0]
 
@@ -68,10 +68,10 @@ export class SileroLanguageDetection {
 
 		const results = await this.session!.run(inputs)
 
-		logger.start("Parse model results")
+		logger.start('Parse model results')
 
-		const languageLogits = results["output"].data
-		const languageGroupLogits = results["2038"].data
+		const languageLogits = results['output'].data
+		const languageGroupLogits = results['2038'].data
 
 		const languageProbabilities = softmax(languageLogits as any)
 		const languageGroupProbabilities = softmax(languageGroupLogits as any)
@@ -80,7 +80,7 @@ export class SileroLanguageDetection {
 
 		for (let i = 0; i < languageProbabilities.length; i++) {
 			const languageString = this.languageDictionary[i]
-			const languageCode = languageString.replace(/,.*$/, "")
+			const languageCode = languageString.replace(/,.*$/, '')
 
 			languageResults.push({
 				language: languageCode,

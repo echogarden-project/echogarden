@@ -1,15 +1,15 @@
-import type { LanguageCode, SynthesizeSpeechCommandInput, VoiceId } from "@aws-sdk/client-polly"
-import { IncomingMessage } from "http"
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { Logger } from "../utilities/Logger.js"
+import type { LanguageCode, SynthesizeSpeechCommandInput, VoiceId } from '@aws-sdk/client-polly'
+import { IncomingMessage } from 'http'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Logger } from '../utilities/Logger.js'
 
-import { readBinaryIncomingMessage } from "../utilities/Utilities.js"
+import { readBinaryIncomingMessage } from '../utilities/Utilities.js'
 
-export async function synthesize(text: string, language: string | undefined, voice: string, region: string, accessKeyId: string, secretAccessKey: string, engine: "standard" | "neural" = "standard", ssmlEnabled = false, lexiconNames?: string[]) {
+export async function synthesize(text: string, language: string | undefined, voice: string, region: string, accessKeyId: string, secretAccessKey: string, engine: 'standard' | 'neural' = 'standard', ssmlEnabled = false, lexiconNames?: string[]) {
 	const logger = new Logger()
-	logger.start("Load AWS SDK client module")
+	logger.start('Load AWS SDK client module')
 
-	const polly = await import("@aws-sdk/client-polly")
+	const polly = await import('@aws-sdk/client-polly')
 
 	const pollyClient = new polly.PollyClient({
 		region,
@@ -28,12 +28,12 @@ export async function synthesize(text: string, language: string | undefined, voi
 		Text: text,
 		LexiconNames: lexiconNames,
 
-		TextType: ssmlEnabled ? "ssml" : "text",
+		TextType: ssmlEnabled ? 'ssml' : 'text',
 
-		OutputFormat: "mp3",
+		OutputFormat: 'mp3',
 	}
 
-	logger.start("Request synthesis from AWS Polly")
+	logger.start('Request synthesis from AWS Polly')
 
 	const command = new polly.SynthesizeSpeechCommand(params)
 
@@ -52,11 +52,11 @@ export async function synthesize(text: string, language: string | undefined, voi
 
 export async function getVoiceList(region: string, accessKeyId: string, secretAccessKey: string) {
 	const logger = new Logger()
-	logger.start("Load AWS SDK client module")
+	logger.start('Load AWS SDK client module')
 
-	const polly = await import("@aws-sdk/client-polly")
+	const polly = await import('@aws-sdk/client-polly')
 
-	logger.start("Request voice list from AWS Polly")
+	logger.start('Request voice list from AWS Polly')
 
 	const pollyClient = new polly.PollyClient({
 		region,

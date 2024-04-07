@@ -1,23 +1,23 @@
-import { request } from "gaxios"
-import { Phrase, splitToFragments } from "../nlp/Segmentation.js"
-import { concatFloat32Arrays, logToStderr } from "../utilities/Utilities.js"
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { trimAudioEnd } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
-import { Timeline } from "../utilities/Timeline.js"
-import { getShortLanguageCode } from "../utilities/Locale.js"
+import { request } from 'gaxios'
+import { Phrase, splitToFragments } from '../nlp/Segmentation.js'
+import { concatFloat32Arrays, logToStderr } from '../utilities/Utilities.js'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { trimAudioEnd } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { getShortLanguageCode } from '../utilities/Locale.js'
 
 const log = logToStderr
 
 const maxTextLengthPerRequest = 200
 
-export async function synthesizeLongText(text: string, languageCode = "en", tld = "us", sentenceEndPause = 0.75, segmentEndPause = 1.0) {
+export async function synthesizeLongText(text: string, languageCode = 'en', tld = 'us', sentenceEndPause = 0.75, segmentEndPause = 1.0) {
 	if (text.length == 0) {
-		throw new Error("Text is empty")
+		throw new Error('Text is empty')
 	}
 
 	const logger = new Logger()
-	logger.start("Prepare and split text")
+	logger.start('Prepare and split text')
 
 	const fragments = await splitToFragments(text, maxTextLengthPerRequest, languageCode)
 
@@ -57,7 +57,7 @@ export async function synthesizeLongText(text: string, languageCode = "en", tld 
 		const endTime = startTime + (trimmedAudio.length / fragmentsSampleRate)
 
 		timeline.push({
-			type: "segment",
+			type: 'segment',
 			text: fragment.text,
 			startTime,
 			endTime
@@ -74,56 +74,56 @@ export async function synthesizeLongText(text: string, languageCode = "en", tld 
 	}
 }
 
-export async function synthesizeShortText(text: string, languageCode = "en", tld = "us") {
+export async function synthesizeShortText(text: string, languageCode = 'en', tld = 'us') {
 	if (text.length > maxTextLengthPerRequest) {
 		throw new Error(`Text is ${text.length} characters, which is longer than the maximum of ${maxTextLengthPerRequest}`)
 	}
 
-	if (languageCode != "zh-CN" && languageCode != "zh-TW") {
+	if (languageCode != 'zh-CN' && languageCode != 'zh-TW') {
 		languageCode = getShortLanguageCode(languageCode)
 	}
 
-	const bodyFormParameters = [text, languageCode, null, "null"]
-	const requestForm = [[["jQ1olc", JSON.stringify(bodyFormParameters), null, "generic"]]]
+	const bodyFormParameters = [text, languageCode, null, 'null']
+	const requestForm = [[['jQ1olc', JSON.stringify(bodyFormParameters), null, 'generic']]]
 	const stringifiedForm = JSON.stringify(requestForm)
 	const requestBody = `f.req=${encodeURIComponent(stringifiedForm)}&`
 
 	const response = await request<string>({
-		method: "POST",
+		method: 'POST',
 
 		url: `https://translate.google.${tld}/_/TranslateWebserverUi/data/batchexecute`,
 
 		params: {
-			"rpcids": "jQ1olc"
+			'rpcids': 'jQ1olc'
 		},
 
 		headers: {
-			"sec-ch-ua": `".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"`,
-			"x-same-domain": "1",
-			"dnt": "1",
-			"content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-			"sec-ch-ua-mobile": "?0",
-			"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-			"sec-ch-ua-arch": "x86",
-			"sec-ch-ua-full-version": "103.0.5060.114",
-			"sec-ch-ua-platform-version": "10.0.0",
-			"sec-ch-ua-full-version-list": `".Not/A)Brand";v="99.0.0.0", "Google Chrome";v="103.0.5060.114", "Chromium";v="103.0.5060.114"`,
-			"sec-ch-ua-bitness": "64",
-			"sec-ch-ua-model": "",
-			"sec-ch-ua-platform": "Windows",
-			"accept": "*/*",
-			"origin": "https://translate.google.com",
-			"sec-fetch-site": "same-origin",
-			"sec-fetch-mode": "cors",
-			"sec-fetch-dest": "empty",
-			"referer": "https://translate.google.com/",
-			"accept-encoding": "gzip, deflate, br",
-			"accept-language": "en-US,en;q=0.9",
+			'sec-ch-ua': `".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"`,
+			'x-same-domain': '1',
+			'dnt': '1',
+			'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+			'sec-ch-ua-mobile': '?0',
+			'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
+			'sec-ch-ua-arch': 'x86',
+			'sec-ch-ua-full-version': '103.0.5060.114',
+			'sec-ch-ua-platform-version': '10.0.0',
+			'sec-ch-ua-full-version-list': `".Not/A)Brand";v="99.0.0.0", "Google Chrome";v="103.0.5060.114", "Chromium";v="103.0.5060.114"`,
+			'sec-ch-ua-bitness': '64',
+			'sec-ch-ua-model': '',
+			'sec-ch-ua-platform': 'Windows',
+			'accept': '*/*',
+			'origin': 'https://translate.google.com',
+			'sec-fetch-site': 'same-origin',
+			'sec-fetch-mode': 'cors',
+			'sec-fetch-dest': 'empty',
+			'referer': 'https://translate.google.com/',
+			'accept-encoding': 'gzip, deflate, br',
+			'accept-language': 'en-US,en;q=0.9',
 		},
 
 		body: requestBody,
 
-		responseType: "text"
+		responseType: 'text'
 	})
 
 	//log(response.data)
@@ -135,7 +135,7 @@ export async function synthesizeShortText(text: string, languageCode = "en", tld
 
 		if (match != null) {
 			const base64AudioChunk = match[1]
-			audioChunks.push(Buffer.from(base64AudioChunk, "base64"))
+			audioChunks.push(Buffer.from(base64AudioChunk, 'base64'))
 		}
 	}
 
@@ -144,67 +144,67 @@ export async function synthesizeShortText(text: string, languageCode = "en", tld
 }
 
 export const supportedLanguageLookup: { [langCode: string]: string } = {
-	"af": "Afrikaans",
-	"ar": "Arabic",
-	"bg": "Bulgarian",
-	"bn": "Bengali",
-	"bs": "Bosnian",
-	"ca": "Catalan",
-	"cs": "Czech",
-	"cy": "Welsh",
-	"da": "Danish",
-	"de": "German",
-	"el": "Greek",
-	"en": "English",
-	"eo": "Esperanto",
-	"es": "Spanish",
-	"et": "Estonian",
-	"fi": "Finnish",
-	"fr": "French",
-	"gu": "Gujarati",
-	"hi": "Hindi",
-	"hr": "Croatian",
-	"hu": "Hungarian",
-	"hy": "Armenian",
-	"id": "Indonesian",
-	"is": "Icelandic",
-	"it": "Italian",
-	"iw": "Hebrew",
-	"ja": "Japanese",
-	"jw": "Javanese",
-	"km": "Khmer",
-	"kn": "Kannada",
-	"ko": "Korean",
-	"la": "Latin",
-	"lv": "Latvian",
-	"mk": "Macedonian",
-	"ms": "Malay",
-	"ml": "Malayalam",
-	"mr": "Marathi",
-	"my": "Myanmar (Burmese)",
-	"ne": "Nepali",
-	"nl": "Dutch",
-	"no": "Norwegian",
-	"pl": "Polish",
-	"pt": "Portuguese",
-	"ro": "Romanian",
-	"ru": "Russian",
-	"si": "Sinhala",
-	"sk": "Slovak",
-	"sq": "Albanian",
-	"sr": "Serbian",
-	"su": "Sundanese",
-	"sv": "Swedish",
-	"sw": "Swahili",
-	"ta": "Tamil",
-	"te": "Telugu",
-	"th": "Thai",
-	"tl": "Filipino",
-	"tr": "Turkish",
-	"uk": "Ukrainian",
-	"ur": "Urdu",
-	"vi": "Vietnamese",
-	"zh-CN": "Chinese",
-	"zh-TW": "Chinese (Mandarin/Taiwan)",
-	"zh": "Chinese (Mandarin)",
+	'af': 'Afrikaans',
+	'ar': 'Arabic',
+	'bg': 'Bulgarian',
+	'bn': 'Bengali',
+	'bs': 'Bosnian',
+	'ca': 'Catalan',
+	'cs': 'Czech',
+	'cy': 'Welsh',
+	'da': 'Danish',
+	'de': 'German',
+	'el': 'Greek',
+	'en': 'English',
+	'eo': 'Esperanto',
+	'es': 'Spanish',
+	'et': 'Estonian',
+	'fi': 'Finnish',
+	'fr': 'French',
+	'gu': 'Gujarati',
+	'hi': 'Hindi',
+	'hr': 'Croatian',
+	'hu': 'Hungarian',
+	'hy': 'Armenian',
+	'id': 'Indonesian',
+	'is': 'Icelandic',
+	'it': 'Italian',
+	'iw': 'Hebrew',
+	'ja': 'Japanese',
+	'jw': 'Javanese',
+	'km': 'Khmer',
+	'kn': 'Kannada',
+	'ko': 'Korean',
+	'la': 'Latin',
+	'lv': 'Latvian',
+	'mk': 'Macedonian',
+	'ms': 'Malay',
+	'ml': 'Malayalam',
+	'mr': 'Marathi',
+	'my': 'Myanmar (Burmese)',
+	'ne': 'Nepali',
+	'nl': 'Dutch',
+	'no': 'Norwegian',
+	'pl': 'Polish',
+	'pt': 'Portuguese',
+	'ro': 'Romanian',
+	'ru': 'Russian',
+	'si': 'Sinhala',
+	'sk': 'Slovak',
+	'sq': 'Albanian',
+	'sr': 'Serbian',
+	'su': 'Sundanese',
+	'sv': 'Swedish',
+	'sw': 'Swahili',
+	'ta': 'Tamil',
+	'te': 'Telugu',
+	'th': 'Thai',
+	'tl': 'Filipino',
+	'tr': 'Turkish',
+	'uk': 'Ukrainian',
+	'ur': 'Urdu',
+	'vi': 'Vietnamese',
+	'zh-CN': 'Chinese',
+	'zh-TW': 'Chinese (Mandarin/Taiwan)',
+	'zh': 'Chinese (Mandarin)',
 }

@@ -1,17 +1,17 @@
-import { request } from "gaxios"
-import WebSocket from "ws"
+import { request } from 'gaxios'
+import WebSocket from 'ws'
 
 import { escape } from 'html-escaper'
 
-import splitBuffer from "buffer-split"
+import splitBuffer from 'buffer-split'
 
-import * as AzureCognitiveServicesTTS from "./AzureCognitiveServicesTTS.js"
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { Logger } from "../utilities/Logger.js"
-import { OpenPromise } from "../utilities/OpenPromise.js"
-import { getRandomHexString, logToStderr } from "../utilities/Utilities.js"
-import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from "../audio/AudioUtilities.js"
-import { Timer } from "../utilities/Timer.js"
+import * as AzureCognitiveServicesTTS from './AzureCognitiveServicesTTS.js'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Logger } from '../utilities/Logger.js'
+import { OpenPromise } from '../utilities/OpenPromise.js'
+import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
+import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
+import { Timer } from '../utilities/Timer.js'
 
 const traceEnabled = false
 
@@ -20,13 +20,13 @@ const log: typeof logToStderr = traceEnabled ? logToStderr : () => { }
 export async function synthesize(
 	text: string,
 	trustedClientToken: string,
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)",
-	ssmlPitchString = "+0Hz",
-	ssmlRateString = "+0%",
-	ssmlVolumeString = "+0%") {
+	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)',
+	ssmlPitchString = '+0Hz',
+	ssmlRateString = '+0%',
+	ssmlVolumeString = '+0%') {
 
 	const logger = new Logger()
-	logger.start("Request synthesis from Microsoft Edge cloud API")
+	logger.start('Request synthesis from Microsoft Edge cloud API')
 
 	const { audioData, events } = await requestSynthesis(text, trustedClientToken, voice, ssmlPitchString, ssmlRateString, ssmlVolumeString)
 	logger.end()
@@ -43,7 +43,7 @@ export async function synthesize(
 
 	//logToStderr(`Raw audio length: ${rawAudio.audioChannels[0].length}`)
 
-	logger.start("Convert boundary events to timeline")
+	logger.start('Convert boundary events to timeline')
 	const timeline = AzureCognitiveServicesTTS.boundaryEventsToTimeline(events, getRawAudioDuration(rawAudio))
 	logger.end()
 
@@ -55,10 +55,10 @@ type SynthesisRequestResult = { audioData: Buffer, events: any[] }
 async function requestSynthesis(
 	text: string,
 	trustedClientToken: string,
-	voice = "Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)",
-	ssmlPitchString = "+0Hz",
-	ssmlRateString = "+0%",
-	ssmlVolumeString = "+0%") {
+	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)',
+	ssmlPitchString = '+0Hz',
+	ssmlRateString = '+0%',
+	ssmlVolumeString = '+0%') {
 
 	const synthesisOpenPromise = new OpenPromise<SynthesisRequestResult>()
 
@@ -120,15 +120,15 @@ async function requestSynthesis(
 				return
 			}
 
-			log("\nReceived binary message:")
+			log('\nReceived binary message:')
 			log(header)
 
 			receivedBinaryMessages.push(messageData)
-			receivedBinaryMessages.push(Buffer.from("\n\n"))
+			receivedBinaryMessages.push(Buffer.from('\n\n'))
 
 			audioChunks.push(audioChunk)
 		} else {
-			const message = messageData.toString("utf8")
+			const message = messageData.toString('utf8')
 			const [header, content] = parseTextMessage(message)
 
 			if (header['X-RequestId'] != requestId) {
@@ -136,17 +136,17 @@ async function requestSynthesis(
 				return
 			}
 
-			log("\nReceived text message:")
+			log('\nReceived text message:')
 			log(header)
 			log(content)
 
-			if (header["Path"] == "turn.start") {
+			if (header['Path'] == 'turn.start') {
 
 			}
-			else if (header["Path"] == "audio.metadata") {
-				receivedEventMessages.push(content["Metadata"][0])
+			else if (header['Path'] == 'audio.metadata') {
+				receivedEventMessages.push(content['Metadata'][0])
 			}
-			else if (header["Path"] == "turn.end") {
+			else if (header['Path'] == 'turn.end') {
 				const result: SynthesisRequestResult = { audioData: Buffer.concat(audioChunks), events: receivedEventMessages }
 
 				removeWebSocketHandlers()
@@ -168,7 +168,7 @@ async function requestSynthesis(
 	}
 
 	const onClose = async (code: number, reason: Buffer) => {
-		log("WebSocket closed.")
+		log('WebSocket closed.')
 		log(code)
 		log(reason.toString())
 
@@ -179,15 +179,15 @@ async function requestSynthesis(
 
 	function removeWebSocketHandlers() {
 		if (webSocket) {
-			webSocket.off("message", onMessage)
-			webSocket.off("error", onError)
-			webSocket.off("close", onClose)
+			webSocket.off('message', onMessage)
+			webSocket.off('error', onError)
+			webSocket.off('close', onClose)
 		}
 	}
 
-	webSocket.on("message", onMessage)
-	webSocket.on("error", onError)
-	webSocket.on("close", onClose)
+	webSocket.on('message', onMessage)
+	webSocket.on('error', onError)
+	webSocket.on('close', onClose)
 
 	const requestContentSSML =
 		`<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'>` +
@@ -201,7 +201,7 @@ async function requestSynthesis(
 	const bodyRequestString =
 		`X-RequestId:${requestId}\r\n` +
 		`Content-Type:application/ssml+xml\r\n` +
-		`X-Timestamp:${getTimestampString()}Z\r\n` + // The added "Z" recreates a Microsoft Edge bug.
+		`X-Timestamp:${getTimestampString()}Z\r\n` + // The added 'Z' recreates a Microsoft Edge bug.
 		`Path:ssml\r\n\r\n` +
 		requestContentSSML
 
@@ -229,34 +229,34 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 
 	const connectionId = getRandomHexString()
 
-	const requestURL = "wss://speech.platform.bing.com/" +
-		"consumer/speech/synthesize/readaloud/edge/v1" +
+	const requestURL = 'wss://speech.platform.bing.com/' +
+		'consumer/speech/synthesize/readaloud/edge/v1' +
 		`?TrustedClientToken=${trustedClientToken}` +
-		"&ConnectionId=" + connectionId
+		'&ConnectionId=' + connectionId
 
 	log(requestURL)
-	log("")
+	log('')
 
 	const webSocket = new WebSocket(requestURL, {
 		headers: {
-			"Pragma": "no-cache",
-			"Cache-Control": "no-cache",
-			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44",
-			"Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
-			"Accept-Encoding": "gzip, deflate, br",
-			"Accept-Language": "en-US,en;q=0.9",
+			'Pragma': 'no-cache',
+			'Cache-Control': 'no-cache',
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44',
+			'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Accept-Language': 'en-US,en;q=0.9',
 		}
 	})
 
 	const requestMetadata = {
-		"context": {
-			"synthesis": {
-				"audio": {
-					"metadataoptions": {
-						"sentenceBoundaryEnabled": "false",
-						"wordBoundaryEnabled": "true"
+		'context': {
+			'synthesis': {
+				'audio': {
+					'metadataoptions': {
+						'sentenceBoundaryEnabled': 'false',
+						'wordBoundaryEnabled': 'true'
 					},
-					"outputFormat": "webm-24khz-16bit-mono-opus"
+					'outputFormat': 'webm-24khz-16bit-mono-opus'
 				}
 			}
 		}
@@ -275,15 +275,15 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 
 		existingWebSocketConnection = webSocket
 
-		webSocket.off("open", onOpen)
-		webSocket.off("close", onClose)
-		webSocket.off("error", onError)
+		webSocket.off('open', onOpen)
+		webSocket.off('close', onClose)
+		webSocket.off('error', onError)
 
 		requestOpenPromise.resolve(webSocket)
 	}
 
 	const onClose = (code: number, reason: Buffer) => {
-		log("WebSocket closed.")
+		log('WebSocket closed.')
 		log(code)
 		log(reason.toString())
 
@@ -296,50 +296,50 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		requestOpenPromise.reject(err)
 	}
 
-	webSocket.on("open", onOpen)
-	webSocket.on("close", onClose)
-	webSocket.on("error", onError)
+	webSocket.on('open', onOpen)
+	webSocket.on('close', onClose)
+	webSocket.on('error', onError)
 
 	return requestOpenPromise.promise
 }
 
 export async function getVoiceList(trustedClientToken: string) {
 	const response = await request<any>({
-		method: "GET",
+		method: 'GET',
 
-		url: "https://speech.platform.bing.com/consumer/speech/synthesize/" +
+		url: 'https://speech.platform.bing.com/consumer/speech/synthesize/' +
 			`readaloud/voices/list?trustedclienttoken=${trustedClientToken}`,
 
 		headers: {
-			"sec-ch-ua": `" Not;A Brand";v="99", "Microsoft Edge";v="103", "Chromium";v="103"`,
-			"dnt": "1",
-			"sec-ch-ua-mobile": "?0",
-			"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44",
-			"sec-ch-ua-platform": "Windows",
-			"accept": "*/*",
-			"sec-fetch-site": "none",
-			"sec-fetch-mode": "cors",
-			"sec-fetch-dest": "empty",
-			"accept-encoding": "gzip, deflate, br",
-			"accept-language": "en-US,en;q=0.9",
+			'sec-ch-ua': `" Not;A Brand";v="99", "Microsoft Edge";v="103", "Chromium";v="103"`,
+			'dnt': '1',
+			'sec-ch-ua-mobile': '?0',
+			'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44',
+			'sec-ch-ua-platform': 'Windows',
+			'accept': '*/*',
+			'sec-fetch-site': 'none',
+			'sec-fetch-mode': 'cors',
+			'sec-fetch-dest': 'empty',
+			'accept-encoding': 'gzip, deflate, br',
+			'accept-language': 'en-US,en;q=0.9',
 		},
 
-		responseType: "json"
+		responseType: 'json'
 	})
 
 	return response.data as any[]
 }
 
 function getTimestampString() {
-	const timestampString = new Date(new Date().toLocaleString("en-US", { timeZone: "UTC" })).toString().replace(/GMT.*/, "GMT+0000 (Coordinated Universal Time)")
+	const timestampString = new Date(new Date().toLocaleString('en-US', { timeZone: 'UTC' })).toString().replace(/GMT.*/, 'GMT+0000 (Coordinated Universal Time)')
 	return timestampString
 }
 
 function parseHeaderString(headerString: string) {
 	const headers: any = {}
 
-	for (const headerLine of headerString.split("\r\n")) {
-		const [key, value] = headerLine.split(":")
+	for (const headerLine of headerString.split('\r\n')) {
+		const [key, value] = headerLine.split(':')
 		headers[key] = value
 	}
 
@@ -347,15 +347,15 @@ function parseHeaderString(headerString: string) {
 }
 
 function parseTextMessage(message: string) {
-	const [headerString, content] = message.split("\r\n\r\n")
+	const [headerString, content] = message.split('\r\n\r\n')
 
 	return [parseHeaderString(headerString), JSON.parse(content)]
 }
 
 function parseBinaryMessage(message: Buffer) {
-	const audioChunk = splitBuffer(message, Buffer.from("Path:audio\r\n"))[1]
+	const audioChunk = splitBuffer(message, Buffer.from('Path:audio\r\n'))[1]
 	const headerBuffer = message.subarray(2, message.length - audioChunk.length)
-	const headerString = headerBuffer.toString("utf8").trim()
+	const headerString = headerBuffer.toString('utf8').trim()
 
 	return [parseHeaderString(headerString), audioChunk]
 }

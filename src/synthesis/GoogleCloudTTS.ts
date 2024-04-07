@@ -1,12 +1,12 @@
-import { request } from "gaxios"
-import { Logger } from "../utilities/Logger.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { request } from 'gaxios'
+import { Logger } from '../utilities/Logger.js'
+import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
-export async function synthesize(text: string, apiKey: string, languageCode = "en-US", voice = "en-US-Wavenet-C", speakingRate = 1.0, pitchDeltaSemitones = 0.0, volumeGainDb = 0.0, ssml = false, audioEncoding: AudioEncoding = "MP3_64_KBPS", sampleRate = 24000) {
+export async function synthesize(text: string, apiKey: string, languageCode = 'en-US', voice = 'en-US-Wavenet-C', speakingRate = 1.0, pitchDeltaSemitones = 0.0, volumeGainDecibels = 0.0, ssml = false, audioEncoding: AudioEncoding = 'MP3_64_KBPS', sampleRate = 24000) {
 	const logger = new Logger()
-	logger.start("Request synthesis from Google Cloud")
+	logger.start('Request synthesis from Google Cloud')
 
 	const requestBody = {
 		input: {
@@ -23,11 +23,11 @@ export async function synthesize(text: string, apiKey: string, languageCode = "e
 			audioEncoding,
 			speakingRate,
 			pitch: pitchDeltaSemitones,
-			volumeGainDb,
+			volumeGainDb: volumeGainDecibels,
 			sampleRateHertz: sampleRate
 		},
 
-		enableTimePointing: ["SSML_MARK"]
+		enableTimePointing: ['SSML_MARK']
 	}
 
 	if (ssml) {
@@ -37,24 +37,24 @@ export async function synthesize(text: string, apiKey: string, languageCode = "e
 	}
 
 	const response = await request<any>({
-		method: "POST",
+		method: 'POST',
 
 		url: `https://texttospeech.googleapis.com/v1beta1/text:synthesize`,
 
 		params: {
-			"key": apiKey
+			'key': apiKey
 		},
 
 		headers: {
-			"User-Agent": ""
+			'User-Agent': ''
 		},
 
 		data: requestBody,
 
-		responseType: "json"
+		responseType: 'json'
 	})
 
-	logger.start("Parse result")
+	logger.start('Parse result')
 
 	const result = parseResponseBody(response.data)
 
@@ -64,7 +64,7 @@ export async function synthesize(text: string, apiKey: string, languageCode = "e
 }
 
 function parseResponseBody(responseBody: any) {
-	const audioData = Buffer.from(responseBody.audioContent, "base64")
+	const audioData = Buffer.from(responseBody.audioContent, 'base64')
 	const timepoints: timePoint[] = responseBody.timepoints
 
 	return { audioData, timepoints }
@@ -75,19 +75,19 @@ export async function getVoiceList(apiKey: string) {
 	const requestURL = `https://texttospeech.googleapis.com/v1beta1/voices`
 
 	const response = await request<any>({
-		method: "GET",
+		method: 'GET',
 
 		url: requestURL,
 
 		params: {
-			"key": apiKey
+			'key': apiKey
 		},
 
 		headers: {
-			"User-Agent": ""
+			'User-Agent': ''
 		},
 
-		responseType: "json"
+		responseType: 'json'
 	})
 
 	const responseData = response.data
@@ -100,11 +100,11 @@ export async function getVoiceList(apiKey: string) {
 export type GoogleCloudVoice = {
 	name: string
 	languageCodes: string[]
-	ssmlGender: "MALE" | "FEMALE"
+	ssmlGender: 'MALE' | 'FEMALE'
 	naturalSampleRateHertz: number
 }
 
-export type AudioEncoding = "LINEAR16" | "MP3" | "MP3_64_KBPS" | "OGG_OPUS" | "MULAW" | "ALAW"
+export type AudioEncoding = 'LINEAR16' | 'MP3' | 'MP3_64_KBPS' | 'OGG_OPUS' | 'MULAW' | 'ALAW'
 
 export type timePoint = {
 	markName: string,

@@ -1,29 +1,29 @@
-import { float32ToInt16Pcm } from "../audio/AudioBufferConversion.js"
-import { concatFloat32Arrays } from "../utilities/Utilities.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
-import { Logger } from "../utilities/Logger.js"
-import { RawAudio, cloneRawAudio } from "../audio/AudioUtilities.js"
+import { float32ToInt16Pcm } from '../audio/AudioBufferConversion.js'
+import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { Logger } from '../utilities/Logger.js'
+import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
 
 let rnnoiseInstance: any
 
 export async function denoiseAudio(rawAudio: RawAudio) {
 	const logger = new Logger()
 	if (rawAudio.sampleRate != 48000) {
-		throw new Error("Sample rate must be 48000")
+		throw new Error('Sample rate must be 48000')
 	}
 
 	if (rawAudio.audioChannels.length != 1) {
-		throw new Error("Channel count must be 1")
+		throw new Error('Channel count must be 1')
 	}
 
 	if (rawAudio.audioChannels[0].length == 0) {
 		return { denoisedRawAudio: cloneRawAudio(rawAudio), frameVadProbabilities: [] }
 	}
 
-	logger.start("Get RNNoise WASM instance")
+	logger.start('Get RNNoise WASM instance')
 	const m = await getRnnoiseInstance()
 
-	logger.start("Process with RNNoise")
+	logger.start('Process with RNNoise')
 	const wasmMemory = new WasmMemoryManager(m)
 
 	const stateSize = m._rnnoise_get_size()

@@ -6,11 +6,12 @@ import { Timeline } from '../utilities/Timeline.js'
 
 export async function recognize(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw) {
 	const logger = new Logger()
-	logger.start("Request recognition from Azure Cognitive Services")
+
+	logger.start('Request recognition from Azure Cognitive Services')
 
 	const result = await requestRecognition(rawAudio, subscriptionKey, serviceRegion, languageCode)
 
-	logger.start("Process result")
+	logger.start('Process result')
 
 	const transcript = result.text
 
@@ -25,7 +26,7 @@ export async function recognize(rawAudio: RawAudio, subscriptionKey: string, ser
 		const endTime = (wordEntry.Offset + wordEntry.Duration) / 10000000
 
 		timeline.push({
-			type: "word",
+			type: 'word',
 			text,
 			startTime,
 			endTime
@@ -38,7 +39,6 @@ export async function recognize(rawAudio: RawAudio, subscriptionKey: string, ser
 }
 
 async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw) {
-	//const encodedAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: "wav", sampleRate: 16000, sampleFormat: "s16", channelCount: 1 });
 	const encodedAudio = encodeWaveBuffer(rawAudio)
 
 	return new Promise<SpeechSDK.SpeechRecognitionResult>((resolve, reject) => {
@@ -65,11 +65,13 @@ async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, s
 		recognizer.recognizeOnceAsync(
 			(result) => {
 				recognizer.close()
+
 				resolve(result)
 			},
 
 			(error) => {
 				recognizer.close()
+				
 				reject(error)
 			})
 	})
