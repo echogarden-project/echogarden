@@ -1,6 +1,7 @@
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
-import { SampleFormat, encodeWave, decodeWave, BitDepth } from "../codecs/WaveCodec.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { SampleFormat, encodeWave, decodeWave, BitDepth } from '../codecs/WaveCodec.js'
+import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
+import { Timeline } from '../utilities/Timeline.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,6 +32,10 @@ export function trimAudioStart(audioSamples: Float32Array, targetStartSilentSamp
 }
 
 export function trimAudioEnd(audioSamples: Float32Array, targetEndSilentSampleCount = 0, amplitudeThresholdDecibels = defaultSilenceThresholdDecibels) {
+	if (audioSamples.length === 0) {
+		return new Float32Array(0)
+	}
+
 	const silentSampleCount = getEndingSilentSampleCount(audioSamples, amplitudeThresholdDecibels)
 
 	const trimmedAudio = audioSamples.subarray(0, audioSamples.length - silentSampleCount)
@@ -76,15 +81,19 @@ export function getEndingSilentSampleCount(audioSamples: Float32Array, amplitude
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Gain, normalization, mixing, and channel downmixing
 ////////////////////////////////////////////////////////////////////////////////////////////////
-export function downmixToMonoAndNormalize(rawAudio: RawAudio, targetPeakDb = -3) {
-	return normalizeAudioLevel(downmixToMono(rawAudio), targetPeakDb)
+export function downmixToMonoAndNormalize(rawAudio: RawAudio, targetPeakDecibels = -3) {
+	return normalizeAudioLevel(downmixToMono(rawAudio), targetPeakDecibels)
 }
 
-export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDb = -3, maxIncreaseDb = 30): RawAudio {
+export function attenuateIfClipping(rawAudio: RawAudio) {
+	return normalizeAudioLevel(rawAudio, -0.1, 0)
+}
+
+export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDecibels = -3, maxGainIncreaseDecibels = 30): RawAudio {
 	//rawAudio = correctDCBias(rawAudio)
 
-	const targetPeakAmplitude = decibelsToGainFactor(targetPeakDb)
-	const maxGainFactor = decibelsToGainFactor(maxIncreaseDb)
+	const targetPeakAmplitude = decibelsToGainFactor(targetPeakDecibels)
+	const maxGainFactor = decibelsToGainFactor(maxGainIncreaseDecibels)
 
 	const peakAmplitude = getAudioPeakAmplitude(rawAudio.audioChannels)
 
@@ -173,11 +182,11 @@ export function getAudioPeakAmplitude(audioChannels: Float32Array[]) {
 
 export function mixAudio(rawAudio1: RawAudio, rawAudio2: RawAudio) {
 	if (rawAudio1.audioChannels.length != rawAudio2.audioChannels.length) {
-		throw new Error("Can't mix audio of unequal channel counts")
+		throw new Error(`Can't mix audio of unequal channel counts`)
 	}
 
 	if (rawAudio1.sampleRate != rawAudio2.sampleRate) {
-		throw new Error("Can't mix audio of different sample rates")
+		throw new Error(`Can't mix audio of different sample rates`)
 	}
 
 	const mixedAudioChannels: Float32Array[] = []
@@ -244,6 +253,40 @@ export function concatAudioSegments(audioSegments: Float32Array[][]) {
 	}
 
 	return outAudioChannels
+}
+
+export function cropToTimeline(rawAudio: RawAudio, timeline: Timeline) {
+	const sampleRate = rawAudio.sampleRate
+	const channelCount = rawAudio.audioChannels.length
+	const sampleCount = rawAudio.audioChannels[0].length
+
+	const audioSegments: Float32Array[][] = []
+
+	for (let i = 0; i < timeline.length; i++) {
+		const entry = timeline[i]
+		const startTime = entry.startTime
+		const endTime = entry.endTime
+
+		const startSampleOffset = Math.max(Math.floor(startTime * sampleRate), 0)
+		const endSampleOffset = Math.min(Math.floor(endTime * sampleRate), sampleCount)
+
+		const segment: Float32Array[] = []
+
+		for (let c = 0; c < channelCount; c++) {
+			segment.push(rawAudio.audioChannels[c].subarray(startSampleOffset, endSampleOffset))
+		}
+
+		audioSegments.push(segment)
+	}
+
+	if (audioSegments.length > 0) {
+		const croppedAudioChannels =  concatAudioSegments(audioSegments)
+		const croppedRawAudio: RawAudio = { audioChannels: croppedAudioChannels, sampleRate: rawAudio.sampleRate }
+
+		return croppedRawAudio
+	} else {
+		return getEmptyRawAudio(channelCount, sampleRate)
+	}
 }
 
 export function fadeAudioInOut(rawAudio: RawAudio, fadeTime: number): RawAudio {
@@ -326,14 +369,19 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 			inputAsRawAudio = downmixToMono(inputAsRawAudio)
 		}
 
-		if (outChannelCount != null && outChannelCount >= 2 && outChannelCount != inputAudioChannelCount) {
-			throw new Error(`Can't convert ${inputAudioChannelCount} channels to ${outChannelCount} channels. Channel conversion of raw audio currently only supports downmixing to mono.`)
+		if (outChannelCount == 2 && inputAudioChannelCount == 1) {
+			inputAsRawAudio = cloneRawAudio(inputAsRawAudio)
+			inputAsRawAudio.audioChannels.push(inputAsRawAudio.audioChannels[0].slice())
+		}
+
+		if (outChannelCount != null && outChannelCount > 2 && outChannelCount != inputAudioChannelCount) {
+			throw new Error(`Can't convert ${inputAudioChannelCount} channels to ${outChannelCount} channels. Channel conversion of raw audio currently only supports mono and stereo inputs.`)
 		}
 
 		if (outSampleRate && inputAsRawAudio.sampleRate != outSampleRate) {
 			inputAsRawAudio = await resampleAudioSpeex(inputAsRawAudio, outSampleRate)
 		}
-	} else if (typeof input == "string" || input instanceof Uint8Array) {
+	} else if (typeof input == 'string' || input instanceof Uint8Array) {
 		if (input instanceof Uint8Array && !Buffer.isBuffer(input)) {
 			input = Buffer.from(input)
 		}
@@ -342,10 +390,26 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 
 		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(inputAsStringOrBuffer, outSampleRate, outChannelCount)
 	} else {
-		throw new Error("Received an invalid input audio data type.")
+		throw new Error('Received an invalid input audio data type.')
 	}
 
 	return inputAsRawAudio
+}
+
+export function subtractAudio(audio1: RawAudio, audio2: RawAudio) {
+	const sampleCount = audio1.audioChannels[0].length
+
+	const subtractedAudioChannels = [new Float32Array(sampleCount), new Float32Array(sampleCount)]
+
+	for (let i = 0; i < sampleCount; i++) {
+		for (let channelIndex = 0; channelIndex < 2; channelIndex++) {
+			subtractedAudioChannels[channelIndex][i] = audio1.audioChannels[channelIndex][i] - audio2.audioChannels[channelIndex][i]
+		}
+	}
+
+	const subtractedRawAudio: RawAudio = { audioChannels: subtractedAudioChannels, sampleRate: audio1.sampleRate }
+
+	return subtractedRawAudio
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

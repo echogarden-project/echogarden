@@ -1,22 +1,24 @@
-import { extendDeep } from "../utilities/ObjectUtilities.js"
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from "../utilities/Utilities.js"
-import { AudioSourceParam, RawAudio, ensureRawAudio, } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
+import { logToStderr } from '../utilities/Utilities.js'
+import { AudioSourceParam, RawAudio, concatAudioSegments, cropToTimeline, ensureRawAudio, normalizeAudioLevel, } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
 
-import { Timeline } from "../utilities/Timeline.js"
-import path from "path"
-import { loadPackage } from "../utilities/PackageManager.js"
-import { EngineMetadata } from "./Common.js"
-import chalk from "chalk"
+import { Timeline } from '../utilities/Timeline.js'
+import path from 'path'
+import { loadPackage } from '../utilities/PackageManager.js'
+import { EngineMetadata } from './Common.js'
+import chalk from 'chalk'
+import { type AdaptiveGateVADOptions } from '../voice-activity-detection/AdaptiveGateVAD.js'
 
 const log = logToStderr
 
 export async function detectVoiceActivity(input: AudioSourceParam, options: VADOptions): Promise<VADResult> {
 	const logger = new Logger()
+
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start("Prepare for voice activity detection")
+	logger.start('Prepare for voice activity detection')
 
 	const inputRawAudio = await ensureRawAudio(input)
 
@@ -26,46 +28,65 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 
 	logger.start(`Detect voice activity with ${options.engine}`)
 
-	let frameDurationSeconds: number
-	let frameProbabilities: number[]
+	const activityThreshold = options.activityThreshold!
+	
+	let verboseTimeline: Timeline
 
 	switch (options.engine) {
-		case "webrtc": {
-			const WebRtcVAD = await import("../voice-activity-detection/WebRtcVAD.js")
+		case 'webrtc': {
+			const WebRtcVAD = await import('../voice-activity-detection/WebRtcVAD.js')
 
 			const webrtcOptions = options.webrtc!
 
-			frameProbabilities = await WebRtcVAD.detectVoiceActivity(sourceRawAudio, webrtcOptions.frameDuration!)
-			frameDurationSeconds = webrtcOptions.frameDuration! / 1000
+			const frameProbabilities = await WebRtcVAD.detectVoiceActivity(sourceRawAudio, webrtcOptions.frameDuration!)
+			const frameDurationSeconds = webrtcOptions.frameDuration! / 1000
+
+			verboseTimeline = frameProbabilitiesToTimeline(frameProbabilities, frameDurationSeconds, activityThreshold)
 
 			break
 		}
 
-		case "silero": {
-			const SileroVAD = await import("../voice-activity-detection/SileroVAD.js")
+		case 'silero': {
+			const SileroVAD = await import('../voice-activity-detection/SileroVAD.js')
 
 			const sileroOptions = options.silero!
 
-			const modelDir = await loadPackage("silero-vad")
+			const modelDir = await loadPackage('silero-vad')
 
-			const modelPath = path.join(modelDir, "silero-vad.onnx")
+			const modelPath = path.join(modelDir, 'silero-vad.onnx')
 			const frameDuration = sileroOptions.frameDuration!
 
-			frameProbabilities = await SileroVAD.detectVoiceActivity(sourceRawAudio, modelPath, frameDuration)
-			frameDurationSeconds = sileroOptions.frameDuration! / 1000
+			const frameProbabilities = await SileroVAD.detectVoiceActivity(sourceRawAudio, modelPath, frameDuration)
+			const frameDurationSeconds = sileroOptions.frameDuration! / 1000
+
+			verboseTimeline = frameProbabilitiesToTimeline(frameProbabilities, frameDurationSeconds, activityThreshold)
 
 			break
 		}
 
-		case "rnnoise": {
-			const RNNoise = await import("../denoising/RNNoise.js")
+		case 'rnnoise': {
+			const RNNoise = await import('../denoising/RNNoise.js')
+
+			const audio48k = await ensureRawAudio(sourceRawAudio, 48000, 1)
 
 			const rnnoiseOptions = options.rnnoise!
 
-			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(sourceRawAudio)
+			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audio48k)
 
-			frameDurationSeconds = 0.01
-			frameProbabilities = frameVadProbabilities
+			const frameDurationSeconds = 0.01
+			const frameProbabilities = frameVadProbabilities
+
+			verboseTimeline = frameProbabilitiesToTimeline(frameProbabilities, frameDurationSeconds, activityThreshold)
+
+			break
+		}
+
+		case 'adaptive-gate': {
+			const AdaptiveGateVAD = await import('../voice-activity-detection/AdaptiveGateVAD.js')
+
+			const adaptiveGateOptions = options.adaptiveGate!
+
+			verboseTimeline = await AdaptiveGateVAD.detectVoiceActivity(sourceRawAudio, adaptiveGateOptions)
 
 			break
 		}
@@ -75,6 +96,18 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 		}
 	}
 
+	const timeline = verboseTimeline.filter(entry => entry.text === 'active')
+
+	const croppedRawAudio = cropToTimeline(inputRawAudio, timeline)
+
+	logger.end()
+	logger.log('')
+	logger.logDuration(`Total voice activity detection time`, startTimestamp, chalk.magentaBright)
+
+	return { timeline, verboseTimeline, inputRawAudio, croppedRawAudio }
+}
+
+function frameProbabilitiesToTimeline(frameProbabilities: number[], frameDurationSeconds: number, activityThreshold: number) {
 	const timeline: Timeline = []
 
 	for (let i = 0; i < frameProbabilities.length; i++) {
@@ -83,14 +116,16 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 		const startTime = i * frameDurationSeconds
 		const endTime = (i + 1) * frameDurationSeconds
 
-		if (frameProbability >= options.activityThreshold!) {
-			if (timeline.length == 0 || timeline[timeline.length - 1].text == "nonspeech") {
-				timeline.push({ type: "segment", text: "speech", startTime, endTime })
+		if (frameProbability >= activityThreshold) {
+			if (timeline.length == 0 || timeline[timeline.length - 1].text == 'inactive') {
+				timeline.push({ type: 'segment', text: 'active', startTime, endTime })
+
 				continue
 			}
 		} else {
-			if (timeline.length == 0 || timeline[timeline.length - 1].text == "speech") {
-				timeline.push({ type: "segment", text: "nonspeech", startTime, endTime })
+			if (timeline.length == 0 || timeline[timeline.length - 1].text == 'active') {
+				timeline.push({ type: 'segment', text: 'inactive', startTime, endTime })
+
 				continue
 			}
 		}
@@ -98,19 +133,50 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 		timeline[timeline.length - 1].endTime = endTime
 	}
 
-	logger.end()
-	logger.log('')
-	logger.logDuration(`Total voice activity detection time`, startTimestamp, chalk.magentaBright)
+	return timeline
+}
 
-	return { timeline, inputRawAudio }
+export function convertCroppedToUncroppedTimeline(timeline: Timeline, uncropTimeline: Timeline) {
+	for (const entry of timeline) {
+		entry.startTime = mapTimestampUsingUncropTimeline(entry.startTime, uncropTimeline)
+		entry.endTime = mapTimestampUsingUncropTimeline(entry.endTime, uncropTimeline)
+
+		if (entry.timeline) {
+			convertCroppedToUncroppedTimeline(entry.timeline, uncropTimeline)
+		}
+	}
+}
+
+export function mapTimestampUsingUncropTimeline(timeInCroppedAudio: number, uncropTimeline: Timeline) {
+	let offsetInCroppedAudio = 0
+
+	for (let i = 0; i < uncropTimeline.length; i++) {
+		const entry = uncropTimeline[i]
+
+		const entryDuration = entry.endTime - entry.startTime
+
+		const endOffset = offsetInCroppedAudio + entryDuration
+
+		if ((i === uncropTimeline.length - 1) ||
+			(timeInCroppedAudio >= offsetInCroppedAudio && timeInCroppedAudio < endOffset)) {
+			return entry.startTime + (timeInCroppedAudio - offsetInCroppedAudio)
+		}
+
+		offsetInCroppedAudio += entryDuration
+	}
+
+	throw new Error(`Should not be reached`)
 }
 
 export interface VADResult {
 	timeline: Timeline
+	verboseTimeline: Timeline
+
 	inputRawAudio: RawAudio
+	croppedRawAudio: RawAudio
 }
 
-export type VADEngine = "webrtc" | "silero" | "rnnoise"
+export type VADEngine = 'webrtc' | 'silero' | 'rnnoise' | 'adaptive-gate'
 
 export interface VADOptions {
 	engine?: VADEngine
@@ -123,16 +189,17 @@ export interface VADOptions {
 	}
 
 	silero?: {
-		modelPath?: string
 		frameDuration?: 30 | 60 | 90
 	}
 
 	rnnoise?: {
 	}
+
+	adaptiveGate?: AdaptiveGateVADOptions
 }
 
 export const defaultVADOptions: VADOptions = {
-	engine: "webrtc",
+	engine: 'silero',
 
 	activityThreshold: 0.5,
 
@@ -142,11 +209,13 @@ export const defaultVADOptions: VADOptions = {
 	},
 
 	silero: {
-		modelPath: undefined,
 		frameDuration: 90,
 	},
 
 	rnnoise: {
+	},
+
+	adaptiveGate: {
 	}
 }
 
@@ -166,7 +235,7 @@ export const vadEngines: EngineMetadata[] = [
 	{
 		id: 'rnnoise',
 		name: 'RNNoise',
-		description: "Uses RNNoise's speech probabilities as VAD metrics.",
+		description: `Uses RNNoise's internal speech probabilities as VAD metrics.`,
 		type: 'local'
 	}
 ]
