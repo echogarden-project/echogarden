@@ -16,7 +16,7 @@ Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
 
-By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 16.2GB (11.4GB compressed).
+By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 50GB (may not be up-to-date).
 
 The packages are currently hosted and downloaded from a dedicated [Hugging Face repository](https://huggingface.co/echogarden/echogarden-packages).
 
@@ -24,14 +24,14 @@ The packages are currently hosted and downloaded from a dedicated [Hugging Face 
 
 The base installed (uncompressed) size, including dependencies, is around 270MB. This is without any models or voices, which are downloaded as needed.
 
-Currently, the biggest contributors to the size are:
+Currently, the largest contributors to the size are:
 
 * `onnxruntime-node` (NAPI): 92MB
 * `kuromoji` (JavaScript) 40MB
 * `flite-wasi` (WASI): 20MB
 * `espeak-ng-emscripten` (WASM): 18MB
 
-`onnxruntime-node` is big because it bundles pre-compiled binaries for multiple platforms. `kuromoji` is large because of its dictionary files and some unessential test code it bundles. The other three packages include large WASM binaries.
+`onnxruntime-node` is large because it bundles pre-compiled binaries for multiple platforms. `kuromoji` is large because of its dictionary files and some unessential test code it bundles. The other three packages include large WASM binaries.
 
 So, yes, in the future it may be possible to reduce the core installed size by dynamically installing some of these dependencies, or using modified, "slimmed-down" versions of some packages.
 

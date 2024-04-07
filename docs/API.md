@@ -209,9 +209,9 @@ Detects voice activity in audio (non real-time).
 
 ## Speech denoising
 
-Tries to reduce background noise in spoken audio.
-
 ### `denoise(input, options)`
+
+Tries to reduce background noise in spoken audio.
 
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Denoising options object
@@ -220,6 +220,24 @@ Tries to reduce background noise in spoken audio.
 ```ts
 {
 	denoisedAudio: RawAudio
+}
+```
+
+## Source separation
+
+### `isolate(input, options)`
+
+Attempts to isolate an individual [audio stem](https://en.wikipedia.org/wiki/Stem_(audio)), like human voice, or one or more musical instruments (depending on model training), from the given waveform.
+
+* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: Source separation options object
+
+#### Returns (via promise):
+```ts
+{
+	inputRawAudio: RawAudio
+	isolatedRawAudio: RawAudio
+	backgroundRawAudio: RawAudio
 }
 ```
 
@@ -274,5 +292,5 @@ The value associated with the given key.
 
 ## TODO
 
-Expose more methods that may be useful for developers, like phonemization, etc.
-
+* Expose more methods that may be useful for developers, like phonemization, etc.
+* Expose audio playback used in CLI, possibly with timeline synchronization support.

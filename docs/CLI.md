@@ -14,7 +14,7 @@ Each command can accept one or more options, in the form `--[optionName]=[value]
 * While the program is running, you can press `esc` to exit immediately
 * When audio is playing, you can press `enter` to skip it
 
-## Text to speech
+## Text-to-speech
 
 **Task**: given a text file, synthesize spoken audio for it.
 
@@ -58,7 +58,7 @@ Synthesize a Wikipedia article, in any of its language editions:
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
 
-## Speech to text
+## Speech-to-text
 
 **Task**: given an audio recording containing speech, find a textual transcription that best matches it.
 
@@ -72,7 +72,7 @@ This would transcribe the audio file `speech.mp3` and store the resulting transc
 echogarden transcribe speech.mp3 result.txt result.srt result.json
 ```
 
-## Speech to transcript alignment
+## Speech-to-transcript alignment
 
 **Task**: given an audio file and its transcript, try to approximate the timing of the start and end of each spoken word (and its subparts).
 
@@ -135,7 +135,7 @@ echogarden transcribe speech.mp3 --no-play
 
 ## File overwriting
 
-By default, the CLI doesn't overwrite existing files. If an output file `out.mp3` already exists, it will save it as `out (1).mp3`:
+By default, the CLI doesn't overwrite existing files. If an output file `out.mp3` already exists, it will save it as `out_001.mp3`.
 
 To have existing files be overwritten, you can pass the `--overwrite` option.
 
@@ -237,7 +237,7 @@ echogarden detect-voice-activity speech.mp3 timeline.json
 
 ### Speech denoising
 
-**Task**: try to reduce the amount of background noise in a spoken recording.
+**Task**: attempt to reduce the amount of background noise in a spoken recording.
 
 This would apply denoising and play the denoised audio:
 ```bash
@@ -247,6 +247,26 @@ echogarden denoise speech.mp3
 This would apply denoising, and save the denoised audio to a file:
 ```bash
 echogarden denoise speech.mp3 denoised-speech.mp3
+```
+
+### Source separation
+
+**Task**: try to isolate a vocal track (or other type of track, depending on model used), from the audio.
+
+This would apply source separation and play the isolated audio:
+```bash
+echogarden isolate voice-with-music.mp3
+```
+
+This would apply source separation, and save both the isolated and background audio:
+```bash
+echogarden isolate voice-with-music.mp3 voice-isolated.mp3
+```
+
+Written files would be:
+```
+voice-isolated.mp3
+voice-isolated.background.mp3
 ```
 
 ## Information and lists

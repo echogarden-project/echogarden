@@ -1,6 +1,7 @@
 # Developer's task list
 
 ## Bugs
+* Using the `|` separator breaks synthesis on Polish eSpeak TTS, since the symbol is pronounced directly on that language. Currently, separators are only added when aligning using `dtw-ra`.
 
 ### Phoneme processing
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
@@ -43,23 +44,25 @@
 
 ### CLI
 * Show names of files written do disk. This is useful for cases where a file is auto-renamed to allow overwrite.
-* Consider if auto-renamed files can use a suffix other than ` (1)`.
 * Restrict input media file extensions to ensure that invalid files are not passed to FFMpeg.
 * Mode to print IPA words when speaking
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
-* Option to set audio output device for playback
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
 * Make enum options case-insensitive if possible
-* Add phone playback support
 * More fine-grained intermediate progress report for operations
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
 * Generate JSON configuration file schema
 * Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
-* Option to set playback volume.
+
+### CLI / playback
+* Option to set audio output device for playback
+* Add phone playback support
+* Option to set playback volume
+* Maybe find a way not to pre-normalize if the audio is silent (to prevent a 30dB increase of possible noise)
 
 ### CLI / `speak`
 * Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
@@ -78,27 +81,26 @@
 * Support filters
 
 ### CLI / New commands
-* `speak-youtube`: To speak the subtitles of a YouTube video
 * `play-with-subtitles`: Preview subtitles in terminal
 * `play-with-timeline`: Preview timeline in terminal
 * `subtitles-to-text`, `subtitles-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
-* `crop-to-timeline`, `split-by-timeline`
 * `text-to-ipa`, `arpabet-to-ipa`, `ipa-to-arpabet`
 * `phonemize-text`
 * `normalize-text`
-* `remove-nonspeech`
+* `transcribe-youtube`: Transcribe the audio in a YouTube video (requires fetching the audio somehow - which can't be done using the normal YouTube API)
+* `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
 
 ### API
 * Option to control logging verbosity
-* Retry on error when connecting to cloud providers, including WebSocket disconnection with `microsoft-edge` (already supported by `gaxios`, not sure about `ws` - decide on default setting)
 * Accept full language names as language identifiers
-* Validate timelines to ensure timestamps are always increasing, no -1 timestamps or timestamps over the time of the audio, no sentences without words, etc. and correct if needed
-* See if it's possible to detect and include Emoji characters in timelines.
+* Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
+* See if it's possible to detect and include / remove Emoji characters in timelines
 * Add support for phrases in timelines
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
 * Better error message when package is not found remotely. Currently it just gives a `404 not found` without any other information.
+* Retry on network failure
 
 ### Speech language detection
 
@@ -118,7 +120,7 @@
 * Parse VTT's language
 
 ### Synthesis
-* Option to disable alignment (only for some engines). Alternative: use a low setting that is very fast to compute
+* Option to disable alignment (only for some engines). Alternative: use a low granularity setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" as well
@@ -156,9 +158,7 @@
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
 
 ### Recognition
-* Add confidence to each recognized word on any engine that supports it
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
-* Look for good split points using VAD before performing recognition
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 
 ### Recognition / Whisper
@@ -167,14 +167,13 @@
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be use to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
+* Use compression ratios on the decoded tokens of individual segments and discard if too much repetition detected
 * Way to specify model size only, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
 
 ### Alignment
-* Investigate a reliable way to cut silent or non-speech sections to improve results.
 
 ### Postprocessing
-* When `normalize` is set to false, should obvious clipping still be prevented?
 
 ## Maintenance and cleanup
 
@@ -183,7 +182,7 @@
 * See if the installation of `winax` can be automated and only initiate if it is in a Windows environment
 * Ensure that all modules have no internal state other than caching
 * Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, an which cannot?
-* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag to all of them and rebuild them. Support for node.js modules was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915), so maybe wait a little bit until it's' stable.
+* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag and rebuild them. Support for node.js modules was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915).
 * Remove built-in voices from `flite` to reduce size?
 * Slim down `kuromoji` package to the reduce base install size
 
@@ -240,31 +239,31 @@
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment
-* Implement alignment with speech translation assistance, which would enable multilingual subtitle replacement for translated subtitles
+* Implement alignment with speech-to-text translation assistance, which would enable multilingual subtitle replacement for translated subtitles
 * Method to align audio file to audio file
 * Make `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps
+
+### Source separation
+* Option to customize overlap
+* Add more MDX-NET models
 
 ## Documentation
 
 ## Possible new engines or platforms
 
-* OpenAI Whisper cloud service (`large-v3` model is available, at a price).
-* OpenAI Text-to-Speech cloud service.
 * [PlayHT](https://play.ht/) speech synthesis cloud service
-* [Assembly AI cloud service](https://www.assemblyai.com/)
-* [Deepgram cloud service](https://deepgram.com/)
-* `whisper.cpp` CLI and WASM support
+* [Deepgram](https://deepgram.com/) cloud text-to-speech API
+* [Assembly AI](https://www.assemblyai.com/) cloud speech recognition API
 * Coqui STT server connection
+* [MarbleNet VAD](https://github.com/NVIDIA/NeMo/blob/main/tutorials/asr/Online_Offline_Microphone_VAD_Demo.ipynb), included of the NVIDIA NeMo framework, can be exported to ONNX
+* Silero text enhancement engine can be ported to ONNX
 * See what can be done on supporting WinRT speech: in particular `windows.media.speechsynthesis` and `windows.media.speechrecognition` support, possibly using NodeRT or some other method.
 * Figure out how to support `julius` speech recognition via WASM.
 * Any way to support RHVoice?
-* Silero text enhancement engine can be ported to ONNX
-* Investigate Raspberry Pi support. In particular, see if `onnxruntime-node` can be built for this environment
 
 ## Maybe?
 
-* PDF support
 * Using a machine translation model to provide speech translation to languages other than English?
 * Is it possible to get sentence boundaries without punctuation using NLP techniques like part of speech tagging?
 
@@ -275,10 +274,12 @@
 
 ## Other ideas
 
+* Support alignment of EPUB 3 eBooks with corresponding audiobook
+* Voice cloning
+* Speech to speech voice conversion
+* Speech-to-speech translation (need to find a good model)
 * HTML generator, that includes text and audio, with playback and word highlighting
 * Video generator
 * Desktop app that uses the tool to transcribe the PC audio output
 * Special method to use time stretching to project between different utterances of the same text
 * Is it possible to combine the Silero speech recognizer and a language model and try to perform Viterbi decoding to find alignments?
-* Voice replacement
-* Speech-to-speech translation (need to find a good model)

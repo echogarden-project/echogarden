@@ -1,9 +1,10 @@
 
 # Supported engines
 
-## Text to speech
+## Text-to-speech
 
 **Offline**:
+
 * [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently there are 117 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxemburgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/).
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a legacy diphone-based synthesis engine. Supports English (US, UK), Spanish, Italian, French, and German.
 * [Flite](https://github.com/festvox/flite) (`flite`): a legacy diphone-based synthesis engine. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi.
@@ -16,11 +17,12 @@
 
 * [Microsoft Speech Platform](https://www.microsoft.com/en-us/download/details.aspx?id=27225) (`msspeech`): Microsoft Server Speech API. Requires [installing a runtime (2.6MB)](https://www.microsoft.com/en-us/download/details.aspx?id=27225). Supports 28 dialects, which can be individually downloaded via [freely available installers](https://www.microsoft.com/en-us/download/details.aspx?id=27224), or, for convenience, bundled as [a single 358MB zip file](https://drive.google.com/u/0/uc?id=1uQdFNxLzUxpaEwVVKhMawys8cIh3F21T&export=download). Has voices for English (US, UK, AU, CA), Spanish (ES, MX), Portuguese (BR, PT), German, French (FR, CA), Italian, Norwegian, Dutch, Russian, Swedish, Danish, Catalan, Finnish, Japanese, Korean and Chinese (ZH, HK, TW). All voices are female.
 
-_Note_: both these engines require manually installing the [`winax` npm package](https://www.npmjs.com/package/winax) by running `npm install winax -g`.
+**Note**: both these engines require manually installing the [`winax` npm package](https://www.npmjs.com/package/winax) by running `npm install winax -g`.
 
-`winax` is a native module which requires the Node.js Windows build tools to successfully install. If you have issues installing this package, please ensure that you've checked the "install necessary tools" checkbox during the installation of node.js.
+`winax` is a native module which requires the Node.js Windows build tools to successfully install. If you have issues installing this package, please ensure that you've checked the "install necessary tools" checkbox during the installation of Node.js.
 
-**Client for remote or self-hosted servers**:
+**Client for self-hosted or remote servers**:
+
 * [Coqui TTS](https://github.com/coqui-ai/TTS) server (`coqui-server`)
 
 **Cloud services**:
@@ -30,20 +32,22 @@ These are commercial services that require a subscription and an API key to use:
 * [Google Cloud](https://cloud.google.com/text-to-speech) (`google-cloud`)
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/cognitive-services/text-to-speech/) (`microsoft-azure`)
 * [Amazon Polly](https://aws.amazon.com/polly/) (`amazon-polly`)
+* [OpenAI Cloud](https://platform.openai.com/) (`openai-cloud`)
 * [Elevenlabs](https://elevenlabs.io/) (`elevenlabs`)
 
 **Cloud services (unofficial)**:
 
-These cloud-based engines connect to public-facing cloud APIs that are not officially publicized by their operators. They are included for educational purposes only, and may be removed in the future:
+These cloud-based engines connect to public cloud APIs that are not officially publicized by their operators. They are included for educational purposes only, and may be removed in the future:
 
 * Google Translate (`google-translate`): used by the [Google Translate web UI](https://translate.google.com/) to speak written text in any one of its supported languages. Offers a single voice for each language (usually female).
 * Microsoft Edge (`microsoft-edge`): subset of the Azure Cognitive Services cloud TTS API used by the Microsoft Edge browser as part of its support for the [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) and its [Read Aloud](https://www.microsoft.com/en-us/edge/features/read-aloud?form=MT00D8) feature. Using this engine requires a special token, which should be passed via the `microsoftEdge.trustedClientToken` option.
 * Streamlabs Polly (`streamlabs-polly`): a public REST API by Streamlabs, primarily intended for generating speech for TTS donations. It includes a few English (US, UK, AU, IN) voices, which are similar to some of the non-neural (Ivona-based) voices offered by Amazon Polly.
 
-## Speech to text
+## Speech-to-text
 
 **Offline**:
-* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high accuracy transformer-based architecture. Supports 99 languages. There are several models of different sizes, some are multilingual, and some are English only (`.en`): `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large`, `large-v1` and `large-v2`. _Note_: large models are not currently auto-downloaded as Echogarden packages, but may become available in the future.
+* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high accuracy transformer-based speech recognition architecture. Supports 99 languages. There are several models of different sizes, some are multilingual, and some are English only (`.en`): `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large`, `large-v1` and `large-v2`, `large-v3`. **Note**: large models are not currently supported by `onnxruntime-node` due to model size restrictions.
+* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): a port of the Whisper architecture to C++ by Georgi Gerganov. Supports all Whisper models, including several quantized ones (see full list in the options page). Has various different builds, including CUDA and OpenCL builds for GPU support.
 * [Vosk](https://github.com/alphacep/vosk-api) (`vosk`): models available for 25+ languages. _Note_: the Vosk package is not included in the default installation, but you can add support for it using `npm install @echogarden/vosk -g`. Then, you'll need to manually [download a model](https://alphacephei.com/vosk/models) and specify its directory path via the `vosk.modelPath` option.
 * [Silero](https://github.com/snakers4/silero-models) (`silero`): models available for English, Spanish, German and Ukrainian. For [non-commercial use only](https://github.com/snakers4/silero-models/blob/master/LICENSE).
 
@@ -54,24 +58,27 @@ These are commercial services that require a subscription and an API key to use:
 * [Google Cloud](https://cloud.google.com/speech-to-text) (`google-cloud`)
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/cognitive-services/speech-to-text/) (`microsoft-azure`)
 * [Amazon Transcribe](https://aws.amazon.com/transcribe/) (`amazon-transcribe`)
+* [OpenAI Cloud](https://platform.openai.com/) (`openai-cloud`)
 
-## Speech to transcript alignment
+## Speech-to-transcript alignment
 
 These engines' goal is to match (or "align") a given spoken recording with a given transcript as closely as possible. They will annotate each word in the transcript with approximate start and end timestamps:
 
-* Dynamic Time Warping (`dtw`): transcript is first synthesized using the eSpeak engine, then [DTW](https://en.wikipedia.org/wiki/Dynamic_time_warping) is applied to find the best mapping between the synthesized audio and the original audio.
-* Dynamic Time Warping with Recognition Assist (`dtw-ra`): recognition is applied to the audio (any recognition engine can be used), then both the ground-truth transcript and the recognized transcript are synthesized using eSpeak. Then, the best mapping is found between the two synthesized audio sequences, and the result is mapped back to the original audio using the timing information produced by the recognizer.
-* Whisper-based alignment (`whisper`): transcript is tokenized and decoded along with the audio using the Whisper model, then timestamps are extracted from the internal state of the model (_note_: currently, only supports audio inputs that are 30 seconds or less).
+* Dynamic Time Warping (`dtw`): transcript is first synthesized using the eSpeak engine, then the [DTW](https://en.wikipedia.org/wiki/Dynamic_time_warping) alignment algorithm is applied to find the best mapping between the synthesized and original audio frames.
+* Dynamic Time Warping with Recognition Assist (`dtw-ra`): recognition is applied to the audio (any recognition engine can be used), then both the ground-truth transcript and the recognized transcript are synthesized using eSpeak. Then, the best mapping is found between the two synthesized waveforms, and the result is mapped back to the original audio using the timing information produced by the recognizer.
+* Whisper-based alignment (`whisper`): transcript is tokenized and decoded along with the audio using the Whisper model, then timestamps are extracted from the internal state of the model. **Note**: currently, only supports audio inputs that are 30 seconds or less. Some words or special characters may fail to tokenize due to limitations of the tokenizer used by Whisper.
 
-## Speech translation
+## Speech-to-text translation
 
-* [Whisper](https://github.com/openai/whisper) (`whisper`): the Whisper model can transcribe speech in any one of its supported languages and output a transcript directly translated to English. Other languages are not supported as targets.
+* [Whisper](https://github.com/openai/whisper) (`whisper`): the Whisper model can recognize speech in any one of its supported languages and output a transcript directly translated to English. Other languages are not supported as targets.
+* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): supports translation to English
+* [OpenAI Cloud](https://platform.openai.com/) (`openai-cloud`): OpenAI cloud service. Only translates to English.
 
 ## Language detection
 
 **Spoken language detection**:
 * [Silero Language Classifier](https://github.com/snakers4/silero-vad/wiki/Other-Models) (`silero`): a speech language classification model by Silero.
-* [Whisper](https://github.com/openai/whisper) (`whisper`): uses the language token produced by the `whisper` speech recognition model to generate a set of probabilities for the 99 languages it has been trained on (_note_: currently only uses the first 30 seconds of the audio).
+* [Whisper](https://github.com/openai/whisper) (`whisper`): uses the language token produced by the `whisper` speech recognition model to generate a set of probabilities for the 99 languages it has been trained on.
 
 **Text language detection**:
 * [TinyLD](https://www.npmjs.com/package/tinyld) (`tinyld`): a simple language detection library.
@@ -82,7 +89,12 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 * [WebRTC VAD](https://github.com/dpirch/libfvad) (`webrtc`): a voice activity detector. Originally from the Chromium browser source code.
 * [Silero VAD](https://github.com/snakers4/silero-vad) (`silero`): a voice activity detection model by Silero.
 * [RNNoise](https://github.com/xiph/rnnoise) (`rnnoise`): uses RNNoise's speech probabilities output for each audio frame as a VAD metric.
+* Adaptive Gate (`adaptive-gate`): uses a bandlimited adaptive gate to identify activity in the lower voice frequencies. Reliable, but will often pass non-vocal sounds if they are loud enough. Good for clean speech and acapella singing, where most non-vocal segments are quiet.
 
 ## Speech denoising
 
 * [RNNoise](https://github.com/xiph/rnnoise) (`rnnoise`): a noise suppression library based on a recurrent neural network.
+
+## Source separation
+
+* [MDX-NET](https://github.com/kuielab/mdx-net) (`mdx-net`): Deep learning source separation architecture by [KUIELAB (Korea University)](https://kuielab.github.io/).
