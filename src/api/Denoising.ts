@@ -1,12 +1,12 @@
-import { extendDeep } from "../utilities/ObjectUtilities.js"
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { AudioSourceParam, RawAudio, applyGainDecibels, ensureRawAudio, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
+import { AudioSourceParam, RawAudio, applyGainDecibels, ensureRawAudio, getAudioPeakDecibels, mixAudio, normalizeAudioLevel } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
 
-import { logToStderr } from "../utilities/Utilities.js"
-import { resampleAudioSpeex } from "../dsp/SpeexResampler.js"
-import { EngineMetadata } from "./Common.js"
-import chalk from "chalk"
+import { logToStderr } from '../utilities/Utilities.js'
+import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
+import { EngineMetadata } from './Common.js'
+import chalk from 'chalk'
 
 const log = logToStderr
 
@@ -14,7 +14,7 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const logger = new Logger()
 	const startTime = logger.getTimestamp()
 
-	logger.start("Prepare for denoising")
+	logger.start('Prepare for denoising')
 
 	options = extendDeep(defaultDenoisingOptions, options)
 
@@ -30,8 +30,8 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	let denoisedAudio: RawAudio
 
 	switch (options.method) {
-		case "rnnoise": {
-			const RNNoise = await import("../denoising/RNNoise.js")
+		case 'rnnoise': {
+			const RNNoise = await import('../denoising/RNNoise.js')
 			logger.end()
 
 			const denoisedAudioChannels: Float32Array[] = []
@@ -53,27 +53,27 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 		}
 	}
 
-	logger.start("Postprocess audio")
+	logger.start('Postprocess audio')
 
 	const shouldNormalize = options.postProcessing!.normalizeAudio!
-	const targetPeakDb = options.postProcessing!.targetPeakDb!
-	const maxIncreaseDb = options.postProcessing!.maxIncreaseDb!
-	const dryMixGainDb = options.postProcessing!.dryMixGainDb!
+	const targetPeakDecibels = options.postProcessing!.targetPeak!
+	const maxGainIncreaseDecibels = options.postProcessing!.maxGainIncrease!
+	const dryMixGainDecibels = options.postProcessing!.dryMixGain!
 
-	const preMixPeakDb = getAudioPeakDecibels(denoisedAudio.audioChannels)
-	denoisedAudio = mixAudio(denoisedAudio, applyGainDecibels(resampledRawAudio, dryMixGainDb))
-	const postMixPeakDb = getAudioPeakDecibels(denoisedAudio.audioChannels)
+	const preMixPeakDecibels = getAudioPeakDecibels(denoisedAudio.audioChannels)
+	denoisedAudio = mixAudio(denoisedAudio, applyGainDecibels(resampledRawAudio, dryMixGainDecibels))
+	const postMixPeakDecibels = getAudioPeakDecibels(denoisedAudio.audioChannels)
 
 	if (shouldNormalize) {
-		denoisedAudio = normalizeAudioLevel(denoisedAudio, targetPeakDb, maxIncreaseDb)
+		denoisedAudio = normalizeAudioLevel(denoisedAudio, targetPeakDecibels, maxGainIncreaseDecibels)
 	} else {
-		denoisedAudio = applyGainDecibels(denoisedAudio, preMixPeakDb - postMixPeakDb)
+		denoisedAudio = applyGainDecibels(denoisedAudio, preMixPeakDecibels - postMixPeakDecibels)
 	}
 
 	logger.end()
 
 	logger.log('')
-	logger.logDuration("Total denoising time", startTime, chalk.magentaBright)
+	logger.logDuration('Total denoising time', startTime, chalk.magentaBright)
 
 	return {
 		denoisedAudio,
@@ -86,27 +86,27 @@ export interface DenoisingResult {
 	inputRawAudio: RawAudio
 }
 
-export type DenoisingMethod = "rnnoise"
+export type DenoisingMethod = 'rnnoise'
 
 export interface DenoisingOptions {
 	method?: DenoisingMethod,
 	postProcessing?: {
 		normalizeAudio: boolean
-		targetPeakDb: number
-		maxIncreaseDb: number
+		targetPeak: number
+		maxGainIncrease: number
 
-		dryMixGainDb?: number
+		dryMixGain?: number
 	}
 }
 
 export const defaultDenoisingOptions: DenoisingOptions = {
-	method: "rnnoise",
+	method: 'rnnoise',
 
 	postProcessing: {
 		normalizeAudio: false,
-		targetPeakDb: -3,
-		maxIncreaseDb: 30,
-		dryMixGainDb: -20,
+		targetPeak: -3,
+		maxGainIncrease: 30,
+		dryMixGain: -20,
 	}
 }
 
