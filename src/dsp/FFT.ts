@@ -1,16 +1,21 @@
-import { RawAudio } from "../audio/AudioUtilities.js"
-import { concatFloat32Arrays } from "../utilities/Utilities.js"
-import { WasmMemoryManager } from "../utilities/WasmMemoryManager.js"
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { ComplexNumber, sumVector } from '../math/VectorMath.js'
+import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 let kissFFTInstance: any
 
-export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopLength: number, windowType: WindowType) {
+export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
 	if (fftOrder % 2 != 0 || windowSize % 2 != 0) {
-		throw new Error("FFT order and window size must multiples of 2")
+		throw new Error('FFT order and window size must multiples of 2')
 	}
 
 	if (windowSize > fftOrder) {
-		throw new Error("Window size must be lesser or equal to the FFT order")
+		throw new Error('Window size must be lesser or equal to the FFT size')
+	}
+
+	if (hopSize > windowSize) {
+		throw new Error('Hop size must be lesser or equal to the window size')
 	}
 
 	const halfWindowSize = windowSize / 2
@@ -32,7 +37,7 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 
 	const frames: Float32Array[] = []
 
-	for (let offset = 0; offset < sampleCount; offset += hopLength) {
+	for (let offset = 0; offset < sampleCount; offset += hopSize) {
 		const windowSamples = samples.subarray(offset, offset + windowSize)
 		frameBufferRef.clear()
 
@@ -54,24 +59,32 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 	return frames
 }
 
-export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType, expectedOutputLength: number) {
+export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType, expectedOutputLength?: number) {
 	if (fftOrder % 2 != 0 || windowSize % 2 != 0) {
-		throw new Error("FFT order and window size must multiples of 2")
+		throw new Error('FFT order and window size must multiples of 2')
 	}
 
 	if (windowSize > fftOrder) {
-		throw new Error("Window size must be lesser or equal to the FFT order")
+		throw new Error('Window size must be lesser or equal to the FFT size')
 	}
+
+	if (hopSize > windowSize) {
+		throw new Error('Hop size must be lesser or equal to the window size')
+	}
+
+	const frameCount = binsForFrames.length
 
 	const halfWindowSize = windowSize / 2
 
-	if (hopSize != halfWindowSize) {
-		throw new Error("To perform inverse short-time FFT, hop size must be half the window size")
+	const windowWeights = getWindowWeights(windowType, windowSize)
+
+	const outSampleCount = hopSize * frameCount
+
+	if (expectedOutputLength == null) {
+		expectedOutputLength = outSampleCount
 	}
 
-	if (windowType != "hann") {
-		throw new Error("Only Hann window is currently supported for inverse short-time FFT")
-	}
+	const outSamples = new Float32Array(outSampleCount)
 
 	const m = await getKissFFTInstance()
 	const wasmMemory = new WasmMemoryManager(m)
@@ -79,28 +92,44 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 	const statePtr = m._kiss_fftr_alloc(fftOrder, 1, 0, 0)
 	wasmMemory.wrapPointer(statePtr)
 
-	const outSamples = new Float32Array(binsForFrames.length * hopSize)
-
 	const frameBufferRef = wasmMemory.allocFloat32Array(fftOrder)
 	const binsRef = wasmMemory.allocFloat32Array(fftOrder * 2)
 
-	for (let frameIndex = 0, writeOffset = 0; frameIndex < binsForFrames.length; frameIndex++, writeOffset += hopSize) {
-		const bins = binsForFrames[frameIndex]
+	const sumOfSquaredWeightsForSample = new Float32Array(outSampleCount)
+
+	for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+		const binsForFrame = binsForFrames[frameIndex]
 		binsRef.clear()
-		binsRef.view.set(bins)
+		binsRef.view.set(binsForFrame)
 
 		frameBufferRef.clear()
 		m._kiss_fftri(statePtr, binsRef.address, frameBufferRef.address)
-
 		const frameSamples = frameBufferRef.view
-		for (let i = 0; i < windowSize; i++) {
-			outSamples[writeOffset + i] += frameSamples[i]
+
+		const frameStartOffset = frameIndex * hopSize
+
+		for (let windowOffset = 0; windowOffset < windowSize; windowOffset++) {
+			const frameSample = frameSamples[windowOffset]
+			const weight = windowWeights[windowOffset]
+
+			const writePosition = frameStartOffset + windowOffset
+
+			outSamples[writePosition] += frameSample * weight
+
+			sumOfSquaredWeightsForSample[writePosition] += weight ** 2
 		}
 	}
 
 	wasmMemory.freeAll()
 
-	return outSamples.subarray(halfWindowSize, halfWindowSize + expectedOutputLength)
+	// Divide by sum of weight squares for each samples
+	for (let i = 0; i < outSamples.length; i++) {
+		outSamples[i] /= sumOfSquaredWeightsForSample[i] + 1e-8
+	}
+
+	const outSamplesTrimmed = outSamples.slice(halfWindowSize, halfWindowSize + expectedOutputLength)
+
+	return outSamplesTrimmed
 }
 
 export function getBinFrequencies(binCount: number, maxFrequency: number) {
@@ -133,6 +162,45 @@ export function fftFrameToPowerSpectrum(fftFrame: Float32Array) {
 	return powerSpectrum
 }
 
+export function binBufferToComplex(bins: Float32Array, extendAndMirror = false) {
+	const complexBins: ComplexNumber[] = []
+
+	for (let i = 0; i < bins.length; i += 2) {
+		complexBins.push({
+			real: bins[i],
+			imaginary: bins[i + 1]
+		})
+	}
+
+	if (extendAndMirror) {
+		const fftSize = bins.length - 2
+
+		for (let i = complexBins.length; i < fftSize; i++) {
+			const complexBinToMirror = complexBins[fftSize - i]
+
+			complexBins.push({
+				real: complexBinToMirror.real,
+				imaginary: -complexBinToMirror.imaginary
+			})
+		}
+	}
+
+	return complexBins
+}
+
+export function complexToBinBuffer(complexBins: ComplexNumber[]) {
+	const binBuffer = new Float32Array(complexBins.length * 2)
+
+	for (let i = 0, outIndex = 0; i < complexBins.length; i++) {
+		const complexBin = complexBins[i]
+
+		binBuffer[outIndex++] = complexBin.real
+		binBuffer[outIndex++] = complexBin.imaginary
+	}
+
+	return binBuffer
+}
+
 export async function getKissFFTInstance() {
 	if (!kissFFTInstance) {
 		const { default: initializer } = await import('@echogarden/kissfft-wasm')
@@ -143,20 +211,20 @@ export async function getKissFFTInstance() {
 	return kissFFTInstance
 }
 
-function getWindowWeights(windowType: WindowType, windowSize: number) {
+export function getWindowWeights(windowType: WindowType, windowSize: number) {
 	const weights = new Float32Array(windowSize)
 
-	if (windowType == "hann") {
-		//const innerMultiplier = (2 * Math.PI) / (windowSize - 1)
+	const innerFactor = (2 * Math.PI) / (windowSize - 1)
 
+	if (windowType == 'hann') {
 		for (let i = 0; i < windowSize; i++) {
-			weights[i] = 0.5 * (1 - Math.cos(2 * Math.PI * (i / (windowSize - 1))))
-			//weights[i] = 0.5 * (1 - Math.cos(innerMultiplier * i))
+			//weights[i] = 0.5 * (1 - Math.cos(2 * Math.PI * (i / (windowSize - 1))))
+			weights[i] = 0.5 * (1 - Math.cos(innerFactor * i))
 		}
-	} else if (windowType == "hamming") {
+	} else if (windowType == 'hamming') {
 		for (let i = 0; i < windowSize; i++) {
-			weights[i] = 0.54 - (0.46 * Math.cos(2 * Math.PI * (i / (windowSize - 1))))
-			//weights[i] = 0.54 - (0.46 * Math.cos(i * innerMultiplier))
+			//weights[i] = 0.54 - (0.46 * Math.cos(2 * Math.PI * (i / (windowSize - 1))))
+			weights[i] = 0.54 - (0.46 * Math.cos(innerFactor * i))
 		}
 	} else {
 		throw new Error(`Unsupported window function type: ${windowType}`)
@@ -166,14 +234,14 @@ function getWindowWeights(windowType: WindowType, windowSize: number) {
 }
 
 export async function testFFT1(rawAudio: RawAudio) {
-	const { resampleAudioSpeex } = await import("./SpeexResampler.js")
+	const { resampleAudioSpeex } = await import('./SpeexResampler.js')
 
 	const samples = (await resampleAudioSpeex(rawAudio, 16000)).audioChannels[0]
 
 	const fftOrder = 512
 	const windowSize = 320
 	const hopLength = windowSize / 2
-	const windowType: WindowType = "hann"
+	const windowType: WindowType = 'hann'
 
 	const bins = await stftr(samples, fftOrder, windowSize, hopLength, windowType)
 	const normalizedBins = bins.map(bin => bin.map(x => x / fftOrder))
@@ -184,4 +252,4 @@ export async function testFFT1(rawAudio: RawAudio) {
 	return recoveredRawAudio
 }
 
-export type WindowType = "hann" | "hamming"
+export type WindowType = 'hann' | 'hamming'
