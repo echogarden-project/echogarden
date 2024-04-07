@@ -32,6 +32,9 @@
         "DenoisingOptions": {
           "$ref": "#/definitions/DenoisingOptions"
         },
+        "SourceSeparationOptions": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        },
         "ServerOptions": {
           "$ref": "#/definitions/ServerOptions"
         }
@@ -46,6 +49,7 @@
         "TextLanguageDetectionOptions",
         "VADOptions",
         "DenoisingOptions",
+        "SourceSeparationOptions",
         "ServerOptions"
       ],
       "additionalProperties": false
@@ -104,10 +108,10 @@
             "normalizeAudio": {
               "type": "boolean"
             },
-            "targetPeakDb": {
+            "targetPeak": {
               "type": "number"
             },
-            "maxIncreaseDb": {
+            "maxGainIncrease": {
               "type": "number"
             },
             "speed": {
@@ -304,20 +308,11 @@
           },
           "additionalProperties": false
         },
+        "openAICloud": {
+          "$ref": "#/definitions/OpenAICloudTTSOptions"
+        },
         "elevenlabs": {
-          "type": "object",
-          "properties": {
-            "apiKey": {
-              "type": "string"
-            },
-            "stability": {
-              "type": "number"
-            },
-            "similarityBoost": {
-              "type": "number"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/ElevenLabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
@@ -373,6 +368,7 @@
         "google-cloud",
         "microsoft-azure",
         "amazon-polly",
+        "openai-cloud",
         "elevenlabs",
         "google-translate",
         "microsoft-edge",
@@ -423,14 +419,23 @@
         "language": {
           "type": "string"
         },
-        "languageDetection": {
-          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        "isolate": {
+          "type": "boolean"
+        },
+        "crop": {
+          "type": "boolean"
         },
         "customLexiconPaths": {
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
         },
         "plainText": {
           "$ref": "#/definitions/PlainTextOptions"
@@ -476,6 +481,9 @@
         "recognition": {
           "$ref": "#/definitions/RecognitionOptions"
         },
+        "separation": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        },
         "whisper": {
           "$ref": "#/definitions/WhisperOptions"
         }
@@ -511,6 +519,98 @@
         "tinyld",
         "fasttext"
       ]
+    },
+    "VADOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/VADEngine"
+        },
+        "activityThreshold": {
+          "type": "number"
+        },
+        "webrtc": {
+          "type": "object",
+          "properties": {
+            "frameDuration": {
+              "type": "number",
+              "enum": [
+                10,
+                20,
+                30
+              ]
+            },
+            "mode": {
+              "type": "number",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "silero": {
+          "type": "object",
+          "properties": {
+            "frameDuration": {
+              "type": "number",
+              "enum": [
+                30,
+                60,
+                90
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "rnnoise": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "adaptiveGate": {
+          "$ref": "#/definitions/AdaptiveGateVADOptions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VADEngine": {
+      "type": "string",
+      "enum": [
+        "webrtc",
+        "silero",
+        "rnnoise",
+        "adaptive-gate"
+      ]
+    },
+    "AdaptiveGateVADOptions": {
+      "type": "object",
+      "properties": {
+        "lowCutoff": {
+          "type": "number"
+        },
+        "highCutoff": {
+          "type": "number"
+        },
+        "positiveAdaptationRate": {
+          "type": "number"
+        },
+        "negativeAdaptationRate": {
+          "type": "number"
+        },
+        "peakLoudnessDecay": {
+          "type": "number"
+        },
+        "backwardExtensionDuration": {
+          "type": "number"
+        },
+        "relativeThreshold": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
     },
     "SubtitlesConfig": {
       "type": "object",
@@ -614,6 +714,12 @@
         "maxAlternatives": {
           "type": "number"
         },
+        "isolate": {
+          "type": "boolean"
+        },
+        "crop": {
+          "type": "boolean"
+        },
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
         },
@@ -623,8 +729,17 @@
         "subtitles": {
           "$ref": "#/definitions/SubtitlesConfig"
         },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
+        },
+        "separation": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        },
         "whisper": {
           "$ref": "#/definitions/WhisperOptions"
+        },
+        "whisperCpp": {
+          "$ref": "#/definitions/WhisperCppOptions"
         },
         "vosk": {
           "type": "object",
@@ -694,6 +809,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "openAICloud": {
+          "$ref": "#/definitions/OpenAICloudSTTOptions"
         }
       },
       "additionalProperties": false
@@ -702,11 +820,13 @@
       "type": "string",
       "enum": [
         "whisper",
+        "whisper.cpp",
         "vosk",
         "silero",
         "google-cloud",
         "microsoft-azure",
-        "amazon-transcribe"
+        "amazon-transcribe",
+        "openai-cloud"
       ]
     },
     "SpeechLanguageDetectionOptions": {
@@ -721,12 +841,27 @@
         "fallbackThresholdProbability": {
           "type": "number"
         },
+        "crop": {
+          "type": "boolean"
+        },
         "silero": {
           "type": "object",
           "additionalProperties": false
         },
         "whisper": {
-          "$ref": "#/definitions/WhisperOptions"
+          "type": "object",
+          "properties": {
+            "model": {
+              "$ref": "#/definitions/WhisperModelName"
+            },
+            "temperature": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
         }
       },
       "additionalProperties": false
@@ -737,6 +872,45 @@
         "silero",
         "whisper"
       ]
+    },
+    "WhisperModelName": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny.en",
+        "base",
+        "base.en",
+        "small",
+        "small.en",
+        "medium",
+        "medium.en",
+        "large",
+        "large-v1",
+        "large-v2",
+        "large-v3"
+      ]
+    },
+    "SourceSeparationOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/SourceSeparationEngine"
+        },
+        "mdxNet": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SourceSeparationEngine": {
+      "type": "string",
+      "const": "mdx-net"
     },
     "WhisperOptions": {
       "type": "object",
@@ -758,26 +932,113 @@
         },
         "autoPromptParts": {
           "type": "boolean"
+        },
+        "maxTokensPerPart": {
+          "type": "number"
+        },
+        "suppressRepetition": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
     },
-    "WhisperModelName": {
+    "WhisperCppOptions": {
+      "type": "object",
+      "properties": {
+        "executablePath": {
+          "type": "string"
+        },
+        "model": {
+          "$ref": "#/definitions/WhisperCppModelId"
+        },
+        "threadCount": {
+          "type": "number"
+        },
+        "coreCount": {
+          "type": "number"
+        },
+        "enableGPU": {
+          "type": "boolean"
+        },
+        "topCandidateCount": {
+          "type": "number"
+        },
+        "beamCount": {
+          "type": "number"
+        },
+        "entropyThreshold": {
+          "type": "number"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "enableDTW": {
+          "type": "boolean"
+        },
+        "verbose": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WhisperCppModelId": {
       "type": "string",
       "enum": [
         "tiny",
+        "tiny-q5_1",
         "tiny.en",
+        "tiny.en-q5_1",
+        "tiny.en-q8_0",
         "base",
+        "base-q5_1",
         "base.en",
+        "base.en-q5_1",
         "small",
+        "small-q5_1",
         "small.en",
+        "small.en-q5_1",
         "medium",
+        "medium-q5_0",
         "medium.en",
+        "medium.en-q5_0",
         "large",
         "large-v1",
         "large-v2",
-        "large-v3"
+        "large-v2-q5_0",
+        "large-v3",
+        "large-v3-q5_0"
       ]
+    },
+    "OpenAICloudSTTOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "const": "whisper-1"
+        },
+        "apiKey": {
+          "type": "string"
+        },
+        "organization": {
+          "type": "string"
+        },
+        "baseURL": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "number"
+        },
+        "maxRetries": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
     },
     "TimePitchShiftingMethod": {
       "type": "string",
@@ -866,6 +1127,55 @@
       },
       "additionalProperties": false
     },
+    "OpenAICloudTTSOptions": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "organization": {
+          "type": "string"
+        },
+        "baseURL": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "tts-1",
+            "tts-1-hd"
+          ]
+        },
+        "timeout": {
+          "type": "number"
+        },
+        "maxRetries": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ElevenLabsTTSOptions": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "stability": {
+          "type": "number"
+        },
+        "similarityBoost": {
+          "type": "number"
+        },
+        "style": {
+          "type": "number"
+        },
+        "useSpeakerBoost": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "SynthesisOptions": {
       "type": "object",
       "properties": {
@@ -920,10 +1230,10 @@
             "normalizeAudio": {
               "type": "boolean"
             },
-            "targetPeakDb": {
+            "targetPeak": {
               "type": "number"
             },
-            "maxIncreaseDb": {
+            "maxGainIncrease": {
               "type": "number"
             },
             "speed": {
@@ -1120,20 +1430,11 @@
           },
           "additionalProperties": false
         },
+        "openAICloud": {
+          "$ref": "#/definitions/OpenAICloudTTSOptions"
+        },
         "elevenlabs": {
-          "type": "object",
-          "properties": {
-            "apiKey": {
-              "type": "string"
-            },
-            "stability": {
-              "type": "number"
-            },
-            "similarityBoost": {
-              "type": "number"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/ElevenLabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
@@ -1175,84 +1476,42 @@
         "targetLanguage": {
           "type": "string"
         },
+        "crop": {
+          "type": "boolean"
+        },
+        "isolate": {
+          "type": "boolean"
+        },
         "languageDetection": {
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
         },
         "subtitles": {
           "$ref": "#/definitions/SubtitlesConfig"
         },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
+        },
+        "separation": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        },
         "whisper": {
           "$ref": "#/definitions/WhisperOptions"
+        },
+        "whisperCpp": {
+          "$ref": "#/definitions/WhisperCppOptions"
+        },
+        "openAICloud": {
+          "$ref": "#/definitions/OpenAICloudSTTOptions"
         }
       },
       "additionalProperties": false
     },
     "SpeechTranslationEngine": {
       "type": "string",
-      "const": "whisper"
-    },
-    "VADOptions": {
-      "type": "object",
-      "properties": {
-        "engine": {
-          "$ref": "#/definitions/VADEngine"
-        },
-        "activityThreshold": {
-          "type": "number"
-        },
-        "webrtc": {
-          "type": "object",
-          "properties": {
-            "frameDuration": {
-              "type": "number",
-              "enum": [
-                10,
-                20,
-                30
-              ]
-            },
-            "mode": {
-              "type": "number",
-              "enum": [
-                0,
-                1,
-                2,
-                3
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        "silero": {
-          "type": "object",
-          "properties": {
-            "modelPath": {
-              "type": "string"
-            },
-            "frameDuration": {
-              "type": "number",
-              "enum": [
-                30,
-                60,
-                90
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        "rnnoise": {
-          "type": "object",
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "VADEngine": {
-      "type": "string",
       "enum": [
-        "webrtc",
-        "silero",
-        "rnnoise"
+        "whisper",
+        "whisper.cpp",
+        "openai-cloud"
       ]
     },
     "DenoisingOptions": {
@@ -1267,20 +1526,20 @@
             "normalizeAudio": {
               "type": "boolean"
             },
-            "targetPeakDb": {
+            "targetPeak": {
               "type": "number"
             },
-            "maxIncreaseDb": {
+            "maxGainIncrease": {
               "type": "number"
             },
-            "dryMixGainDb": {
+            "dryMixGain": {
               "type": "number"
             }
           },
           "required": [
             "normalizeAudio",
-            "targetPeakDb",
-            "maxIncreaseDb"
+            "targetPeak",
+            "maxGainIncrease"
           ],
           "additionalProperties": false
         }
