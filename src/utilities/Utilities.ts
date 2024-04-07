@@ -5,6 +5,7 @@ import { inspect } from 'node:util'
 import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
+import { ChildProcessWithoutNullStreams } from 'node:child_process'
 
 const log = logToStderr
 
@@ -84,7 +85,7 @@ export function printToStderr(message: any) {
 
 export function logToStderr(message: any) {
 	printToStderr(message)
-	writeToStderr("\n")
+	writeToStderr('\n')
 }
 
 export function objToString(obj: any) {
@@ -105,7 +106,7 @@ export function getRandomHexString(charCount = 32, upperCase = false) {
 		throw new Error(`'charCount' must be an even number`)
 	}
 
-	let hex = randomBytes(charCount / 2).toString("hex")
+	let hex = randomBytes(charCount / 2).toString('hex')
 
 	if (upperCase) {
 		hex = hex.toUpperCase()
@@ -118,7 +119,7 @@ export function getRandomUUID(dashes = true) {
 	let uuid = randomUUID() as string
 
 	if (dashes == false) {
-		uuid = uuid.replaceAll("-", "")
+		uuid = uuid.replaceAll('-', '')
 	}
 
 	return uuid
@@ -181,7 +182,7 @@ export function printMatrix(matrix: Float32Array[]) {
 	const rowCount = matrix.length
 
 	for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-		log(matrix[rowIndex].join(", "))
+		log(matrix[rowIndex].join(', '))
 	}
 }
 
@@ -212,11 +213,11 @@ export function secondsToMS(totalSeconds: number) {
 	return { minutes: (hours * 60) + minutes, seconds, milliseconds }
 }
 
-export function formatHMS(timeHMS: { hours: number, minutes: number, seconds: number, milliseconds: number }, decimalSeparator = ".") {
+export function formatHMS(timeHMS: { hours: number, minutes: number, seconds: number, milliseconds: number }, decimalSeparator = '.') {
 	return `${formatIntegerWithLeadingZeros(timeHMS.hours, 2)}:${formatIntegerWithLeadingZeros(timeHMS.minutes, 2)}:${formatIntegerWithLeadingZeros(timeHMS.seconds, 2)}${decimalSeparator}${formatIntegerWithLeadingZeros(timeHMS.milliseconds, 3)}`
 }
 
-export function formatMS(timeMS: { minutes: number, seconds: number, milliseconds: number }, decimalSeparator = ".") {
+export function formatMS(timeMS: { minutes: number, seconds: number, milliseconds: number }, decimalSeparator = '.') {
 	return `${formatIntegerWithLeadingZeros(timeMS.minutes, 2)}:${formatIntegerWithLeadingZeros(timeMS.seconds, 2)}${decimalSeparator}${formatIntegerWithLeadingZeros(timeMS.milliseconds, 3)}`
 }
 
@@ -356,15 +357,15 @@ export function readBinaryIncomingMessage(incomingMessage: IncomingMessage) {
 	return new Promise<Buffer>((resolve, reject) => {
 		const chunks: Buffer[] = []
 
-		incomingMessage.on("data", (chunk) => {
+		incomingMessage.on('data', (chunk) => {
 			chunks.push(Buffer.from(chunk))
 		})
 
-		incomingMessage.on("end", () => {
+		incomingMessage.on('end', () => {
 			resolve(Buffer.concat(chunks))
 		})
 
-		incomingMessage.on("error", (e) => {
+		incomingMessage.on('error', (e) => {
 			reject(e)
 		})
 	})
@@ -388,7 +389,7 @@ export async function sha256AsHex(input: string) {
 }
 
 export async function commandExists(command: string) {
-	const { default: commandExists } = await import("command-exists")
+	const { default: commandExists } = await import('command-exists')
 
 	try {
 		await commandExists(command)
@@ -415,11 +416,11 @@ export async function convertHtmlToText(html: string) {
 		]
 	})
 
-	return text || ""
+	return text || ''
 }
 
 export function formatListWithQuotedElements(strings: string[], quoteSymbol = `'`) {
-	return strings.map(str => `${quoteSymbol}${str}${quoteSymbol}`).join(", ")
+	return strings.map(str => `${quoteSymbol}${str}${quoteSymbol}`).join(', ')
 }
 
 export async function resolveModuleMainPath(moduleName: string) {
@@ -441,7 +442,7 @@ export function splitFilenameOnExtendedExtension(filenameWithExtension: string) 
 	let splitPoint = filenameWithExtension.length
 
 	for (let i = filenameWithExtension.length - 1; i >= 0; i--) {
-		if (filenameWithExtension[i] == ".") {
+		if (filenameWithExtension[i] == '.') {
 			if (/^[a-zA-Z0-9\.]+$/.test(filenameWithExtension.slice(i + 1))) {
 				splitPoint = i
 
@@ -577,7 +578,7 @@ export async function resolveModuleScriptPath(moduleName: string) {
 export async function runOperationWithRetries<R>(
 	operationFunc: () => Promise<R>,
 	logger: Logger,
-	opreationName = "Operation",
+	opreationName = 'Operation',
 	delayBetweenRetries = 2000,
 	maxRetries = 200) {
 
@@ -592,7 +593,7 @@ export async function runOperationWithRetries<R>(
 			const { shouldCancelCurrentTask } = await import('../server/Worker.js')
 
 			if (shouldCancelCurrentTask()) {
-				throw new Error("Canceled")
+				throw new Error('Canceled')
 			}
 
 			logger.setAsActiveLogger()
@@ -612,4 +613,27 @@ export async function runOperationWithRetries<R>(
 	}
 
 	throw new Error(`${opreationName} failed after ${maxRetries} retry attempts`)
+}
+
+export function writeToStdinInChunks(process: ChildProcessWithoutNullStreams, buffer: Buffer, chunkSize: number) {
+	const writeChunk = (chunkOffset: number) => {
+		if (chunkOffset >= buffer.length) {
+			process.stdin.end() // End the stream after writing all chunks
+
+			return
+		}
+
+		const startOffset = chunkOffset
+		const endOffset = Math.min(chunkOffset + chunkSize, buffer.length)
+
+		const chunk = buffer.subarray(startOffset, endOffset)
+
+		if (!process.stdin.writable) {
+			return
+		}
+
+		process.stdin.write(chunk, () => writeChunk(endOffset))
+	}
+
+	writeChunk(0)
 }
