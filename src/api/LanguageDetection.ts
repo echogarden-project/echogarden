@@ -1,15 +1,15 @@
-import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
+import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime, trimAudioEnd } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
+import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
 
-import * as API from "./API.js"
-import { logToStderr } from "../utilities/Utilities.js"
-import path from "path"
-import { type WhisperOptions } from "../recognition/WhisperSTT.js"
-import { formatLanguageCodeWithName, languageCodeToName } from "../utilities/Locale.js"
-import { loadPackage } from "../utilities/PackageManager.js"
-import chalk from "chalk"
+import * as API from './API.js'
+import { logToStderr } from '../utilities/Utilities.js'
+import path from 'path'
+import { WhisperModelName, type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
+import { loadPackage } from '../utilities/PackageManager.js'
+import chalk from 'chalk'
 
 const log = logToStderr
 
@@ -21,7 +21,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 	const startTime = logger.getTimestamp()
 
-	logger.start("Prepare for speech language detection")
+	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
 
 	const inputRawAudio = await ensureRawAudio(input)
 
@@ -29,7 +29,14 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
-	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
+	if (options.crop) {
+		logger.start('Crop using voice activity detection');
+		({ croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+
+		logger.end()
+	}
+
+	logger.start('Prepare for speech language detection')
 
 	const defaultLanguage = options.defaultLanguage!
 	const fallbackThresholdProbability = options.fallbackThresholdProbability!
@@ -39,18 +46,18 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 	let detectedLanguageProbabilities: LanguageDetectionResults
 
 	switch (options.engine) {
-		case "silero": {
-			const SileroLanguageDetection = await import("../speech-language-detection/SileroLanguageDetection.js")
+		case 'silero': {
+			const SileroLanguageDetection = await import('../speech-language-detection/SileroLanguageDetection.js')
 
 			logger.end()
 
 			const sileroOptions = options.silero!
 
-			const modelDir = await loadPackage("silero-lang-classifier-95")
+			const modelDir = await loadPackage('silero-lang-classifier-95')
 
-			const modelPath = path.join(modelDir, "lang_classifier_95.onnx")
-			const languageDictionaryPath = path.join(modelDir, "lang_dict_95.json")
-			const languageGroupDictionaryPath = path.join(modelDir, "lang_group_dict_95.json")
+			const modelPath = path.join(modelDir, 'lang_classifier_95.onnx')
+			const languageDictionaryPath = path.join(modelDir, 'lang_dict_95.json')
+			const languageGroupDictionaryPath = path.join(modelDir, 'lang_group_dict_95.json')
 
 			const languageResults = await SileroLanguageDetection.detectLanguage(
 				sourceRawAudio,
@@ -63,8 +70,8 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 			break
 		}
 
-		case "whisper": {
-			const WhisperSTT = await import("../recognition/WhisperSTT.js")
+		case 'whisper': {
+			const WhisperSTT = await import('../recognition/WhisperSTT.js')
 
 			const whisperOptions = options.whisper!
 
@@ -72,7 +79,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 			logger.end()
 
-			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, tokenizerDir)
+			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, tokenizerDir, whisperOptions.temperature!)
 
 			break
 		}
@@ -93,9 +100,15 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 	}
 
 	logger.end()
-	logger.logDuration("\nTotal detection time", startTime, chalk.magentaBright)
+	logger.logDuration('\nTotal detection time', startTime, chalk.magentaBright)
 
-	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities, inputRawAudio }
+	return {
+		detectedLanguage,
+		detectedLanguageName: languageCodeToName(detectedLanguage),
+		detectedLanguageProbabilities,
+
+		inputRawAudio,
+	}
 }
 
 export interface SpeechLanguageDetectionResult {
@@ -109,6 +122,10 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 	const logger = new Logger()
 
 	const audioDuration = getRawAudioDuration(sourceRawAudio)
+
+	if (audioDuration === 0) {
+		return []
+	}
 
 	const resultsForParts: LanguageDetectionResults[] = []
 
@@ -149,27 +166,43 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 	return averagedResults
 }
 
-export type SpeechLanguageDetectionEngine = "silero" | "whisper"
+export type SpeechLanguageDetectionEngine = 'silero' | 'whisper'
 
 export interface SpeechLanguageDetectionOptions {
 	engine?: SpeechLanguageDetectionEngine
 	defaultLanguage?: string,
 	fallbackThresholdProbability?: number
 
+	crop?: boolean
+
 	silero?: {
 	}
 
-	whisper?: WhisperOptions
+	whisper?: {
+		model?: WhisperModelName
+		temperature?: number
+	}
+
+	vad?: API.VADOptions
 }
 
 export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptions = {
-	engine: "silero",
+	engine: 'whisper',
+	defaultLanguage: 'en',
+	fallbackThresholdProbability: 0.05,
+
+	crop: true,
 
 	silero: {
 	},
 
 	whisper: {
-		model: "tiny",
+		model: 'tiny',
+		temperature: 1.0
+	},
+
+	vad: {
+		engine: 'adaptive-gate'
 	}
 }
 
@@ -189,20 +222,20 @@ export async function detectTextLanguage(input: string, options: TextLanguageDet
 	logger.start(`Initialize ${options.engine} module`)
 
 	switch (options.engine) {
-		case "tinyld": {
-			const { detectLanguage } = await import("../text-language-detection/TinyLDLanguageDetection.js")
+		case 'tinyld': {
+			const { detectLanguage } = await import('../text-language-detection/TinyLDLanguageDetection.js')
 
-			logger.start("Detecting text language using tinyld")
+			logger.start('Detecting text language using tinyld')
 
 			detectedLanguageProbabilities = await detectLanguage(input)
 
 			break
 		}
 
-		case "fasttext": {
-			const { detectLanguage } = await import("../text-language-detection/FastTextLanguageDetection.js")
+		case 'fasttext': {
+			const { detectLanguage } = await import('../text-language-detection/FastTextLanguageDetection.js')
 
-			logger.start("Detecting text language using FastText")
+			logger.start('Detecting text language using FastText')
 
 			detectedLanguageProbabilities = await detectLanguage(input)
 
@@ -226,8 +259,16 @@ export async function detectTextLanguage(input: string, options: TextLanguageDet
 
 	logger.end()
 
-	return { detectedLanguage, detectedLanguageName: languageCodeToName(detectedLanguage), detectedLanguageProbabilities }
+	return {
+		detectedLanguage,
+		detectedLanguageName: languageCodeToName(detectedLanguage),
+		detectedLanguageProbabilities
+	}
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+// Types
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 export interface TextLanguageDetectionResult {
 	detectedLanguage: string
@@ -236,23 +277,34 @@ export interface TextLanguageDetectionResult {
 }
 
 export type LanguageDetectionResults = LanguageDetectionResultsEntry[]
-export type LanguageDetectionResultsEntry = { language: string, languageName: string, probability: number }
+export interface LanguageDetectionResultsEntry {
+	language: string
+	languageName: string
+	probability: number
+}
 
 export type LanguageDetectionGroupResults = LanguageDetectionGroupResultsEntry[]
-export type LanguageDetectionGroupResultsEntry = { languageGroup: string, probability: number }
+export interface LanguageDetectionGroupResultsEntry {
+	languageGroup: string
+	probability: number
+}
 
-export type TextLanguageDetectionEngine = "tinyld" | "fasttext"
+export type TextLanguageDetectionEngine = 'tinyld' | 'fasttext'
 
-export type TextLanguageDetectionOptions = {
-	engine?: TextLanguageDetectionEngine,
-	defaultLanguage?: string,
+export interface TextLanguageDetectionOptions {
+	engine?: TextLanguageDetectionEngine
+	defaultLanguage?: string
 	fallbackThresholdProbability?: number
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+// Constants
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 export const defaultTextLanguageDetectionOptions: TextLanguageDetectionOptions = {
-	engine: "tinyld",
-	defaultLanguage: "en",
-	fallbackThresholdProbability: 0.05
+	engine: 'tinyld',
+	defaultLanguage: 'en',
+	fallbackThresholdProbability: 0.05,
 }
 
 export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
@@ -265,7 +317,7 @@ export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'Uses the language token produced by the Whisper model to guess the language of the speech (first 30 seconds only).',
+		description: 'Uses the language tokens produced by the Whisper model classify the spoken langauge.',
 		type: 'local'
 	},
 ]
@@ -280,7 +332,7 @@ export const textLanguageDetectionEngines: API.EngineMetadata[] = [
 	{
 		id: 'fasttext',
 		name: 'FastText',
-		description: 'a library for word representations and sentence classification by Facebook research.',
+		description: 'A library for word representations and sentence classification by Facebook research.',
 		type: 'local'
 	},
 ]
