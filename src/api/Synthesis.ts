@@ -1,27 +1,29 @@
-import path from "node:path"
+import path from 'node:path'
 
-import { deepClone, extendDeep } from "../utilities/ObjectUtilities.js"
+import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
-import * as FFMpegTranscoder from "../codecs/FFMpegTranscoder.js"
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, delay, runOperationWithRetries } from "../utilities/Utilities.js"
-import { RawAudio, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from "../audio/AudioUtilities.js"
-import { Logger } from "../utilities/Logger.js"
+import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, delay, runOperationWithRetries } from '../utilities/Utilities.js'
+import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeWaveBuffer, getAudioPeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
+import { Logger } from '../utilities/Logger.js'
 
-import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
-import { type RubberbandOptions } from "../dsp/Rubberband.js"
-import { loadLexiconsForLanguage } from "../nlp/Lexicon.js"
+import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
+import { type RubberbandOptions } from '../dsp/Rubberband.js'
+import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 
-import * as API from "./API.js"
-import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from "../utilities/Timeline.js"
-import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from "../utilities/FileSystem.js"
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from "../utilities/Locale.js"
-import { loadPackage } from "../utilities/PackageManager.js"
-import { EngineMetadata, appName } from "./Common.js"
-import { shouldCancelCurrentTask } from "../server/Worker.js"
-import chalk from "chalk"
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from "../subtitles/Subtitles.js"
-import { type EspeakOptions } from "../synthesis/EspeakTTS.js"
+import * as API from './API.js'
+import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from '../utilities/Timeline.js'
+import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from '../utilities/Locale.js'
+import { loadPackage } from '../utilities/PackageManager.js'
+import { EngineMetadata, appName } from './Common.js'
+import { shouldCancelCurrentTask } from '../server/Worker.js'
+import chalk from 'chalk'
+import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
+import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
+import { OpenAICloudTTSOptions, defaultOpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
+import { ElevenlabsTTSOptions, defaultElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
 
 const log = logToStderr
 
@@ -51,7 +53,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	options = extendDeep(defaultSynthesisOptions, options)
 
 	if (!options.language && !options.voice) {
-		logger.start("No language or voice specified. Detecting language")
+		logger.start('No language or voice specified. Detecting language')
 
 		let segmentsPlainText = segments
 
@@ -63,7 +65,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			}
 		}
 
-		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join("\n\n"), options.languageDetection || {})
+		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join('\n\n'), options.languageDetection || {})
 
 		options.language = detectedLanguage
 
@@ -86,7 +88,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	const { bestMatchingVoice } = await requestVoiceList(options)
 
 	if (!bestMatchingVoice) {
-		throw new Error("No matching voice found")
+		throw new Error('No matching voice found')
 	}
 
 	options.voice = bestMatchingVoice.name
@@ -110,12 +112,12 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
 		const segmentText = segments[segmentIndex].trim()
 
-		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: "${segmentText}"`)
+		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: '${segmentText}'`)
 
 		const segmentStartTime = timeOffset
 
 		const segmentEntry: TimelineEntry = {
-			type: "segment",
+			type: 'segment',
 			text: segmentText,
 			startTime: timeOffset,
 			endTime: -1,
@@ -124,12 +126,12 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 		let sentences: string[]
 
-		if ((options.splitToSentences || options.engine == "vits") && !options.ssml) {
+		if ((options.splitToSentences || options.engine == 'vits') && !options.ssml) {
 			sentences = splitToSentences(segmentText, options.language!)
-			sentences = sentences.filter(sentence => sentence.trim() != "")
+			sentences = sentences.filter(sentence => sentence.trim() != '')
 
 			if (sentences.length == 0) {
-				sentences = [""]
+				sentences = ['']
 			}
 		} else {
 			sentences = [segmentText]
@@ -142,8 +144,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			await yieldToEventLoop()
 
 			if (shouldCancelCurrentTask()) {
-				//log("\n\n\n\n\nCANCELED\n\n\n\n")
-				throw new Error("Canceled")
+				//log('\n\n\n\n\nCANCELED\n\n\n\n')
+				throw new Error('Canceled')
 			}
 
 			const sentenceText = sentences[sentenceIndex].trim()
@@ -175,7 +177,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			const sentenceEndTime = timeOffset - endPause
 
 			segmentEntry.timeline!.push({
-				type: "sentence",
+				type: 'sentence',
 				text: sentenceText,
 				startTime: sentenceStartTime,
 				endTime: sentenceEndTime,
@@ -245,7 +247,9 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 		resultRawAudio = { audioChannels: joinedAudioBuffers, sampleRate: segmentsRawAudio[0].sampleRate }
 
 		if (options.postProcessing!.normalizeAudio) {
-			resultRawAudio = normalizeAudioLevel(resultRawAudio, options.postProcessing!.targetPeakDb, options.postProcessing!.maxIncreaseDb)
+			resultRawAudio = normalizeAudioLevel(resultRawAudio, options.postProcessing!.targetPeak, options.postProcessing!.maxGainIncrease)
+		} else {
+			resultRawAudio = attenuateIfClipping(resultRawAudio)
 		}
 	} else {
 		resultRawAudio = getEmptyRawAudio(1, 24000)
@@ -259,7 +263,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 		if (targetCodec) {
 			logger.start(`Convert to ${targetCodec} codec`)
 
-			if (targetCodec == "wav") {
+			if (targetCodec == 'wav') {
 				output = encodeWaveBuffer(rawAudio)
 			} else {
 				const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech(targetCodec, options.outputAudioFormat?.bitrate)
@@ -293,9 +297,10 @@ export interface SynthesisResult {
 
 async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	const logger = new Logger()
+
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start("Prepare for synthesis")
+	logger.start('Prepare for synthesis')
 
 	const simplifiedText = simplifyPunctuationCharacters(text)
 
@@ -306,7 +311,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	const { bestMatchingVoice } = await requestVoiceList(options)
 
 	if (!bestMatchingVoice) {
-		throw new Error("No matching voice found")
+		throw new Error('No matching voice found')
 	}
 
 	const selectedVoice = bestMatchingVoice
@@ -338,18 +343,18 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	let shouldPostprocessPitch = false
 
 	switch (engine) {
-		case "vits": {
+		case 'vits': {
 			if (inputIsSSML) {
 				throw new Error(`The VITS engine doesn't currently support SSML inputs`)
 			}
 
 			let vitsLanguage = language
 
-			if (vitsLanguage == "en") {
-				vitsLanguage = "en-us"
+			if (vitsLanguage == 'en') {
+				vitsLanguage = 'en-us'
 			}
 
-			const vitsTTS = await import("../synthesis/VitsTTS.js")
+			const vitsTTS = await import('../synthesis/VitsTTS.js')
 
 			const lengthScale = 1 / speed
 
@@ -360,7 +365,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			if (speakerId != undefined) {
 				if (selectedVoice.speakerCount == undefined) {
 					if (speakerId != 0) {
-						throw new Error("Selected VITS model has only one speaker. Speaker ID must be 0 if specified.")
+						throw new Error('Selected VITS model has only one speaker. Speaker ID must be 0 if specified.')
 					}
 				} else if (speakerId < 0 || speakerId >= selectedVoice.speakerCount) {
 					throw new Error(`Selected VITS model has ${selectedVoice.speakerCount} voices. Speaker ID should be in the range ${0} to ${selectedVoice.speakerCount - 1}`)
@@ -385,18 +390,18 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "pico": {
+		case 'pico': {
 			if (inputIsSSML) {
 				throw new Error(`The SVOX Pico engine doesn't currently support SSML inputs`)
 			}
 
-			const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
+			const SvoxPicoTTS = await import('../synthesis/SvoxPicoTTS.js')
 
 			const picoSpeed = Math.round(speed * 1.0 * 100)
 			const picoPitch = Math.round(pitch * 1.0 * 100)
 			const picoVolume = 35.0
 
-			const preparedText = `<speed level="${picoSpeed}"><pitch level="${picoPitch}"><volume level="${picoVolume}">${simplifiedText}</volume></pitch></speed>`
+			const preparedText = `<speed level='${picoSpeed}'><pitch level='${picoPitch}'><volume level='${picoVolume}'>${simplifiedText}</volume></pitch></speed>`
 
 			logger.end()
 
@@ -412,12 +417,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "flite": {
+		case 'flite': {
 			if (inputIsSSML) {
 				throw new Error(`The Flite engine doesn't currently support SSML inputs`)
 			}
 
-			const FliteTTS = await import("../synthesis/FliteTTS.js")
+			const FliteTTS = await import('../synthesis/FliteTTS.js')
 
 			logger.end()
 
@@ -430,8 +435,8 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "espeak": {
-			const EspeakTTS = await import("../synthesis/EspeakTTS.js")
+		case 'espeak': {
+			const EspeakTTS = await import('../synthesis/EspeakTTS.js')
 
 			const engineOptions = options.espeak!
 
@@ -471,12 +476,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "sam": {
+		case 'sam': {
 			if (inputIsSSML) {
 				throw new Error(`The SAM engine doesn't support SSML inputs`)
 			}
 
-			const SamTTS = await import("../synthesis/SamTTS.js")
+			const SamTTS = await import('../synthesis/SamTTS.js')
 
 			const engineOptions = options.sam!
 
@@ -494,12 +499,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "sapi": {
+		case 'sapi': {
 			if (inputIsSSML) {
 				throw new Error(`The SAPI engine doesn't currently support SSML inputs`)
 			}
 
-			const SapiTTS = await import("../synthesis/SapiTTS.js")
+			const SapiTTS = await import('../synthesis/SapiTTS.js')
 
 			await SapiTTS.AssertSAPIAvailable(false)
 
@@ -520,12 +525,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "msspeech": {
+		case 'msspeech': {
 			if (inputIsSSML) {
 				throw new Error(`The MSSpeech engine doesn't currently support SSML inputs`)
 			}
 
-			const SapiTTS = await import("../synthesis/SapiTTS.js")
+			const SapiTTS = await import('../synthesis/SapiTTS.js')
 
 			await SapiTTS.AssertSAPIAvailable(true)
 
@@ -546,12 +551,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "coqui-server": {
+		case 'coqui-server': {
 			if (inputIsSSML) {
 				throw new Error(`The Coqui Server engine doesn't support SSML inputs`)
 			}
 
-			const CoquiServerTTS = await import("../synthesis/CoquiServerTTS.js")
+			const CoquiServerTTS = await import('../synthesis/CoquiServerTTS.js')
 
 			const engineOptions = options.coquiServer!
 
@@ -574,15 +579,15 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "google-cloud": {
-			const GoogleCloudTTS = await import("../synthesis/GoogleCloudTTS.js")
+		case 'google-cloud': {
+			const GoogleCloudTTS = await import('../synthesis/GoogleCloudTTS.js')
 
 			const engineOptions = options.googleCloud!
 
 			const apiKey = engineOptions.apiKey
 
 			if (!apiKey) {
-				throw new Error(`No API key given`)
+				throw new Error(`No Google Cloud API key provided`)
 			}
 
 			let pitchDeltaSemitones: number
@@ -607,21 +612,21 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "microsoft-azure": {
-			const AzureCognitiveServicesTTS = await import("../synthesis/AzureCognitiveServicesTTS.js")
+		case 'microsoft-azure': {
+			const AzureCognitiveServicesTTS = await import('../synthesis/AzureCognitiveServicesTTS.js')
 
 			const engineOptions = options.microsoftAzure!
 
 			const subscriptionKey = engineOptions.subscriptionKey
 
 			if (!subscriptionKey) {
-				throw new Error(`No subscription key given`)
+				throw new Error(`No Microsoft Azure subscription key provided`)
 			}
 
 			const serviceRegion = engineOptions!.serviceRegion
 
 			if (!serviceRegion) {
-				throw new Error(`No service region given`)
+				throw new Error(`No Microsoft Azure service region provided`)
 			}
 
 			let ssmlPitch: string
@@ -648,27 +653,27 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "amazon-polly": {
-			const AwsPollyTTS = await import("../synthesis/AwsPollyTTS.js")
+		case 'amazon-polly': {
+			const AwsPollyTTS = await import('../synthesis/AwsPollyTTS.js')
 
 			const engineOptions = options.amazonPolly!
 
 			const region = engineOptions.region
 
 			if (!region) {
-				throw new Error(`No region given`)
+				throw new Error(`No Amazon Polly region provided`)
 			}
 
 			const accessKeyId = engineOptions.accessKeyId
 
 			if (!accessKeyId) {
-				throw new Error(`No access key id given`)
+				throw new Error(`No Amazon Polly access key id provided`)
 			}
 
 			const secretAccessKey = engineOptions.secretAccessKey
 
 			if (!secretAccessKey) {
-				throw new Error(`No secret access key given`)
+				throw new Error(`No Amazon Polly secret access key provided`)
 			}
 
 			const pollyEngine = engineOptions.pollyEngine
@@ -686,29 +691,44 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "elevenlabs": {
+		case 'openai-cloud': {
+			const OpenAICloudTTS = await import('../synthesis/OpenAICloudTTS.js')
+
+			const openAICloudTTSOptions = options.openAICloud!
+
+			if (!openAICloudTTSOptions.apiKey) {
+				throw new Error(`No API key given`)
+			}
+
+			logger.end();
+
+			synthesizedAudio = await OpenAICloudTTS.synthesize(text, voice, speed, openAICloudTTSOptions)
+
+			shouldPostprocessSpeed = false
+			shouldPostprocessPitch = true
+
+			break
+		}
+
+		case 'elevenlabs': {
 			if (inputIsSSML) {
 				throw new Error(`The Elevenlabs engine doesn't support SSML inputs`)
 			}
 
-			const ElevenLabsTTS = await import("../synthesis/ElevenLabsTTS.js")
+			const ElevenLabsTTS = await import('../synthesis/ElevenlabsTTS.js')
 
 			const engineOptions = options.elevenlabs!
 
-			const apiKey = engineOptions.apiKey
-
-			if (!apiKey) {
-				throw new Error(`No ElevenLabs API key given`)
+			if (!engineOptions.apiKey) {
+				throw new Error(`No ElevenLabs API key provided`)
 			}
 
-			const voiceId = (selectedVoice as any)["elevenLabsVoiceId"]
-			const modelId = (selectedVoice as any)["elevenLabsModelId"]
-			const stability = engineOptions.stability!
-			const similarityBoost = engineOptions.similarityBoost!
+			const voiceId = (selectedVoice as any)['elevenLabsVoiceId']
+			const modelId = (selectedVoice as any)['elevenLabsModelId']
 
 			logger.end()
 
-			const { rawAudio } = await ElevenLabsTTS.synthesize(text, voiceId, apiKey, modelId, stability, similarityBoost)
+			const { rawAudio } = await ElevenLabsTTS.synthesize(text, voiceId, modelId, engineOptions)
 
 			synthesizedAudio = rawAudio
 
@@ -718,12 +738,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "google-translate": {
+		case 'google-translate': {
 			if (inputIsSSML) {
 				throw new Error(`The Google Translate engine doesn't support SSML inputs`)
 			}
 
-			const GoogleTranslateTTS = await import("../synthesis/GoogleTranslateTTS.js")
+			const GoogleTranslateTTS = await import('../synthesis/GoogleTranslateTTS.js')
 
 			logger.end()
 
@@ -745,23 +765,23 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "microsoft-edge": {
+		case 'microsoft-edge': {
 			if (inputIsSSML) {
 				throw new Error(`The Microsoft Edge engine doesn't support SSML inputs`)
 			}
 
-			const MicrosoftEdgeTTS = await import("../synthesis/MicrosoftEdgeTTS.js")
+			const MicrosoftEdgeTTS = await import('../synthesis/MicrosoftEdgeTTS.js')
 
 			const engineOptions = options.microsoftEdge!
 
 			const trustedClientToken = engineOptions.trustedClientToken
 
 			if (!trustedClientToken) {
-				throw new Error("No trusted client token provided.")
+				throw new Error('No Microsoft Edge trusted client token provided')
 			}
 
-			if (await sha256AsHex(trustedClientToken) != "558d7c6a7f7db444895946fe23a54ad172fd6d159f46cb34dd4db21bb27c07d7") {
-				throw new Error("Trusted client token is incorrect.")
+			if (await sha256AsHex(trustedClientToken) != '558d7c6a7f7db444895946fe23a54ad172fd6d159f46cb34dd4db21bb27c07d7') {
+				throw new Error('Trusted client token is incorrect.')
 			}
 
 			let ssmlPitch: string
@@ -791,12 +811,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
-		case "streamlabs-polly": {
+		case 'streamlabs-polly': {
 			if (inputIsSSML) {
 				throw new Error(`The Streamlabs Polly Engine engine doesn't support SSML inputs`)
 			}
 
-			const StreamlabsPollyTTS = await import("../synthesis/StreamlabsPollyTTS.js")
+			const StreamlabsPollyTTS = await import('../synthesis/StreamlabsPollyTTS.js')
 
 			logger.end()
 
@@ -820,11 +840,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 		}
 	}
 
-	logger.start("Postprocess synthesized audio")
+	logger.start('Postprocess synthesized audio')
 	synthesizedAudio = downmixToMono(synthesizedAudio)
 
 	if (options.postProcessing!.normalizeAudio) {
-		synthesizedAudio = normalizeAudioLevel(synthesizedAudio, options.postProcessing!.targetPeakDb!, options.postProcessing!.maxIncreaseDb!)
+		synthesizedAudio = normalizeAudioLevel(synthesizedAudio, options.postProcessing!.targetPeak!, options.postProcessing!.maxGainIncrease!)
+	} else {
+		synthesizedAudio = attenuateIfClipping(synthesizedAudio)
 	}
 
 	const preTrimSampleCount = synthesizedAudio.audioChannels[0].length
@@ -838,7 +860,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	}
 
 	if (!timeline) {
-		logger.start("Align synthesized audio with text")
+		logger.start('Align synthesized audio with text')
 
 		let plainText = text
 
@@ -880,17 +902,17 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	}
 
 	if ((timeStretchFactor != undefined && timeStretchFactor != 1.0) || (pitchShiftFactor != undefined && pitchShiftFactor != 1.0)) {
-		logger.start("Apply time and pitch shifting")
+		logger.start('Apply time and pitch shifting')
 
 		timeStretchFactor = timeStretchFactor || 1.0
 		pitchShiftFactor = pitchShiftFactor || 1.0
 
 		const timePitchShiftingMethod = postProcessingOptions.timePitchShiftingMethod
 
-		if (timePitchShiftingMethod == "sonic") {
+		if (timePitchShiftingMethod == 'sonic') {
 			const sonic = await import('../dsp/Sonic.js')
 			synthesizedAudio = await sonic.stretchTimePitch(synthesizedAudio, timeStretchFactor, pitchShiftFactor)
-		} else if (timePitchShiftingMethod == "rubberband") {
+		} else if (timePitchShiftingMethod == 'rubberband') {
 			const rubberband = await import('../dsp/Rubberband.js')
 
 			const rubberbandOptions: RubberbandOptions = extendDeep(rubberband.defaultRubberbandOptions, postProcessingOptions.rubberband || {})
@@ -928,10 +950,10 @@ function convertSpeedScaleToSSMLValueString(rate: number) {
 
 function convertPitchScaleToSSMLValueString(pitch: number, voiceGender: VoiceGender) {
 	let fundementalFrequency
-	if (voiceGender == "male") {
+	if (voiceGender == 'male') {
 		// Use an estimate of the average male voice fundemental frequency
 		fundementalFrequency = 120
-	} else if (voiceGender == "female") {
+	} else if (voiceGender == 'female') {
 		// Use an estimate of the average female voice fundemental frequency
 		fundementalFrequency = 210
 	} else {
@@ -949,9 +971,9 @@ function convertPitchScaleToSSMLValueString(pitch: number, voiceGender: VoiceGen
 	}
 }
 
-export type SynthesisEngine = "vits" | "pico" | "flite" | "espeak" | "sam" | "sapi" | "msspeech" | "coqui-server" | "google-cloud" | "microsoft-azure" | "amazon-polly" | "elevenlabs" | "google-translate" | "microsoft-edge" | "streamlabs-polly"
+export type SynthesisEngine = 'vits' | 'pico' | 'flite' | 'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' | 'google-cloud' | 'microsoft-azure' | 'amazon-polly' | 'openai-cloud' | 'elevenlabs' | 'google-translate' | 'microsoft-edge' | 'streamlabs-polly'
 
-export type TimePitchShiftingMethod = "sonic" | "rubberband"
+export type TimePitchShiftingMethod = 'sonic' | 'rubberband'
 
 export interface SynthesisOptions {
 	engine?: SynthesisEngine
@@ -979,8 +1001,8 @@ export interface SynthesisOptions {
 
 	postProcessing?: {
 		normalizeAudio?: boolean
-		targetPeakDb?: number
-		maxIncreaseDb?: number
+		targetPeak?: number
+		maxGainIncrease?: number
 
 		speed?: number
 		pitch?: number
@@ -990,7 +1012,7 @@ export interface SynthesisOptions {
 	}
 
 	outputAudioFormat?: {
-		codec?: "wav" | "mp3" | "opus" | "m4a" | "ogg" | "flac"
+		codec?: 'wav' | 'mp3' | 'opus' | 'm4a' | 'ogg' | 'flac'
 		bitrate?: number
 	}
 
@@ -1055,15 +1077,13 @@ export interface SynthesisOptions {
 		region?: string
 		accessKeyId?: string
 		secretAccessKey?: string
-		pollyEngine?: "standard" | "neural"
+		pollyEngine?: 'standard' | 'neural'
 		lexiconNames?: string[]
 	}
 
-	elevenlabs?: {
-		apiKey?: string
-		stability?: number
-		similarityBoost?: number
-	},
+	openAICloud?: OpenAICloudTTSOptions
+
+	elevenlabs?: ElevenlabsTTSOptions,
 
 	googleTranslate?: {
 		tld?: string
@@ -1105,7 +1125,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	},
 
 	alignment: {
-		engine: "dtw",
+		engine: 'dtw',
 
 		dtw: {
 			granularity: 'high'
@@ -1114,13 +1134,13 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	postProcessing: {
 		normalizeAudio: true,
-		targetPeakDb: -3,
-		maxIncreaseDb: 30,
+		targetPeak: -3,
+		maxGainIncrease: 30,
 
 		speed: undefined,
 		pitch: undefined,
 
-		timePitchShiftingMethod: "sonic",
+		timePitchShiftingMethod: 'sonic',
 		rubberband: {
 		}
 	},
@@ -1164,7 +1184,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	},
 
 	coquiServer: {
-		serverUrl: "http://[::1]:5002",
+		serverUrl: 'http://[::1]:5002',
 		speakerId: null
 	},
 
@@ -1192,14 +1212,12 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		lexiconNames: undefined,
 	},
 
-	elevenlabs: {
-		apiKey: undefined,
-		stability: 0.5,
-		similarityBoost: 0.5,
-	},
+	openAICloud: defaultOpenAICloudTTSOptions,
+
+	elevenlabs: defaultElevenlabsTTSOptions,
 
 	googleTranslate: {
-		tld: "us"
+		tld: 'us'
 	},
 
 	microsoftEdge: {
@@ -1236,8 +1254,8 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 		let voiceList: SynthesisVoice[] = []
 
 		switch (options.engine) {
-			case "espeak": {
-				const EspeakTTS = await import("../synthesis/EspeakTTS.js")
+			case 'espeak': {
+				const EspeakTTS = await import('../synthesis/EspeakTTS.js')
 
 				const voices = await EspeakTTS.listVoices()
 
@@ -1256,41 +1274,41 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					return {
 						name: voice.identifier,
 						languages,
-						gender: "male"
+						gender: 'male'
 					}
 				})
 
 				break
 			}
 
-			case "flite": {
-				const FliteTTS = await import("../synthesis/FliteTTS.js")
+			case 'flite': {
+				const FliteTTS = await import('../synthesis/FliteTTS.js')
 
 				voiceList = deepClone(FliteTTS.voiceList)
 
 				break
 			}
 
-			case "pico": {
-				const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
+			case 'pico': {
+				const SvoxPicoTTS = await import('../synthesis/SvoxPicoTTS.js')
 
 				voiceList = SvoxPicoTTS.voiceList
 
 				break
 			}
 
-			case "sam": {
+			case 'sam': {
 				voiceList.push({
-					name: "sam",
-					languages: ["en-US", "en"],
-					gender: "male"
+					name: 'sam',
+					languages: ['en-US', 'en'],
+					gender: 'male'
 				})
 
 				break
 			}
 
-			case "vits": {
-				const VitsTTS = await import("../synthesis/VitsTTS.js")
+			case 'vits': {
+				const VitsTTS = await import('../synthesis/VitsTTS.js')
 
 				voiceList = VitsTTS.voiceList.map(entry => {
 					return { ...entry, packageName: `vits-${entry.name}` }
@@ -1299,8 +1317,8 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				break
 			}
 
-			case "sapi": {
-				const SapiTTS = await import("../synthesis/SapiTTS.js")
+			case 'sapi': {
+				const SapiTTS = await import('../synthesis/SapiTTS.js')
 
 				await SapiTTS.AssertSAPIAvailable(false)
 
@@ -1309,8 +1327,8 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				break
 			}
 
-			case "msspeech": {
-				const SapiTTS = await import("../synthesis/SapiTTS.js")
+			case 'msspeech': {
+				const SapiTTS = await import('../synthesis/SapiTTS.js')
 
 				await SapiTTS.AssertSAPIAvailable(true)
 
@@ -1319,23 +1337,23 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				break
 			}
 
-			case "coqui-server": {
+			case 'coqui-server': {
 				voiceList = [{
-					name: "coqui",
-					languages: ["en-US"],
-					gender: "unknown"
+					name: 'coqui',
+					languages: ['en-US'],
+					gender: 'unknown'
 				}]
 
 				break
 			}
 
-			case "google-cloud": {
-				const GoogleCloudTTS = await import("../synthesis/GoogleCloudTTS.js")
+			case 'google-cloud': {
+				const GoogleCloudTTS = await import('../synthesis/GoogleCloudTTS.js')
 
 				const apiKey = options.googleCloud!.apiKey
 
 				if (!apiKey) {
-					throw new Error(`No API key given`)
+					throw new Error(`No Google Cloud API key provided`)
 				}
 
 				const voices = await GoogleCloudTTS.getVoiceList(apiKey)
@@ -1343,25 +1361,25 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				voiceList = voices.map(voice => ({
 					name: voice.name,
 					languages: [normalizeLanguageCode(voice.languageCodes[0]), getShortLanguageCode(voice.languageCodes[0])],
-					gender: voice.ssmlGender.toLowerCase() as ("male" | "female"),
+					gender: voice.ssmlGender.toLowerCase() as ('male' | 'female'),
 				}))
 
 				break
 			}
 
-			case "microsoft-azure": {
-				const AzureCognitiveServicesTTS = await import("../synthesis/AzureCognitiveServicesTTS.js")
+			case 'microsoft-azure': {
+				const AzureCognitiveServicesTTS = await import('../synthesis/AzureCognitiveServicesTTS.js')
 
 				const subscriptionKey = options.microsoftAzure!.subscriptionKey
 
 				if (!subscriptionKey) {
-					throw new Error(`No subscription key given`)
+					throw new Error(`No Microsoft Azure subscription key provided`)
 				}
 
 				const serviceRegion = options.microsoftAzure!.serviceRegion
 
 				if (!serviceRegion) {
-					throw new Error(`No service region given`)
+					throw new Error(`No Microsoft Azure service region provided`)
 				}
 
 				const voices = await AzureCognitiveServicesTTS.getVoiceList(subscriptionKey, serviceRegion)
@@ -1370,32 +1388,32 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					voiceList.push({
 						name: voice.name,
 						languages: [normalizeLanguageCode(voice.locale), getShortLanguageCode(voice.locale)],
-						gender: voice.gender == 1 ? "female" : "male"
+						gender: voice.gender == 1 ? 'female' : 'male'
 					})
 				}
 
 				break
 			}
 
-			case "amazon-polly": {
-				const AwsPollyTTS = await import("../synthesis/AwsPollyTTS.js")
+			case 'amazon-polly': {
+				const AwsPollyTTS = await import('../synthesis/AwsPollyTTS.js')
 
 				const region = options.amazonPolly!.region
 
 				if (!region) {
-					throw new Error(`No region given`)
+					throw new Error(`No Amazon Polly region provided`)
 				}
 
 				const accessKeyId = options.amazonPolly!.accessKeyId
 
 				if (!accessKeyId) {
-					throw new Error(`No access key id given`)
+					throw new Error(`No Amazon Polly access key id provided`)
 				}
 
 				const secretAccessKey = options.amazonPolly!.secretAccessKey
 
 				if (!secretAccessKey) {
-					throw new Error(`No secret access key given`)
+					throw new Error(`No Amazon Polly secret access key provided`)
 				}
 
 				const voices = await AwsPollyTTS.getVoiceList(region, accessKeyId, secretAccessKey)
@@ -1416,22 +1434,30 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					voiceList.push({
 						name: voice.Id!,
 						languages: languageCodes,
-						gender: voice.Gender!.toLowerCase() as ("male" | "female")
+						gender: voice.Gender!.toLowerCase() as ('male' | 'female')
 					})
 				}
 
 				break
 			}
 
-			case "elevenlabs": {
-				const ElevenLabsTTS = await import("../synthesis/ElevenLabsTTS.js")
+			case 'openai-cloud': {
+				const OpenAICloudTTS = await import('../synthesis/OpenAICloudTTS.js')
+
+				voiceList = OpenAICloudTTS.voiceList
+
+				break
+			}
+
+			case 'elevenlabs': {
+				const ElevenLabsTTS = await import('../synthesis/ElevenlabsTTS.js')
 
 				const engineOptions = options.elevenlabs!
 
 				const apiKey = engineOptions.apiKey
 
 				if (!apiKey) {
-					throw new Error(`No Elevenlabs API key given`)
+					throw new Error(`No Elevenlabs API key provided`)
 				}
 
 				voiceList = await ElevenLabsTTS.getVoiceList(apiKey)
@@ -1439,29 +1465,29 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				break
 			}
 
-			case "google-translate": {
-				const GoogleTranslateTTS = await import("../synthesis/GoogleTranslateTTS.js")
+			case 'google-translate': {
+				const GoogleTranslateTTS = await import('../synthesis/GoogleTranslateTTS.js')
 
 				const langLookup = GoogleTranslateTTS.supportedLanguageLookup
 
 				for (const langCode in langLookup) {
 					voiceList.push({
 						name: langLookup[langCode],
-						languages: langCode.includes("-") ? [normalizeLanguageCode(langCode), getShortLanguageCode(langCode)] : [normalizeLanguageCode(langCode)],
-						gender: "unknown"
+						languages: langCode.includes('-') ? [normalizeLanguageCode(langCode), getShortLanguageCode(langCode)] : [normalizeLanguageCode(langCode)],
+						gender: 'unknown'
 					})
 				}
 
 				break
 			}
 
-			case "microsoft-edge": {
-				const MicrosoftEdgeTTS = await import("../synthesis/MicrosoftEdgeTTS.js")
+			case 'microsoft-edge': {
+				const MicrosoftEdgeTTS = await import('../synthesis/MicrosoftEdgeTTS.js')
 
 				const trustedClientToken = options.microsoftEdge?.trustedClientToken
 
 				if (!trustedClientToken) {
-					throw new Error("No trusted client token provided")
+					throw new Error('No Microsoft Edge trusted client token provided')
 				}
 
 				const voices =
@@ -1472,14 +1498,14 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				voiceList = voices.map((voice: any) => ({
 					name: voice.Name,
 					languages: [normalizeLanguageCode(voice.Locale), getShortLanguageCode(voice.Locale)],
-					gender: voice.Gender == "Male" ? "male" : "female",
+					gender: voice.Gender == 'Male' ? 'male' : 'female',
 				}))
 
 				break
 			}
 
-			case "streamlabs-polly": {
-				const StreamlabsPollyTTS = await import("../synthesis/StreamlabsPollyTTS.js")
+			case 'streamlabs-polly': {
+				const StreamlabsPollyTTS = await import('../synthesis/StreamlabsPollyTTS.js')
 
 				voiceList = StreamlabsPollyTTS.voiceList
 
@@ -1503,12 +1529,12 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 		voiceList = await loadVoiceList()
 	}
 
-	const languageCode = normalizeLanguageCode(options.language || "")
+	const languageCode = normalizeLanguageCode(options.language || '')
 
 	if (languageCode) {
 		let filteredVoiceList = voiceList.filter(voice => voice.languages.includes(languageCode))
 
-		if (filteredVoiceList.length == 0 && languageCode.includes("-")) {
+		if (filteredVoiceList.length == 0 && languageCode.includes('-')) {
 			const shortLanguageCode = getShortLanguageCode(languageCode)
 
 			filteredVoiceList = voiceList.filter(voice => voice.languages.includes(shortLanguageCode))
@@ -1519,7 +1545,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 	if (options.voiceGender) {
 		const genderLowercase = options.voiceGender.toLowerCase()
-		voiceList = voiceList.filter(voice => voice.gender == genderLowercase || voice.gender == "unknown")
+		voiceList = voiceList.filter(voice => voice.gender == genderLowercase || voice.gender == 'unknown')
 	}
 
 	if (options.voice) {
@@ -1568,31 +1594,31 @@ export interface RequestVoiceListResult {
 export async function selectBestOfflineEngineForLanguage(language: string): Promise<SynthesisEngine> {
 	language = normalizeLanguageCode(language)
 
-	const VitsTTS = await import("../synthesis/VitsTTS.js")
+	const VitsTTS = await import('../synthesis/VitsTTS.js')
 
 	const vitsLanguages = getAllLangCodesFromVoiceList(VitsTTS.voiceList)
 
 	if (vitsLanguages.includes(language)) {
-		return "vits"
+		return 'vits'
 	}
 
-	const FliteTTS = await import("../synthesis/FliteTTS.js")
+	const FliteTTS = await import('../synthesis/FliteTTS.js')
 
 	const fliteLanguages = getAllLangCodesFromVoiceList(FliteTTS.voiceList)
 
 	if (fliteLanguages.includes(language)) {
-		return "flite"
+		return 'flite'
 	}
 
-	const SvoxPicoTTS = await import("../synthesis/SvoxPicoTTS.js")
+	const SvoxPicoTTS = await import('../synthesis/SvoxPicoTTS.js')
 
 	const picoLanguages = getAllLangCodesFromVoiceList(SvoxPicoTTS.voiceList)
 
 	if (picoLanguages.includes(language)) {
-		return "pico"
+		return 'pico'
 	}
 
-	return "espeak"
+	return 'espeak'
 }
 
 export function getAllLangCodesFromVoiceList(voiceList: SynthesisVoice[]) {
@@ -1649,7 +1675,7 @@ export interface SynthesisVoice {
 	packageName?: string
 }
 
-export type VoiceGender = "male" | "female" | "unknown"
+export type VoiceGender = 'male' | 'female' | 'unknown'
 
 export const synthesisEngines: EngineMetadata[] = [
 	{
@@ -1673,13 +1699,13 @@ export const synthesisEngines: EngineMetadata[] = [
 	{
 		id: 'espeak',
 		name: 'eSpeak NG',
-		description: 'A lightweight "robot" sounding formant-based synthesizer.',
+		description: `A lightweight 'robot' sounding formant-based synthesizer.`,
 		type: 'local'
 	},
 	{
 		id: 'sam',
 		name: 'SAM (Software Automatic Mouth)',
-		description: 'A classic "robot" speech synthesizer from 1982.',
+		description: `A classic 'robot' speech synthesizer from 1982.`,
 		type: 'local'
 	},
 	{
@@ -1716,6 +1742,12 @@ export const synthesisEngines: EngineMetadata[] = [
 		id: 'amazon-polly',
 		name: 'Amazon Polly',
 		description: 'Amazon Polly (also: AWS Polly) cloud text-to-speech.',
+		type: 'cloud'
+	},
+	{
+		id: 'openai-cloud',
+		name: 'OpenAI Cloud',
+		description: 'OpenAI cloud text-to-speech.',
 		type: 'cloud'
 	},
 	{
