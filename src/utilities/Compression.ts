@@ -2,7 +2,7 @@ import path from 'node:path'
 import { Logger } from './Logger.js'
 import { readdir, stat } from './FileSystem.js'
 
-export async function createTarball(filePath: string, outputFile: string, prefixPath = "") {
+export async function createTarball(filePath: string, outputFile: string, prefixPath = '') {
 	const pathStat = await stat(filePath)
 
 	if (pathStat.isDirectory()) {
@@ -12,7 +12,7 @@ export async function createTarball(filePath: string, outputFile: string, prefix
 	}
 }
 
-export async function createTarballForFile(filePath: string, outputFile: string, prefixPath = "") {
+export async function createTarballForFile(filePath: string, outputFile: string, prefixPath = '') {
 	const logger = new Logger()
 
 	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
@@ -46,7 +46,7 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 	logger.end()
 }
 
-export async function createTarballForDir(inputDir: string, outputFile: string, prefixPath = "") {
+export async function createTarballForDir(inputDir: string, outputFile: string, prefixPath = '') {
 	const logger = new Logger()
 
 	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
@@ -88,4 +88,21 @@ export async function extractTarball(filepath: string, outputDir: string) {
 		preserveOwner: false,
 		//noChmod: true
 	})
+}
+
+export async function getDeflateCompressionMetricsForString(str: string) {
+	const zlib = await import('node:zlib')
+	const { promisify } = await import('node:util')
+
+	const originalStringBytes = Buffer.from(str, 'utf-8')
+
+	const deflateRaw = promisify(zlib.deflateRaw)
+
+	const compressedStringBytes = await deflateRaw(originalStringBytes)
+
+	return {
+		originalSize: originalStringBytes.length,
+		compressedSize: compressedStringBytes.length,
+		ratio: compressedStringBytes.length / originalStringBytes.length
+	}
 }
