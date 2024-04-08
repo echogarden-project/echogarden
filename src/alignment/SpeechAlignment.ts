@@ -182,9 +182,6 @@ export async function alignUsingDtwWithRecognition(sourceRawAudio: RawAudio, ref
 		// Add phone timelines by aligning each individual recognized word with the corresponding word
 		// in the reference timeline
 		recognitionTimelineWithPhones = await alignPhoneTimelines(sourceRawAudio, recognitionTimeline, synthesizedRecognizedTranscriptRawAudio, synthesizedRecognitionTimeline)
-	} else if (phoneAlignmentMethod == 'dtw-knn') {
-		logger.start('Align phone timing')
-		throw new Error('Not implemented')
 	} else {
 		throw new Error(`Unknown phone alignment method: ${phoneAlignmentMethod}`)
 	}
