@@ -1,7 +1,7 @@
-import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
-import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
@@ -85,7 +85,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end()
 
-			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortLanguageCode)
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortLanguageCode)
 
 			logger.end();
 
@@ -93,7 +93,6 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 				sourceRawAudio,
 				modelName,
 				modelDir,
-				tokenizerDir,
 				'transcribe',
 				shortLanguageCode,
 				whisperOptions

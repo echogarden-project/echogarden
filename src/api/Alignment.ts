@@ -8,7 +8,7 @@ import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
-import { WhisperOptions, defaultWhisperOptions } from '../recognition/WhisperSTT.js'
+import { WhisperOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { DtwGranularity } from '../alignment/SpeechAlignment.js'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
@@ -103,7 +103,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			}
 		}
 
-		let { audio: referenceRawAudio,  timeline: segmentTimeline, voice: espeakVoice } = await synthesize(transcript, synthesisOptions)
+		let { audio: referenceRawAudio, timeline: segmentTimeline, voice: espeakVoice } = await synthesize(transcript, synthesisOptions)
 
 		const sentenceTimeline = segmentTimeline.flatMap(entry => entry.timeline!)
 		const wordTimeline = sentenceTimeline.flatMap(entry => entry.timeline!)
@@ -162,20 +162,13 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		}
 
 		case 'dtw-ra': {
-			/*
-			const promptWords = (await splitToWords(prompt, language)).filter(word => isWord(word))
-
-			shuffleArrayInPlace(promptWords, this.randomGen)
-
-			prompt = promptWords.join(' ')
-			*/
-
 			const recognitionOptionsDefaults: API.RecognitionOptions = {
 				engine: 'whisper',
 				language,
 			}
 
-			const recognitionOptions: API.RecognitionOptions = extendDeep(recognitionOptionsDefaults, options.recognition || {})
+			const recognitionOptions: API.RecognitionOptions =
+				extendDeep({ ...recognitionOptionsDefaults, crop: options.crop }, options.recognition || {})
 
 			logger.end()
 
@@ -203,7 +196,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			const shortLanguageCode = getShortLanguageCode(language)
 
-			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, language)
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, language)
 
 			if (getRawAudioDuration(sourceRawAudio) > 30) {
 				throw new Error('Whisper based alignment currently only supports audio inputs that are 30s or less')
@@ -211,7 +204,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			logger.end()
 
-			mappedTimeline = await WhisperSTT.align(sourceRawAudio, transcript, modelName, modelDir, tokenizerDir, shortLanguageCode)
+			mappedTimeline = await WhisperSTT.align(sourceRawAudio, transcript, modelName, modelDir, shortLanguageCode)
 
 			break
 		}

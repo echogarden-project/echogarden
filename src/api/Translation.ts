@@ -23,7 +23,7 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
 	const logger = new Logger()
-	
+
 	const startTimestamp = logger.getTimestamp()
 
 	options = extendDeep(defaultSpeechTranslationOptions, options)
@@ -93,7 +93,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 			const shortSourceLanguageCode = getShortLanguageCode(sourceLanguage)
 			const shortTargetLanguageCode = getShortLanguageCode(targetLanguage)
 
-			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortSourceLanguageCode)
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortSourceLanguageCode)
 
 			if (shortTargetLanguageCode != 'en') {
 				throw new Error('Whisper translation only supports English as target language')
@@ -109,7 +109,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, tokenizerDir, 'translate', sourceLanguage, whisperOptions))
+			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, 'translate', sourceLanguage, whisperOptions))
 
 			addWordTextOffsetsToTimeline(wordTimeline, transcript);
 

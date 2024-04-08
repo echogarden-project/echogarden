@@ -142,7 +142,7 @@ export async function recognize(
 				const resultObject: WhisperCppVerboseResult = await readAndParseJsonFile(outJsonFilePath)
 				await remove(outJsonFilePath)
 
-				const parsedResultObject = parseResultObject(resultObject, getRawAudioDuration(sourceRawAudio), options.enableDTW!)
+				const parsedResultObject = await parseResultObject(resultObject, modelName, getRawAudioDuration(sourceRawAudio), options.enableDTW!)
 
 				resolve(parsedResultObject)
 			} else {
@@ -157,19 +157,24 @@ export async function recognize(
 	})
 }
 
-function parseResultObject(resultObject: WhisperCppVerboseResult, totalDuration: number, useDTWTimestamps: boolean): RecognitionResult {
-	const transcript = resultObject.transcription.map(partEntry => partEntry.text).join('').trim()
+async function parseResultObject(resultObject: WhisperCppVerboseResult, modelName: WhisperModelName, totalDuration: number, useDTWTimestamps: boolean): Promise<RecognitionResult> {
+	const { Whisper } = await import('../recognition/WhisperSTT.js')
 
-	const timeline: Timeline = []
+	const whisper = new Whisper(modelName, '')
+	await whisper.initializeTokenizerIfNeeded()
+
+	const tokenTimeline: Timeline = []
 
 	const tokens = resultObject.transcription
 		.flatMap(partEntry => partEntry.tokens)
-		.filter(entry => !(entry.text.startsWith('[') && entry.text.endsWith(']')))
+		//.filter(entry => !(entry.text.startsWith('[') && entry.text.endsWith(']')))
 
 	for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
 		const tokenEntry = tokens[tokenIndex]
 
-		const tokenText = tokenEntry.text
+		const tokenId = tokenEntry.id
+		const tokenText = whisper.tokenToText(tokenId)
+		const tokenConfidence = tokenEntry.p
 
 		let startTime: number
 		let endTime: number
@@ -187,28 +192,26 @@ function parseResultObject(resultObject: WhisperCppVerboseResult, totalDuration:
 			endTime = tokenEntry.offsets.to / 1000
 		}
 
-		const confidence = tokenEntry.p
-
-		if (!isWordOrSymbolWord(tokenText)) {
-			//continue
-		}
-
-		if (timeline.length === 0 || tokenText.startsWith(' ')) {
-			timeline.push({
-				type: 'word',
-				text: tokenText.trim(),
-				startTime,
-				endTime,
-			})
-		} else {
-			const previousEntry = timeline[timeline.length - 1]
-
-			previousEntry.text += tokenText
-			previousEntry.endTime = endTime
-		}
+		tokenTimeline.push({
+			type: 'token',
+			text: tokenText,
+			id: tokenId,
+			startTime,
+			endTime,
+			confidence: tokenConfidence
+		})
 	}
 
-	return { transcript, timeline, language: resultObject.result.language }
+	const allTokenIds = tokenTimeline.map(entry => entry.id!)
+	const transcript = whisper.tokensToText(allTokenIds).trim()
+
+	let timeline = whisper.tokenTimelineToWordTimeline(tokenTimeline)
+
+	return {
+		transcript,
+		timeline,
+		language: resultObject.result.language
+	}
 }
 
 function parseStdOutLinesToTimeline(lines: string[], entryType: TimelineEntryType): RecognitionResult {

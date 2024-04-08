@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import * as API from './API.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import path from 'path'
-import { WhisperModelName, type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { WhisperModelName } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
@@ -75,11 +75,11 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 			const whisperOptions = options.whisper!
 
-			const { modelName, modelDir, tokenizerDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, undefined)
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, undefined)
 
 			logger.end()
 
-			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, tokenizerDir, whisperOptions.temperature!)
+			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, whisperOptions.temperature!)
 
 			break
 		}

@@ -4,14 +4,13 @@ import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
 import { clip, getRepetitionScoreRelativeToFirstSubstring, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
-import { isWordOrSymbolWord, splitToWords } from '../nlp/Segmentation.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
-import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio } from '../audio/AudioUtilities.js'
-import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
+import { readFile } from '../utilities/FileSystem.js'
 import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
 import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
@@ -20,8 +19,9 @@ import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
 import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
+import { type Tiktoken } from 'tiktoken/lite'
 
-export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
+export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -36,15 +36,14 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
-	await whisper.initialize()
+	const whisper = new Whisper(modelName, modelDir)
 
 	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options)
 
 	return result
 }
 
-export async function align(sourceRawAudio: RawAudio, referenceText: string, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, sourceLanguage: string) {
+export async function align(sourceRawAudio: RawAudio, referenceText: string, modelName: WhisperModelName, modelDir: string, sourceLanguage: string) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -59,15 +58,14 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
-	await whisper.initialize()
+	const whisper = new Whisper(modelName, modelDir)
 
 	const timeline = await whisper.align(sourceRawAudio, referenceText, sourceLanguage)
 
 	return timeline
 }
 
-export async function detectLanguage(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, tokenizerDir: string, temperature: number) {
+export async function detectLanguage(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, temperature: number) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -76,8 +74,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error(`Language detection is only supported with multilingual models.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir, tokenizerDir)
-	await whisper.initialize()
+	const whisper = new Whisper(modelName, modelDir)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
 		const audioFeatures = await whisper.encodeAudio(partAudio)
@@ -96,17 +93,13 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 export class Whisper {
 	modelName: WhisperModelName
 	modelDir: string
-	tokenizerDir: string
 
 	isMultiligualModel: boolean
 
 	audioEncoder?: Onnx.InferenceSession
 	textDecoder?: Onnx.InferenceSession
 
-	textToTokenLookup = new Map<string, number>()
-	tokenToTextLookup = new Map<number, string>()
-
-	merges: [string, string][] = []
+	tiktoken?: Tiktoken
 
 	onnxOptions: Onnx.InferenceSession.SessionOptions = {
 		logSeverityLevel: 2,
@@ -125,10 +118,9 @@ export class Whisper {
 
 	randomGen = new XorShift32RNG(23948203)
 
-	constructor(modelName: WhisperModelName, modelDir: string, tokenizerDir: string) {
-		this.modelDir = modelDir
+	constructor(modelName: WhisperModelName, modelDir: string) {
 		this.modelName = modelName
-		this.tokenizerDir = tokenizerDir
+		this.modelDir = modelDir
 
 		this.isMultiligualModel = isMultiligualModel(this.modelName)
 
@@ -155,56 +147,69 @@ export class Whisper {
 		}
 	}
 
-	async initialize() {
+	async initializeIfNeeded() {
+		await this.initializeTokenizerIfNeeded()
+		await this.initializeEncoderSessionIfNeeded()
+		await this.initializeDecoderSessionIfNeeded()
+	}
+
+	async initializeTokenizerIfNeeded() {
+		if (this.tiktoken) {
+			return
+		}
+
 		const logger = new Logger()
 		await logger.startAsync('Load tokenizer data')
 
+		const tiktokenModulePackagePath = await loadPackage('whisper-tiktoken-data')
+
+		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
+		let tiktokenData = await readFile(tiktokenDataFilePath, { encoding: 'utf8' })
+
+		const patternString = `'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+`
+
+		const { Tiktoken } = await import('tiktoken/lite')
+
+		this.tiktoken = new Tiktoken(tiktokenData, {}, patternString)
+
+		logger.end()
+	}
+
+	async initializeEncoderSessionIfNeeded() {
+		if (this.audioEncoder) {
+			return
+		}
+
+		const logger = new Logger()
+
+		await logger.startAsync(`Create encoder model inference session for model '${this.modelName}'`)
+
 		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
-		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
-
-		const vocabFilePath = path.join(this.tokenizerDir, 'vocab.json')
-		const mergesFilePath = path.join(this.tokenizerDir, 'merges.txt')
-
-		const vocabObject = await readAndParseJsonFile(vocabFilePath)
-
-		function bpeEncodedStrToString(str: string) {
-			const decodedChars = []
-
-			for (const char of str) {
-				const decodedChar = vocabCharacterSetLookup[char]
-
-				if (decodedChar == undefined) {
-					throw new Error(`Invalid char: '${char}'`)
-				}
-
-				decodedChars.push(decodedChar)
-			}
-
-			return Buffer.from(decodedChars).toString('utf-8')
-		}
-
-		for (const key in vocabObject) {
-			const value = vocabObject[key]
-
-			const decodedKey = bpeEncodedStrToString(key)
-
-			this.textToTokenLookup.set(decodedKey, value)
-			this.tokenToTextLookup.set(value, decodedKey)
-		}
-
-		const mergesFileRawLines = (await readFile(mergesFilePath, 'utf8')).trim().split(/\r?\n/g)
-		const mergesFileRawEntries = mergesFileRawLines.map(line => line.trim().split(' '))
-		this.merges = mergesFileRawEntries.map(entry => [bpeEncodedStrToString(entry[0]), bpeEncodedStrToString(entry[1])])
-
-		await logger.startAsync(`Create ONNX inference session for model '${this.modelName}'`)
 
 		this.audioEncoder = await Onnx.InferenceSession.create(encoderFilePath, this.onnxOptions)
+
+		logger.end()
+	}
+
+	async initializeDecoderSessionIfNeeded() {
+		if (this.textDecoder) {
+			return
+		}
+
+		const logger = new Logger()
+
+		await logger.startAsync(`Create decoder model inference session for model '${this.modelName}'`)
+
+		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
+
 		this.textDecoder = await Onnx.InferenceSession.create(decoderFilePath, this.onnxOptions)
 
 		logger.end()
 	}
 
 	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string, options: WhisperOptions) {
+		await this.initializeIfNeeded()
+
 		const logger = new Logger()
 
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
@@ -240,7 +245,7 @@ export class Whisper {
 			let initialTokens: number[] = []
 
 			if (isFirstPart && prompt) {
-				const promptTokens = await this.textToTokens(prompt, language)
+				const promptTokens = this.textToTokens(prompt)
 
 				initialTokens = [this.tokenConfig.sotPrevToken, ...promptTokens]
 			} else if (options.autoPromptParts && previousPartTokens.length > 0) {
@@ -286,7 +291,7 @@ export class Whisper {
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 			//await this.addWordsToTimeline(timeline, partTokens, audioPartRawAudio, partCrossAttentionQKs, initialAudioTimeOffset, audioPartSamples.length / sampleRate)
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
-			const partTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, decodedTokensConfidence)
+			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, decodedTokensConfidence)
 
 			audioOffset = audioEndOffset
 
@@ -302,10 +307,9 @@ export class Whisper {
 			timeline[timeline.length - 1].endTime = audioDuration
 		}
 
-		timeline = this.mergeSuccessiveWordFragmentsInTimeline(timeline)
-		timeline.forEach(entry => { entry.text = entry.text.trim() })
+		timeline = this.tokenTimelineToWordTimeline(timeline)
 
-		const transcript = this.tokensToText(allDecodedTokens)
+		const transcript = this.tokensToText(allDecodedTokens).trim()
 
 		logger.end()
 
@@ -313,9 +317,14 @@ export class Whisper {
 	}
 
 	async align(rawAudio: RawAudio, referenceText: string, language: string) {
+		await this.initializeIfNeeded()
+
 		const logger = new Logger()
 
 		await logger.startAsync('Prepare for alignment')
+
+		referenceText = referenceText.replaceAll(/\s+/g, ' ')
+
 		const audioDuration = Math.min(getRawAudioDuration(rawAudio), 30)
 		const audioFrameCount = Math.floor(audioDuration / 0.02)
 
@@ -323,7 +332,7 @@ export class Whisper {
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
 		const eotToken = this.tokenConfig.eotToken
 
-		let tokens = [...initialTokens, ...await this.textToTokens(referenceText, language), eotToken]
+		let tokens = [...initialTokens, ...this.textToTokens(referenceText), eotToken]
 
 		logger.end()
 		const audioFeatures = await this.encodeAudio(rawAudio)
@@ -336,11 +345,9 @@ export class Whisper {
 
 		await logger.startAsync('Extract word timeline')
 		const alignmentPath = await this.findAlignmentPathFromQKs(crossAttentionQKs, tokens, 0, audioFrameCount)//, this.getAlignmentHeadIndexes())
-		let timeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
+		let timeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
 
-		timeline = this.mergeSuccessiveWordFragmentsInTimeline(timeline)
-		timeline.forEach(entry => { entry.text = entry.text.trim() })
-		//timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+		timeline = this.tokenTimelineToWordTimeline(timeline)
 
 		logger.end()
 
@@ -348,13 +355,15 @@ export class Whisper {
 	}
 
 	async detectLanguage(audioFeatures: Onnx.Tensor, temperature: number): Promise<LanguageDetectionResults> {
-		const logger = new Logger()
-
 		if (!this.isMultiligualModel) {
 			throw new Error('Language detection is only supported with multilingual models')
 		}
 
+		await this.initializeTokenizerIfNeeded()
+		await this.initializeDecoderSessionIfNeeded()
+
 		// Prepare and run decoder
+		const logger = new Logger()
 		await logger.startAsync('Detect language with Whisper model')
 
 		const sotToken = this.tokenConfig.sotToken
@@ -400,14 +409,18 @@ export class Whisper {
 	}
 
 	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, options: WhisperOptions) {
+		await this.initializeTokenizerIfNeeded()
+		await this.initializeDecoderSessionIfNeeded()
+
 		const logger = new Logger()
+
 		await logger.startAsync('Decode text tokens with Whisper decoder model')
 
 		options = extendDeep(defaultWhisperOptions, options)
 
 		const noSpeechThreshold = 0.6
 
-		const blankToken = this.textToTokenLookup.get(' ')
+		const blankToken = this.textToTokens(' ')[0]
 
 		const suppressedTokens = this.tokenConfig.suppressedTokens
 		const sotToken = this.tokenConfig.sotToken
@@ -476,7 +489,7 @@ export class Whisper {
 
 			// Suppress tokens
 			for (let logitIndex = 0; logitIndex < tokenLogits.length; logitIndex++) {
-				const isWrongTokenForInitialState = isInitialState && (logitIndex == blankToken || logitIndex == eotToken)
+				const isWrongTokenForInitialState = isInitialState && (logitIndex === blankToken || logitIndex === eotToken)
 				const isInSupressedList = suppressedTokens.includes(logitIndex)
 				const isNoTimestampsToken = logitIndex == noTimestampsToken
 
@@ -510,9 +523,11 @@ export class Whisper {
 			}
 
 			//
-			//const topLogits = [...tokenLogits].map((logit, index) => ({ index, logit, token: this.tokenToTextLookup.get(index) || '', prob: probs[index] }))
+			//const topLogits = [...tokenLogits].map((logit, index) => ({ index, logit, token: this.tokenToText(index) || '', prob: probs[index] }))
 			//topLogits.sort((a, b) => b.logit - a.logit)
 			///
+
+			let bufferedTokensToLog: number[] = []
 
 			// Add best token
 			function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number) {
@@ -577,7 +592,7 @@ export class Whisper {
 					const textTokenProbs = softmax(topLogits, options.temperature)
 
 					const topIndexOfPromisingPunctuationLogit = topLogitsWithIndexes.findIndex(entry => {
-						const tokenText = (this.tokenToTextLookup.get(entry.index) || '').trim()
+						const tokenText = this.tokenToText(entry.index).trim()
 						const tokenProb = probs[entry.index]
 
 						return tokenProb >= options.punctuationThreshold! && [',', '，', '.', '。', '!', '?'].includes(tokenText)
@@ -595,13 +610,19 @@ export class Whisper {
 				}
 
 				if (chosenTokenIndex < eotToken) {
-					let chosenTokenText = this.tokenToTextLookup.get(chosenTokenIndex) || ''
+					bufferedTokensToLog.push(chosenTokenIndex)
 
-					if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
-						chosenTokenText = chosenTokenText.trimStart()
+					let textToLog = this.tokensToText(bufferedTokensToLog)
+
+					if (textToLog.codePointAt(0) !== 65533) {
+						if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
+							textToLog = textToLog.trimStart()
+						}
+
+						logger.write(textToLog)
+
+						bufferedTokensToLog = []
 					}
-
-					logger.write(chosenTokenText)
 				}
 
 				const confidence = probs[chosenTokenIndex]
@@ -674,6 +695,8 @@ export class Whisper {
 	}
 
 	async encodeAudio(rawAudio: RawAudio) {
+		await this.initializeEncoderSessionIfNeeded()
+
 		const logger = new Logger()
 
 		const audioSamples = rawAudio.audioChannels[0]
@@ -775,7 +798,7 @@ export class Whisper {
 					})
 				}
 
-				const tokenText = this.tokenToTextLookup.get(token) || ''
+				const tokenText = this.tokenToText(token)
 
 				timeline[timeline.length - 1].text += tokenText
 			}
@@ -836,14 +859,14 @@ export class Whisper {
 						reinferredCrossAttentionQKs.slice(initialTokens.length)
 
 						const alignmentPath = await this.findAlignmentPathFromQKs(reinferredCrossAttentionQKs, tokensToDecode, 0, segmentFrameCount)//, alignmentHeadsIndexes[modelName])
-						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokensWithoutTimestamps, initialAudioTimeOffset + segmentStartTime, initialAudioTimeOffset + segmentEndTime)
+						const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, segmentTokensWithoutTimestamps, initialAudioTimeOffset + segmentStartTime, initialAudioTimeOffset + segmentEndTime)
 
-						timeline.push(...wordTimeline)
+						timeline.push(...tokenTimeline)
 					} else {
 						const alignmentPath = await this.findAlignmentPathFromQKs(segmentCrossAttentionQKs, segmentTokens, segmentStartFrame, segmentEndFrame)//, alignmentHeadsIndexes[modelName])
-						const wordTimeline = await this.getWordTimelineFromAlignmentPath(alignmentPath, segmentTokens, initialAudioTimeOffset, initialAudioTimeOffset + segmentEndTime)
+						const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, segmentTokens, initialAudioTimeOffset, initialAudioTimeOffset + segmentEndTime)
 
-						timeline.push(...wordTimeline)
+						timeline.push(...tokenTimeline)
 					}
 				}
 
@@ -857,17 +880,34 @@ export class Whisper {
 		}
 	}
 
-	mergeSuccessiveWordFragmentsInTimeline(timeline: Timeline) {
+	tokenTimelineToWordTimeline(tokenTimeline: Timeline) {
+		const separatorChars =
+			[' ', '–', '一', '，', '、', '|', '/', '\\', ';', '"', '“', '”', '…', '(', ')', '[', ']', '{', '}']
+
+		function startsWithSeparatingPunctuation(text: string) {
+			return separatorChars.some(char => text.startsWith(char))
+		}
+
+		function isSeparatorPunctuation(text: string) {
+			return separatorChars.includes(text)
+		}
+
 		const resultTimeline: Timeline = []
 
 		const groups: TimelineEntry[][] = []
 
-		for (const entry of timeline) {
-			if (entry.type != 'word') {
-				continue
-			}
+		for (let i = 0; i < tokenTimeline.length; i++) {
+			const entry = tokenTimeline[i]
+			const previousEntry = i > 0 ? tokenTimeline[i - 1] : undefined
 
-			if (groups.length == 0 || entry.text.startsWith(' ')) {
+			const text = entry.text
+			const previousEntryText = previousEntry?.text
+
+			if (groups.length == 0 ||
+				text === '' ||
+				startsWithSeparatingPunctuation(text) ||
+				(previousEntryText != null && isSeparatorPunctuation(previousEntryText))) {
+
 				groups.push([entry])
 			} else {
 				groups[groups.length - 1].push(entry)
@@ -875,39 +915,41 @@ export class Whisper {
 		}
 
 		for (const group of groups) {
-			if (group.length == 1) {
-				resultTimeline.push(deepClone(group[0]))
-			} else {
-				const text = group.map(entry => entry.text).join('')
-				const startTime = group[0].startTime
-				const endTime = group[group.length - 1].endTime
-				let confidence: number | undefined = undefined
+			const text = this.tokensToText(group.map(entry => entry.id!))
 
-				if (group[0].confidence != null) {
-					confidence = meanOfVector(group.map(entry => entry.confidence!))
-				}
-
-				const newEntry: TimelineEntry = {
-					type: 'word',
-					text,
-					startTime,
-					endTime,
-					confidence
-				}
-
-				resultTimeline.push(newEntry)
+			if (text === '') {
+				continue
 			}
+
+			const startTime = group[0].startTime
+			const endTime = group[group.length - 1].endTime
+			let confidence: number | undefined = undefined
+
+			if (group[0].confidence != null) {
+				confidence = meanOfVector(group.map(entry => entry.confidence!))
+			}
+
+			const newEntry: TimelineEntry = {
+				type: 'word',
+				text: text.trim(),
+				startTime,
+				endTime,
+				confidence,
+				timeline: group,
+			}
+
+			resultTimeline.push(newEntry)
 		}
 
 		return resultTimeline
 	}
 
-	async getWordTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, tokensConfidence?: number[], correctionAmount = 0.0) {
+	async getTokenTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, tokensConfidence?: number[], correctionAmount = 0.0) {
 		if (alignmentPath.length == 0) {
 			return []
 		}
 
-		const wordTimeline: Timeline = []
+		const tokenTimeline: Timeline = []
 
 		for (let pathIndex = 0; pathIndex < alignmentPath.length; pathIndex++) {
 			if (pathIndex != 0 && alignmentPath[pathIndex].source == alignmentPath[pathIndex - 1].source) {
@@ -919,34 +961,35 @@ export class Whisper {
 			const tokenIndex = tokenMappingEntry.source
 			const token = tokens[tokenIndex]
 			const tokenConfidence = tokensConfidence ? tokensConfidence[tokenIndex] : undefined
-			const tokenText = this.tokenToTextLookup.get(token)
-
-			if (token >= this.tokenConfig.eotToken || !tokenText) {
-				continue
-			}
+			const tokenText = this.tokenToText(token)
 
 			let startTime = startTimeOffset + (tokenMappingEntry.dest * 0.02)
 
 			startTime = Math.max(startTime + correctionAmount, startTimeOffset)
 
-			if (wordTimeline.length > 0) {
-				wordTimeline[wordTimeline.length - 1].endTime = startTime
+			if (tokenTimeline.length > 0) {
+				tokenTimeline[tokenTimeline.length - 1].endTime = startTime
 			}
 
-			wordTimeline.push({
-				type: 'word',
+			//if (!tokenText || token >= this.tokenConfig.eotToken) {
+			//	continue
+			//}
+
+			tokenTimeline.push({
+				type: 'token',
 				text: tokenText,
+				id: token,
 				startTime,
 				endTime: -1,
 				confidence: tokenConfidence
 			})
 		}
 
-		if (wordTimeline.length > 0) {
-			wordTimeline[wordTimeline.length - 1].endTime = endTimeOffset
+		if (tokenTimeline.length > 0) {
+			tokenTimeline[tokenTimeline.length - 1].endTime = endTimeOffset
 		}
 
-		return wordTimeline
+		return tokenTimeline
 	}
 
 	async findAlignmentPathFromQKs(qksTensors: Onnx.Tensor[], tokens: number[], segmentStartFrame: number, segmentEndFrame: number, headIndexes?: number[]) {
@@ -1121,63 +1164,31 @@ export class Whisper {
 		return initialTokens
 	}
 
-	getAlignmentHeadIndexes() {
-		return alignmentHeadsIndexes[this.modelName]
+	tokenToText(token: number) {
+		if (token >= this.tokenConfig.eotToken) {
+			return ''
+		}
+
+		const utf8Data = this.tiktoken!.decode_single_token_bytes(token)
+		const str = Buffer.from(utf8Data).toString('utf8')
+
+		return str
 	}
 
 	tokensToText(tokens: number[]) {
-		return tokens.map(token => this.tokenToTextLookup.get(token) || '').join('').trim()
+		tokens = tokens.filter(token => token < this.tokenConfig.eotToken)
+
+		const decodedTokens = Buffer.from(this.tiktoken!.decode(new Uint32Array(tokens))).toString('utf8')
+
+		return decodedTokens
 	}
 
-	async textToTokens(text: string, language: string) {
-		const resultTokens: number[] = []
+	textToTokens(text: string) {
+		return Array.from(this.tiktoken!.encode(text))
+	}
 
-		const words = (await splitToWords(text, language)).filter(w => w.trim().length > 0)
-
-		//words = words.filter(word => wordCharacterPattern.test(word))
-
-		for (let i = 1; i < words.length; i++) {
-			words[i] = ` ${words[i]}`
-		}
-
-		const allResultingSubwords: string[][] = []
-
-		for (const word of words) {
-			const tokenForEntireWord = this.textToTokenLookup.get(word)
-
-			if (tokenForEntireWord) {
-				resultTokens.push(tokenForEntireWord)
-				allResultingSubwords.push([word])
-				continue
-			}
-
-			const subwords = word.split('')
-
-			for (const mergeRule of this.merges) {
-				for (let i = 0; i < subwords.length - 1; i++) {
-					const currentSubword = subwords[i]
-					const nextSubword = subwords[i + 1]
-
-					if (currentSubword == mergeRule[0] && nextSubword == mergeRule[1]) {
-						subwords.splice(i, 2, mergeRule[0] + mergeRule[1])
-					}
-				}
-			}
-
-			for (const subword of subwords) {
-				const tokenForSubword = this.textToTokenLookup.get(subword)
-
-				if (!tokenForSubword) {
-					throw new Error(`Failed tokenizing the given text. The word '${word}' contains a subword '${subword}' which is not in the vocabulary.`)
-				}
-
-				resultTokens.push(tokenForSubword)
-			}
-
-			allResultingSubwords.push(subwords)
-		}
-
-		return resultTokens
+	getAlignmentHeadIndexes() {
+		return alignmentHeadsIndexes[this.modelName]
 	}
 }
 
@@ -1360,10 +1371,7 @@ export async function loadPackagesAndGetPaths(modelName: WhisperModelName | unde
 
 	const modelDir = await loadPackage(packageName)
 
-	const tokenizerPackagePath = await loadPackage(tokenizerPackageName)
-	const tokenizerDir = isMultiligualModel(modelName) ? path.join(tokenizerPackagePath, 'multilingual') : path.join(tokenizerPackagePath, 'gpt2')
-
-	return { modelName, modelDir, tokenizerDir }
+	return { modelName, modelDir }
 }
 
 export function normalizeWhisperModelName(modelName: WhisperModelName, languageCode: string | undefined): WhisperModelName {
