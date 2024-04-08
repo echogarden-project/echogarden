@@ -33,7 +33,7 @@ export function startMessageChannel() {
 	messageChannel.port2.start()
 
 	addListenerToClientMessages((message) => {
-		if (message.messageType == 'CancelationRequest') {
+		if (message.messageType == 'CancelationRequest' || message.messageType == 'CancellationRequest') {
 			//log(`CANCEL REQUESTED FOR ${message.requestId}`)
 			canceledRequests.add(message.requestId)
 			return
@@ -70,7 +70,7 @@ async function processQueueIfIdle() {
 			})
 		}
 
-		function setCancelationFlagIfNeeded() {
+		function setCancellationFlagIfNeeded() {
 			if (canceledRequests.has(requestId)) {
 				cancelCurrentTask = true
 				canceledRequests.delete(requestId)
@@ -79,8 +79,8 @@ async function processQueueIfIdle() {
 
 		await yieldToEventLoop()
 
-		setCancelationFlagIfNeeded()
-		const cancelationFlagSetterInterval = setInterval(setCancelationFlagIfNeeded, 20)
+		setCancellationFlagIfNeeded()
+		const cancellationFlagSetterInterval = setInterval(setCancellationFlagIfNeeded, 20)
 
 		try {
 			if (cancelCurrentTask) {
@@ -100,7 +100,7 @@ async function processQueueIfIdle() {
 		} finally {
 			resetActiveLogger()
 
-			clearInterval(cancelationFlagSetterInterval)
+			clearInterval(cancellationFlagSetterInterval)
 			cancelCurrentTask = false
 		}
 	}
