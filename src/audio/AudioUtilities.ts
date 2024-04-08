@@ -151,13 +151,24 @@ export function applyGainFactor(rawAudio: RawAudio, gainFactor: number): RawAudi
 }
 
 export function downmixToMono(rawAudio: RawAudio): RawAudio {
+	const channelCount = rawAudio.audioChannels.length
 	const sampleCount = rawAudio.audioChannels[0].length
+
+	if (channelCount === 1) {
+		return cloneRawAudio(rawAudio)
+	}
 
 	const downmixedAudio = new Float32Array(sampleCount)
 
 	for (const channelSamples of rawAudio.audioChannels) {
 		for (let i = 0; i < sampleCount; i++) {
 			downmixedAudio[i] += channelSamples[i]
+		}
+	}
+
+	if (channelCount > 1) {
+		for (let i = 0; i < sampleCount; i++) {
+			downmixedAudio[i] /= channelCount
 		}
 	}
 
@@ -226,6 +237,14 @@ export function sliceRawAudio(rawAudio: RawAudio, startSampleIndex: number, endS
 }
 
 export function sliceAudioChannels(audioChannels: Float32Array[], startSampleIndex: number, endSampleIndex: number) {
+	if (audioChannels.length === 0) {
+		throw new Error('audioChannels array is empty')
+	}
+
+	if (startSampleIndex > endSampleIndex) {
+		throw new Error('startSampleIndex must be less or equal to endSampleIndex')
+	}
+
 	const channelCount = audioChannels.length
 
 	const outAudioChannels: Float32Array[] = []
