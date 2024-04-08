@@ -15,13 +15,13 @@ echogarden serve [options]
 * `keyPath`: Path to a private key file, required when `secure = true`
 * `deflate`: Use per-message deflate. Defaults to `true`
 * `maxPayload`: Maximum raw message payload size (in bytes). Defaults to `1000 * 1000000` (1GB)
-* `useWorkerThread`: Run worker in a separate thread. Defaults to `true` (recommended to leave as is)
+* `useWorkerThread`: Run worker in a separate thread. Defaults to `true` (recommended leaving as is)
 
 ## Using the client class
 
 For Node.js clients, a simple client class allows to wrap communications with the server in a more convenient interface, without needing to know the details of the protocol.
 
-Currently, the client is is embedded in the main codebase. This means you have to import the `echogarden` package to use it:
+Currently, the client is embedded in the main codebase. This means you have to import the `echogarden` package to use it:
 
 ```ts
 import { WebSocket } from 'ws'
@@ -39,7 +39,7 @@ ws.on("open", async () => {
 In the future, this module may be separated to an independent lightweight package.
 
 **TODO**: Document using the client class with a background worker.
-**TODO**: Add support for cancelation signals in the client class.
+**TODO**: Add support for cancellation signals in the client class.
 
 ## Protocol details
 
@@ -111,18 +111,18 @@ Example response, for the above synthesis request:
 }
 ```
 
-### Cancelation messages
+### Cancellation messages
 
-To cancel an existing request, the client can send a `CancelationRequest` message, with the same `requestId` of an ongoing request, like:
+To cancel an existing request, the client can send a `CancellationRequest` message, with the same `requestId` of an ongoing request, like:
 
 ```ts
 {
-	messageType: 'CancelationRequest',
+	messageType: 'CancellationRequest',
 	requestId: 'cb7e0f3ec835a213b005c4424c8d5775'
 }
 ```
 
-**TODO**: Cancelation requests are currently only supported for synthesis operations. Extend support for other operations.
+**TODO**: Cancellation requests are currently only supported for synthesis operations. Extend support for other operations.
 
 ## Starting the server programmatically
 
