@@ -225,6 +225,8 @@ export type TimelineEntry = {
 
 	confidence?: number
 
+	id?: number
+
 	timeline?: Timeline
 }
 
