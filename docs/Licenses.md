@@ -36,6 +36,6 @@ All are freely distributable, with varying licenses:
 * MDX-NET source separation models (`mdxnet-`): [MIT License](https://github.com/kuielab/mdx-net/blob/main/LICENSE)
 
 Tool binary distributions:
-* FFMpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
+* FFmpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
 * SoX: [GPL v2 License](https://github.com/chirlu/sox/blob/master/LICENSE.GPL)
 * whisper.cpp: [MIT License](https://github.com/ggerganov/whisper.cpp/blob/master/LICENSE)

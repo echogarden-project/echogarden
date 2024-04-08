@@ -3,6 +3,19 @@
 ## Bugs
 * Using the `|` separator breaks synthesis on Polish eSpeak TTS, since the symbol is pronounced directly on that language. Currently, separators are only added when aligning using `dtw-ra`.
 
+## External bugs
+
+* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
+* `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
+* `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
+* `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
+* `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
+* `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
+* `compromise`: Slow initialization time. Currently, it takes more than a second
+* Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
+* `whisper.cpp`: Timestamps aren't very accurate when `enableDTW` is set. There's a constant lag
+* Node.js WASI on `v21.7.2` and `v20` is intermittently crashing the process when `run` is called
+
 ### Phoneme processing
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
 
@@ -36,15 +49,15 @@
 * Minimum size when iterating text nodes to get handle
 
 ### Server
-* Option to allow or disallow local file paths as arguments to API methods (as a security guard)
+* Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
 
 ### Worker
-* Add cancelation checks in more operations
+* Add cancellation checks in more operations
 * Support more operations
 
 ### CLI
-* Show names of files written do disk. This is useful for cases where a file is auto-renamed to allow overwrite.
-* Restrict input media file extensions to ensure that invalid files are not passed to FFMpeg.
+* Show names of files written do disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data.
+* Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg.
 * Mode to print IPA words when speaking
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
@@ -56,7 +69,7 @@
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
 * Generate JSON configuration file schema
-* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help giving better error messages when the given file type is wrong.
+* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help to give better error messages when the given file type is wrong.
 
 ### CLI / playback
 * Option to set audio output device for playback
@@ -75,7 +88,7 @@
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
 
 ### CLI / `list-voices`
-* When given a configuration file, see if you can fall back to take options from from `speak` options, for example, to take API keys that are required for the both the synthesis request and voice list request and
+* When given a configuration file, see if you can fall back to take options from `speak` options, for example, to take API keys that are required for the both the synthesis request and voice list request and
 
 ### CLI / `list-packages`
 * Support filters
@@ -94,12 +107,12 @@
 * Option to control logging verbosity
 * Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
-* See if it's possible to detect and include / remove Emoji characters in timelines
+* See whether it's possible to detect and include / remove Emoji characters in timelines
 * Add support for phrases in timelines
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
-* Better error message when package is not found remotely. Currently it just gives a `404 not found` without any other information.
+* Better error message when package is not found remotely. Currently, it just gives a `404 not found` without any other information.
 * Retry on network failure
 
 ### Speech language detection
@@ -134,6 +147,7 @@
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
 * Speaker-specific voice option
 * Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
+* When `splitToSentences` is set to `false`, the timeline doesn't include proper sentences. Find a way to pass larger sections to the TTS, but still have proper sentences in the timeline.
 
 ### Synthesis / preprocessing
 * Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
@@ -149,13 +163,13 @@
 * Option to add POS tags to timeline, if available
 
 ### Synthesis / VITS
-* Allow to limit how many models are cached in memory
+* Allow limiting how many models are cached in memory
 * Custom model paths (decide how to implement)
 * Pull voice list from JSON file, or based on URL? Is that a good idea?
 * Add speaker names to voice list somehow
 
 ### Synthesis / Azure Cognitive Services
-* Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently it may send invalid input to Azure
+* Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
 
 ### Recognition
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
@@ -166,14 +180,18 @@
 * Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * Cache last model (if enough memory available)
 * Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
-* The segment output can be use to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
+* The segment output can be used to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
 * Use compression ratios on the decoded tokens of individual segments and discard if too much repetition detected
 * Way to specify model size only, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
-* Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better.
+* Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better
+* Try to exclude the timing for trailing punctuation characters in words that contain them. This can help narrow down the end timestamp to cover the word more tightly
+* Consider including the individual decoded tokens themselves as a sub-word timeline
+* Whisper's Chinese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them.
 
-### Alignment
+### Alignment / DTW-RA
+* Remove emojis and other special characters, that are not likely to be pronounced in the speech, from the transcript timeline before it is synthesized. For example Whisper may produce 'note' emojis when it detects singing or music. Pronouncing them reduces the accuracy of the alignment.
 
-### Postprocessing
+### Post-processing
 
 ## Maintenance and cleanup
 
@@ -181,21 +199,10 @@
 * CLI code has a lot of repetition. See how it can be refactored
 * See if the installation of `winax` can be automated and only initiate if it is in a Windows environment
 * Ensure that all modules have no internal state other than caching
-* Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, an which cannot?
+* Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, and which cannot?
 * Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag and rebuild them. Support for node.js modules was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915).
 * Remove built-in voices from `flite` to reduce size?
-* Slim down `kuromoji` package to the reduce base install size
-
-## External bugs
-
-* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
-* `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
-* `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
-* `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
-* `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
-* `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
-* `compromise`: Slow initialization time. Currently it takes more than a second
-* Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
+* Slim down `kuromoji` package to reduce base installation size
 
 ## Things to test
 
@@ -235,7 +242,7 @@
 * Live input / microphone recognition
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
-* Live vosk alternatives events
+* Live Vosk alternatives events
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment

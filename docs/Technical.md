@@ -51,7 +51,7 @@ However, it is a lot of work, and only a subset of the engines can be supported 
 * Possibly lots of issues with inconsistent browser support and browser security constraints
 * Not future-proof. Due to changing restrictions of browsers, the runtime environment is not guaranteed be reliably reproducible in the future, meaning that it may need continuous maintenance to ensure it keeps working on the newest browsers
 
-It remains to be seen if this sort of work would feel justified somehow. I designed the tool to make the local installation extremely easy and issue-free. I guess it could look "impressive" to be able to run it in a browser, and may be come as a nice "toy" or "tech-demo", and could get some attention, but it may eventually turn out to be simpler and more practical to just install a local instance and connect to it from the browser via a WebSocket API.
+It remains to be seen if this sort of work would feel justified somehow. I designed the tool to make the local installation extremely easy and issue-free. I guess it could look "impressive" to be able to run it in a browser, and may become as a nice "toy" or "tech-demo", and could get some attention, but it may eventually turn out to be simpler and more practical to just install a local instance and connect to it from the browser via a WebSocket API.
 
 A TTS-only browser extension is in development. It registers Echogarden's voices on the browser's Web Speech API using the [`chrome.ttsEngine`](https://developer.chrome.com/docs/extensions/reference/ttsEngine/) extension API and communicates with it using the WebSocket API
 

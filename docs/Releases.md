@@ -27,8 +27,8 @@
 * Default speech language detection engine is now changed to `whisper`
 * Default voice activity detection engine is now changed to `silero`
 * CLI: duplicate file name outputs would now append the `_001` suffix pattern instead of ` (1)`. This change is meant to simplify sorting and typing the resulting file name and remove the space and parenthesis characters, to ensure compatibility with all operating systems
-* `targetPeakDb` postprocessing and denoising option renamed to `targetPeak`
-* `maxIncreaseDb` postprocessing and denoising option renamed to `maxGainIncrease`
+* `targetPeakDb` post-processing and denoising option renamed to `targetPeak`
+* `maxIncreaseDb` post-processing and denoising option renamed to `maxGainIncrease`
 * `dryMixGainDb` denoising option renamed to `dryMixGain`
 
 **Enhancements**:
@@ -63,7 +63,7 @@
 
 ## `0.11.x` (August 17, 2023)
 
-Many different features, enhancements, and fixes were incrementally added over the span of 7 months, up to March 2024.
+Many features, enhancements, and fixes were incrementally added over the span of 7 months, up to March 2024.
 
 **New features**:
 * Partial rewrite of subtitle generation methods. Adds many features and options
@@ -117,7 +117,7 @@ Many different features, enhancements, and fixes were incrementally added over t
 * Expose subtitle configuration options to CLI
 
 **Behavioral changes**:
-* Rename 'subtitles.minWords' to 'subtitles.minWordsInLine'
+* Rename `subtitles.minWords` to `subtitles.minWordsInLine`
 
 **Enhancements**:
 * Improve speech language detection to work with arbitrary length audio. Split audio to overlapping parts and detect each part individually. Then average the results.
@@ -160,7 +160,7 @@ Many different features, enhancements, and fixes were incrementally added over t
 * Change whitespace option to include option for collapsing all whitespace
 
 **Behavioral changes**:
-* Set Elevenlabs defaults to mid values
+* Set Elevenlabs defaults to mid-values
 * Split plain text to paragraphs using double line breaks by default.
 * Rename `awsPolly` options to `amazonPolly` to be more consistent with documentation
 
@@ -234,7 +234,7 @@ Many different features, enhancements, and fixes were incrementally added over t
 
 **Enhancements**:
 * Show current sentence and segment in synthesis log.
-* Add check for cancelation flag.
+* Add check for cancellation flag.
 * Add support to additional VITS voices
 * Improve auto TTS engine selection
 * Many Enhancements

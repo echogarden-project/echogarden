@@ -43,7 +43,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 
 **Output audio format**:
 * `outputAudioFormat.codec`: Codec identifier (**Note**: API only. CLI uses file extensions instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the API documentation). Optional
-* `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size.  Optional
+* `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
 
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
@@ -64,7 +64,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `sapi.rate`: SAPI speech rate, in its native units. An integer number between `-10` and `10`. Setting `speed` would apply time stretching instead. The two options can be used together
 
 **Microsoft Speech Platform**:
-* `msspeech.rate`: same  units and effects as the SAPI speech rate
+* `msspeech.rate`: same units and effects as the SAPI speech rate
 
 **Coqui Server**:
 * `coquiServer.serverUrl`: server URL
@@ -102,7 +102,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
 
 **Google Translate**:
-* `googleTranslate.tld`: top level domain to to connect to. Can change the dialect for a small number or voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
+* `googleTranslate.tld`: top level domain to connect to. Can change the dialect for a small number of voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
 
 **Microsoft Edge**:
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service
@@ -150,7 +150,7 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `whisper.suppressRepetition`: attempt to suppress decoding repeating token patterns (experimental). Defaults to `false`
 
 **Whisper.cpp**:
-* `whisperCpp.model`: selects which whisper.cpp model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`. Defaults to `base` or `base.en`
+* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`. Defaults to `base` or `base.en`
 * `whisperCpp.executablePath`: custom executable path to use. By default, on Windows x64 and Linux x64, a CPU-only build is downloaded via an internal package. For other platforms, or for using GPU-enabled builds, this must be provided
 * `whisperCpp.threadCount`: number of CPU threads to use
 * `whisperCpp.coreCount`: number of CPU cores to use
@@ -299,7 +299,7 @@ Applicable to CLI command: `denoise`, API method: `denoise`
 **General**:
 * `engine`: can only be `rnnoise`
 
-**Postprocessing**:
+**Post-processing**:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `false`
 * `postProcessing.targetPeak`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxGainIncrease`: max gain increase (decibels) when performing normalization. Defaults to `30`
@@ -336,5 +336,5 @@ These are shared between text-to-speech, speech-to-text and alignment operations
 
 * `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
 * `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
-* `--debug`, `--no-debug`: show/hide the full details of JavasSript errors, if they occur. Disabled by default
+* `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
 * `--config=...`: path to configuration file to use. See the [CLI guide](CLI.md) for more information about configuration files

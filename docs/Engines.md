@@ -5,7 +5,7 @@
 
 **Offline**:
 
-* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently there are 117 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxemburgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/).
+* [VITS](https://github.com/jaywalnut310/vits) (`vits`): a high-quality end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently, there are 117 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxembourgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/).
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a legacy diphone-based synthesis engine. Supports English (US, UK), Spanish, Italian, French, and German.
 * [Flite](https://github.com/festvox/flite) (`flite`): a legacy diphone-based synthesis engine. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi.
 * [eSpeak-NG](https://github.com/espeak-ng/espeak-ng/) (`espeak`): a lightweight "robot" sounding formant-based synthesizer. Supports 100+ languages. Extensively used internally for speech alignment, phonemization, and other internal tasks.
@@ -89,7 +89,7 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 * [WebRTC VAD](https://github.com/dpirch/libfvad) (`webrtc`): a voice activity detector. Originally from the Chromium browser source code.
 * [Silero VAD](https://github.com/snakers4/silero-vad) (`silero`): a voice activity detection model by Silero.
 * [RNNoise](https://github.com/xiph/rnnoise) (`rnnoise`): uses RNNoise's speech probabilities output for each audio frame as a VAD metric.
-* Adaptive Gate (`adaptive-gate`): uses a bandlimited adaptive gate to identify activity in the lower voice frequencies. Reliable, but will often pass non-vocal sounds if they are loud enough. Good for clean speech and acapella singing, where most non-vocal segments are quiet.
+* Adaptive Gate (`adaptive-gate`): uses a band-limited adaptive gate to identify activity in the lower voice frequencies. Reliable, but will often pass non-vocal sounds if they are loud enough. Good for clean speech and a cappella singing, where most non-vocal segments are quiet.
 
 ## Speech denoising
 

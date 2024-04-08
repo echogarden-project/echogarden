@@ -24,7 +24,7 @@ When you encounter an odd pronunciation in a VITS voice, there are several possi
 1. This word has multiple different pronunciations based on context (a heteronym). In that case, it may be possible resolve the pronunciations based on context, by using the preceding and succeeding words as indicators. This is supported by the lexicon in the `precededBy`, `notPrecededBy`, `succeededBy`, `notSucceededBy` properties.
 1. An issue with model training, which may need to be forwarded to the original authors.
 
-If the problem is serious, you can report it and we'll see what we can do.
+If the problem is serious, you can report it, and we'll see what we can do.
 
 ## Notes about licensing
 
@@ -37,9 +37,10 @@ In the future, I may want to re-license parts (or all) of the code to a more per
 * Clone or fork the repository
 * Ensure you have [Node.js](https://nodejs.org/en/download) installed
 * Ensure you have TypeScript installed (`npm install typescript -g`)
+* Run `npm install` in the project base directory
 * Compile using `tsc .` at the project base directory
 
-## Auto-compiling in VSCode
+## Auto-compiling in Visual Studio Code
 
 Create the `.vscode` subdirectory at the project base directory
 
@@ -88,7 +89,7 @@ npx echogarden speak "Hello World!"
 
 Adding `npx` would run the local repository code directly.
 
-## Step-debugging in VSCode
+## Step-debugging in VS Code
 
 Ensure the project is compiled (using the task above is highly recommended)
 

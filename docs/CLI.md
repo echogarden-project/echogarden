@@ -120,7 +120,7 @@ echogarden align speech.mp3 transcript.txt parts/[segment].m4a parts/[segment].s
 
 ### Splitting based on sentence boundaries (future)
 
-Splitting based on sentences, using a `[sentence]` placeholder, is currently on the to-do list. Please let me know if you find this feature important and I'll prioritize it.
+Splitting based on sentences, using a `[sentence]` placeholder, is currently on the to-do list. Please let me know if you find this feature important, and I'll prioritize it.
 
 ## Audio playback
 By default, audio isn't played in the terminal when an output file is specified, you can override this behavior by adding `--play`:

@@ -195,7 +195,7 @@ Detects language of text.
 
 ### `detectVoiceActivity(input, options)`
 
-Detects voice activity in audio (non real-time).
+Detects voice activity in audio (non-real-time).
 
 * `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: Voice activity detection options object
@@ -274,7 +274,7 @@ Set a global option.
 
 Supported keys:
 
-* `'ffmpegPath'`: override FFMpeg executable path
+* `'ffmpegPath'`: override FFmpeg executable path
 * `'soxPath'`: override SoX executable path
 
 ### `getGlobalOption(key)`
@@ -283,7 +283,7 @@ Get a global option.
 
 Supported keys:
 
-* `'ffmpegPath'`: get FFMpeg executable path
+* `'ffmpegPath'`: get FFmpeg executable path
 * `'soxPath'`: get SoX executable path
 
 #### Returns:
