@@ -67,10 +67,18 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		const { detectedLanguage } = await detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
 
 		logger.end()
-		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
+		logger.logTitledMessage('Source language detected', formatLanguageCodeWithName(detectedLanguage))
 
 		options.sourceLanguage = detectedLanguage
+	} else {
+		logger.end()
+
+		const specifiedLanguageFormatted = formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.sourceLanguage)))
+
+		logger.logTitledMessage('Source language', specifiedLanguageFormatted)
 	}
+
+	logger.logTitledMessage('Target language', formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.targetLanguage!))))
 
 	logger.start('Preprocess audio for translation')
 
@@ -138,7 +146,9 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 				throw new Error('Whisper.cpp translation tasks are only possible with a multilingual model')
 			}
 
-			const executablePath = await WhisperCppSTT.loadPackageAndGetExecutablePath(whisperCppOptions.executablePath)
+			const buildType = whisperCppOptions.enableGPU ? 'cuda' : 'cpu'
+
+			const executablePath = await WhisperCppSTT.loadPackageAndGetExecutablePath(whisperCppOptions.executablePath, buildType)
 
 			logger.end();
 
@@ -147,6 +157,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 				'translate',
 				shortSourceLanguageCode,
 				executablePath,
+				buildType,
 				modelName,
 				modelPath,
 				whisperCppOptions,
