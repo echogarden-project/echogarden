@@ -167,7 +167,6 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 
 	const tokens = resultObject.transcription
 		.flatMap(partEntry => partEntry.tokens)
-		//.filter(entry => !(entry.text.startsWith('[') && entry.text.endsWith(']')))
 
 	for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
 		const tokenEntry = tokens[tokenIndex]
@@ -296,9 +295,9 @@ export async function loadPackageAndGetExecutablePath(customPath: string | undef
 	let packageName: string
 
 	if (platform === 'win32' && arch === 'x64') {
-		packageName = `whisper.cpp-binaries-windows-x64-latest-patched`
+		packageName = `whisper.cpp-binaries-windows-x64-cpu-latest-patched`
 	} else if (platform === 'linux' && arch === 'x64') {
-		packageName = `whisper.cpp-binaries-linux-x64-latest-patched`
+		packageName = `whisper.cpp-binaries-linux-x64-cpu-latest-patched`
 	} else {
 		throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to the binary in the 'executablePath' option.`)
 	}

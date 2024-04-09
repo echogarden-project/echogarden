@@ -174,8 +174,8 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'whisper.cpp-large-v3': '20240405',
 	'whisper.cpp-large-v3-q5_0': '20240405',
 
-	'whisper.cpp-binaries-linux-x64-latest-patched': '20240405',
-	'whisper.cpp-binaries-windows-x64-latest-patched': '20240405',
+	'whisper.cpp-binaries-linux-x64-cpu-latest-patched': '20240405',
+	'whisper.cpp-binaries-windows-x64-cpu-latest-patched': '20240405',
 
 	'whisper-tiktoken-data': '20240408',
 }
