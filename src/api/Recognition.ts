@@ -69,7 +69,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 		options.language = detectedLanguage
 	} else {
 		logger.end()
-		
+
 		const specifiedLanguageFormatted = formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.language)))
 
 		logger.logTitledMessage('Language specified', specifiedLanguageFormatted)
@@ -114,11 +114,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end()
 
-			const { modelName, modelPath } = await WhisperCppSTT.loadPackagesAndGetPaths(whisperCppOptions.model, shortLanguageCode)
-
-			const buildType = whisperCppOptions.enableGPU ? 'cuda' : 'cpu'
-
-			const executablePath = await WhisperCppSTT.loadPackageAndGetExecutablePath(whisperCppOptions.executablePath, buildType)
+			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, shortLanguageCode)
 
 			logger.end();
 
@@ -126,8 +122,6 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 				sourceRawAudio,
 				'transcribe',
 				shortLanguageCode,
-				executablePath,
-				buildType,
 				modelName,
 				modelPath,
 				whisperCppOptions,

@@ -136,7 +136,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 			logger.end()
 
-			const { modelName, modelPath } = await WhisperCppSTT.loadPackagesAndGetPaths(whisperCppOptions.model, shortSourceLanguageCode)
+			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, shortSourceLanguageCode)
 
 			if (shortTargetLanguageCode != 'en') {
 				throw new Error('Whisper.cpp translation only supports English as target language')
@@ -146,18 +146,12 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 				throw new Error('Whisper.cpp translation tasks are only possible with a multilingual model')
 			}
 
-			const buildType = whisperCppOptions.enableGPU ? 'cuda' : 'cpu'
-
-			const executablePath = await WhisperCppSTT.loadPackageAndGetExecutablePath(whisperCppOptions.executablePath, buildType)
-
 			logger.end();
 
 			({ transcript, timeline: wordTimeline } = await WhisperCppSTT.recognize(
 				sourceRawAudio,
 				'translate',
 				shortSourceLanguageCode,
-				executablePath,
-				buildType,
 				modelName,
 				modelPath,
 				whisperCppOptions,

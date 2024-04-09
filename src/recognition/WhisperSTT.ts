@@ -1387,7 +1387,7 @@ export function isMultiligualModel(modelName: WhisperModelName) {
 }
 
 export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
-export type WhisperTask = 'transcribe' | 'translate'
+export type WhisperTask = 'transcribe' | 'translate' | 'detect-language'
 
 export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
 	'tiny': 'whisper-tiny',

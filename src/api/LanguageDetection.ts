@@ -10,6 +10,7 @@ import { WhisperModelName } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
+import { WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 
 const log = logToStderr
 
@@ -84,6 +85,22 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 			break
 		}
 
+		case 'whisper.cpp': {
+			const WhisperCppSTT = await import('../recognition/WhisperCppSTT.js')
+
+			const whisperCppOptions = options.whisperCpp!
+
+			logger.end()
+
+			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, undefined)
+
+			logger.end();
+
+			detectedLanguageProbabilities = await WhisperCppSTT.detectLanguage(sourceRawAudio, modelName, modelPath)
+
+			break
+		}
+
 		default: {
 			throw new Error(`Engine '${options.engine}' is not supported`)
 		}
@@ -118,7 +135,7 @@ export interface SpeechLanguageDetectionResult {
 	inputRawAudio: RawAudio
 }
 
-export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 15) {
+export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 25) {
 	const logger = new Logger()
 
 	const audioDuration = getRawAudioDuration(sourceRawAudio)
@@ -143,7 +160,13 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 
 		const sortedResultsForPart = deepClone(resultsForPart).sort((a, b) => b.probability - a.probability)
 
-		logger.logTitledMessage(`Top candidates`, `${formatLanguageCodeWithName(sortedResultsForPart[0].language)}: ${sortedResultsForPart[0].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[1].language)}: ${sortedResultsForPart[1].probability.toFixed(3)}, ${formatLanguageCodeWithName(sortedResultsForPart[3].language)}: ${sortedResultsForPart[3].probability.toFixed(3)}`)
+		let topCandidatesStrings: string[] = []
+
+		for (let i = 0; i < Math.min(3, sortedResultsForPart.length); i++) {
+			topCandidatesStrings.push(`${formatLanguageCodeWithName(sortedResultsForPart[i].language)}: ${sortedResultsForPart[i].probability.toFixed(3)}`)
+		}
+
+		logger.logTitledMessage(`Top candidates`, topCandidatesStrings.join(', '))
 
 		if (audioPartLength < audioPartDuration) {
 			break
@@ -166,7 +189,7 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 	return averagedResults
 }
 
-export type SpeechLanguageDetectionEngine = 'silero' | 'whisper'
+export type SpeechLanguageDetectionEngine = 'silero' | 'whisper' | 'whisper.cpp'
 
 export interface SpeechLanguageDetectionOptions {
 	engine?: SpeechLanguageDetectionEngine
@@ -182,6 +205,8 @@ export interface SpeechLanguageDetectionOptions {
 		model?: WhisperModelName
 		temperature?: number
 	}
+
+	whisperCpp?: WhisperCppOptions
 
 	vad?: API.VADOptions
 }
@@ -199,6 +224,10 @@ export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptio
 	whisper: {
 		model: 'tiny',
 		temperature: 1.0
+	},
+
+	whisperCpp: {
+		model: 'tiny'
 	},
 
 	vad: {
@@ -317,7 +346,13 @@ export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'Uses the language tokens produced by the Whisper model classify the spoken langauge.',
+		description: 'Uses the language tokens produced by the Whisper model to classify the spoken langauge.',
+		type: 'local'
+	},
+	{
+		id: 'whisper.cpp',
+		name: 'OpenAI Whisper (C++ port)',
+		description: 'Uses the language tokens produced by Whisper.cpp to classify the spoken langauge.',
 		type: 'local'
 	},
 ]

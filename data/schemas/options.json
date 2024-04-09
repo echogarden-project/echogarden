@@ -860,6 +860,9 @@
           },
           "additionalProperties": false
         },
+        "whisperCpp": {
+          "$ref": "#/definitions/WhisperCppOptions"
+        },
         "vad": {
           "$ref": "#/definitions/VADOptions"
         }
@@ -870,7 +873,8 @@
       "type": "string",
       "enum": [
         "silero",
-        "whisper"
+        "whisper",
+        "whisper.cpp"
       ]
     },
     "WhisperModelName": {
@@ -888,6 +892,85 @@
         "large-v1",
         "large-v2",
         "large-v3"
+      ]
+    },
+    "WhisperCppOptions": {
+      "type": "object",
+      "properties": {
+        "buildKind": {
+          "$ref": "#/definitions/BuildKind"
+        },
+        "executablePath": {
+          "type": "string"
+        },
+        "enableGPU": {
+          "type": "boolean"
+        },
+        "model": {
+          "$ref": "#/definitions/WhisperCppModelId"
+        },
+        "threadCount": {
+          "type": "number"
+        },
+        "splitCount": {
+          "type": "number"
+        },
+        "topCandidateCount": {
+          "type": "number"
+        },
+        "beamCount": {
+          "type": "number"
+        },
+        "entropyThreshold": {
+          "type": "number"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "enableDTW": {
+          "type": "boolean"
+        },
+        "verbose": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BuildKind": {
+      "type": "string",
+      "enum": [
+        "cpu",
+        "cublas-11.8.0",
+        "cublas-12.4.0",
+        "custom"
+      ]
+    },
+    "WhisperCppModelId": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny-q5_1",
+        "tiny.en",
+        "tiny.en-q5_1",
+        "tiny.en-q8_0",
+        "base",
+        "base-q5_1",
+        "base.en",
+        "base.en-q5_1",
+        "small",
+        "small-q5_1",
+        "small.en",
+        "small.en-q5_1",
+        "medium",
+        "medium-q5_0",
+        "medium.en",
+        "medium.en-q5_0",
+        "large",
+        "large-v1",
+        "large-v2",
+        "large-v2-q5_0",
+        "large-v3",
+        "large-v3-q5_0"
       ]
     },
     "SourceSeparationOptions": {
@@ -941,73 +1024,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "WhisperCppOptions": {
-      "type": "object",
-      "properties": {
-        "executablePath": {
-          "type": "string"
-        },
-        "model": {
-          "$ref": "#/definitions/WhisperCppModelId"
-        },
-        "threadCount": {
-          "type": "number"
-        },
-        "splitCount": {
-          "type": "number"
-        },
-        "enableGPU": {
-          "type": "boolean"
-        },
-        "topCandidateCount": {
-          "type": "number"
-        },
-        "beamCount": {
-          "type": "number"
-        },
-        "entropyThreshold": {
-          "type": "number"
-        },
-        "prompt": {
-          "type": "string"
-        },
-        "enableDTW": {
-          "type": "boolean"
-        },
-        "verbose": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "WhisperCppModelId": {
-      "type": "string",
-      "enum": [
-        "tiny",
-        "tiny-q5_1",
-        "tiny.en",
-        "tiny.en-q5_1",
-        "tiny.en-q8_0",
-        "base",
-        "base-q5_1",
-        "base.en",
-        "base.en-q5_1",
-        "small",
-        "small-q5_1",
-        "small.en",
-        "small.en-q5_1",
-        "medium",
-        "medium-q5_0",
-        "medium.en",
-        "medium.en-q5_0",
-        "large",
-        "large-v1",
-        "large-v2",
-        "large-v2-q5_0",
-        "large-v3",
-        "large-v3-q5_0"
-      ]
     },
     "OpenAICloudSTTOptions": {
       "type": "object",
