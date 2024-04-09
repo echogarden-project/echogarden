@@ -239,8 +239,8 @@ export class Whisper {
 
 			const audioPartFeatures = await this.encodeAudio(audioPartRawAudio)
 
-			const isFirstPart = audioOffset == 0
-			const isFinalPart = audioOffset + maxAudioSamplesPerPart > audioSamples.length
+			const isFirstPart = audioOffset === 0
+			const isFinalPart = audioOffset + maxAudioSamplesPerPart >= audioSamples.length
 
 			let initialTokens: number[] = []
 
@@ -970,10 +970,6 @@ export class Whisper {
 			if (tokenTimeline.length > 0) {
 				tokenTimeline[tokenTimeline.length - 1].endTime = startTime
 			}
-
-			//if (!tokenText || token >= this.tokenConfig.eotToken) {
-			//	continue
-			//}
 
 			tokenTimeline.push({
 				type: 'token',
