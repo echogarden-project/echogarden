@@ -19,6 +19,7 @@ export async function recognize(
 	task: WhisperTask,
 	sourceLanguage: string | undefined,
 	executablePath: string,
+	builtType: BuildType,
 	modelName: WhisperModelName,
 	modelPath: string,
 	options: WhisperCppOptions) {
@@ -32,7 +33,7 @@ export async function recognize(
 	return new Promise<RecognitionResult>(async (resolve, reject) => {
 		const logger = new Logger()
 
-		logger.start(`Recognize with command-line whisper.cpp (model: '${options.model!}')`)
+		logger.start(`Recognize with command-line whisper.cpp (model: '${options.model!}', device: ${builtType.toUpperCase()})`)
 		logger.log('')
 		logger.log('')
 
@@ -58,7 +59,7 @@ export async function recognize(
 			`${options.threadCount!}`,
 
 			'--processors',
-			`${options.coreCount!}`,
+			`${options.splitCount!}`,
 
 			'--best-of',
 			`${options.topCandidateCount!}`,
@@ -165,41 +166,54 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 
 	const tokenTimeline: Timeline = []
 
-	const tokens = resultObject.transcription
-		.flatMap(partEntry => partEntry.tokens)
+	let currentCorrectionTimeOffset = 0
 
-	for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
-		const tokenEntry = tokens[tokenIndex]
+	for (let segmentIndex = 0; segmentIndex < resultObject.transcription.length; segmentIndex++) {
+		const segmentObject = resultObject.transcription[segmentIndex]
 
-		const tokenId = tokenEntry.id
-		const tokenText = whisper.tokenToText(tokenId)
-		const tokenConfidence = tokenEntry.p
+		const tokens = segmentObject.tokens
 
-		let startTime: number
-		let endTime: number
+		for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
+			const tokenObject = tokens[tokenIndex]
 
-		if (useDTWTimestamps) {
-			const nextTokenEntry = tokens[tokenIndex + 1]
+			if (tokenIndex === 0 && tokenObject.text === '[_BEG_]' && tokenObject.offsets.from === 0) {
+				currentCorrectionTimeOffset = segmentObject.offsets.from / 1000
+			}
 
-			const tokenEntryDtwStartTime = tokenEntry.t_dtw / 100
-			const nextTokenEntryDtwStartTime = nextTokenEntry ? nextTokenEntry.t_dtw / 100 : totalDuration
+			const tokenId = tokenObject.id
+			const tokenText = whisper.tokenToText(tokenId)
+			const tokenConfidence = tokenObject.p
 
-			startTime = Math.max(tokenEntryDtwStartTime, 0)
-			endTime = nextTokenEntryDtwStartTime
-		} else {
-			startTime = tokenEntry.offsets.from / 1000
-			endTime = tokenEntry.offsets.to / 1000
+			let startTime: number
+			let endTime: number
+
+			if (useDTWTimestamps) {
+				const nextTokenEntry = tokens[tokenIndex + 1]
+
+				const tokenEntryDtwStartTime = tokenObject.t_dtw / 100
+				const nextTokenEntryDtwStartTime = nextTokenEntry ? nextTokenEntry.t_dtw / 100 : totalDuration
+
+				startTime = Math.max(tokenEntryDtwStartTime, 0)
+				endTime = nextTokenEntryDtwStartTime
+			} else {
+				startTime = tokenObject.offsets.from / 1000
+				endTime = tokenObject.offsets.to / 1000
+			}
+
+			startTime += currentCorrectionTimeOffset
+			endTime += currentCorrectionTimeOffset
+
+			tokenTimeline.push({
+				type: 'token',
+				text: tokenText,
+				id: tokenId,
+				startTime,
+				endTime,
+				confidence: tokenConfidence
+			})
 		}
-
-		tokenTimeline.push({
-			type: 'token',
-			text: tokenText,
-			id: tokenId,
-			startTime,
-			endTime,
-			confidence: tokenConfidence
-		})
 	}
+
 
 	const allTokenIds = tokenTimeline.map(entry => entry.id!)
 	const transcript = whisper.tokensToText(allTokenIds).trim()
@@ -284,7 +298,9 @@ export async function loadPackagesAndGetPaths(modelId: WhisperCppModelId | undef
 	return { modelName, modelPath }
 }
 
-export async function loadPackageAndGetExecutablePath(customPath: string | undefined) {
+export type BuildType = 'cpu' | 'cuda'
+
+export async function loadPackageAndGetExecutablePath(customPath: string | undefined, buildType: BuildType) {
 	if (customPath) {
 		return customPath
 	}
@@ -294,12 +310,22 @@ export async function loadPackageAndGetExecutablePath(customPath: string | undef
 
 	let packageName: string
 
-	if (platform === 'win32' && arch === 'x64') {
-		packageName = `whisper.cpp-binaries-windows-x64-cpu-latest-patched`
-	} else if (platform === 'linux' && arch === 'x64') {
-		packageName = `whisper.cpp-binaries-linux-x64-cpu-latest-patched`
+	if (buildType === 'cuda') {
+		if (platform === 'win32' && arch === 'x64') {
+			packageName = `whisper.cpp-binaries-windows-x64-cublas-12.4.5-latest-patched`
+		} else {
+			throw new Error(`GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64. Please specify a custom path to the binary in the 'executablePath' option.`)
+		}
+	} else if (buildType === 'cpu') {
+		if (platform === 'win32' && arch === 'x64') {
+			packageName = `whisper.cpp-binaries-windows-x64-cpu-latest-patched`
+		} else if (platform === 'linux' && arch === 'x64') {
+			packageName = `whisper.cpp-binaries-linux-x64-cpu-latest-patched`
+		} else {
+			throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to the binary in the 'executablePath' option.`)
+		}
 	} else {
-		throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to the binary in the 'executablePath' option.`)
+		throw new Error(`Unknown build type '${buildType}'`)
 	}
 
 	const ffmpegPackagePath = await loadPackage(packageName)
@@ -395,7 +421,7 @@ export interface WhisperCppOptions {
 	model?: WhisperCppModelId
 
 	threadCount?: number,
-	coreCount?: number,
+	splitCount?: number,
 	enableGPU?: boolean
 
 	topCandidateCount?: number
@@ -414,7 +440,7 @@ export const defaultWhisperCppOptions: WhisperCppOptions = {
 	executablePath: undefined,
 
 	threadCount: 4,
-	coreCount: 1,
+	splitCount: 1,
 	enableGPU: false,
 
 	topCandidateCount: 5,
