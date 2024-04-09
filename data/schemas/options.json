@@ -312,7 +312,7 @@
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
         "elevenlabs": {
-          "$ref": "#/definitions/ElevenLabsTTSOptions"
+          "$ref": "#/definitions/ElevenlabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
@@ -954,7 +954,7 @@
         "threadCount": {
           "type": "number"
         },
-        "coreCount": {
+        "splitCount": {
           "type": "number"
         },
         "enableGPU": {
@@ -1155,7 +1155,7 @@
       },
       "additionalProperties": false
     },
-    "ElevenLabsTTSOptions": {
+    "ElevenlabsTTSOptions": {
       "type": "object",
       "properties": {
         "apiKey": {
@@ -1434,7 +1434,7 @@
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
         "elevenlabs": {
-          "$ref": "#/definitions/ElevenLabsTTSOptions"
+          "$ref": "#/definitions/ElevenlabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
