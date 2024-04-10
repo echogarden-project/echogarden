@@ -38,7 +38,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.log(``)
 		logger.end();
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.separation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
 
 		logger.end()
 		logger.log(``)
@@ -245,7 +245,7 @@ export interface SpeechTranslationOptions {
 	languageDetection?: SpeechLanguageDetectionOptions
 	subtitles?: SubtitlesConfig
 	vad?: API.VADOptions
-	separation?: API.SourceSeparationOptions
+	sourceSeparation?: API.SourceSeparationOptions
 
 	whisper?: WhisperOptions
 	whisperCpp?: WhisperCppOptions

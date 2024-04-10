@@ -33,7 +33,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 		logger.log(``)
 		logger.end();
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.separation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
 
 		logger.end()
 		logger.log(``)
@@ -336,7 +336,7 @@ export interface RecognitionOptions {
 
 	vad?: API.VADOptions
 
-	separation?: API.SourceSeparationOptions
+	sourceSeparation?: API.SourceSeparationOptions
 
 	whisper?: WhisperOptions
 

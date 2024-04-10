@@ -34,7 +34,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		logger.log(``)
 		logger.end();
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.separation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
 
 		logger.end()
 		logger.log(``)
@@ -311,7 +311,7 @@ export interface AlignmentOptions {
 
 	recognition?: API.RecognitionOptions
 
-	separation?: API.SourceSeparationOptions
+	sourceSeparation?: API.SourceSeparationOptions
 
 	whisper?: WhisperOptions
 }
@@ -358,7 +358,7 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 		engine: 'adaptive-gate'
 	},
 
-	separation: {
+	sourceSeparation: {
 	},
 
 	whisper: {
