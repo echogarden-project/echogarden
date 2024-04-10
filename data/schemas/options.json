@@ -481,7 +481,7 @@
         "recognition": {
           "$ref": "#/definitions/RecognitionOptions"
         },
-        "separation": {
+        "sourceSeparation": {
           "$ref": "#/definitions/SourceSeparationOptions"
         },
         "whisper": {
@@ -732,7 +732,7 @@
         "vad": {
           "$ref": "#/definitions/VADOptions"
         },
-        "separation": {
+        "sourceSeparation": {
           "$ref": "#/definitions/SourceSeparationOptions"
         },
         "whisper": {
@@ -897,8 +897,8 @@
     "WhisperCppOptions": {
       "type": "object",
       "properties": {
-        "buildKind": {
-          "$ref": "#/definitions/BuildKind"
+        "build": {
+          "$ref": "#/definitions/WhisperCppBuild"
         },
         "executablePath": {
           "type": "string"
@@ -921,7 +921,7 @@
         "beamCount": {
           "type": "number"
         },
-        "entropyThreshold": {
+        "repetitionThreshold": {
           "type": "number"
         },
         "prompt": {
@@ -936,7 +936,7 @@
       },
       "additionalProperties": false
     },
-    "BuildKind": {
+    "WhisperCppBuild": {
       "type": "string",
       "enum": [
         "cpu",
@@ -1507,7 +1507,7 @@
         "vad": {
           "$ref": "#/definitions/VADOptions"
         },
-        "separation": {
+        "sourceSeparation": {
           "$ref": "#/definitions/SourceSeparationOptions"
         },
         "whisper": {

@@ -17,7 +17,7 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 
 	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
 
-	const { default: tar } = await import('tar')
+	const { create } = await import('tar')
 
 	const inputFileStat = await stat(filePath)
 
@@ -28,15 +28,17 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 	const filename = path.basename(filePath)
 	const dirname = path.dirname(filePath)
 
-	await tar.create({
-		gzip: { level: 9, memLevel: 9 },
+	await create({
+		gzip: { level: 9 },
 		file: outputFile,
 		cwd: dirname,
 		prefix: prefixPath,
 		mode: 0o775,
 
 		filter: (path, stat) => {
-			stat.mode |= 0o775
+			if (stat.mode) {
+				stat.mode |= 0o775
+			}
 
 			return true
 		}
@@ -51,7 +53,7 @@ export async function createTarballForDir(inputDir: string, outputFile: string, 
 
 	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
 
-	const { default: tar } = await import('tar')
+	const { create } = await import('tar')
 
 	const inputDirStat = await stat(inputDir)
 
@@ -61,15 +63,17 @@ export async function createTarballForDir(inputDir: string, outputFile: string, 
 
 	const filesInBaseDir = await readdir(inputDir)
 
-	await tar.create({
-		gzip: { level: 9, memLevel: 9 },
+	await create({
+		gzip: { level: 9 },
 		file: outputFile,
 		cwd: inputDir,
 		prefix: prefixPath,
 		mode: 0o775,
 
 		filter: (path, stat) => {
-			stat.mode |= 0o775
+			if (stat.mode) {
+				stat.mode |= 0o775
+			}
 
 			return true
 		}
@@ -80,9 +84,9 @@ export async function createTarballForDir(inputDir: string, outputFile: string, 
 }
 
 export async function extractTarball(filepath: string, outputDir: string) {
-	const { default: tar } = await import('tar')
+	const { extract } = await import('tar')
 
-	await tar.extract({
+	await extract({
 		file: filepath,
 		cwd: outputDir,
 		preserveOwner: false,
