@@ -2,14 +2,14 @@ import { spawn } from 'node:child_process'
 import { RawAudio, encodeRawAudioToWave, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { type WhisperTask, type WhisperModelName } from './WhisperSTT.js'
-import { getRandomHexString, writeToStdinInChunks, writeToStderr } from '../utilities/Utilities.js'
+import { getRandomHexString } from '../utilities/Utilities.js'
 import { Timeline, TimelineEntryType } from '../utilities/Timeline.js'
 import { tryParseTimeRangePatternWithHours } from '../subtitles/Subtitles.js'
 import { getAppTempDir } from '../utilities/PathUtilities.js'
 import { appName } from '../api/Common.js'
 import path from 'node:path'
 import { readAndParseJsonFile, remove } from '../utilities/FileSystem.js'
-import { isWordOrSymbolWord, splitToFragments, splitToLines } from '../nlp/Segmentation.js'
+import { splitToLines } from '../nlp/Segmentation.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
@@ -32,16 +32,26 @@ export async function recognize(
 
 		options = extendDeep(defaultWhisperCppOptions, options)
 
-		let buildKind: BuildKind
+		let buildKind: WhisperCppBuild
 		let executablePath: string
 
 		if (options.executablePath) {
 			buildKind = 'custom'
 
 			executablePath = options.executablePath
+
+			if (options.enableGPU == null) {
+				options.enableGPU = true
+			}
 		} else {
-			if (options.buildKind) {
-				buildKind = options.buildKind
+			if (options.build) {
+				buildKind = options.build
+
+				if (options.enableGPU == null) {
+					options.enableGPU = buildKind.startsWith('cublas-')
+				} else if (options.enableGPU === true && !buildKind.startsWith('cublas-')) {
+					throw new Error('GPU support is only available for CUDA builds')
+				}
 			} else {
 				if (options.enableGPU) {
 					buildKind = 'cublas-11.8.0'
@@ -53,7 +63,8 @@ export async function recognize(
 			executablePath = await loadExecutablePackage(buildKind)
 		}
 
-		logger.start(`Recognize with command-line whisper.cpp (build: ${buildKind}, model: '${options.model || modelName}')`)
+
+		logger.start(`Recognize with command-line whisper.cpp (build: ${buildKind}, model: ${options.model || modelName})`)
 		logger.log('')
 		logger.log('')
 
@@ -88,7 +99,7 @@ export async function recognize(
 			`${options.beamCount!}`,
 
 			'--entropy-thold',
-			`${options.entropyThreshold!}`
+			`${options.repetitionThreshold!}`
 		]
 
 		if (options.prompt) {
@@ -219,7 +230,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 	return results
 }
 
-async function parseResultObject(resultObject: WhisperCppVerboseResult, modelName: WhisperModelName, totalDuration: number, useDTWTimestamps: boolean): Promise<RecognitionResult> {
+async function parseResultObject(resultObject: WhisperCppVerboseResult, modelName: WhisperModelName, totalDuration: number, enableDTW: boolean): Promise<RecognitionResult> {
 	const { Whisper } = await import('../recognition/WhisperSTT.js')
 
 	const whisper = new Whisper(modelName, '')
@@ -248,7 +259,7 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 			let startTime: number
 			let endTime: number
 
-			if (useDTWTimestamps) {
+			if (enableDTW) {
 				const nextTokenEntry = tokens[tokenIndex + 1]
 
 				const tokenEntryDtwStartTime = tokenObject.t_dtw / 100
@@ -359,9 +370,9 @@ export async function loadModelPackage(modelId: WhisperCppModelId | undefined, l
 	return { modelName, modelPath }
 }
 
-export type BuildKind = 'cpu' | 'cublas-11.8.0' | 'cublas-12.4.0' | 'custom'
+export type WhisperCppBuild = 'cpu' | 'cublas-11.8.0' | 'cublas-12.4.0' | 'custom'
 
-export async function loadExecutablePackage(buildKind: BuildKind) {
+export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 	if (buildKind === 'custom') {
 		throw new Error(`A 'custom' build kind requires providing a custom path to the whisper.cpp binary in the 'executablePath' option.`)
 	}
@@ -478,7 +489,7 @@ interface RecognitionResult {
 }
 
 export interface WhisperCppOptions {
-	buildKind?: BuildKind
+	build?: WhisperCppBuild
 	executablePath?: string
 	enableGPU?: boolean
 
@@ -489,7 +500,7 @@ export interface WhisperCppOptions {
 
 	topCandidateCount?: number
 	beamCount?: number
-	entropyThreshold?: number
+	repetitionThreshold?: number
 
 	prompt?: string
 
@@ -499,18 +510,18 @@ export interface WhisperCppOptions {
 }
 
 export const defaultWhisperCppOptions: WhisperCppOptions = {
-	buildKind: undefined,
+	build: undefined,
 	executablePath: undefined,
 
 	model: undefined,
 
 	threadCount: 4,
 	splitCount: 1,
-	enableGPU: false,
+	enableGPU: undefined,
 
 	topCandidateCount: 5,
 	beamCount: 5,
-	entropyThreshold: 2.4,
+	repetitionThreshold: 2.4,
 
 	prompt: undefined,
 
