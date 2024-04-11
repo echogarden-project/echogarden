@@ -2,7 +2,7 @@ import Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
-import { clip, getRepetitionScoreRelativeToFirstSubstring, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { clip, getIntegerRange, getRepetitionScoreRelativeToFirstSubstring, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
@@ -18,7 +18,6 @@ import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
-import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
 import { type Tiktoken } from 'tiktoken/lite'
 
 export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
@@ -32,11 +31,21 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
-	if (!isMultiligualModel(modelName) && sourceLanguage != 'en') {
+	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir)
+	if (options.temperature && options.temperature < 0) {
+		throw new Error(`Temperature can't be negative`)
+	}
+
+	let seed = options.seed
+
+	if (seed) {
+		seed = Math.max(Math.floor(seed), 1) | 0
+	}
+
+	const whisper = new Whisper(modelName, modelDir, seed)
 
 	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options)
 
@@ -54,11 +63,11 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
-	if (!isMultiligualModel(modelName) && sourceLanguage != 'en') {
+	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir)
+	const whisper = new Whisper(modelName, modelDir, 1234567)
 
 	const timeline = await whisper.align(sourceRawAudio, referenceText, sourceLanguage)
 
@@ -70,11 +79,15 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
 
-	if (!isMultiligualModel(modelName)) {
+	if (!isMultilingualModel(modelName)) {
 		throw new Error(`Language detection is only supported with multilingual models.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir)
+	if (temperature < 0) {
+		throw new Error(`Temperature cannot be negative`)
+	}
+
+	const whisper = new Whisper(modelName, modelDir, 1234567)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
 		const audioFeatures = await whisper.encodeAudio(partAudio)
@@ -107,44 +120,87 @@ export class Whisper {
 	}
 
 	tokenConfig: {
-		suppressedTokens: number[]
-		sotToken: number
-		sotPrevToken: number
-		eotToken: number
+		endOfTextToken: number
+		startOfTextToken: number
+
+		languageTokensStart: number
+		languageTokensEnd: number
+
+		translateTaskToken: number
+		transcribeTaskToken: number
+		startOfPromptToken: number
+		nonSpeechToken: number
 		noTimestampsToken: number
-		noSpeechToken: number
+
 		timestampTokensStart: number
+		timestampTokensEnd: number
+
+		suppressedTokens: Set<number>
 	}
 
-	randomGen = new XorShift32RNG(23948203)
+	randomGen: XorShift32RNG
 
-	constructor(modelName: WhisperModelName, modelDir: string) {
+	constructor(modelName: WhisperModelName, modelDir: string, rngSeed = 461845907) {
 		this.modelName = modelName
 		this.modelDir = modelDir
 
-		this.isMultiligualModel = isMultiligualModel(this.modelName)
+		this.isMultiligualModel = isMultilingualModel(this.modelName)
 
 		if (this.isMultiligualModel) {
 			this.tokenConfig = {
-				sotToken: 50258,
-				sotPrevToken: 50361,
-				eotToken: 50257,
-				noSpeechToken: 50362,
+				endOfTextToken: 50257,
+				startOfTextToken: 50258,
+
+				languageTokensStart: 50259,
+				languageTokensEnd: 50358,
+
+				translateTaskToken: 50358,
+				transcribeTaskToken: 50359,
+				startOfPromptToken: 50361,
+				nonSpeechToken: 50362,
 				noTimestampsToken: 50363,
+
 				timestampTokensStart: 50364,
-				suppressedTokens: [1, 2, 6, 7, 8, 9, 10, 12, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 359, 503, 522, 542, 873, 893, 902, 918, 922, 931, 1350, 1853, 1982, 2460, 2627, 3246, 3253, 3268, 3536, 3846, 3961, 4183, 4667, 6585, 6647, 7273, 9061, 9383, 10428, 10929, 11938, 12033, 12331, 12562, 13793, 14157, 14635, 15265, 15618, 16553, 16604, 18362, 18956, 20075, 21675, 22520, 26130, 26161, 26435, 28279, 29464, 31650, 32302, 32470, 36865, 42863, 47425, 49870, 50254, 50258, 50360, 50361, 50362]
+				timestampTokensEnd: 50364 + 1501,
+
+				suppressedTokens: new Set()
 			}
+
+			const suppressedTextTokens = [1, 2, 6, 7, 8, 9, 10, 12, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 359, 503, 522, 542, 873, 893, 902, 918, 922, 931, 1350, 1853, 1982, 2460, 2627, 3246, 3253, 3268, 3536, 3846, 3961, 4183, 4667, 6585, 6647, 7273, 9061, 9383, 10428, 10929, 11938, 12033, 12331, 12562, 13793, 14157, 14635, 15265, 15618, 16553, 16604, 18362, 18956, 20075, 21675, 22520, 26130, 26161, 26435, 28279, 29464, 31650, 32302, 32470, 36865, 42863, 47425, 49870, 50254]
+			const suppressedMetadataTokens = [50256, ...getIntegerRange(50258, 50364)]
+
+			const suppressedTokens = [...suppressedTextTokens, ...suppressedMetadataTokens]
+
+			this.tokenConfig.suppressedTokens = new Set(suppressedTokens)
 		} else {
 			this.tokenConfig = {
-				sotToken: 50257,
-				sotPrevToken: 50360,
-				eotToken: 50256,
-				noSpeechToken: 50361,
+				endOfTextToken: 50256,
+				startOfTextToken: 50257,
+
+				languageTokensStart: 50258,
+				languageTokensEnd: 50358,
+
+				translateTaskToken: 50358,
+				transcribeTaskToken: 50359,
+				startOfPromptToken: 50360,
+				nonSpeechToken: 50361,
 				noTimestampsToken: 50362,
+
 				timestampTokensStart: 50363,
-				suppressedTokens: [1, 2, 7, 8, 9, 10, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 357, 366, 438, 532, 685, 705, 796, 930, 1058, 1220, 1267, 1279, 1303, 1343, 1377, 1391, 1635, 1782, 1875, 2162, 2361, 2488, 3467, 4008, 4211, 4600, 4808, 5299, 5855, 6329, 7203, 9609, 9959, 10563, 10786, 11420, 11709, 11907, 13163, 13697, 13700, 14808, 15306, 16410, 16791, 17992, 19203, 19510, 20724, 22305, 22935, 27007, 30109, 30420, 33409, 34949, 40283, 40493, 40549, 47282, 49146, 50257, 50359, 50360, 50361]
+				timestampTokensEnd: 50363 + 1501,
+
+				suppressedTokens: new Set()
 			}
+
+			const suppressedTextTokens = [1, 2, 7, 8, 9, 10, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 357, 366, 438, 532, 685, 705, 796, 930, 1058, 1220, 1267, 1279, 1303, 1343, 1377, 1391, 1635, 1782, 1875, 2162, 2361, 2488, 3467, 4008, 4211, 4600, 4808, 5299, 5855, 6329, 7203, 9609, 9959, 10563, 10786, 11420, 11709, 11907, 13163, 13697, 13700, 14808, 15306, 16410, 16791, 17992, 19203, 19510, 20724, 22305, 22935, 27007, 30109, 30420, 33409, 34949, 40283, 40493, 40549, 47282, 49146]
+			const suppressedMetadataTokens = [...getIntegerRange(50257, 50363)]
+
+			const suppressedTokens = [...suppressedTextTokens, ...suppressedMetadataTokens]
+
+			this.tokenConfig.suppressedTokens = new Set(suppressedTokens)
 		}
+
+		this.randomGen = new XorShift32RNG(rngSeed)
 	}
 
 	async initializeIfNeeded() {
@@ -166,11 +222,51 @@ export class Whisper {
 		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
 		let tiktokenData = await readFile(tiktokenDataFilePath, { encoding: 'utf8' })
 
+		const tokenConfig = this.tokenConfig
+
+		const metadataTokens: Record<number, string> = {
+			[tokenConfig.endOfTextToken]: '[EndOfText]',
+			[tokenConfig.startOfTextToken]: '[StartOfText]',
+			[tokenConfig.translateTaskToken]: '[TranslateTask]',
+			[tokenConfig.transcribeTaskToken]: '[TranscribeTask]',
+			[tokenConfig.startOfPromptToken]: '[StartOfPrompt]',
+			[tokenConfig.nonSpeechToken]: '[NonSpeech]',
+			[tokenConfig.noTimestampsToken]: '[NoTimestamps]',
+		}
+
+		if (this.isMultiligualModel) {
+			metadataTokens[50256] = '[Unused_50256]'
+			metadataTokens[50360] = '[Unused_50360]'
+		}
+
+		const languageTokenCount = tokenConfig.languageTokensEnd - tokenConfig.languageTokensStart
+
+		for (let i = 0; i < languageTokenCount; i++) {
+			const tokenIndex = this.tokenConfig.languageTokensStart + i
+
+			metadataTokens[tokenIndex] = `[Language_${i}]`
+		}
+
+		const timestampTokensCount = 1501
+
+		for (let i = 0; i < timestampTokensCount; i++) {
+			const tokenIndex = this.tokenConfig.timestampTokensStart + i
+			const tokenTime = this.timestampTokenToSeconds(tokenIndex)
+
+			metadataTokens[tokenIndex] = `[Timestamp_${tokenTime.toFixed(2)}]`
+		}
+
+		const inverseMetadataTokensLookup: Record<string, number> = {}
+
+		for (const [key, value] of Object.entries(metadataTokens)) {
+			inverseMetadataTokensLookup[value] = parseInt(key)
+		}
+
 		const patternString = `'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+`
 
 		const { Tiktoken } = await import('tiktoken/lite')
 
-		this.tiktoken = new Tiktoken(tiktokenData, {}, patternString)
+		this.tiktoken = new Tiktoken(tiktokenData, inverseMetadataTokensLookup, patternString)
 
 		logger.end()
 	}
@@ -212,16 +308,13 @@ export class Whisper {
 
 		const logger = new Logger()
 
-		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-
 		const audioSamples = rawAudio.audioChannels[0]
 		const sampleRate = rawAudio.sampleRate
-		const audioDuration = getRawAudioDuration(rawAudio)
 		const prompt = options.prompt
 
 		const maxAudioSamplesPerPart = sampleRate * 30
 
-		let previousPartTokens: number[] = []
+		let previousPartTextTokens: number[] = []
 
 		let timeline: Timeline = []
 		let allDecodedTokens: number[] = []
@@ -247,24 +340,28 @@ export class Whisper {
 			if (isFirstPart && prompt) {
 				const promptTokens = this.textToTokens(prompt)
 
-				initialTokens = [this.tokenConfig.sotPrevToken, ...promptTokens]
-			} else if (options.autoPromptParts && previousPartTokens.length > 0) {
-				initialTokens = [this.tokenConfig.sotPrevToken, ...previousPartTokens]
+				initialTokens = [this.tokenConfig.startOfPromptToken, ...promptTokens]
+			} else if (options.autoPromptParts && previousPartTextTokens.length > 0) {
+				initialTokens = [this.tokenConfig.startOfPromptToken, ...previousPartTextTokens]
 			}
 
-			initialTokens = [...initialTokens, ...this.getInitialTokens(language, task)]
+			initialTokens = [...initialTokens, ...this.getTextStartTokens(language, task)]
 
 			logger.end()
 
-			let { decodedTokens: partTokens, crossAttentionQKs: partCrossAttentionQKs, decodedTokensConfidence } = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, options)
+			let {
+				decodedTokens: partTokens,
+				crossAttentionQKs: partCrossAttentionQKs,
+				decodedTokensConfidence
+			} = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, options)
 
 			const lastToken = partTokens[partTokens.length - 1]
-			const lastTokenIsTimestamp = lastToken >= timestampTokensStart
+			const lastTokenIsTimestamp = this.isTimestampToken(lastToken)
 
 			let audioEndOffset: number
 
 			if (!isFinalPart && lastTokenIsTimestamp) {
-				const timePosition = (lastToken - timestampTokensStart) * 0.02
+				const timePosition = this.timestampTokenToSeconds(lastToken)
 
 				audioEndOffset = audioOffset + Math.floor(timePosition * sampleRate)
 			} else {
@@ -272,7 +369,7 @@ export class Whisper {
 			}
 
 			const segmentEndTime = audioEndOffset / sampleRate
-			const segmentFrameCount = Math.floor((segmentEndTime - segmentStartTime) / 0.02)
+			const segmentFrameCount = this.secondsRangeToFrameCount(segmentStartTime, segmentEndTime)
 
 			await logger.startAsync(`Extract timeline for part`)
 
@@ -280,31 +377,23 @@ export class Whisper {
 				throw new Error('Unexpected: partTokens.length != partCrossAttentionQKs.length')
 			}
 
-			//partTokens = partTokens.filter(token => token < timestampTokensStart)
-			//partCrossAttentionQKs = await this.inferCrossAttentionQKs(partTokens, audioPartFeatures)
-
 			partTokens = partTokens.slice(initialTokens.length)
 
-			const textForPart = this.tokensToText(partTokens)
-			const compressionRateForPart = (await getDeflateCompressionMetricsForString(textForPart)).ratio
+			//const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens))).ratio
 
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
-			//await this.addWordsToTimeline(timeline, partTokens, audioPartRawAudio, partCrossAttentionQKs, initialAudioTimeOffset, audioPartSamples.length / sampleRate)
+
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
 			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, decodedTokensConfidence)
 
 			audioOffset = audioEndOffset
 
-			previousPartTokens = partTokens.filter(token => token < this.tokenConfig.eotToken)
-
-			allDecodedTokens.push(...previousPartTokens)
+			allDecodedTokens.push(...partTokens)
 			timeline.push(...partTimeline)
 
-			logger.end()
-		}
+			previousPartTextTokens = partTokens.filter(token => this.isTextToken(token))
 
-		if (timeline.length > 0) {
-			timeline[timeline.length - 1].endTime = audioDuration
+			logger.end()
 		}
 
 		timeline = this.tokenTimelineToWordTimeline(timeline)
@@ -326,13 +415,13 @@ export class Whisper {
 		referenceText = referenceText.replaceAll(/\s+/g, ' ')
 
 		const audioDuration = Math.min(getRawAudioDuration(rawAudio), 30)
-		const audioFrameCount = Math.floor(audioDuration / 0.02)
+		const audioFrameCount = this.secondsToFrame(audioDuration)
 
-		const initialTokens = this.getInitialTokens(language, 'transcribe', true)
-		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-		const eotToken = this.tokenConfig.eotToken
+		const initialTokens = this.getTextStartTokens(language, 'transcribe', true)
 
-		let tokens = [...initialTokens, ...this.textToTokens(referenceText), eotToken]
+		const endOfTextToken = this.tokenConfig.endOfTextToken
+
+		let tokens = [...initialTokens, ...this.textToTokens(referenceText), endOfTextToken]
 
 		logger.end()
 		const audioFeatures = await this.encodeAudio(rawAudio)
@@ -366,7 +455,7 @@ export class Whisper {
 		const logger = new Logger()
 		await logger.startAsync('Detect language with Whisper model')
 
-		const sotToken = this.tokenConfig.sotToken
+		const sotToken = this.tokenConfig.startOfTextToken
 
 		const initialTokens = [sotToken]
 		const offset = 0
@@ -387,7 +476,9 @@ export class Whisper {
 		const decoderOutputs = await this.textDecoder!.run(decoderInputs)
 		const logitsBuffer = decoderOutputs['logits'].data as Float32Array
 
-		const languageTokensLogits = Array.from(logitsBuffer.slice(sotToken + 1, sotToken + 1 + 99))
+		const tokenConfig = this.tokenConfig
+
+		const languageTokensLogits = Array.from(logitsBuffer.slice(tokenConfig.languageTokensStart, tokenConfig.languageTokensEnd))
 		const languageTokensProbabilities = softmax(languageTokensLogits, temperature)
 
 		const results: LanguageDetectionResults = []
@@ -418,18 +509,16 @@ export class Whisper {
 
 		options = extendDeep(defaultWhisperOptions, options)
 
-		const noSpeechThreshold = 0.6
+		const endOfTextToken = this.tokenConfig.endOfTextToken
 
-		const blankToken = this.textToTokens(' ')[0]
-
-		const suppressedTokens = this.tokenConfig.suppressedTokens
-		const sotToken = this.tokenConfig.sotToken
-		const eotToken = this.tokenConfig.eotToken
-		const noTimestampsToken = this.tokenConfig.noTimestampsToken
-		const noSpeechToken = this.tokenConfig.noSpeechToken
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
+		const suppressedTokens = this.tokenConfig.suppressedTokens
+
+		const spaceToken = this.textToTokens(' ')[0]
 
 		const maxDecodedTokenCount = options.maxTokensPerPart!
+
+		//const suppressedTokensText = Array.from(this.tokenConfig.suppressedTokens).map(token => this.tokenToText(token, true))
 
 		let decodedTokens = initialTokens.slice()
 		const initialKvDimensions = this.getKvDimensions(1, decodedTokens.length)
@@ -484,50 +573,61 @@ export class Whisper {
 
 			// Compute logits
 			const resultLogits = splitFloat32Array(logitsBuffer, logitsBuffer.length / decoderOutputs['logits'].dims[1])
-			const tokenLogits = resultLogits[resultLogits.length - 1]
-			const tokenTimestampLogits = Array.from(tokenLogits.slice(timestampTokensStart))
+			const allTokenLogits = Array.from(resultLogits[resultLogits.length - 1])
+			const timestampTokenLogits = allTokenLogits.slice(timestampTokensStart)
 
 			// Suppress tokens
-			for (let logitIndex = 0; logitIndex < tokenLogits.length; logitIndex++) {
-				const isWrongTokenForInitialState = isInitialState && (logitIndex === blankToken || logitIndex === eotToken)
-				const isInSupressedList = suppressedTokens.includes(logitIndex)
-				const isNoTimestampsToken = logitIndex == noTimestampsToken
+			for (let logitIndex = 0; logitIndex < allTokenLogits.length; logitIndex++) {
+				const isWrongTokenForInitialState =
+					isInitialState &&
+					(logitIndex === spaceToken || logitIndex === endOfTextToken)
 
-				const shouldSupressToken = isWrongTokenForInitialState || isInSupressedList || isNoTimestampsToken
+				const isInSuppressedList = suppressedTokens.has(logitIndex)
 
-				if (shouldSupressToken) {
-					tokenLogits[logitIndex] = -Infinity
+				const shouldSuppressToken = isWrongTokenForInitialState || isInSuppressedList
+
+				if (shouldSuppressToken) {
+					allTokenLogits[logitIndex] = -Infinity
 				}
 			}
 
 			// Find token distributions and best token
-			const probs = softmax(tokenLogits as any)
-			const logProbs = logOfVector(probs)
+			const probabilities = softmax(allTokenLogits as any)
+			const logProbabilities = logOfVector(probabilities)
 
-			const textTokenLogProbs = logProbs.slice(0, timestampTokensStart)
-			const timestampTokenLogProbs = logProbs.slice(timestampTokensStart)
+			const nonTimestampTokenLogProbs = logProbabilities.slice(0, timestampTokensStart)
+			const timestampTokenLogProbs = logProbabilities.slice(timestampTokensStart)
 
-			const indexOfMaxTextLogProb = indexOfMax(textTokenLogProbs)
-			const valueOfMaxTextLogProb = textTokenLogProbs[indexOfMaxTextLogProb]
+			const indexOfMaxNonTimestampLogProb = indexOfMax(nonTimestampTokenLogProbs)
+			const valueOfMaxNonTimestampLogProb = nonTimestampTokenLogProbs[indexOfMaxNonTimestampLogProb]
 
 			const indexOfMaxTimestampLogProb = indexOfMax(timestampTokenLogProbs)
 
 			const logSumExpOfTimestampTokenLogProbs = logSumExp(timestampTokenLogProbs)
 
-			const isTimestampToken = logSumExpOfTimestampTokenLogProbs > valueOfMaxTextLogProb
-			const previousTokenWasTimestamp = decodedTokens[decodedTokens.length - 1] >= timestampTokensStart
-			const secondPreviousTokenWasTimestamp = decodedTokens.length < 2 || decodedTokens[decodedTokens.length - 2] >= timestampTokensStart
+			const shouldDecodeTimestampToken = logSumExpOfTimestampTokenLogProbs > valueOfMaxNonTimestampLogProb
 
-			if (isTimestampToken && !previousTokenWasTimestamp) {
+			const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
+			const secondPreviousTokenWasTimestamp = decodedTokens.length < 2 || this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
+
+			if (shouldDecodeTimestampToken && !previousTokenWasTimestamp) {
 				timestampsSeenCount += 1
 			}
 
-			//
-			//const topLogits = [...tokenLogits].map((logit, index) => ({ index, logit, token: this.tokenToText(index) || '', prob: probs[index] }))
-			//topLogits.sort((a, b) => b.logit - a.logit)
+			// Debug to see top candidates
+			if (false) {
+				const candidates =
+					Array.from(allTokenLogits).map((logit, index) => ({ index, token: this.tokenToText(index, true), probability: probabilities[index], logit }))
+
+				candidates.sort((a, b) => b.logit - a.logit)
+
+				const topCandidates = candidates.slice(0, 40)
+
+				const x = 0
+			}
 			///
 
-			let bufferedTokensToLog: number[] = []
+			let bufferedTokensToPrint: number[] = []
 
 			// Add best token
 			function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number) {
@@ -537,7 +637,7 @@ export class Whisper {
 				decodedTokensConfidence.push(confidence)
 			}
 
-			if (isTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
+			if (shouldDecodeTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
 				if (previousTokenWasTimestamp) {
 					const previousToken = decodedTokens[decodedTokens.length - 1]
 					const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
@@ -547,87 +647,103 @@ export class Whisper {
 
 					lastTimestampTokenIndex = decodedTokens.length
 
-					const previousTokenTimestamp = (previousToken - timestampTokensStart) * 0.02
+					const previousTokenTimestamp = this.timestampTokenToSeconds(previousToken)
 
 					if (previousTokenTimestamp >= audioDuration) {
 						break
 					}
 				} else {
 					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
-					const confidence = probs[timestampToken]
+					const confidence = probabilities[timestampToken]
 
-					addToken(timestampToken, tokenTimestampLogits, confidence)
+					addToken(timestampToken, timestampTokenLogits, confidence)
 				}
-			} else if (indexOfMaxTextLogProb == eotToken) {
+			} else if (indexOfMaxNonTimestampLogProb == endOfTextToken) {
 				break
 			} else {
-				let chosenTokenIndex: number
+				let chosenToken: number
 
 				if (options.temperature == 0.0) {
-					chosenTokenIndex = indexOfMaxTextLogProb
+					chosenToken = indexOfMaxNonTimestampLogProb
 				} else {
 					const topLogitCount = options.topCandidateCount!
 
-					const textTokenLogits = tokenLogits.slice(0, timestampTokensStart)
-					const sortedTextTokenLogitsWithIndexes = Array.from(textTokenLogits).map((logit, index) => ({ logit, index }))
-					sortedTextTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
-					let topLogitsWithIndexes = sortedTextTokenLogitsWithIndexes.slice(0, topLogitCount)
+					const nonTimestampTokenLogits = allTokenLogits.slice(0, timestampTokensStart)
+
+					const sortedNonTimestampTokenLogitsWithIndexes =
+						Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+
+					sortedNonTimestampTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+
+					let topCandidates = sortedNonTimestampTokenLogitsWithIndexes.slice(0, topLogitCount)
+						.map(entry => ({ token: entry.token, logit: entry.logit, text: this.tokenToText(entry.token) }))
 
 					//// Repetition suppression code
 					if (options.suppressRepetition) {
-						topLogitsWithIndexes = topLogitsWithIndexes.filter(entry => {
-							const lastDecodedTextTokens = decodedTokens.filter(token => token < eotToken).reverse().slice(0, 20)
-							const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.index, ...lastDecodedTextTokens])
+						const topCandidatesRepetitionScores = topCandidates.map(entry => {
+							const lastDecodedTextTokens = decodedTokens.filter(token => this.isTextToken(token)).reverse().slice(0, 20)
+							const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.token, ...lastDecodedTextTokens])
 
-							if (maxScore < 4) {
-								return true
-							} else {
-								return false
-							}
+							return maxScore
 						})
+
+						const thresholdRepetitionScore = 4
+
+						if (topCandidatesRepetitionScores.every(score => score >= thresholdRepetitionScore)) {
+							const indexOfMaxScore = topCandidatesRepetitionScores.indexOf(Math.max(...topCandidatesRepetitionScores))
+							topCandidates = [topCandidates[indexOfMaxScore]]
+						} else {
+							topCandidates = topCandidates.filter((candidate, index) => topCandidatesRepetitionScores[index] < thresholdRepetitionScore)
+						}
 					}
 					////
 
-					const topLogits = topLogitsWithIndexes.map(a => a.logit)
-					const textTokenProbs = softmax(topLogits, options.temperature)
+					const topCandidateProbabilities = softmax(topCandidates.map(a => a.logit), options.temperature)
 
-					const topIndexOfPromisingPunctuationLogit = topLogitsWithIndexes.findIndex(entry => {
-						const tokenText = this.tokenToText(entry.index).trim()
-						const tokenProb = probs[entry.index]
+					const rankOfPromisingPunctuationToken = topCandidates.findIndex(entry => {
+						const tokenText = this.tokenToText(entry.token).trim()
+						const tokenProb = probabilities[entry.token]
 
-						return tokenProb >= options.punctuationThreshold! && [',', '，', '.', '。', '!', '?'].includes(tokenText)
+						return tokenProb >= options.punctuationThreshold! && [',', '，', '、', '.', '。', '!', '?'].includes(tokenText)
 					})
 
-					let chosenTokenIndexInTopLogits: number
+					let rankOfSpaceToken = topCandidates.findIndex(candidate => candidate.token === spaceToken)
 
-					if (topIndexOfPromisingPunctuationLogit >= 0) {
-						chosenTokenIndexInTopLogits = topIndexOfPromisingPunctuationLogit
-					} else {
-						chosenTokenIndexInTopLogits = this.randomGen.selectRandomIndexFromDistribution(textTokenProbs)
+					if (rankOfSpaceToken < 0) {
+						rankOfSpaceToken = Infinity
 					}
 
-					chosenTokenIndex = sortedTextTokenLogitsWithIndexes[chosenTokenIndexInTopLogits].index
+					let chosenCandidateRank: number
+
+					if (rankOfPromisingPunctuationToken >= 0 &&
+						rankOfPromisingPunctuationToken < rankOfSpaceToken) {
+						chosenCandidateRank = rankOfPromisingPunctuationToken
+					} else {
+						chosenCandidateRank = this.randomGen.selectRandomIndexFromDistribution(topCandidateProbabilities)
+					}
+
+					chosenToken = sortedNonTimestampTokenLogitsWithIndexes[chosenCandidateRank].token
 				}
 
-				if (chosenTokenIndex < eotToken) {
-					bufferedTokensToLog.push(chosenTokenIndex)
+				if (this.isTextToken(chosenToken)) {
+					bufferedTokensToPrint.push(chosenToken)
 
-					let textToLog = this.tokensToText(bufferedTokensToLog)
+					let textToPrint = this.tokensToText(bufferedTokensToPrint)
 
-					if (textToLog.codePointAt(0) !== 65533) {
-						if (isFirstPart && decodedTokens.every(token => token >= eotToken)) {
-							textToLog = textToLog.trimStart()
+					if (textToPrint.codePointAt(0) !== 65533) {
+						if (isFirstPart && decodedTokens.every(token => this.isMetadataToken(token))) {
+							textToPrint = textToPrint.trimStart()
 						}
 
-						logger.write(textToLog)
+						logger.write(textToPrint)
 
-						bufferedTokensToLog = []
+						bufferedTokensToPrint = []
 					}
 				}
 
-				const confidence = probs[chosenTokenIndex]
+				const confidence = probabilities[chosenToken]
 
-				addToken(chosenTokenIndex, tokenTimestampLogits, confidence)
+				addToken(chosenToken, timestampTokenLogits, confidence)
 			}
 
 			await yieldToEventLoop()
@@ -643,7 +759,12 @@ export class Whisper {
 		logger.end()
 
 		// Return the tokens
-		return { decodedTokens, decodedTokensTimestampLogits, crossAttentionQKs: decodedTokensCrossAttentionQKs, decodedTokensConfidence }
+		return {
+			decodedTokens,
+			decodedTokensTimestampLogits,
+			crossAttentionQKs: decodedTokensCrossAttentionQKs,
+			decodedTokensConfidence
+		}
 	}
 
 	async inferCrossAttentionQKs(tokens: number[], audioFeatures: Onnx.Tensor) {
@@ -762,7 +883,7 @@ export class Whisper {
 		for (let i = 0; i < tokens.length; i++) {
 			const token = tokens[i]
 
-			if (token == this.tokenConfig.sotToken || token == this.tokenConfig.eotToken) {
+			if (token == this.tokenConfig.startOfTextToken || token == this.tokenConfig.endOfTextToken) {
 				continue
 			}
 
@@ -774,7 +895,7 @@ export class Whisper {
 					continue
 				}
 
-				let startTime = initialTimeOffset + (token - timestampTokensStart) * 0.02
+				let startTime = initialTimeOffset + this.timestampTokenToSeconds(token)
 
 				startTime = Math.min(startTime, audioDuration)
 
@@ -806,8 +927,6 @@ export class Whisper {
 	}
 
 	async addWordsToTimeline(timeline: Timeline, tokens: number[], rawAudio: RawAudio, crossAttentionQKs: Onnx.Tensor[], initialAudioTimeOffset: number, duration: number) {
-		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-
 		let segmentStartTime = 0
 		let segmentTokens: number[] = []
 		let segmentCrossAttentionQKs: Onnx.Tensor[] = []
@@ -816,15 +935,15 @@ export class Whisper {
 			const token = tokens[tokenIndex]
 			const tokenCrossAttentionQKs = crossAttentionQKs[tokenIndex]
 
-			const segmentTokensWithoutTimestamps = segmentTokens.filter(token => token < this.tokenConfig.timestampTokensStart)
+			const segmentTokensWithoutTimestamps = segmentTokens.filter(token => this.isNonTimestampToken(token))
 
-			const isTimestamp = token >= timestampTokensStart
+			const isTimestamp = this.isTimestampToken(token)
 
 			if (isTimestamp || tokenIndex == tokens.length - 1) {
 				let tokenTime: number
 
 				if (isTimestamp) {
-					tokenTime = (token - timestampTokensStart) * 0.02
+					tokenTime = this.timestampTokenToSeconds(token)
 				} else {
 					tokenTime = duration
 				}
@@ -832,8 +951,8 @@ export class Whisper {
 				if (segmentTokensWithoutTimestamps.length > 0) {
 					const segmentEndTime = tokenTime
 
-					const segmentStartFrame = Math.floor(segmentStartTime / 0.02)
-					let segmentEndFrame = Math.floor(segmentEndTime / 0.02)
+					const segmentStartFrame = this.secondsToFrame(segmentStartTime)
+					let segmentEndFrame = this.secondsToFrame(segmentEndTime)
 
 					if (segmentStartFrame == segmentEndFrame) {
 						segmentEndFrame += 1
@@ -844,7 +963,7 @@ export class Whisper {
 					const reinferCrossAttentionQKs = true
 
 					if (reinferCrossAttentionQKs) {
-						const initialTokens = this.getInitialTokens('en', 'transcribe')
+						const initialTokens = this.getTextStartTokens('en', 'transcribe')
 						const tokensToDecode = [...initialTokens, ...segmentTokensWithoutTimestamps]
 
 						//const segmentAudioFeaturesBuffer = audioFeatures.data.slice(segmentStartFrame * audioFeatures.dims[2], segmentEndFrame * audioFeatures.dims[2])
@@ -915,9 +1034,9 @@ export class Whisper {
 		}
 
 		for (const group of groups) {
-			const text = this.tokensToText(group.map(entry => entry.id!))
+			const groupText = this.tokensToText(group.map(entry => entry.id!))
 
-			if (text === '') {
+			if (groupText === '') {
 				continue
 			}
 
@@ -931,7 +1050,7 @@ export class Whisper {
 
 			const newEntry: TimelineEntry = {
 				type: 'word',
-				text: text.trim(),
+				text: groupText.trim(),
 				startTime,
 				endTime,
 				confidence,
@@ -1010,10 +1129,10 @@ export class Whisper {
 		}
 
 		// Load attention head weights from tensors
-		const attentionHeads: number[][][] = [] // [heads, tokens, frames]
+		const attentionHeads: number[][][] = [] // structure: [heads, tokens, frames]
 
 		for (const headIndex of headIndexes) {
-			const attentionHead: number[][] = [] // [tokens, frames]
+			const attentionHead: number[][] = [] // structure: [tokens, frames]
 
 			for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
 				const bufferOffset = headIndex * frameCount
@@ -1051,7 +1170,7 @@ export class Whisper {
 				const allWeightsForHead = head.flatMap(tokenFrames => tokenFrames)
 
 				const meanOfAllWeights = meanOfVector(allWeightsForHead)
-				const stdDeviationOfAllWeights = stdDeviationOfVector(allWeightsForHead)
+				const stdDeviationOfAllWeights = stdDeviationOfVector(allWeightsForHead) + 1e-10
 
 				for (const tokenFrames of head) {
 					for (let frameIndex = 0; frameIndex < tokenFrames.length; frameIndex++) {
@@ -1094,11 +1213,15 @@ export class Whisper {
 		}
 
 		if (fixateTimestampTokens) {
+			// Fixate timestamp tokens to the original ones detected
 			const timestampTokensStart = this.tokenConfig.timestampTokensStart
 
 			for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
-				if (tokens[tokenIndex] >= timestampTokensStart) {
-					let timestampFrame = tokens[tokenIndex] - timestampTokensStart
+				const token = tokens[tokenIndex]
+
+				if (this.isTimestampToken(token)) {
+					let timestampFrame = token - timestampTokensStart
+
 					timestampFrame = clip(timestampFrame, segmentStartFrame, segmentEndFrame - 1)
 
 					frameMeansForToken[tokenIndex][timestampFrame] = 100
@@ -1137,50 +1260,119 @@ export class Whisper {
 		}
 	}
 
-	getInitialTokens(language: string, task: WhisperTask, disableTimestamps = false) {
-		const sotToken = this.tokenConfig.sotToken
+	getTextStartTokens(language: string, task: WhisperTask, disableTimestamps = false) {
+		const startOfTextToken = this.tokenConfig.startOfTextToken
 
-		let initialTokens: number[]
+		let tokens: number[]
 
 		if (this.isMultiligualModel) {
-			const languageToken = sotToken + 1 + languageIdLookup[language]
-			const translateTaskToken = 50358
-			const transcribeTaskToken = 50359
-			const taskToken = task == 'transcribe' ? transcribeTaskToken : translateTaskToken
+			const languageToken = this.tokenConfig.languageTokensStart + languageIdLookup[language]
+			const taskToken = task == 'translate' ? this.tokenConfig.translateTaskToken : this.tokenConfig.transcribeTaskToken
 
-			initialTokens = [sotToken, languageToken, taskToken]
+			tokens = [startOfTextToken, languageToken, taskToken]
 		} else {
-			initialTokens = [sotToken]
+			tokens = [startOfTextToken]
 		}
 
 		if (disableTimestamps) {
-			initialTokens.push(this.tokenConfig.noTimestampsToken)
+			tokens.push(this.tokenConfig.noTimestampsToken)
 		}
 
-		return initialTokens
+		return tokens
 	}
 
-	tokenToText(token: number) {
-		if (token >= this.tokenConfig.eotToken) {
+	tokenToText(token: number, includeMetadataTokens = false) {
+		return this.tokensToText([token], includeMetadataTokens)
+	}
+
+	tokensToText(tokens: number[], includeMetadataTokens = false) {
+		tokens.forEach(token => this.assertIsValidToken(token))
+
+		if (includeMetadataTokens === false) {
+			tokens = tokens.filter(token => this.isTextToken(token))
+		}
+
+		if (tokens.length === 0) {
 			return ''
 		}
 
-		const utf8Data = this.tiktoken!.decode_single_token_bytes(token)
-		const str = Buffer.from(utf8Data).toString('utf8')
-
-		return str
-	}
-
-	tokensToText(tokens: number[]) {
-		tokens = tokens.filter(token => token < this.tokenConfig.eotToken)
-
-		const decodedTokens = Buffer.from(this.tiktoken!.decode(new Uint32Array(tokens))).toString('utf8')
-
-		return decodedTokens
+		try {
+			return Buffer.from(this.tiktoken!.decode(new Uint32Array(tokens))).toString('utf8')
+		} catch {
+			return '[TOKENIZER_FAILED]'
+		}
 	}
 
 	textToTokens(text: string) {
 		return Array.from(this.tiktoken!.encode(text))
+	}
+
+	isTextToken(token: number) {
+		return token < this.tokenConfig.endOfTextToken
+	}
+
+	isMetadataToken(token: number) {
+		return token >= this.tokenConfig.endOfTextToken
+	}
+
+	isLanguageToken(token: number) {
+		return token >= this.tokenConfig.languageTokensStart && token < this.tokenConfig.languageTokensEnd
+	}
+
+	isTimestampToken(token: number) {
+		return token >= this.tokenConfig.timestampTokensStart
+	}
+
+	isNonTimestampToken(token: number) {
+		return token < this.tokenConfig.timestampTokensStart
+	}
+
+	timestampTokenToSeconds(timestampToken: number) {
+		this.assertIsValidToken(timestampToken)
+
+		if (this.isNonTimestampToken(timestampToken)) {
+			throw new Error(`Invalid timestamp token: ${timestampToken}`)
+		}
+
+		return (timestampToken - this.tokenConfig.timestampTokensStart) * 0.02
+	}
+
+	isValidToken(token: number) {
+		return token < this.tokenConfig.timestampTokensEnd
+	}
+
+	assertIsValidToken(token: number) {
+		if (!this.isValidToken(token)) {
+			throw new Error(`Invalid token: ${token}`)
+		}
+	}
+
+	secondsToFrame(seconds: number) {
+		return Math.floor(seconds / 0.02)
+	}
+
+	secondsRangeToFrameCount(startSeconds: number, endSeconds: number) {
+		if (startSeconds > endSeconds) {
+			throw new Error(`Invalid range: ${startSeconds} > ${endSeconds}`)
+		}
+
+		return this.secondsToFrame(endSeconds - startSeconds)
+	}
+
+	languageTokenToLanguageIndex(languageToken: number) {
+		if (!this.isLanguageToken(languageToken)) {
+			throw new Error(`Invalid language token: ${languageToken}`)
+		}
+
+		let languageIndex = languageToken - this.tokenConfig.languageTokensStart
+
+		if (this.isEnglishOnlyModel) {
+			languageIndex += 1
+		}
+	}
+
+	get isEnglishOnlyModel() {
+		return this.isMultiligualModel === false
 	}
 
 	getAlignmentHeadIndexes() {
@@ -1382,8 +1574,12 @@ export function normalizeWhisperModelName(modelName: WhisperModelName, languageC
 	return modelName
 }
 
-export function isMultiligualModel(modelName: WhisperModelName) {
-	return !modelName.endsWith('.en')
+export function isMultilingualModel(modelName: WhisperModelName) {
+	return !isEnglishOnlyModel(modelName)
+}
+
+export function isEnglishOnlyModel(modelName: WhisperModelName) {
+	return modelName.endsWith('.en')
 }
 
 export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
@@ -1405,12 +1601,6 @@ export const modelNameToPackageName: { [modelName in WhisperModelName]: string }
 }
 
 export const tokenizerPackageName = 'whisper-tokenizer'
-
-const vocabCharacterSetLookup: { [s: string]: number } = {
-	'!': 33, '\"': 34, '#': 35, '$': 36, '%': 37, '&': 38, '\'': 39, '(': 40, ')': 41, '*': 42, '+': 43, ',': 44, '-': 45, '.': 46, '/': 47, '0': 48, '1': 49, '2': 50, '3': 51, '4': 52, '5': 53, '6': 54,
-	'7': 55, '8': 56, '9': 57, ':': 58, ';': 59, '<': 60, '=': 61, '>': 62, '?': 63, '@': 64, 'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71, 'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78, 'O': 79, 'P': 80, 'Q': 81, 'R': 82, 'S': 83, 'T': 84, 'U': 85, 'V': 86, 'W': 87, 'X': 88, 'Y': 89, 'Z': 90, '[': 91, '\\': 92, ']': 93, '^': 94, '_': 95, '`': 96, 'a': 97, 'b': 98, 'c': 99, 'd': 100, 'e': 101, 'f': 102, 'g': 103, 'h': 104, 'i': 105, 'j': 106, 'k': 107, 'l': 108, 'm': 109, 'n': 110, 'o': 111, 'p': 112, 'q': 113, 'r': 114, 's': 115, 't': 116, 'u': 117, 'v': 118, 'w': 119, 'x': 120, 'y': 121, 'z': 122, '{': 123, '|': 124, '}': 125, '~': 126, '¡': 161, '¢': 162, '£': 163, '¤': 164, '¥': 165, '¦': 166, '§': 167, '¨': 168, '©': 169, 'ª': 170, '«': 171, '¬': 172, '®': 174, '¯': 175, '°': 176, '±': 177, '²': 178, '³': 179, '´': 180, 'µ': 181, '¶': 182, '·': 183, '¸': 184, '¹': 185, 'º': 186, '»': 187, '¼': 188, '½': 189, '¾': 190, '¿': 191, 'À': 192, 'Á': 193, 'Â': 194, 'Ã': 195, 'Ä': 196, 'Å': 197, 'Æ': 198, 'Ç': 199, 'È': 200, 'É': 201, 'Ê': 202, 'Ë': 203, 'Ì': 204, 'Í': 205, 'Î': 206, 'Ï': 207, 'Ð': 208, 'Ñ': 209, 'Ò': 210, 'Ó': 211, 'Ô': 212, 'Õ': 213, 'Ö': 214, '×': 215, 'Ø': 216, 'Ù': 217, 'Ú': 218, 'Û': 219, 'Ü': 220, 'Ý': 221, 'Þ': 222, 'ß': 223, 'à': 224, 'á': 225, 'â': 226, 'ã': 227, 'ä': 228, 'å': 229, 'æ': 230, 'ç': 231, 'è': 232, 'é': 233, 'ê': 234, 'ë': 235, 'ì': 236, 'í': 237, 'î': 238, 'ï': 239, 'ð': 240, 'ñ': 241, 'ò': 242, 'ó': 243, 'ô': 244, 'õ': 245, 'ö': 246, '÷': 247, 'ø': 248, 'ù': 249, 'ú': 250, 'û': 251, 'ü': 252, 'ý': 253, 'þ': 254, 'ÿ': 255, 'Ā': 0, 'ā': 1, 'Ă': 2, 'ă': 3, 'Ą': 4, 'ą': 5, 'Ć': 6, 'ć': 7, 'Ĉ': 8, 'ĉ': 9, 'Ċ': 10, 'ċ': 11, 'Č': 12, 'č': 13, 'Ď': 14, 'ď': 15, 'Đ': 16, 'đ': 17, 'Ē': 18, 'ē': 19, 'Ĕ': 20, 'ĕ':
-		21, 'Ė': 22, 'ė': 23, 'Ę': 24, 'ę': 25, 'Ě': 26, 'ě': 27, 'Ĝ': 28, 'ĝ': 29, 'Ğ': 30, 'ğ': 31, 'Ġ': 32, 'ġ': 127, 'Ģ': 128, 'ģ': 129, 'Ĥ': 130, 'ĥ': 131, 'Ħ': 132, 'ħ': 133, 'Ĩ': 134, 'ĩ': 135, 'Ī': 136, 'ī': 137, 'Ĭ': 138, 'ĭ': 139, 'Į': 140, 'į': 141, 'İ': 142, 'ı': 143, 'Ĳ': 144, 'ĳ': 145, 'Ĵ': 146, 'ĵ': 147, 'Ķ': 148, 'ķ': 149, 'ĸ': 150, 'Ĺ': 151, 'ĺ': 152, 'Ļ': 153, 'ļ': 154, 'Ľ': 155, 'ľ': 156, 'Ŀ': 157, 'ŀ': 158, 'Ł': 159, 'ł': 160, 'Ń': 173
-}
 
 const languageIdLookup: { [s: string]: number } = {
 	'en': 0,
@@ -1538,6 +1728,7 @@ export interface WhisperOptions {
 	autoPromptParts?: boolean
 	maxTokensPerPart?: number
 	suppressRepetition?: boolean
+	seed?: number
 }
 
 export const defaultWhisperOptions: WhisperOptions = {
@@ -1549,4 +1740,5 @@ export const defaultWhisperOptions: WhisperOptions = {
 	autoPromptParts: true,
 	maxTokensPerPart: 250,
 	suppressRepetition: true,
+	seed: undefined,
 }

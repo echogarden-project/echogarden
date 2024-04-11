@@ -1021,6 +1021,9 @@
         },
         "suppressRepetition": {
           "type": "boolean"
+        },
+        "seed": {
+          "type": "number"
         }
       },
       "additionalProperties": false

@@ -253,7 +253,7 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 			}
 
 			const tokenId = tokenObject.id
-			const tokenText = whisper.tokenToText(tokenId)
+			const tokenText = whisper.tokenToText(tokenId, true)
 			const tokenConfidence = tokenObject.p
 
 			let startTime: number
@@ -285,7 +285,6 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 			})
 		}
 	}
-
 
 	const allTokenIds = tokenTimeline.map(entry => entry.id!)
 	const transcript = whisper.tokensToText(allTokenIds).trim()

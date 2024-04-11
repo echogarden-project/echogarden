@@ -370,7 +370,7 @@ export function varianceOfVector(vector: number[], kind: 'population' | 'sample'
 }
 
 export function logOfVector(vector: number[], minVal = 1e-40) {
-	return vector.map(value => Math.log(minVal + value))
+	return vector.map(value => Math.log(value + minVal))
 }
 
 export function expOfVector(vector: number[]) {
@@ -616,10 +616,14 @@ export function maxValue(vector: number[]) {
 }
 
 export function indexOfMax(vector: number[]) {
-	let maxValue = -Infinity
-	let result = -1
+	if (vector.length == 0) {
+		return -1
+	}
 
-	for (let i = 0; i < vector.length; i++) {
+	let maxValue = vector[0]
+	let result = 0
+
+	for (let i = 1; i < vector.length; i++) {
 		if (vector[i] > maxValue) {
 			maxValue = vector[i]
 			result = i
@@ -676,7 +680,7 @@ export function sigmoid(x: number) {
 }
 
 export function softmax(logits: number[], temperature = 1.0) {
-	if (logits.length == 0) {
+	if (logits.length === 0) {
 		return []
 	}
 
