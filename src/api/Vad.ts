@@ -1,7 +1,7 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
-import { AudioSourceParam, RawAudio, concatAudioSegments, cropToTimeline, ensureRawAudio, normalizeAudioLevel, } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline } from '../utilities/Timeline.js'
@@ -29,7 +29,7 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 	logger.start(`Detect voice activity with ${options.engine}`)
 
 	const activityThreshold = options.activityThreshold!
-	
+
 	let verboseTimeline: Timeline
 
 	switch (options.engine) {
