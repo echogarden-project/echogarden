@@ -132,7 +132,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	return { referenceSynthesizedAudio, referenceTimeline, fragments, preprocessedFragments, phonemizedFragmentsSubstitutions, phonemizedSentence }
 }
 
-export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = false) {
+export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions) {
 	const logger = new Logger()
 
 	const sampleRate = await getSampleRate()
@@ -158,11 +158,10 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			.replaceAll('<', '&lt;')
 			.replaceAll('>', '&gt;')
 
-		if (insertSeparators) {
-			// Note: `|` separators are pronounced literally in eSpeak's Polish TTS,
-			// which breaks this approach
+		if (espeakOptions.insertSeparators) {
+			const separator = ` | `
 
-			textWithMarkers += `<mark name="s-${i}"/> | ${fragment} | <mark name="e-${i}"/>`
+			textWithMarkers += `<mark name="s-${i}"/>${separator}${fragment}${separator}<mark name="e-${i}"/>`
 		} else {
 			if (fragment.endsWith('.')) {
 				fragment += ' ()'
@@ -297,7 +296,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			throw new Error('Unexpected: token timeline should exist and have at least one token')
 		}
 
-		if (tokenTimeline[0].text != '') {
+		if (tokenTimeline.length !== 1 && tokenTimeline[0].text != '') {
 			continue
 		}
 
@@ -317,13 +316,31 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			continue
 		}
 
-		const previousWordTokenEntry = previousWordEntry.timeline[0]
+		const previousWordTokenEntry = previousWordEntry.timeline[previousWordEntry.timeline.length - 1]
 
-		if (!previousWordTokenEntry.timeline || previousWordTokenEntry.timeline.length <= wordReferencePhonemes.length) {
+		if (!previousWordTokenEntry.timeline) {
 			continue
 		}
 
 		const previousWordTokenIPAWithoutStress = previousWordTokenEntry.timeline.map(phoneEntry => phoneEntry.text.replaceAll('ˈ', '').replaceAll('ˌ', '')).join(' ')
+
+		if (previousWordEntry.timeline.length > 1 && previousWordTokenIPAWithoutStress === wordReferenceIPAWithoutStress) {
+			tokenTimeline.pop()
+
+			const tokenEntryToInsert = previousWordEntry.timeline.pop()!
+			tokenTimeline.push(tokenEntryToInsert)
+
+			previousWordEntry.endTime = previousWordEntry.timeline[previousWordEntry.timeline.length - 1].endTime
+
+			wordEntry.startTime = tokenEntryToInsert.startTime
+			wordEntry.endTime = tokenEntryToInsert.endTime
+
+			continue
+		}
+
+		if (previousWordTokenEntry.timeline.length <= wordReferencePhonemes.length) {
+			continue
+		}
 
 		if (!previousWordTokenIPAWithoutStress.endsWith(wordReferenceIPAWithoutStress)) {
 			continue
@@ -531,6 +548,7 @@ export interface EspeakOptions {
 	pitch: number
 	pitchRange: number
 	useKlatt: boolean
+	insertSeparators: boolean
 }
 
 export const defaultEspeakOptions: EspeakOptions = {
@@ -539,7 +557,8 @@ export const defaultEspeakOptions: EspeakOptions = {
 	rate: 1.0,
 	pitch: 1.0,
 	pitchRange: 1.0,
-	useKlatt: false
+	useKlatt: false,
+	insertSeparators: false
 }
 
 export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
