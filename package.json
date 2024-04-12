@@ -54,8 +54,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.552.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.552.0",
+		"@aws-sdk/client-polly": "^3.554.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.554.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
