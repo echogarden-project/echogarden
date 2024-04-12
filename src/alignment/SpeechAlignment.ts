@@ -12,6 +12,7 @@ import { synthesize } from '../api/API.js'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
 import { zeroIfNaN } from '../math/VectorMath.js'
+import { EspeakOptions } from '../synthesis/EspeakTTS.js'
 
 export async function alignUsingDtw(
 	sourceRawAudio: RawAudio,
@@ -150,15 +151,14 @@ export async function alignUsingDtw(
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognition(
+export async function alignUsingDtwWithRecognitionReference(
 	sourceRawAudio: RawAudio,
 	referenceRawAudio: RawAudio,
 	referenceTimeline: Timeline,
 	recognitionTimeline: Timeline,
-	synthesizedRecognizedTranscriptRawAudio: RawAudio,
-	synthesizedRecognitionTimeline: Timeline,
 	granularities: DtwGranularity[],
 	windowDurations: number[],
+	espeakOptions: EspeakOptions,
 	phoneAlignmentMethod: API.PhoneAlignmentMethod = 'interpolation') {
 
 	const logger = new Logger()
@@ -182,13 +182,25 @@ export async function alignUsingDtwWithRecognition(
 		return interpolatedTimeline
 	}
 
+	// Synthesize the recognized transcript and get its timeline
+	logger.start("Synthesize recognized transcript with eSpeak")
+	const recognizedWords = recognitionTimeline.map(entry => entry.text)
+
+	const {
+		rawAudio: synthesizedRecognizedTranscriptRawAudio,
+		timeline: synthesizedRecognitionTimeline
+	} = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakOptions)
+
 	let recognitionTimelineWithPhones: Timeline
 
 	if (phoneAlignmentMethod == 'interpolation') {
 		// Add phone timelines by interpolating from reference words
 		logger.start('Interpolate phone timing')
 
-		recognitionTimelineWithPhones = await interpolatePhoneTimelines(recognitionTimeline, synthesizedRecognitionTimeline)
+		recognitionTimelineWithPhones = await interpolatePhoneTimelines(
+			recognitionTimeline,
+			synthesizedRecognitionTimeline
+		)
 	} else if (phoneAlignmentMethod == 'dtw') {
 		logger.start('Align phone timing')
 
@@ -205,7 +217,7 @@ export async function alignUsingDtwWithRecognition(
 	}
 
 	// Create a mapping from the synthesized recognized timeline to the recognized timeline
-	logger.start('Map from the synthesized recognized timeline to the recognized timeline')
+	logger.start("Map from the synthesized recognized timeline to the recognized timeline")
 
 	type SynthesizedToRecognizedTimeMappingEntry = {
 		synthesized: number
@@ -217,16 +229,18 @@ export async function alignUsingDtwWithRecognition(
 	const synthesizedToRecognizedTimeMapping: SynthesizedToRecognizedTimeMapping = []
 
 	for (let wordEntryIndex = 0; wordEntryIndex < synthesizedRecognitionTimeline.length; wordEntryIndex++) {
-		const synthesizedWordTimelineEntry = synthesizedRecognitionTimeline[wordEntryIndex]
-		const recognitionWordTimelineEntry = recognitionTimelineWithPhones[wordEntryIndex]
+		const synthesizedTimelineEntry = synthesizedRecognitionTimeline[wordEntryIndex]
+		const recognitionTimelineEntry = recognitionTimelineWithPhones[wordEntryIndex]
 
-		for (let tokenEntryIndex = 0; tokenEntryIndex < synthesizedWordTimelineEntry.timeline!.length; tokenEntryIndex++) {
-			const synthesizedTokenTimelineEntry = synthesizedWordTimelineEntry.timeline![tokenEntryIndex]
-			const recognitionTokenTimelineEntry = recognitionWordTimelineEntry.timeline![tokenEntryIndex]
+		synthesizedToRecognizedTimeMapping.push({
+			synthesized: synthesizedTimelineEntry.startTime,
+			recognized: recognitionTimelineEntry.startTime
+		})
 
-			for (let phoneEntryIndex = 0; phoneEntryIndex < synthesizedTokenTimelineEntry.timeline!.length; phoneEntryIndex++) {
-				const synthesizedPhoneTimelineEntry = synthesizedTokenTimelineEntry.timeline![phoneEntryIndex]
-				const recognitionPhoneTimelineEntry = recognitionTokenTimelineEntry.timeline![phoneEntryIndex]
+		if (synthesizedTimelineEntry.timeline) {
+			for (let tokenEntryIndex = 0; tokenEntryIndex < synthesizedTimelineEntry.timeline.length; tokenEntryIndex++) {
+				const synthesizedPhoneTimelineEntry = synthesizedTimelineEntry.timeline[tokenEntryIndex]
+				const recognitionPhoneTimelineEntry = recognitionTimelineEntry.timeline![tokenEntryIndex]
 
 				synthesizedToRecognizedTimeMapping.push({
 					synthesized: synthesizedPhoneTimelineEntry.startTime,
@@ -239,10 +253,16 @@ export async function alignUsingDtwWithRecognition(
 				})
 			}
 		}
+
+		synthesizedToRecognizedTimeMapping.push({
+			synthesized: synthesizedTimelineEntry.endTime,
+			recognized: recognitionTimelineEntry.endTime
+		})
 	}
 
-	logger.start('Align the synthesized recognized transcript with the synthesized ground-truth transcript')
 	// Align the synthesized recognized transcript to the synthesized reference transcript
+	logger.start("Align the synthesized recognized transcript with the synthesized ground-truth transcript")
+
 	const alignedSynthesizedRecognitionTimeline = await alignUsingDtw(
 		synthesizedRecognizedTranscriptRawAudio,
 		referenceRawAudio,
@@ -250,40 +270,43 @@ export async function alignUsingDtwWithRecognition(
 		granularities,
 		windowDurations)
 
-	function mapTimeline(timeline: Timeline) {
-		function mapSynthesizedToRecognizedTime(synthesizedTime: number) {
-			for (let mappingIndex = 0; ; mappingIndex += 1) {
-				const left = synthesizedToRecognizedTimeMapping[mappingIndex].synthesized
+	let currentSynthesizedToRecognizedMappingIndex = 0
 
-				let right: number
+	function mapSynthesizedToRecognizedTimeAndAdvance(synthesizedTime: number) {
+		for (; ; currentSynthesizedToRecognizedMappingIndex += 1) {
+			const left = synthesizedToRecognizedTimeMapping[currentSynthesizedToRecognizedMappingIndex].synthesized
 
-				if (mappingIndex < synthesizedToRecognizedTimeMapping.length - 1) {
-					right = synthesizedToRecognizedTimeMapping[mappingIndex + 1].synthesized
-				} else {
-					right = Infinity
-				}
+			let right: number
 
-				if (left > right) {
-					throw new Error('Left is greater than right!')
-				}
+			if (currentSynthesizedToRecognizedMappingIndex < synthesizedToRecognizedTimeMapping.length - 1) {
+				right = synthesizedToRecognizedTimeMapping[currentSynthesizedToRecognizedMappingIndex + 1].synthesized
+			} else {
+				right = Infinity
+			}
 
-				if (Math.abs(synthesizedTime - left) < Math.abs(synthesizedTime - right)) {
-					return synthesizedToRecognizedTimeMapping[mappingIndex].recognized
-				}
+			if (left > right) {
+				throw new Error("Left is larger than right!")
+			}
+
+			if (Math.abs(synthesizedTime - left) < Math.abs(synthesizedTime - right)) {
+				return synthesizedToRecognizedTimeMapping[currentSynthesizedToRecognizedMappingIndex].recognized
 			}
 		}
+	}
 
+	function mapTimeline(timeline: Timeline) {
 		const mappedTimeline: Timeline = []
 
 		for (const entry of timeline) {
-			const mappedEntry = deepClone(entry)
+			const mappedEntry = { ...entry }
 
-			mappedEntry.startTime = mapSynthesizedToRecognizedTime(entry.startTime)
-			mappedEntry.endTime = mapSynthesizedToRecognizedTime(entry.endTime)
+			mappedEntry.startTime = mapSynthesizedToRecognizedTimeAndAdvance(entry.startTime)
 
 			if (entry.timeline) {
 				mappedEntry.timeline = mapTimeline(entry.timeline)
 			}
+
+			mappedEntry.endTime = mapSynthesizedToRecognizedTimeAndAdvance(entry.endTime)
 
 			mappedTimeline.push(mappedEntry)
 		}
@@ -301,10 +324,10 @@ export async function alignUsingDtwWithRecognition(
 export async function interpolatePhoneTimelines(sourceTimeline: Timeline, referenceTimeline: Timeline) {
 	const interpolatedTimeline: Timeline = []
 
-	for (let i = 0; i < sourceTimeline.length; i++) {
-		const referenceEntry = referenceTimeline[i]
+	for (let wordEntryIndex = 0; wordEntryIndex < sourceTimeline.length; wordEntryIndex++) {
+		const referenceEntry = referenceTimeline[wordEntryIndex]
 
-		const interpolatedEntry = deepClone(sourceTimeline[i])
+		const interpolatedEntry = deepClone(sourceTimeline[wordEntryIndex])
 		interpolatedTimeline.push(interpolatedEntry)
 
 		if (interpolatedEntry.type != 'word') {
@@ -335,23 +358,13 @@ export async function interpolatePhoneTimelines(sourceTimeline: Timeline, refere
 			}
 		}
 
-		const interpolatedTokenEntries: Timeline = []
+		const interpolatedPhoneEntries: Timeline = []
 
-		for (const tokenEntry of (referenceEntry.timeline || [])!) {
-			const interpolatedTokenEntry = mapEntry(tokenEntry)
-
-			const interpolatedPhoneEntries: Timeline = []
-
-			for (const phoneEntry of (tokenEntry.timeline || [])) {
-				interpolatedPhoneEntries.push(mapEntry(phoneEntry))
-			}
-
-			interpolatedTokenEntry.timeline = interpolatedPhoneEntries
-
-			interpolatedTokenEntries.push(interpolatedTokenEntry)
+		for (const phoneEntry of (referenceEntry.timeline || [])) {
+			interpolatedPhoneEntries.push(mapEntry(phoneEntry))
 		}
 
-		interpolatedEntry.timeline = interpolatedTokenEntries
+		interpolatedEntry.timeline = interpolatedPhoneEntries
 	}
 
 	return interpolatedTimeline
@@ -424,28 +437,39 @@ export async function alignPhoneTimelines(
 		}
 
 		// Add phone timeline using the mapped time information
-		const alignedTokenTimeline: Timeline = []
+		const alignedPhoneTimeline: Timeline = []
 
-		for (const referenceTokenEntry of (referenceWordEntry.timeline || [])) {
-			const alignedPhoneTimeline: Timeline = []
-
-			for (const referencePhoneEntry of (referenceTokenEntry.timeline || [])) {
-				alignedPhoneTimeline.push(mapEntry(referencePhoneEntry))
-			}
-
-			alignedTokenTimeline.push({
-				...mapEntry(referenceTokenEntry),
-
-				timeline: alignedPhoneTimeline
-			})
+		for (const referencePhoneEntry of (referenceWordEntry.timeline || [])) {
+			alignedPhoneTimeline.push(mapEntry(referencePhoneEntry))
 		}
 
-		alignedWordEntry.timeline = alignedTokenTimeline
+		alignedWordEntry.timeline = alignedPhoneTimeline
 
 		alignedWordTimeline.push(alignedWordEntry)
 	}
 
 	return alignedWordTimeline
+}
+
+export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = true) {
+	const progressLogger = new Logger()
+
+	progressLogger.start("Load espeak module")
+	const Espeak = await import("../synthesis/EspeakTTS.js")
+
+	progressLogger.start("Create alignment reference with eSpeak")
+
+	const result = await Espeak.synthesizeFragments(fragments, espeakOptions)
+
+	result.timeline = result.timeline.flatMap(clause => clause.timeline!)
+
+	for (const wordEntry of result.timeline) {
+		wordEntry.timeline = wordEntry.timeline!.flatMap(tokenEntry => tokenEntry.timeline!)
+	}
+
+	progressLogger.end()
+
+	return result
 }
 
 export async function createAlignmentReferenceUsingEspeak(transcript: string, language: string, plaintextOptions?: API.PlainTextOptions, customLexiconPaths?: string[], insertSeparators?: boolean) {

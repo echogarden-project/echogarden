@@ -11,7 +11,7 @@ import { WhisperOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
-
+import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 
 const log = logToStderr
 
@@ -85,7 +85,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	logger.start('Load alignment module')
 
-	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
+	const { alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
 	function getDtwWindowDurationsAndGranularities() {
 		let granularities: DtwGranularity[]
@@ -153,21 +153,21 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const {
 				referenceRawAudio,
 				referenceTimeline,
+				espeakVoice,
 			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, true)
-
-			// Synthesize the recognized transcript and get its timeline
-			logger.start('Synthesize recognized transcript with eSpeak')
-
-			const {
-				referenceRawAudio: synthesizedRecognizedTranscriptRawAudio,
-				referenceTimeline: synthesizedRecognitionTimeline
-			} = await createAlignmentReferenceUsingEspeak(recognizedTranscript, language, undefined, undefined, true)
 
 			logger.end()
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
+			
+			const espeakOptions: EspeakOptions = {
+				...defaultEspeakOptions,
+				voice: espeakVoice,
+				useKlatt: false,
+				insertSeparators: true
+			}
 
 			// Align the ground-truth transcript and the recognized transcript
 			mappedTimeline = await alignUsingDtwWithRecognitionReference(
@@ -176,11 +176,10 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				referenceTimeline,
 
 				recognitionTimeline,
-				synthesizedRecognizedTranscriptRawAudio,
-				synthesizedRecognitionTimeline,
 
 				granularities,
 				windowDurations,
+				espeakOptions,
 				phoneAlignmentMethod)
 
 			break
