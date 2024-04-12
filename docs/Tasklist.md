@@ -2,8 +2,9 @@
 
 ## Bugs
 
-### Synthesis
+* In DTW-RA, recognition transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline.
 
+### Synthesis
 
 ### Phoneme processing
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.

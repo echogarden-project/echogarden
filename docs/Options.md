@@ -221,7 +221,7 @@ Applies to CLI operation: `align`, API method: `align`
 
 **DTW-RA only**:
 * `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.engine = whisper` and `recognition.whisper.model = base.en`
-* `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolate`. Defaults to `dtw`
+* `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolation`. Defaults to `dtw`
 
 **Whisper alignment only**:
 * `whisper`: prefix to provide Whisper options when the `whisper` alignment engine is used (does not apply to `dtw-ra` when `whisper` engine is used, for that use `recognition.whisper` prefix instead).
