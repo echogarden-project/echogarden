@@ -1,19 +1,17 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
-import { AudioSourceParam, RawAudio, downmixToMonoAndNormalize, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
-import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 
 import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
 import { WhisperOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
-import { DtwGranularity } from '../alignment/SpeechAlignment.js'
+import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
-import { synthesize } from './API.js'
-import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
+
 
 const log = logToStderr
 
@@ -87,32 +85,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	logger.start('Load alignment module')
 
-	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
-
-	async function getAlignmentReference() {
-		logger.start('Create alignment reference with eSpeak')
-
-		const synthesisOptions: API.SynthesisOptions = {
-			engine: 'espeak',
-			language,
-			plainText: options.plainText,
-			customLexiconPaths: options.customLexiconPaths,
-
-			espeak: {
-				useKlatt: false
-			}
-		}
-
-		let { audio: referenceRawAudio, timeline: segmentTimeline, voice: espeakVoice } = await synthesize(transcript, synthesisOptions)
-
-		const sentenceTimeline = segmentTimeline.flatMap(entry => entry.timeline!)
-		const wordTimeline = sentenceTimeline.flatMap(entry => entry.timeline!)
-
-		referenceRawAudio = await resampleAudioSpeex(referenceRawAudio as RawAudio, 16000)
-		referenceRawAudio = downmixToMonoAndNormalize(referenceRawAudio)
-
-		return { referenceRawAudio, referenceTimeline: wordTimeline, espeakVoice }
-	}
+	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
 	function getDtwWindowDurationsAndGranularities() {
 		let granularities: DtwGranularity[]
@@ -151,7 +124,11 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	switch (options.engine) {
 		case 'dtw': {
-			const { referenceRawAudio, referenceTimeline } = await getAlignmentReference()
+			const {
+				referenceRawAudio,
+				referenceTimeline
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths)
+
 			logger.end()
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
@@ -162,29 +139,49 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		}
 
 		case 'dtw-ra': {
-			const recognitionOptionsDefaults: API.RecognitionOptions = {
-				engine: 'whisper',
-				language,
-			}
-
 			const recognitionOptions: API.RecognitionOptions =
-				extendDeep({ ...recognitionOptionsDefaults, crop: options.crop }, options.recognition || {})
+				extendDeep({ crop: options.crop, language }, options.recognition)
 
 			logger.end()
 
-			const { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
+			// Recognize source audio
+			const { transcript: recognizedTranscript, wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
 
-			const { referenceRawAudio, referenceTimeline, espeakVoice } = await getAlignmentReference()
+			// Synthesize the ground-truth transcript and get its timeline
+			logger.start('Synthesize ground-truth transcript with eSpeak')
+
+			const {
+				referenceRawAudio,
+				referenceTimeline,
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, true)
+
+			// Synthesize the recognized transcript and get its timeline
+			logger.start('Synthesize recognized transcript with eSpeak')
+
+			const {
+				referenceRawAudio: synthesizedRecognizedTranscriptRawAudio,
+				referenceTimeline: synthesizedRecognitionTimeline
+			} = await createAlignmentReferenceUsingEspeak(recognizedTranscript, language, undefined, undefined, true)
 
 			logger.end()
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
-			const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, useKlatt: false }
-
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
-			mappedTimeline = await alignUsingDtwWithRecognition(sourceRawAudio, referenceRawAudio, referenceTimeline, recognitionTimeline, granularities, windowDurations, espeakOptions, phoneAlignmentMethod)
+			// Align the ground-truth transcript and the recognized transcript
+			mappedTimeline = await alignUsingDtwWithRecognitionReference(
+				sourceRawAudio,
+				referenceRawAudio,
+				referenceTimeline,
+
+				recognitionTimeline,
+				synthesizedRecognizedTranscriptRawAudio,
+				synthesizedRecognitionTimeline,
+
+				granularities,
+				windowDurations,
+				phoneAlignmentMethod)
 
 			break
 		}
@@ -348,9 +345,11 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 			temperature: 0.15,
 			topCandidateCount: 5,
 			punctuationThreshold: 0.2,
-			maxTokensPerPart: 200,
-			autoPromptParts: false,
+			maxTokensPerPart: 250,
+			autoPromptParts: true,
 			suppressRepetition: true,
+			seed: undefined,
+			decodeTimestampTokens: false,
 		}
 	},
 
