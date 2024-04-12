@@ -22,8 +22,6 @@ Create the `.vscode` subdirectory at the project base directory
 Add a `.vscode/tasks.json` file to run the TypeScript compiler in watch mode:
 ```json
 {
-	// See http://go.microsoft.com/fwlink/?LinkId=733558
-	// for the documentation about the tasks.json format
 	"version": "2.0.0",
 	"command": "tsc.cmd",
 	"args": [
