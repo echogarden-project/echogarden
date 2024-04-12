@@ -1578,6 +1578,10 @@ export async function loadPackagesAndGetPaths(modelName: WhisperModelName | unde
 		}
 	}
 
+	if (modelName.startsWith('large')) {
+		throw new Error(`Large models are not currently supported by the integrated Whisper engine due to model size restrictions of onnxruntime-node. To use large models, you can select the whisper.cpp engine instead.`)
+	}
+
 	const packageName = modelNameToPackageName[modelName]
 
 	const modelDir = await loadPackage(packageName)
