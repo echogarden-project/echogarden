@@ -149,6 +149,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode for each 30 second audio part. Defaults to `250`
 * `whisper.suppressRepetition`: attempt to suppress decoding repeating token patterns. Defaults to `true`
 * `whisper.seed`: use a custom seed for token selection, when temperature is greater than 0. Uses a constant seed by default
+* `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens, since more accurate timing is already extracted via cross-attention weight alignment. For unclear reasons, this can significantly reduce the occurrence of hallucinations and token repetition loops, and increases word timestamp accuracy. However, there are cases where this causes the model to end a part prematurely, especially in singing and less speech-like voice segments. In those cases, you can set it to `true` and see if that improves the results. Defaults to `false`
 
 **Whisper.cpp**:
 * `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`. Defaults to `base` or `base.en`
@@ -333,10 +334,3 @@ These are shared between text-to-speech, speech-to-text and alignment operations
 * `maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's end time. This gives the reader additional time to read the cue, and also ensures that very short duration cues aren't shown in a flash. Defaults to `3.0`
 
 **Note**: options `maxLineCount`, `maxLineWidth`, `minWordsInLine`, `separatePhrases`, are only effective when using the `segment` and `sentence` modes, and are ignored in all other modes. `maxAddedDuration` doesn't apply to modes `word`, `phone` and `word+phone` (they always use the exact start and end timestamps).
-
-# General CLI options
-
-* `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
-* `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
-* `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
-* `--config=...`: path to configuration file to use. See the [CLI guide](CLI.md) for more information about configuration files

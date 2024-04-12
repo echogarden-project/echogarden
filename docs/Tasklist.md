@@ -2,7 +2,10 @@
 
 ## Bugs
 
+### Alignment
+
 * In DTW-RA, recognition transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline.
+* DTW-RA will not work correctly with Polish language texts, due to issues with the eSpeak engine pronouncing `|` characters, which are intended to be used as separators and ignored by all other eSpeak languages.
 
 ### Synthesis
 

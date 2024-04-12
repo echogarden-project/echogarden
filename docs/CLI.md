@@ -311,3 +311,10 @@ Uninstall one or more expansion packages
 ### `list-packages`
 
 Show a list of installed expansion packages
+
+## General CLI options
+
+* `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
+* `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
+* `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
+* `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json`, if found at the current directory
