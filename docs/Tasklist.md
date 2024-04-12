@@ -1,20 +1,9 @@
 # Developer's task list
 
 ## Bugs
-* Using the `|` separator breaks synthesis on Polish eSpeak TTS, since the symbol is pronounced directly on that language. Currently, separators are only added when aligning using `dtw-ra`.
 
-## External bugs
+### Synthesis
 
-* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
-* `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
-* `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
-* `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
-* `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
-* `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
-* `compromise`: Slow initialization time. Currently, it takes more than a second
-* Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
-* `whisper.cpp`: Timestamps aren't very accurate when `enableDTW` is set. There's a constant lag
-* Node.js WASI on `v21.7.2` and `v20` is intermittently crashing the process when `run` is called
 
 ### Phoneme processing
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
@@ -26,27 +15,20 @@
 ### Browser extension / content script
 * Highlighting sometimes does not appear when mouse is pressed over handle while speech of element starts
 
+### External bugs
+
+* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
+* `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
+* `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
+* `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
+* `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
+* `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
+* `compromise`: Slow initialization time. Currently, it takes more than a second
+* Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
+* `whisper.cpp`: Timestamps aren't very accurate when `enableDTW` is set. There's a constant lag
+* Node.js WASI for `flite` on Node `v21.7.2` and `v20.12.1` is intermittently crashing the process when `run` is called
+
 ## Features and enhancements
-
-### Browser extension
-* Options UI
-* Add supported engines and voices to WebSpeech voice list
-* Pause and resume support
-
-### Browser extension / content script
-* Autoscroll should work even if the scrollbar relevant to the target element is not the viewport's scrollbar
-* Find a way to show handles even for elements that start with a link
-* Add detection for line breaks in `pre` blocks
-* Support the custom tags used in YouTube comments
-* Show handles based on `<br>` tags and possibly line breaks internal to the element
-* Show handles based on sentence start positions
-* UI or gesture to stop speech (other than the `esc` key)
-* Hide handles when mouse leaves the viewport
-* Don't show handles when mouse is over a large container element
-* Button or keyboard shortcut to show and hide handles
-* Show blinking placeholder when synthesis is loading for a particular text node
-* Navigate paragraphs or sentences with keyboard shortcuts
-* Minimum size when iterating text nodes to get handle
 
 ### Server
 * Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
@@ -56,15 +38,15 @@
 * Support more operations
 
 ### CLI
-* Show names of files written do disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data.
-* Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg.
+* Show names of files written do disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
+* Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg
 * Mode to print IPA words when speaking
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
 * Print available synthesis voices when no voice matches (or suggest near matches)
 * `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
-* Make enum options case-insensitive if possible
+* Make `enum` options case-insensitive if possible
 * More fine-grained intermediate progress report for operations
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
@@ -73,9 +55,9 @@
 
 ### CLI / playback
 * Option to set audio output device for playback
-* Add phone playback support
 * Option to set playback volume
 * Maybe find a way not to pre-normalize if the audio is silent (to prevent a 30dB increase of possible noise)
+* Add phone playback support
 
 ### CLI / `speak`
 * Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
@@ -136,7 +118,7 @@
 * Option to disable alignment (only for some engines). Alternative: use a low granularity setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
-* Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" as well
+* Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" and ".NET" as well
 * Find way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
@@ -157,7 +139,7 @@
 * Support substituting to graphemes in lexicons, not only phonemes
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
-* Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines).
+* Add support for text preprocessing for all engines that can benefit from it (possibly including cloud engines)
 * Add SAPI pronunciation to lexicons (you already have the pronunciations for `en_US` and `en_GB`)
 * Try to use entity recognition to detect years, dates, currencies etc., which would disambiguate cases where it is not clear, like "in 1993" in "She was born in 1993" and "It searched in 1993 websites"
 * Option to add POS tags to timeline, if available
@@ -174,6 +156,8 @@
 ### Recognition
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
+* Try to exclude the timing for trailing punctuation tokens in words that contain them. This can help narrow down the end timestamp to cover the word more tightly
+* Recognized word entries that span VAD boundaries may be split
 
 ### Recognition / Whisper
 * May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
@@ -184,14 +168,38 @@
 * Use compression ratios on the decoded tokens of individual segments and discard if too much repetition detected
 * Way to specify model size only, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
 * Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better
-* Try to exclude the timing for trailing punctuation characters in words that contain them. This can help narrow down the end timestamp to cover the word more tightly
-* Consider including the individual decoded tokens themselves as a sub-word timeline
-* Whisper's Chinese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them.
+* Whisper's Chinese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
+
+### Alignment
+
+* Aligned words entries that span VAD boundaries may be split
 
 ### Alignment / DTW-RA
-* Remove emojis and other special characters, that are not likely to be pronounced in the speech, from the transcript timeline before it is synthesized. For example Whisper may produce 'note' emojis when it detects singing or music. Pronouncing them reduces the accuracy of the alignment.
+* Remove emojis and other special characters, that are not likely to be pronounced in the speech, from the transcript timeline before it is synthesized. For example Whisper may produce 'note' emojis when it detects singing or music. Pronouncing them reduces the accuracy of the alignment
+* Optional mode to pass Whisper a special vocabulary of tokens that can appear in the transcript. All other tokens would be suppressed
 
-### Post-processing
+### Alignment / Whisper
+* New mode to decode the transcript tokens in order using a more standard decoding approach (updating the KV cache at each step). This would allow audio inputs longer than 30 seconds. See if this produces better results
+
+### Browser extension
+* Options UI
+* Add supported engines and voices to WebSpeech voice list
+* Pause and resume support
+
+### Browser extension / content script
+* Autoscroll should work even if the scrollbar relevant to the target element is not the viewport's scrollbar
+* Find a way to show handles even for elements that start with a link
+* Add detection for line breaks in `pre` blocks
+* Support the custom tags used in YouTube comments
+* Show handles based on `<br>` tags and possibly line breaks internal to the element
+* Show handles based on sentence start positions
+* UI or gesture to stop speech (other than the `esc` key)
+* Hide handles when mouse leaves the viewport
+* Don't show handles when mouse is over a large container element
+* Button or keyboard shortcut to show and hide handles
+* Show blinking placeholder when synthesis is loading for a particular text node
+* Navigate paragraphs or sentences with keyboard shortcuts
+* Minimum size when iterating text nodes to get handle
 
 ## Maintenance and cleanup
 
@@ -211,6 +219,7 @@
 * Test synthesis, recognition and alignment with empty input. Do they still work?
 * Test everything's fine on macOS
 * Test that cloud services all still work correctly, especially with SSML inputs
+
 
 ## Future features and enhancements
 
@@ -251,11 +260,13 @@
 * Make `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps
 
+### Voice activity detection
+
+* Whisper-based VAD. Use Whisper's 'no speech' token to determine if the audio contains speech
+
 ### Source separation
 * Option to customize overlap
 * Add more MDX-NET models
-
-## Documentation
 
 ## Possible new engines or platforms
 

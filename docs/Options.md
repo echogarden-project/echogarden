@@ -1,18 +1,18 @@
 # Options reference
 
-Here is a detailed reference for the options accepted by the Echogarden API and CLI.
+Here's a detailed reference for all the options accepted by the Echogarden CLI and API.
 
-**Related resources**:
-* [A comprehensive list of all supported engines](Engines.md)
-* [A quick guide for using the command line interface](CLI.md)
-* [Developer's API reference](API.md)
+**Related pages**:
+* [List of all supported engines](Engines.md)
+* [Quick guide for the command line interface](CLI.md)
+* [Node.js API reference](API.md)
 
 ## Text-to-speech
 
-Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
+Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
 
 **General**:
-* `engine`: identifier of the synthesis engine to use, such as `espeak`, `vits` or `google-translate` (see [the full engine list](Engines.md) on the engines page). Auto-selected if not set
+* `engine`: identifier of the synthesis engine to use, such as `espeak`, `vits` or `google-translate` (see [the full engine list](Engines.md)). Auto-selected if not set
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Auto-selected if not set
 * `voiceGender`: gender of the voice to use. Optional
@@ -23,7 +23,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
-* `customLexiconPaths`: an array of custom lexicon file paths. Optional
+* `customLexiconPaths`: a list of custom lexicon file paths. Optional
 * `alignment`: prefix to provide options for alignment. Options detailed in section for alignment
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 * `languageDetection`: prefix to provide options for text language detection. Options detailed in section for text language detection
@@ -42,7 +42,7 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO: document options)
 
 **Output audio format**:
-* `outputAudioFormat.codec`: Codec identifier (**Note**: API only. CLI uses file extensions instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the API documentation). Optional
+* `outputAudioFormat.codec`: Codec identifier (**Note**: API only. CLI uses file extensions instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the [API documentation](API.md]). Optional
 * `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
 
 **VITS**:
@@ -110,14 +110,14 @@ Applicable to CLI commands: `speak`, `speak-file`, `speak-url`, `speak-wikipedia
 
 ## Voice list request
 
-Applicable to CLI command: `list-voices`, API method: `requestVoiceList`
+Applies to CLI operation: `list-voices`, API method: `requestVoiceList`
 
 **General**:
 * `language`: language code to filter by (optional)
 * `voice`: name or name pattern to filter by (optional)
 * `voiceGender`: gender to filter by (optional)
 
-Also accepted are engine-specific options that may be required in order to retrieve the voice list, especially for cloud engines. Examples:
+Also accepted are the following engine-specific options that may be required in order to retrieve the voice list:
 * `googleCloud.apiKey`
 * `microsoftAzure.subscriptionKey`, `microsoftAzure.serviceRegion`
 * `amazonPolly.region`, `amazonPolly.accessKeyId`, `amazonPolly.secretAccessKey`
@@ -126,10 +126,10 @@ Also accepted are engine-specific options that may be required in order to retri
 
 ## Speech-to-text
 
-Applicable to CLI command: `transcribe`, API method: `recognize`
+Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **General**:
-* `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk` (see [the full engine list](Engines.md) on the engines page)
+* `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk` (see [the full engine list](Engines.md))
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 * `crop`: crop to active parts using voice activity detection before starting recognition. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting recognition. Defaults to `false`
@@ -137,29 +137,31 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `languageDetection`: prefix to provide options for language detection. Options detailed in section for speech language detection
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
-* `separation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
+* `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
-* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3` (**Note**: large models aren't yet supported by `onnxruntime-node`). Defaults to `tiny` or `tiny.en`
+* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3` (**Note**: large models aren't yet supported by `onnxruntime-node` due to their size). Defaults to `tiny` or `tiny.en`
 * `whisper.temperature`: temperature setting for the text decoder. Impacts amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (`0.25` or lower) for best results. Defaults to `0.1`
 * `whisper.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
 * `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisper.punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
 * `whisper.autoPromptParts`: use previous part's recognized text as prompt for the next part. Disabling this may help to prevent repetition carrying over between parts, in some cases. Defaults to `true`
-* `whisper.maxTokensPerPart`: maximum number of tokens to decode for each part. Defaults to `250`
-* `whisper.suppressRepetition`: attempt to suppress decoding repeating token patterns (experimental). Defaults to `false`
+* `whisper.maxTokensPerPart`: maximum number of tokens to decode for each 30 second audio part. Defaults to `250`
+* `whisper.suppressRepetition`: attempt to suppress decoding repeating token patterns. Defaults to `true`
+* `whisper.seed`: use a custom seed for token selection, when temperature is greater than 0. Uses a constant seed by default
 
 **Whisper.cpp**:
 * `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`. Defaults to `base` or `base.en`
-* `whisperCpp.executablePath`: custom executable path to use. By default, on Windows x64 and Linux x64, a CPU-only build is downloaded via an internal package. For other platforms, or for using GPU-enabled builds, this must be provided
-* `whisperCpp.threadCount`: number of CPU threads to use
-* `whisperCpp.coreCount`: number of CPU cores to use
-* `whisperCpp.enableGPU`: use GPU processing if available by the selected `whisper.cpp` build
+* `whisperCpp.executablePath`: custom `whisper.cpp` executable path (currently required for macOS)
+* `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set `cpu`, `cublas-11.8.0`, `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-11.8.0`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
+* `whisperCpp.threadCount`: number of threads to use, defaults to `4`
+* `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
+* `whisperCpp.enableGPU`: enable GPU processing. Defaults to `true` on CUDA-enabled builds, otherwise `false`
 * `whisperCpp.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
-* `whisperCpp.entropyThreshold`: amount of measured entropy (repetition / compressibility score) to cause a decoded part to be discarded. Defaults to `2.4`
+* `whisperCpp.repetitionThreshold`: minimal repetition / compressibility score to cause a decoded segment to be discarded. Defaults to `2.4`
 * `whisperCpp.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
-* `whisperCpp.enableDTW`: enable experimental `whisper.cpp` internal token DTW alignment to be used. Defaults to `false`
+* `whisperCpp.enableDTW`: enable experimental `whisper.cpp` internal DTW-based token alignment to be used to derive timestamps. Defaults to `false` (recommended for now)
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
 
 **Vosk**:
@@ -188,26 +190,26 @@ Applicable to CLI command: `transcribe`, API method: `recognize`
 * `openAICloud.apiKey`: API key (required)
 * `openAICloud.model`: model to use. Can only be `whisper-1`
 * `openAICloud.organization`: organization identifier. Optional
-* `openAICloud.baseURL`: override the default base URL for the API. Optional
-* `openAICloud.temperature`: temperature. Defaults to `0.0`
-* `openAICloud.prompt`: prompt for the model. Optional
+* `openAICloud.baseURL`: override the default base URL used by the API. Optional
+* `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0.0`
+* `openAICloud.prompt`: initial prompt for the model. Optional
 * `openAICloud.timeout`: request timeout. Optional
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
 
 
 ## Speech-to-transcript alignment
 
-Applicable to CLI command: `align`, API method: `align`
+Applies to CLI operation: `align`, API method: `align`
 
 **General**:
-* `engine`: what alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
+* `engine`: alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting recognition. Defaults to `false`
 * `customLexiconPaths`: an array of custom lexicon file paths. Optional
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
-* `separation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
+* `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Plain text processing**:
 * `plainText.paragraphBreaks`: split transcript to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
@@ -218,7 +220,7 @@ Applicable to CLI command: `align`, API method: `align`
 * `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Higher values consume quadratically larger amounts of memory. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided, like `dtw.windowDuration=[240,20]`. Auto-selected by default
 
 **DTW-RA only**:
-* `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.whisper.model = base.en`
+* `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.engine = whisper` and `recognition.whisper.model = base.en`
 * `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolate`. Defaults to `dtw`
 
 **Whisper alignment only**:
@@ -227,17 +229,17 @@ Applicable to CLI command: `align`, API method: `align`
 
 ## Speech-to-text translation
 
-Applicable to CLI command: `translate-speech`, API method: `translateSpeech`
+Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 **General**:
 * `engine`: only `whisper` supported
 * `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
-* `targetLanguage`: the target language code for the output speech. Only `en` supported by the `whisper` engine
+* `targetLanguage`: the target language code for the output speech. Only `en` (English) supported by the `whisper` engine. Optional
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting speech translation. Defaults to `false`
 * `languageDetection`: prefix to provide options for language detection. Options detailed in section for speech language detection
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
-* `separation`: prefix to provide source separation options when `isolate` is to `true`
+* `sourceSeparation`: prefix to provide source separation options when `isolate` is to `true`
 
 **Whisper**:
 
@@ -255,7 +257,7 @@ Applicable to CLI command: `translate-speech`, API method: `translateSpeech`
 
 ### Speech language detection
 
-Applicable to CLI command: `detect-speech-langauge`, API method: `detectSpeechLangauge`
+Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLangauge`
 
 **General**:
 * `engine`: `whisper` or `silero`. Defaults to `whisper`
@@ -270,7 +272,7 @@ Applicable to CLI command: `detect-speech-langauge`, API method: `detectSpeechLa
 
 ### Text language detection
 
-Applicable to CLI command: `detect-text-langauge`, API method: `detectTextLangauge`
+Applies to CLI operation: `detect-text-langauge`, API method: `detectTextLangauge`
 
 **General**:
 * `engine`: `tinyld` or `fasttext`. Defaults to `tinyld`
@@ -279,10 +281,10 @@ Applicable to CLI command: `detect-text-langauge`, API method: `detectTextLangau
 
 ## Voice activity detection
 
-Applicable to CLI command: `detect-voice-activity`, API method: `detectVoiceActivity`
+Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActivity`
 
 **General**:
-* `engine`: VAD engine to use. Can be `webrtc`, `silero`, `rnnoise`, or `adaptive-gate`. Defaults to `webrtc`
+* `engine`: VAD engine to use. Can be `webrtc`, `silero`, `rnnoise`, or `adaptive-gate`. Defaults to `silero`
 * `activityThreshold`: minimum predicted probability for determining a frame as having speech activity. Defaults to `0.5`
 
 **WebRTC**:
@@ -294,7 +296,7 @@ Applicable to CLI command: `detect-voice-activity`, API method: `detectVoiceActi
 
 ## Speech denoising
 
-Applicable to CLI command: `denoise`, API method: `denoise`
+Applies to CLI operation: `denoise`, API method: `denoise`
 
 **General**:
 * `engine`: can only be `rnnoise`
@@ -307,7 +309,7 @@ Applicable to CLI command: `denoise`, API method: `denoise`
 
 ## Source separation
 
-Applicable to CLI command: `isolate`, API method: `isolate`
+Applies to CLI operation: `isolate`, API method: `isolate`
 
 **General**:
 

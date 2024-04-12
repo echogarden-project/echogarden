@@ -19,11 +19,11 @@ import * as Echogarden from 'echogarden'
 
 All methods, properties and arguments have TypeScript type information. You can use it to get more detailed and up-to-date type information that may not be covered in the documentation.
 
-### Related resources
+### Related pages
 * [Options reference](Options.md)
-* [A comprehensive list of all supported engines](Engines.md)
-* [A quick guide for using the command line interface](CLI.md)
-* [Guide for running and interfacing with a WebSocket server](Server.md)
+* [List of all supported engines](Engines.md)
+* [Quick guide for the command line interface](CLI.md)
+* [WebSocket server guide](Server.md)
 
 ## Synthesis
 

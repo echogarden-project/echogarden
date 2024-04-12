@@ -44,11 +44,11 @@ On macOS, only `ffmpeg` is currently auto-downloaded. It is recommended to insta
 npm update echogarden -g
 ```
 
-## Interfacing with the system
+## Interfacing with the toolset
 
 Currently, tools are accessible mainly through a [command-line interface](docs/CLI.md), which enables powerful customization and is especially useful for long-running bulk operations.
 
-Development of more graphical and interactive tooling is [planned](https://github.com/echogarden-project/echogarden/issues/28). A text-to-speech browser extension is under development (not released yet).
+Development of more graphical and interactive tooling is [planned](https://github.com/echogarden-project/echogarden/issues/28). A text-to-speech browser extension is currently under development (but not released yet).
 
 If you are a developer, you can also [import the package as a module](docs/API.md) or [interface with it via a local WebSocket service](docs/Server.md).
 
@@ -57,10 +57,10 @@ If you are a developer, you can also [import the package as a module](docs/API.m
 * [Using the command-line interface](docs/CLI.md)
 * [Options reference](docs/Options.md)
 * [Full list of supported engines](docs/Engines.md)
-* [Developer API reference](docs/API.md)
-* [Starting and interfacing with a WebSocket server](docs/Server.md)
+* [Node.js API reference](docs/API.md)
+* [How to help](docs/Contributing.md)
+* [Setting up a development environment](docs/Development.md)
 * [Technical overview and Q&A](docs/Technical.md)
-* [How to help](docs/Development.md)
 * [Developer's task list](docs/Tasklist.md)
 * [Release notes](docs/Releases.md)
 

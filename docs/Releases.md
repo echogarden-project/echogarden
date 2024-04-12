@@ -3,48 +3,54 @@
 ## `1.0.0` (April 4, 2024)
 
 **New features**:
-* Adds support for OpenAI cloud platform's [speech recognition and translation services](https://platform.openai.com/docs/guides/speech-to-text)
-* Adds support for OpenAI cloud platform's [speech synthesis service](https://platform.openai.com/docs/guides/text-to-speech)
-* Adds support for [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp), a C++ port of OpenAI's Whisper speech recognition architecture. It is faster than the integrated `whisper` engine, supports large models, and GPU processing. It can now be used for recognition, speech translation and alignment (via `dtw-ra`), though its word timestamps are less accurate than the integrated `whisper` engine.
-* Adds the [MDX-NET](https://github.com/kuielab/mdx-net/) source separation model, enabling vocal tracks to be extracted from music and speech audio using the new `isolate` operation
-* Integrates optional vocal isolation to speech recognition, alignment and translation operations using the new `--isolate` option, allowing for higher accuracy in difficult cases like achieving word-level lyrics alignment
-* Adds the new `adaptive-gate` VAD engine using a custom bandlimited adaptive gate. Fast and robust. Works well for relatively clean tracks or tracks that have already been processed using vocal isolation
+* Add support for [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp), a C++ port of OpenAI's Whisper speech recognition architecture. It is faster than the integrated `whisper` engine, supports large models, and GPU processing. It can now be used for recognition, speech translation and alignment (via `dtw-ra`), though its word timestamps are less accurate than the integrated `whisper` engine.
+* Add the [MDX-NET](https://github.com/kuielab/mdx-net/) source separation model, enabling vocal tracks to be extracted from music and speech audio using the new `isolate` operation
+* Add support for OpenAI cloud platform's [speech recognition and translation services](https://platform.openai.com/docs/guides/speech-to-text)
+* Add support for OpenAI cloud platform's [speech synthesis service](https://platform.openai.com/docs/guides/text-to-speech)
+* Integrate optional vocal isolation to speech recognition, alignment and translation operations using the new `--isolate` option, allowing for higher accuracy in difficult cases like achieving word-level lyrics alignment
+* Add the new `adaptive-gate` VAD engine using a custom bandlimited adaptive gate. Fast and robust. Works well for relatively clean tracks or tracks that have already been processed using vocal isolation
 * Add optional token-level repetition suppression to Whisper engine
-* Expose two new configuration options for the Whisper engine: a settings for maximum tokens per part, and a setting to enable/disable repetition suppression
+* Expose several new configuration options for the Whisper engine: a settings for maximum tokens per part, and a setting to enable/disable repetition suppression, set custom random seed, disable/enable decoding of timestamp tokens
 * Expose more options for the Elevenlabs engine
 
 **Behavioral and breaking changes**:
 * Minimal required node version changed to `18.0.0`
 * All recognition, alignment, translation and language recognition operations first apply the new adaptive gate VAD (can be changed to any other VAD engine via the `vad.` option prefix) and remove any sections that are not identified as containing voice, before starting processing. This should improve results in most cases, and reduce processing time
-* To reduce Whisper hallucinations and repetition loops in `dtw-ra` alignment, these change were made:
-	* Pre-cropping can significantly help with reducing hallucinations, giving the model less "empty space" to hallucinate on
-	* Enable new token-level repetition suppression (`suppressRepetition`) during decoding
-	* Set `autoPromptParts` to `false` by default, to prevent repetitions carrying over between parts
-	* Increase default temperature to `0.15` to inject more random variation to the decoded tokens, attempting to break repeating patterns
+* To reduce Whisper hallucinations and repetition loops, these change were made:
+	* Pre-cropping by default can significantly help with reducing hallucinations, giving the model less "empty space" to hallucinate on
+	* Enable new token-level repetition suppression (`suppressRepetition = true`) during decoding
+	* Disable decoding of timestamp tokens by default (`decodeTimestampTokens = false`), since more accurate timing is already extracted via cross-attention weight alignment. For unclear reasons, this can significantly reduce the occurrence of token repetition loops, and increases word timestamp accuracy. However, there are cases where this causes the model to end a part prematurely, especially in singing and less speech-like voice segments. In those cases the it can be enabled with `decodeTimestampTokens = true`
 * When `transcribe`, `align` or `translate-speech` operations are run with `--isolate` enabled, they will output the isolated part in `some-output-file.isolated.wav` and background part (isolated subtracted from original) in `some-output-file.background.wav` (any supported codec other than `wav` can be used - this is just an example)
 * VAD operations now return a timeline including only the active sections, labeled as `active`
 * When the specified language is not English, but an `.en` Whisper model was specified, a warning would be shown, and the model would be automatically switched to the corresponding multilingual model (omitting the `.en`), instead of producing an error
 * Default speech language detection engine is now changed to `whisper`
 * Default voice activity detection engine is now changed to `silero`
-* CLI: duplicate file name outputs would now append the `_001` suffix pattern instead of ` (1)`. This change is meant to simplify sorting and typing the resulting file name and remove the space and parenthesis characters, to ensure compatibility with all operating systems
+* CLI: duplicate file name outputs would now append the `_001` suffix pattern instead of ` (1)`. This change is meant to simplify sorting and typing the resulting file names and remove the space and parenthesis characters, to ensure compatibility with all operating systems
 * `targetPeakDb` post-processing and denoising option renamed to `targetPeak`
 * `maxIncreaseDb` post-processing and denoising option renamed to `maxGainIncrease`
 * `dryMixGainDb` denoising option renamed to `dryMixGain`
 
 **Enhancements**:
 * `detect-voice-activity` now also outputs the cropped voice when an audio file is given as output, with `.cropped` suffix added
+* Improved word segmentation of whisper engine. Words spanning multiple recognized time segments are now split. Word timestamp ranges don't overlap non-speech sections.
+* Whisper and Whisper.cpp outputs now include timestamps for individual recognized tokens
 
 **Fixes**:
-* Fixed voice language lists for multilingual voices in Elevenlabs TTS engine
-* Fixed runtime error with `rnnoise` when used as VAD engine
-* Fixed issue in CLI where supported output media formats weren't reported correctly
-* Fixed issue with identifying legacy IEEE Float wave format
-* Fixed issue with language detection failing with empty inputs
-* Fixed issue with Whisper model failing when no tokens are detected in a part
+* Integrated `whisper` engine now uses `tiktoken` to tokenize text, which produces near identical tokenization compared to the official Python implementation. This fixes issues with decoding Chinese characters, correctly encoding prompts, and several others languages with characters that span multiple tokens
+* Fix voice language lists for multilingual voices in Elevenlabs TTS engine
+* Fix runtime error with `rnnoise` when used as VAD engine
+* Fix issue in CLI where supported output media formats weren't reported correctly
+* Fix issue with identifying legacy IEEE Float wave format
+* Fix issue with language detection failing with empty inputs
+* Fix issue with Whisper model failing when no tokens are detected in a part
+* Fix issue with phone alignment not getting the right DTW window size, producing warnings like `all cost directions are equal to infinity
+* Fix phone timelines in DTW-RA
+* Add more workarounds for eSpeak tokenization bugs
+* Various other fixes
 
 **Documentation**:
-* New 'Releases' page added. Releases before `1.0.x` were retroactively added based on commit history (may not exactly detail all historical changes)
-* Options page restructured and updated with some missing information
+* Add new 'Releases' page. Releases before `1.0.x` were retroactively documented based on commit history (may not exactly detail all historical changes)
+* Options reference page restructured and updated with some missing information
 
 ## `0.12.x` (March 16, 2024)
 
@@ -55,8 +61,8 @@
 **Enhancements**:
 
 **Fixes**:
-* Fixed issue with Polish TTS in eSpeak NG
-* Fixed warning about `punycode` module in the CLI
+* Fix issue with Polish TTS in eSpeak NG
+* Fix warning about `punycode` module in the CLI
 
 **Other**:
 * Include `package-lock.json` in repository
@@ -78,7 +84,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 
 **Fixes**:
 * Don't error when empty audio is returned in `microsoft-edge` response
-* Fixed audio playback in macOS
+* Fix audio playback in macOS
 * Many other fixes
 
 ## `0.10.x` (August 2, 2023)
@@ -146,7 +152,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Warn when maximum DTW window duration is smaller than source audio duration.
 
 **Fixes**:
-* Fixed support for SSML input in eSpeak engine
+* Fix support for SSML input in eSpeak engine
 * Various fixes
 
 ## `0.6.x` (July 20, 2023)
@@ -170,8 +176,8 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Log full language of selected voice
 
 **Fixes**:
-* Fixed and update Elevenlabs engine
-* Fixed incorrect gender properties for some VITS voices
+* Fix and update Elevenlabs engine
+* Fix incorrect gender properties for some VITS voices
 * Convert to plaintext before detecting language when input is SSML.
 * Various fixes
 
