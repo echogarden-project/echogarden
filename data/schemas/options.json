@@ -186,6 +186,9 @@
             },
             "useKlatt": {
               "type": "boolean"
+            },
+            "insertSeparators": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false
@@ -1024,6 +1027,9 @@
         },
         "seed": {
           "type": "number"
+        },
+        "decodeTimestampTokens": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -1326,6 +1332,9 @@
               "type": "number"
             },
             "useKlatt": {
+              "type": "boolean"
+            },
+            "insertSeparators": {
               "type": "boolean"
             }
           },

@@ -67,7 +67,7 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir, 1234567)
+	const whisper = new Whisper(modelName, modelDir)
 
 	const timeline = await whisper.align(sourceRawAudio, referenceText, sourceLanguage)
 
@@ -87,7 +87,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error(`Temperature cannot be negative`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir, 1234567)
+	const whisper = new Whisper(modelName, modelDir)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
 		const audioFeatures = await whisper.encodeAudio(partAudio)
@@ -314,6 +314,8 @@ export class Whisper {
 
 		const maxAudioSamplesPerPart = sampleRate * 30
 
+		const decodeTimestampTokens = options.decodeTimestampTokens!
+
 		let previousPartTextTokens: number[] = []
 
 		let timeline: Timeline = []
@@ -345,7 +347,7 @@ export class Whisper {
 				initialTokens = [this.tokenConfig.startOfPromptToken, ...previousPartTextTokens]
 			}
 
-			initialTokens = [...initialTokens, ...this.getTextStartTokens(language, task)]
+			initialTokens = [...initialTokens, ...this.getTextStartTokens(language, task, !decodeTimestampTokens)]
 
 			logger.end()
 
@@ -499,7 +501,14 @@ export class Whisper {
 		return results
 	}
 
-	async decodeTokens(audioFeatures: Onnx.Tensor, initialTokens: number[], audioDuration: number, isFirstPart: boolean, isFinalPart: boolean, options: WhisperOptions) {
+	async decodeTokens(
+		audioFeatures: Onnx.Tensor,
+		initialTokens: number[],
+		audioDuration: number,
+		isFirstPart: boolean,
+		isFinalPart: boolean,
+		options: WhisperOptions) {
+
 		await this.initializeTokenizerIfNeeded()
 		await this.initializeDecoderSessionIfNeeded()
 
@@ -591,42 +600,7 @@ export class Whisper {
 				}
 			}
 
-			// Find token distributions and best token
-			const probabilities = softmax(allTokenLogits as any)
-			const logProbabilities = logOfVector(probabilities)
-
-			const nonTimestampTokenLogProbs = logProbabilities.slice(0, timestampTokensStart)
-			const timestampTokenLogProbs = logProbabilities.slice(timestampTokensStart)
-
-			const indexOfMaxNonTimestampLogProb = indexOfMax(nonTimestampTokenLogProbs)
-			const valueOfMaxNonTimestampLogProb = nonTimestampTokenLogProbs[indexOfMaxNonTimestampLogProb]
-
-			const indexOfMaxTimestampLogProb = indexOfMax(timestampTokenLogProbs)
-
-			const logSumExpOfTimestampTokenLogProbs = logSumExp(timestampTokenLogProbs)
-
-			const shouldDecodeTimestampToken = logSumExpOfTimestampTokenLogProbs > valueOfMaxNonTimestampLogProb
-
-			const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
-			const secondPreviousTokenWasTimestamp = decodedTokens.length < 2 || this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
-
-			if (shouldDecodeTimestampToken && !previousTokenWasTimestamp) {
-				timestampsSeenCount += 1
-			}
-
-			// Debug to see top candidates
-			if (false) {
-				const candidates =
-					Array.from(allTokenLogits).map((logit, index) => ({ index, token: this.tokenToText(index, true), probability: probabilities[index], logit }))
-
-				candidates.sort((a, b) => b.logit - a.logit)
-
-				const topCandidates = candidates.slice(0, 40)
-
-				const x = 0
-			}
-			///
-
+			// Derive token probabilities
 			let bufferedTokensToPrint: number[] = []
 
 			// Add best token
@@ -637,93 +611,138 @@ export class Whisper {
 				decodedTokensConfidence.push(confidence)
 			}
 
-			if (shouldDecodeTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
-				if (previousTokenWasTimestamp) {
-					const previousToken = decodedTokens[decodedTokens.length - 1]
-					const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
-					const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
+			let shouldDecodeNonTimestampToken = true
 
-					addToken(previousToken, previousTokenTimestampLogits, previousTokenConfidence)
+			if (options.decodeTimestampTokens) {
+				const probabilities = softmax(allTokenLogits as any, 1.0)
+				const logProbabilities = logOfVector(probabilities)
 
-					lastTimestampTokenIndex = decodedTokens.length
+				const nonTimestampTokenLogProbs = logProbabilities.slice(0, timestampTokensStart)
 
-					const previousTokenTimestamp = this.timestampTokenToSeconds(previousToken)
+				const indexOfMaxNonTimestampLogProb = indexOfMax(nonTimestampTokenLogProbs)
+				const valueOfMaxNonTimestampLogProb = nonTimestampTokenLogProbs[indexOfMaxNonTimestampLogProb]
 
-					if (previousTokenTimestamp >= audioDuration) {
-						break
-					}
-				} else {
-					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
-					const confidence = probabilities[timestampToken]
+				const timestampTokenLogProbs = logProbabilities.slice(timestampTokensStart)
+				const indexOfMaxTimestampLogProb = indexOfMax(timestampTokenLogProbs)
 
-					addToken(timestampToken, timestampTokenLogits, confidence)
+				const logSumExpOfTimestampTokenLogProbs = logSumExp(timestampTokenLogProbs)
+
+				const shouldDecodeTimestampToken = logSumExpOfTimestampTokenLogProbs > valueOfMaxNonTimestampLogProb
+
+				const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
+				const secondPreviousTokenWasTimestamp = decodedTokens.length < 2 || this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
+
+				if (shouldDecodeTimestampToken && !previousTokenWasTimestamp) {
+					timestampsSeenCount += 1
 				}
-			} else if (indexOfMaxNonTimestampLogProb == endOfTextToken) {
-				break
-			} else {
-				let chosenToken: number
 
-				if (options.temperature == 0.0) {
-					chosenToken = indexOfMaxNonTimestampLogProb
-				} else {
-					const topLogitCount = options.topCandidateCount!
+				if (shouldDecodeTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
+					if (previousTokenWasTimestamp) {
+						const previousToken = decodedTokens[decodedTokens.length - 1]
+						const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
+						const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
 
-					const nonTimestampTokenLogits = allTokenLogits.slice(0, timestampTokensStart)
+						addToken(previousToken, previousTokenTimestampLogits, previousTokenConfidence)
 
-					const sortedNonTimestampTokenLogitsWithIndexes =
-						Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+						lastTimestampTokenIndex = decodedTokens.length
 
-					sortedNonTimestampTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+						const previousTokenTimestamp = this.timestampTokenToSeconds(previousToken)
 
-					let topCandidates = sortedNonTimestampTokenLogitsWithIndexes.slice(0, topLogitCount)
-						.map(entry => ({ token: entry.token, logit: entry.logit, text: this.tokenToText(entry.token) }))
-
-					//// Repetition suppression code
-					if (options.suppressRepetition) {
-						const topCandidatesRepetitionScores = topCandidates.map(entry => {
-							const lastDecodedTextTokens = decodedTokens.filter(token => this.isTextToken(token)).reverse().slice(0, 20)
-							const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.token, ...lastDecodedTextTokens])
-
-							return maxScore
-						})
-
-						const thresholdRepetitionScore = 4
-
-						if (topCandidatesRepetitionScores.every(score => score >= thresholdRepetitionScore)) {
-							const indexOfMaxScore = topCandidatesRepetitionScores.indexOf(Math.max(...topCandidatesRepetitionScores))
-							topCandidates = [topCandidates[indexOfMaxScore]]
-						} else {
-							topCandidates = topCandidates.filter((candidate, index) => topCandidatesRepetitionScores[index] < thresholdRepetitionScore)
+						if (previousTokenTimestamp >= audioDuration) {
+							break
 						}
+					} else {
+						const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
+						const confidence = probabilities[timestampToken]
+
+						addToken(timestampToken, timestampTokenLogits, confidence)
 					}
-					////
 
-					const topCandidateProbabilities = softmax(topCandidates.map(a => a.logit), options.temperature)
+					shouldDecodeNonTimestampToken = false
+				}
+			}
 
-					const rankOfPromisingPunctuationToken = topCandidates.findIndex(entry => {
-						const tokenText = this.tokenToText(entry.token).trim()
-						const tokenProb = probabilities[entry.token]
+			if (shouldDecodeNonTimestampToken) {
+				const topLogitCount = options.topCandidateCount!
 
-						return tokenProb >= options.punctuationThreshold! && [',', '，', '、', '.', '。', '!', '?'].includes(tokenText)
+				const nonTimestampTokenLogits = allTokenLogits.slice(0, timestampTokensStart)
+
+				const sortedNonTimestampTokenLogitsWithIndexes =
+					Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+
+				sortedNonTimestampTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+
+				let topCandidates = sortedNonTimestampTokenLogitsWithIndexes.slice(0, topLogitCount)
+					.map(entry => ({
+						token: entry.token,
+						logit: entry.logit,
+						text: this.tokenToText(entry.token, true)
+					}))
+
+				//// Repetition suppression code
+				if (options.suppressRepetition) {
+					const topCandidatesRepetitionScores = topCandidates.map(entry => {
+						const lastDecodedTextTokens = decodedTokens.filter(token => this.isTextToken(token)).reverse().slice(0, 20)
+						const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.token, ...lastDecodedTextTokens])
+
+						return maxScore
 					})
 
-					let rankOfSpaceToken = topCandidates.findIndex(candidate => candidate.token === spaceToken)
+					const thresholdRepetitionScore = 3
 
-					if (rankOfSpaceToken < 0) {
-						rankOfSpaceToken = Infinity
-					}
-
-					let chosenCandidateRank: number
-
-					if (rankOfPromisingPunctuationToken >= 0 &&
-						rankOfPromisingPunctuationToken < rankOfSpaceToken) {
-						chosenCandidateRank = rankOfPromisingPunctuationToken
+					if (topCandidatesRepetitionScores.every(score => score >= thresholdRepetitionScore)) {
+						const indexOfMaxScore = topCandidatesRepetitionScores.indexOf(Math.max(...topCandidatesRepetitionScores))
+						topCandidates = [topCandidates[indexOfMaxScore]]
 					} else {
-						chosenCandidateRank = this.randomGen.selectRandomIndexFromDistribution(topCandidateProbabilities)
+						topCandidates = topCandidates.filter((candidate, index) => topCandidatesRepetitionScores[index] < thresholdRepetitionScore)
+					}
+				}
+				////
+
+				const topCandidateProbabilities = softmax(topCandidates.map(a => a.logit), options.temperature)
+
+				//// Remove end-of-text token from candidates if its probability isn't high enough
+				if (options.decodeTimestampTokens === false) {
+					topCandidates = topCandidates.filter((candidate, index) => {
+						if (candidate.token === endOfTextToken) {
+							return topCandidateProbabilities[index] >= 0.9
+						}
+
+						return true
+					})
+				}
+				////
+
+				const rankOfPromisingPunctuationToken = topCandidates.findIndex((entry, index) => {
+					const tokenText = this.tokenToText(entry.token).trim()
+
+					const isPunctuationToken = [',', '，', '、', '.', '。', '!', '?'].includes(tokenText)
+
+					if (!isPunctuationToken) {
+						return false
 					}
 
-					chosenToken = sortedNonTimestampTokenLogitsWithIndexes[chosenCandidateRank].token
+					const tokenProb = topCandidateProbabilities[index]
+
+					return tokenProb >= options.punctuationThreshold!
+				})
+
+				let rankOfSpaceToken = topCandidates.findIndex(candidate => candidate.token === spaceToken)
+
+				if (rankOfSpaceToken < 0) {
+					rankOfSpaceToken = Infinity
 				}
+
+				let chosenCandidateRank: number
+
+				if (rankOfPromisingPunctuationToken >= 0 &&
+					rankOfPromisingPunctuationToken < rankOfSpaceToken) {
+					chosenCandidateRank = rankOfPromisingPunctuationToken
+				} else {
+					chosenCandidateRank = this.randomGen.selectRandomIndexFromDistribution(topCandidateProbabilities)
+				}
+
+				const chosenToken = topCandidates[chosenCandidateRank].token
 
 				if (this.isTextToken(chosenToken)) {
 					bufferedTokensToPrint.push(chosenToken)
@@ -741,9 +760,13 @@ export class Whisper {
 					}
 				}
 
-				const confidence = probabilities[chosenToken]
+				const confidence = topCandidateProbabilities[chosenCandidateRank]
 
 				addToken(chosenToken, timestampTokenLogits, confidence)
+
+				if (chosenToken === endOfTextToken) {
+					break
+				}
 			}
 
 			await yieldToEventLoop()
@@ -1080,7 +1103,7 @@ export class Whisper {
 			const tokenIndex = tokenMappingEntry.source
 			const token = tokens[tokenIndex]
 			const tokenConfidence = tokensConfidence ? tokensConfidence[tokenIndex] : undefined
-			const tokenText = this.tokenToText(token)
+			const tokenText = this.tokenToText(token, true)
 
 			let startTime = startTimeOffset + (tokenMappingEntry.dest * 0.02)
 
@@ -1235,7 +1258,7 @@ export class Whisper {
 
 		let { path } = alignDTWWindowed(tokenIndexes, frameIndexes, (tokenIndex, frameIndex) => {
 			return -frameMeansForToken[tokenIndex][frameIndex]
-		}, 1000)
+		}, segmentFrameCount)
 
 		path = path.map(entry => ({ source: entry.source, dest: segmentStartFrame + entry.dest }))
 
@@ -1729,6 +1752,7 @@ export interface WhisperOptions {
 	maxTokensPerPart?: number
 	suppressRepetition?: boolean
 	seed?: number
+	decodeTimestampTokens?: boolean
 }
 
 export const defaultWhisperOptions: WhisperOptions = {
@@ -1741,4 +1765,5 @@ export const defaultWhisperOptions: WhisperOptions = {
 	maxTokensPerPart: 250,
 	suppressRepetition: true,
 	seed: undefined,
+	decodeTimestampTokens: false,
 }
