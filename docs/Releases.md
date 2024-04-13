@@ -43,15 +43,15 @@
 * Fix issue with identifying legacy IEEE Float wave format
 * Fix issue with language detection failing with empty inputs
 * Fix issue with Whisper model failing when no tokens are detected in a part
-* Fix issue with phone alignment not getting the right DTW window size, producing warnings like `all cost directions are equal to infinity
+* Fix issue with phone alignment not getting the right DTW window size, producing warnings like `all cost directions are equal to infinity`
 * Fix phone timelines in DTW-RA
 * Add more workarounds for eSpeak tokenization bugs
 * Various other fixes
 
 **Documentation**:
-* Add new 'Releases' page. Releases before `1.0.x` were retroactively documented based on commit history (may not exactly detail all historical changes)
-* Options reference page restructured and updated with some missing information
-
+* Add new [release notes](./Releases.md) page. Releases before `1.0.x` were retroactively documented based on commit history (may not exactly detail all historical changes)
+* Add new [development page](./Development.md) with a quick guide for setting up a development environment to make changes to the Echogarden codebase
+* Options reference page reorganized and updated with some missing information
 
 ## `0.12.x` (March 16, 2024)
 

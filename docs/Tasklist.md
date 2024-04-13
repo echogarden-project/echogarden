@@ -111,8 +111,8 @@
 * See if it's possible to reliably use eSpeak as a segmentation engine
 
 ### Subtitles
+* Split long words if needed. This is especially important for Chinese
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
-* Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
 * Add option to output usable word or phoneme-level caption files (investigate how it's done on YouTube auto-captions)
@@ -158,10 +158,10 @@
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
 
 ### Recognition
+* Recognized word entries that span VAD segment boundaries can be split
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 * Option to split recognized audio to segments or sentences, as is done with synthesized audio
 * Try to exclude the timing for trailing punctuation tokens in words that contain them. This can help narrow down the end timestamp to cover the word more tightly
-* Recognized word entries that span VAD boundaries may be split
 
 ### Recognition / Whisper
 * May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
