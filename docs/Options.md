@@ -156,7 +156,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.executablePath`: custom `whisper.cpp` executable path (currently required for macOS)
 * `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set `cpu`, `cublas-11.8.0`, `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-11.8.0`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
 * `whisperCpp.threadCount`: number of threads to use, defaults to `4`
-* `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
+* `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the `whisper.cpp` CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
 * `whisperCpp.enableGPU`: enable GPU processing. Defaults to `true` on CUDA-enabled builds, otherwise `false`
 * `whisperCpp.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
@@ -206,7 +206,7 @@ Applies to CLI operation: `align`, API method: `align`
 * `engine`: alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
-* `isolate`: apply source separation to isolate voice before starting recognition. Defaults to `false`
+* `isolate`: apply source separation to isolate voice before starting alignment. Defaults to `false`
 * `customLexiconPaths`: an array of custom lexicon file paths. Optional
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection

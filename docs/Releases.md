@@ -1,6 +1,6 @@
 # Release notes
 
-## `1.0.0` (April 4, 2024)
+## `1.0.0` (April 12, 2024)
 
 **New features**:
 * Add support for [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp), a C++ port of OpenAI's Whisper speech recognition architecture. It is faster than the integrated `whisper` engine, supports large models, and GPU processing. It can now be used for recognition, speech translation and alignment (via `dtw-ra`), though its word timestamps are less accurate than the integrated `whisper` engine.
@@ -12,6 +12,11 @@
 * Add optional token-level repetition suppression to Whisper engine
 * Expose several new configuration options for the Whisper engine: a settings for maximum tokens per part, and a setting to enable/disable repetition suppression, set custom random seed, disable/enable decoding of timestamp tokens
 * Expose more options for the Elevenlabs engine
+
+**Enhancements**:
+* `detect-voice-activity` now also outputs the cropped voice when an audio file is given as output, with `.cropped` suffix added
+* Improved word segmentation of whisper engine. Words spanning multiple recognized time segments are now split. Word timestamp ranges don't overlap non-speech sections.
+* Whisper and Whisper.cpp outputs now include timestamps for individual recognized tokens
 
 **Behavioral and breaking changes**:
 * Minimal required node version changed to `18.0.0`
@@ -30,11 +35,6 @@
 * `maxIncreaseDb` post-processing and denoising option renamed to `maxGainIncrease`
 * `dryMixGainDb` denoising option renamed to `dryMixGain`
 
-**Enhancements**:
-* `detect-voice-activity` now also outputs the cropped voice when an audio file is given as output, with `.cropped` suffix added
-* Improved word segmentation of whisper engine. Words spanning multiple recognized time segments are now split. Word timestamp ranges don't overlap non-speech sections.
-* Whisper and Whisper.cpp outputs now include timestamps for individual recognized tokens
-
 **Fixes**:
 * Integrated `whisper` engine now uses `tiktoken` to tokenize text, which produces near identical tokenization compared to the official Python implementation. This fixes issues with decoding Chinese characters, correctly encoding prompts, and several others languages with characters that span multiple tokens
 * Fix voice language lists for multilingual voices in Elevenlabs TTS engine
@@ -52,6 +52,7 @@
 * Add new 'Releases' page. Releases before `1.0.x` were retroactively documented based on commit history (may not exactly detail all historical changes)
 * Options reference page restructured and updated with some missing information
 
+
 ## `0.12.x` (March 16, 2024)
 
 **New features**:
@@ -66,6 +67,7 @@
 
 **Other**:
 * Include `package-lock.json` in repository
+
 
 ## `0.11.x` (August 17, 2023)
 
@@ -87,6 +89,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Fix audio playback in macOS
 * Many other fixes
 
+
 ## `0.10.x` (August 2, 2023)
 
 **New features**:
@@ -99,6 +102,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 
 **Fixes**:
 * Many fixes
+
 
 ## `0.9.x` (July 29, 2023)
 
@@ -114,6 +118,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Work around several eSpeak bugs
 * Many fixes
 
+
 ## `0.8.x` (July 25, 2023)
 
 **New features**:
@@ -122,25 +127,24 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add punctuation thresholds to Whisper decoder
 * Expose subtitle configuration options to CLI
 
-**Behavioral changes**:
-* Rename `subtitles.minWords` to `subtitles.minWordsInLine`
-
 **Enhancements**:
 * Improve speech language detection to work with arbitrary length audio. Split audio to overlapping parts and detect each part individually. Then average the results.
 * Add more heteronyms
+
+**Behavioral changes**:
+* Rename `subtitles.minWords` to `subtitles.minWordsInLine`
 
 **Fixes**:
 * Improve numerical stability of softmax function
 * Work around eSpeak bug with markers in long inputs
 * Various fixes
 
+
 ## `0.7.x` (July 23, 2023)
 
 **New features**:
 * Alignment: Add option to accept custom lexicons
 * Implement and add decoder temperature option to Whisper model
-
-**Behavioral changes**:
 
 **Enhancements**:
 * Alignment: use preprocessing and lexicons
@@ -151,9 +155,12 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add colors to log messages
 * Warn when maximum DTW window duration is smaller than source audio duration.
 
+**Behavioral changes**:
+
 **Fixes**:
 * Fix support for SSML input in eSpeak engine
 * Various fixes
+
 
 ## `0.6.x` (July 20, 2023)
 
@@ -165,15 +172,15 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add arguments to customize paragraph parsing
 * Change whitespace option to include option for collapsing all whitespace
 
-**Behavioral changes**:
-* Set Elevenlabs defaults to mid-values
-* Split plain text to paragraphs using double line breaks by default.
-* Rename `awsPolly` options to `amazonPolly` to be more consistent with documentation
-
 **Enhancements**:
 * Change whitespace option to include option for collapsing all whitespace
 * Add awareness of guillemets
 * Log full language of selected voice
+
+**Behavioral changes**:
+* Set Elevenlabs defaults to mid-values
+* Split plain text to paragraphs using double line breaks by default.
+* Rename `awsPolly` options to `amazonPolly` to be more consistent with documentation
 
 **Fixes**:
 * Fix and update Elevenlabs engine
@@ -184,25 +191,24 @@ Many features, enhancements, and fixes were incrementally added over the span of
 **Other**:
 * Remove `package-lock.json` from the repository
 
+
 ## `0.5.x` (July, 19 2023)
 
 **New features**:
 
-**Behavioral changes**:
-* Move to new package system supporting version tags, and hosted in a Hugging Face repository
-
 **Enhancements**:
 * Add large numbers of VITS voices
+
+**Behavioral changes**:
+* Move to new package system supporting version tags, and hosted in a Hugging Face repository
 
 **Fixes**:
 * Various fixes
 
+
 ## `0.4.x` (July 9, 2023)
 
 **New features**:
-
-**Behavioral changes**:
-* Remove support for `afplay` and `aplay` for playback. Only SoX is used now.
 
 **Enhancements**:
 * Improve text normalization and add support for currencies
@@ -212,14 +218,16 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add some British English (RP) pronunciations to heteronym lexicon
 * Add large numbers of VITS voices
 
+**Behavioral changes**:
+* Remove support for `afplay` and `aplay` for playback. Only SoX is used now.
+
 **Fixes**:
 * Various fixes
+
 
 ## `0.3.x` (July 1, 2023)
 
 **New features**:
-
-**Behavioral changes**:
 
 **Enhancements**:
 * Upgrade heteronym disambiguation to an improved, rule-based approach, which doesn't use POS tagging
@@ -227,16 +235,16 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Improve text normalization and add support to currencies
 * Update the heteronym lexicon
 
+**Behavioral changes**:
+
 **Fixes**:
 * Remove sentences containing only whitespace when synthesizing
 * Many fixes
 
+
 ## `0.2.x` (May 10, 2023)
 
 **New features**:
-
-**Behavioral changes**:
-* Remove dependency on `xregexp` package. Use Unicode RegExp instead.
 
 **Enhancements**:
 * Show current sentence and segment in synthesis log.
@@ -244,6 +252,9 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add support to additional VITS voices
 * Improve auto TTS engine selection
 * Many Enhancements
+
+**Behavioral changes**:
+* Remove dependency on `xregexp` package. Use Unicode RegExp instead.
 
 **Fixes**:
 * Many fixes
