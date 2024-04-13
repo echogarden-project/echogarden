@@ -151,7 +151,7 @@ export async function alignUsingDtw(
 	return mappedTimeline
 }
 
-export async function alignUsingDtwWithRecognitionReference(
+export async function alignUsingDtwWithRecognition(
 	sourceRawAudio: RawAudio,
 	referenceRawAudio: RawAudio,
 	referenceTimeline: Timeline,
@@ -272,6 +272,7 @@ export async function alignUsingDtwWithRecognitionReference(
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 
+	// Map from synthesized reference timestamps to the recognition timestamps
 	function mapSynthesizedToRecognizedTimeAndAdvance(synthesizedTime: number) {
 		for (; ; currentSynthesizedToRecognizedMappingIndex += 1) {
 			const left = synthesizedToRecognizedTimeMapping[currentSynthesizedToRecognizedMappingIndex].synthesized

@@ -19,6 +19,7 @@ import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
+import { isPunctuation, isWhitespace } from '../nlp/Segmentation.js'
 
 export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
 	if (sourceRawAudio.sampleRate != 16000) {
@@ -398,7 +399,7 @@ export class Whisper {
 			logger.end()
 		}
 
-		timeline = this.tokenTimelineToWordTimeline(timeline)
+		timeline = this.tokenTimelineToWordTimeline(timeline, language)
 
 		const transcript = this.tokensToText(allDecodedTokens).trim()
 
@@ -438,7 +439,7 @@ export class Whisper {
 		const alignmentPath = await this.findAlignmentPathFromQKs(crossAttentionQKs, tokens, 0, audioFrameCount)//, this.getAlignmentHeadIndexes())
 		let timeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
 
-		timeline = this.tokenTimelineToWordTimeline(timeline)
+		timeline = this.tokenTimelineToWordTimeline(timeline, language)
 
 		logger.end()
 
@@ -1022,33 +1023,40 @@ export class Whisper {
 		}
 	}
 
-	tokenTimelineToWordTimeline(tokenTimeline: Timeline) {
-		const separatorChars =
-			[' ', '–', '一', '，', '、', '|', '/', '\\', ';', '"', '“', '”', '…', '(', ')', '[', ']', '{', '}']
+	tokenTimelineToWordTimeline(tokenTimeline: Timeline, language: string): Timeline {
+		function isSeparatorCharacter(char: string) {
+			const nonSeparatingPunctuation = [`'`, `-`, `.`, `·`, `•`]
 
-		function startsWithSeparatingPunctuation(text: string) {
-			return separatorChars.some(char => text.startsWith(char))
+			if (nonSeparatingPunctuation.includes(char)) {
+				return false
+			}
+
+			return isWhitespace(char) || isPunctuation(char)
 		}
 
-		function isSeparatorPunctuation(text: string) {
-			return separatorChars.includes(text)
+		function startsWithSeparatorCharacter(text: string) {
+			return isSeparatorCharacter(text[0])
+		}
+
+		function endsWithSeparatorCharacter(text: string) {
+			return isSeparatorCharacter(text[text.length - 1])
 		}
 
 		const resultTimeline: Timeline = []
 
-		const groups: TimelineEntry[][] = []
+		let groups: TimelineEntry[][] = []
 
-		for (let i = 0; i < tokenTimeline.length; i++) {
-			const entry = tokenTimeline[i]
-			const previousEntry = i > 0 ? tokenTimeline[i - 1] : undefined
+		for (let tokenIndex = 0; tokenIndex < tokenTimeline.length; tokenIndex++) {
+			const entry = tokenTimeline[tokenIndex]
+			const previousEntry = tokenIndex > 0 ? tokenTimeline[tokenIndex - 1] : undefined
 
 			const text = entry.text
 			const previousEntryText = previousEntry?.text
 
 			if (groups.length == 0 ||
 				text === '' ||
-				startsWithSeparatingPunctuation(text) ||
-				(previousEntryText != null && isSeparatorPunctuation(previousEntryText))) {
+				startsWithSeparatorCharacter(text) ||
+				(previousEntryText != null && endsWithSeparatorCharacter(previousEntryText))) {
 
 				groups.push([entry])
 			} else {
@@ -1056,8 +1064,28 @@ export class Whisper {
 			}
 		}
 
+		const newGroups: TimelineEntry[][] = []
+
+		for (let groupIndex = 0; groupIndex < groups.length - 1; groupIndex++) {
+			const group = groups[groupIndex]
+			const nextGroup = groups[groupIndex + 1]
+
+			if (
+				group.length > 1 &&
+				group[group.length - 1].text === '.' &&
+				[' ', '['].includes(nextGroup[0].text[0])) {
+
+				newGroups.push(group.slice(0, group.length - 1))
+				newGroups.push(group.slice(group.length - 1))
+			} else {
+				newGroups.push(group)
+			}
+		}
+
+		groups = newGroups
+
 		for (const group of groups) {
-			const groupText = this.tokensToText(group.map(entry => entry.id!))
+			let groupText = this.tokensToText(group.map(entry => entry.id!))
 
 			if (groupText === '') {
 				continue
@@ -1755,8 +1783,8 @@ export interface WhisperOptions {
 	autoPromptParts?: boolean
 	maxTokensPerPart?: number
 	suppressRepetition?: boolean
-	seed?: number
 	decodeTimestampTokens?: boolean
+	seed?: number
 }
 
 export const defaultWhisperOptions: WhisperOptions = {
@@ -1768,6 +1796,6 @@ export const defaultWhisperOptions: WhisperOptions = {
 	autoPromptParts: true,
 	maxTokensPerPart: 250,
 	suppressRepetition: true,
+	decodeTimestampTokens: true,
 	seed: undefined,
-	decodeTimestampTokens: false,
 }

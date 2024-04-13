@@ -200,7 +200,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 			continue
 		}
 
-		const wordTimeline = entry.timeline!.filter(entry => isWord(entry.text))
+		const wordTimeline = entry.timeline!.filter(entry => isWordOrSymbolWord(entry.text))
 
 		// First, add word start and end offsets for all word entries
 		let lastWordEndOffset = 0

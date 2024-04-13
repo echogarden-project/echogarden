@@ -12,6 +12,7 @@ import chalk from 'chalk'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
 import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
+import { isWord } from '../nlp/Segmentation.js'
 
 const log = logToStderr
 
@@ -85,7 +86,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	logger.start('Load alignment module')
 
-	const { alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
+	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
 	function getDtwWindowDurationsAndGranularities() {
 		let granularities: DtwGranularity[]
@@ -145,7 +146,12 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			logger.end()
 
 			// Recognize source audio
-			const { transcript: recognizedTranscript, wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
+			let { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
+
+			logger.log('')
+
+			// Remove non-word entries from recognition timeline
+			recognitionTimeline = recognitionTimeline.filter(entry => isWord(entry.text))
 
 			// Synthesize the ground-truth transcript and get its timeline
 			logger.start('Synthesize ground-truth transcript with eSpeak')
@@ -154,14 +160,14 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				referenceRawAudio,
 				referenceTimeline,
 				espeakVoice,
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, true)
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false)
 
 			logger.end()
 
 			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
-			
+
 			const espeakOptions: EspeakOptions = {
 				...defaultEspeakOptions,
 				voice: espeakVoice,
@@ -345,10 +351,10 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 			topCandidateCount: 5,
 			punctuationThreshold: 0.2,
 			maxTokensPerPart: 250,
-			autoPromptParts: true,
+			autoPromptParts: false,
 			suppressRepetition: true,
+			decodeTimestampTokens: true,
 			seed: undefined,
-			decodeTimestampTokens: false,
 		}
 	},
 

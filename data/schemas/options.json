@@ -1025,11 +1025,11 @@
         "suppressRepetition": {
           "type": "boolean"
         },
-        "seed": {
-          "type": "number"
-        },
         "decodeTimestampTokens": {
           "type": "boolean"
+        },
+        "seed": {
+          "type": "number"
         }
       },
       "additionalProperties": false

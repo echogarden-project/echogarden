@@ -8,8 +8,9 @@ import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
 
 const log = logToStderr
 
-export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
-export const punctuationPattern = /[\p{Punctuation}]/u
+export const wordCharacterPattern = /[\p{Letter}\p{Number}]+/u
+export const punctuationPattern = /[\p{Punctuation}]+/u
+
 export const phraseSeparators = [',', ';', ':']
 export const sentenceSeparators = ['.', '?', '!']
 export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '=', '¼', '½', '¾']
@@ -18,13 +19,20 @@ export function isWordOrSymbolWord(str: string) {
 	return isWord(str) || symbolWords.includes(str)
 }
 
+export function isSymbolWord(str: string) {
+	return symbolWords.includes(str.trim())
+}
+
 export function isWord(str: string) {
-	str = str.trim()
-	return wordCharacterPattern.test(str) || symbolWords.includes(str)
+	return wordCharacterPattern.test(str.trim())
 }
 
 export function isPunctuation(str: string) {
-	return punctuationPattern.test(str)
+	return punctuationPattern.test(str.trim())
+}
+
+export function isWhitespace(str: string) {
+	return str.trim().length === 0
 }
 
 export class Sentence {

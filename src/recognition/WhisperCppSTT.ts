@@ -288,13 +288,14 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 
 	const allTokenIds = tokenTimeline.map(entry => entry.id!)
 	const transcript = whisper.tokensToText(allTokenIds).trim()
+	const language = resultObject.result.language
 
-	let timeline = whisper.tokenTimelineToWordTimeline(tokenTimeline)
+	const timeline = whisper.tokenTimelineToWordTimeline(tokenTimeline, language)
 
 	return {
 		transcript,
 		timeline,
-		language: resultObject.result.language
+		language
 	}
 }
 
