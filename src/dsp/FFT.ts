@@ -122,7 +122,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	wasmMemory.freeAll()
 
-	// Divide by sum of weight squares for each samples
+	// Divide each output sample by the sum of squared weights
 	for (let i = 0; i < outSamples.length; i++) {
 		outSamples[i] /= sumOfSquaredWeightsForSample[i] + 1e-8
 	}

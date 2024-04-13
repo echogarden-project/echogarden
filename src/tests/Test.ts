@@ -1,6 +1,7 @@
-import { getRepetitionScoreRelativeToFirstSubstring, logToStderr, setupProgramTerminationListeners } from '../utilities/Utilities.js'
+import { getRepetitionScoreRelativeToFirstSubstring, logToStderr, setupProgramTerminationListeners, writeToStderr } from '../utilities/Utilities.js'
 import { makeTarballsForInstalledPackages } from '../utilities/TarballMaker.js'
 import { testEspeakSynthesisWithPrePhonemizedInputs, testKirshenbaumPhonemization } from '../synthesis/EspeakTTS.js'
+import { isPunctuation } from '../nlp/Segmentation.js'
 
 const log = logToStderr
 
@@ -21,4 +22,19 @@ setupProgramTerminationListeners()
 //getRepetitionScoreRelativeToFirstSubstring(['a', 'b', 'a', 'c', 'a', 'b', 'a', 'c', 'a'])
 //getRepetitionScoreRelativeToFirstSubstring(['a', 'a', 'a', 'b', 'b', 'a', 'a', 'a', 'b'])
 
+/*
+const allPunctuationChars: string[] = []
+
+for (let i = 0; i < 65536; i++) {
+	const char = String.fromCodePoint(i)
+
+	if (isPunctuation(char)) {
+		allPunctuationChars.push(char)
+
+		writeToStderr(`${char} `)
+	}
+}
+*/
+
 process.exit(0)
+
