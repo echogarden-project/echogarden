@@ -1,4 +1,4 @@
-import Onnx from 'onnxruntime-node'
+import type * as Onnx from 'onnxruntime-node'
 import { RawAudio } from '../audio/AudioUtilities.js';
 import { binBufferToComplex, complexToBinBuffer, getWindowWeights, stftr, stiftr } from '../dsp/FFT.js';
 import { ComplexNumber } from '../math/VectorMath.js';
@@ -31,6 +31,8 @@ export class MDXNet {
 		if (!this.session) {
 			await this.initializeSession(this.modelFilePath)
 		}
+
+		const Onnx = await import('onnxruntime-node')
 
 		const logger = new Logger()
 
@@ -222,6 +224,8 @@ export class MDXNet {
 		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
 			logSeverityLevel: 3
 		}
+
+		const Onnx = await import('onnxruntime-node')
 
 		this.session = await Onnx.InferenceSession.create(modelPath, onnxOptions)
 	}

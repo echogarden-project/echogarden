@@ -12,7 +12,7 @@ import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
 import { OpenAICloudSTTOptions, defaultOpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
-import { WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 
 const log = logToStderr
 

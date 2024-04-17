@@ -1,11 +1,11 @@
 import { indexOfMax } from '../math/VectorMath.js'
 import { wordCharacterPattern } from '../nlp/Segmentation.js'
-import Onnx from 'onnxruntime-node'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
+import type * as Onnx from 'onnxruntime-node'
 import path from 'path'
 
 const log = logToStderr
@@ -13,6 +13,8 @@ const log = logToStderr
 export async function recognize(rawAudio: RawAudio, modelDirectory: string) {
 	const logger = new Logger()
 	logger.start('Create ONNX inference session')
+
+	const Onnx = await import('onnxruntime-node')
 
 	const modelPath = path.join(modelDirectory, 'model.onnx')
 	const labelsPath = path.join(modelDirectory, 'labels.json')

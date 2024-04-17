@@ -8,13 +8,13 @@ import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTi
 import { defaultWhisperOptions, type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
 import { EngineMetadata } from './Common.js'
-import { SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
+import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
 import chalk from 'chalk'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
 
 import * as API from './API.js'
-import { OpenAICloudSTTOptions, defaultOpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
-import { WhisperCppOptions, defaultWhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type OpenAICloudSTTOptions, defaultOpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
+import { type WhisperCppOptions, defaultWhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 
 const log = logToStderr
 

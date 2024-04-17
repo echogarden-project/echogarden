@@ -1,4 +1,4 @@
-import Onnx from 'onnxruntime-node'
+import type * as Onnx from 'onnxruntime-node'
 
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
@@ -38,33 +38,24 @@ export async function detectVoiceActivity(rawAudio: RawAudio, modelPath: string,
 export class SileroVAD {
 	session?: Onnx.InferenceSession
 
-	modelStateH: Onnx.Tensor
-	modelStateC: Onnx.Tensor
-	modelSampleRate: Onnx.Tensor
+	modelStateH?: Onnx.Tensor
+	modelStateC?: Onnx.Tensor
+	modelSampleRate?: Onnx.Tensor
 
 	modelPath: string
 
 	constructor(modelPath: string) {
-		this.modelSampleRate = new Onnx.Tensor('int64', new BigInt64Array([BigInt(16000)]), [])
-
-		const h = new Float32Array(2 * 1 * 64)
-		const c = new Float32Array(2 * 1 * 64)
-
-		this.modelStateH = new Onnx.Tensor('float32', h, [2, 1, 64])
-		this.modelStateC = new Onnx.Tensor('float32', c, [2, 1, 64])
-
 		this.modelPath = modelPath
 	}
 
 	async predictAudioFrame(frame: Float32Array) {
-		if (!this.session) {
-			await this.initializeSession(this.modelPath)
-		}
+		await this.initializeIfNeeded()
+
+		const Onnx = await import('onnxruntime-node')
 
 		const inputTensor = new Onnx.Tensor('float32', frame, [1, frame.length])
 
-		//const inputs = { input: inputTensor, h0: this.modelStateH, c0: this.modelStateC }
-		const inputs = { input: inputTensor, sr: this.modelSampleRate, h: this.modelStateH, c: this.modelStateC }
+		const inputs = { input: inputTensor, sr: this.modelSampleRate!, h: this.modelStateH!, c: this.modelStateC! }
 
 		const results = await this.session!.run(inputs)
 
@@ -75,12 +66,25 @@ export class SileroVAD {
 
 		return probability
 	}
+	private async initializeIfNeeded() {
+		if (this.session) {
+			return
+		}
 
-	private async initializeSession(modelPath: string) {
+		const Onnx = await import('onnxruntime-node')
+
+		const h = new Float32Array(2 * 1 * 64)
+		const c = new Float32Array(2 * 1 * 64)
+
+		this.modelStateH = new Onnx.Tensor('float32', h, [2, 1, 64])
+		this.modelStateC = new Onnx.Tensor('float32', c, [2, 1, 64])
+
+		this.modelSampleRate = new Onnx.Tensor('int64', new BigInt64Array([BigInt(16000)]), [])
+
 		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
 			logSeverityLevel: 3
 		}
 
-		this.session = await Onnx.InferenceSession.create(modelPath, onnxOptions)
+		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxOptions)
 	}
 }

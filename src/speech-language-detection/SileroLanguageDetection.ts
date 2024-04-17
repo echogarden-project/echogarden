@@ -1,4 +1,4 @@
-import Onnx from 'onnxruntime-node'
+import type * as Onnx from 'onnxruntime-node'
 import { softmax } from '../math/VectorMath.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
@@ -50,6 +50,8 @@ export class SileroLanguageDetection {
 			logSeverityLevel: 3
 		}
 
+		const Onnx = await import('onnxruntime-node')
+
 		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxOptions)
 
 		logger.end()
@@ -62,6 +64,8 @@ export class SileroLanguageDetection {
 
 		const audioSamples = rawAudio.audioChannels[0]
 
+		const Onnx = await import('onnxruntime-node')
+		
 		const inputTensor = new Onnx.Tensor('float32', audioSamples, [1, audioSamples.length])
 
 		const inputs = { input: inputTensor }

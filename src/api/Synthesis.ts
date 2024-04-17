@@ -22,8 +22,8 @@ import { shouldCancelCurrentTask } from '../server/Worker.js'
 import chalk from 'chalk'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
-import { OpenAICloudTTSOptions, defaultOpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
-import { ElevenlabsTTSOptions, defaultElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
+import { type OpenAICloudTTSOptions, defaultOpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
+import { type ElevenlabsTTSOptions, defaultElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
 
 const log = logToStderr
 
@@ -1036,7 +1036,7 @@ export interface SynthesisOptions {
 		rate?: number
 		pitch?: number
 		pitchRange?: number
-		
+
 		useKlatt?: boolean
 		insertSeparators?: boolean
 	}

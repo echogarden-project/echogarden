@@ -7,7 +7,7 @@ import { Logger } from '../utilities/Logger.js'
 import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
-import { WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
@@ -86,7 +86,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	logger.start('Load alignment module')
 
-	const { alignUsingDtwWithRecognition: alignUsingDtwWithRecognitionReference, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
+	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
 	function getDtwWindowDurationsAndGranularities() {
 		let granularities: DtwGranularity[]
@@ -128,7 +128,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const {
 				referenceRawAudio,
 				referenceTimeline
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths)
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false)
 
 			logger.end()
 
@@ -176,7 +176,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			}
 
 			// Align the ground-truth transcript and the recognized transcript
-			mappedTimeline = await alignUsingDtwWithRecognitionReference(
+			mappedTimeline = await alignUsingDtwWithRecognition(
 				sourceRawAudio,
 				referenceRawAudio,
 				referenceTimeline,

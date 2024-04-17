@@ -1,4 +1,4 @@
-import type { InferenceSession } from 'onnxruntime-node'
+import type * as Onnx from 'onnxruntime-node'
 import { SynthesisVoice } from '../api/API.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
@@ -32,7 +32,7 @@ export class VitsTTS {
 	voiceName: string
 	modelPath: string
 
-	modelSession?: InferenceSession
+	modelSession?: Onnx.InferenceSession
 	metadata?: any
 	phonemeMap?: Map<string, number[]>
 
@@ -45,7 +45,7 @@ export class VitsTTS {
 		const logger = new Logger()
 		await logger.startAsync('Initialize VITS ONNX synthesis model')
 
-		const onnxOptions: InferenceSession.SessionOptions = {
+		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
 			logSeverityLevel: 3
 		}
 

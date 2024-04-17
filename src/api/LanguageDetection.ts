@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import * as API from './API.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import path from 'path'
-import { WhisperModelName } from '../recognition/WhisperSTT.js'
+import { type WhisperModelName } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
@@ -117,7 +117,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 	}
 
 	logger.end()
-	logger.logDuration('\nTotal detection time', startTime, chalk.magentaBright)
+	logger.logDuration('\nTotal language detection time', startTime, chalk.magentaBright)
 
 	return {
 		detectedLanguage,
