@@ -8,8 +8,8 @@ import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
 
 const log = logToStderr
 
-export const wordCharacterPattern = /[\p{Letter}\p{Number}]+/u
-export const punctuationPattern = /[\p{Punctuation}]+/u
+export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
+export const punctuationPattern = /[\p{Punctuation}]/u
 
 export const phraseSeparators = [',', ';', ':']
 export const sentenceSeparators = ['.', '?', '!']
