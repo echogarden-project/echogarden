@@ -64,7 +64,7 @@ export async function recognize(
 		}
 
 
-		logger.start(`Recognize with command-line whisper.cpp (build: ${buildKind}, model: ${options.model || modelName})`)
+		logger.start(`Recognize with command-line whisper.cpp (model: ${options.model || modelName}, build: ${buildKind})`)
 		logger.log('')
 		logger.log('')
 
