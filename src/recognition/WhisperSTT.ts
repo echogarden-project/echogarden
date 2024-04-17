@@ -421,13 +421,13 @@ export class Whisper {
 
 		await logger.startAsync('Extract word timeline')
 		const alignmentPath = await this.findAlignmentPathFromQKs(crossAttentionQKs, tokens, 0, audioFrameCount)//, this.getAlignmentHeadIndexes())
-		let timeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
+		const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
 
-		timeline = this.tokenTimelineToWordTimeline(timeline, language)
+		const wordTimeline = this.tokenTimelineToWordTimeline(tokenTimeline, language)
 
 		logger.end()
 
-		return timeline
+		return wordTimeline
 	}
 
 	async detectLanguage(audioFeatures: Onnx.Tensor, temperature: number): Promise<LanguageDetectionResults> {
@@ -1058,14 +1058,14 @@ export class Whisper {
 
 		const newGroups: TimelineEntry[][] = []
 
-		for (let groupIndex = 0; groupIndex < groups.length - 1; groupIndex++) {
+		for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
 			const group = groups[groupIndex]
 			const nextGroup = groups[groupIndex + 1]
 
 			if (
 				group.length > 1 &&
 				group[group.length - 1].text === '.' &&
-				[' ', '['].includes(nextGroup[0].text[0])) {
+				(!nextGroup || [' ', '['].includes(nextGroup[0].text[0]))) {
 
 				newGroups.push(group.slice(0, group.length - 1))
 				newGroups.push(group.slice(group.length - 1))
