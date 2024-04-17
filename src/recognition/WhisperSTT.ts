@@ -1,8 +1,8 @@
-import Onnx from 'onnxruntime-node'
+import type * as Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
-import { clip, getIntegerRange, getRepetitionScoreRelativeToFirstSubstring, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { clip, getIntegerRange, getRepetitionScoreRelativeToFirstSubstring, getUTF32Chars, logToStderr, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
@@ -135,8 +135,6 @@ export class Whisper {
 
 		timestampTokensStart: number
 		timestampTokensEnd: number
-
-		suppressedTokens: Set<number>
 	}
 
 	randomGen: XorShift32RNG
@@ -163,16 +161,7 @@ export class Whisper {
 
 				timestampTokensStart: 50364,
 				timestampTokensEnd: 50364 + 1501,
-
-				suppressedTokens: new Set()
 			}
-
-			const suppressedTextTokens = [1, 2, 6, 7, 8, 9, 10, 12, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 359, 503, 522, 542, 873, 893, 902, 918, 922, 931, 1350, 1853, 1982, 2460, 2627, 3246, 3253, 3268, 3536, 3846, 3961, 4183, 4667, 6585, 6647, 7273, 9061, 9383, 10428, 10929, 11938, 12033, 12331, 12562, 13793, 14157, 14635, 15265, 15618, 16553, 16604, 18362, 18956, 20075, 21675, 22520, 26130, 26161, 26435, 28279, 29464, 31650, 32302, 32470, 36865, 42863, 47425, 49870, 50254]
-			const suppressedMetadataTokens = [50256, ...getIntegerRange(50258, 50364)]
-
-			const suppressedTokens = [...suppressedTextTokens, ...suppressedMetadataTokens]
-
-			this.tokenConfig.suppressedTokens = new Set(suppressedTokens)
 		} else {
 			this.tokenConfig = {
 				endOfTextToken: 50256,
@@ -189,16 +178,7 @@ export class Whisper {
 
 				timestampTokensStart: 50363,
 				timestampTokensEnd: 50363 + 1501,
-
-				suppressedTokens: new Set()
 			}
-
-			const suppressedTextTokens = [1, 2, 7, 8, 9, 10, 14, 25, 26, 27, 28, 29, 31, 58, 59, 60, 61, 62, 63, 90, 91, 92, 93, 357, 366, 438, 532, 685, 705, 796, 930, 1058, 1220, 1267, 1279, 1303, 1343, 1377, 1391, 1635, 1782, 1875, 2162, 2361, 2488, 3467, 4008, 4211, 4600, 4808, 5299, 5855, 6329, 7203, 9609, 9959, 10563, 10786, 11420, 11709, 11907, 13163, 13697, 13700, 14808, 15306, 16410, 16791, 17992, 19203, 19510, 20724, 22305, 22935, 27007, 30109, 30420, 33409, 34949, 40283, 40493, 40549, 47282, 49146]
-			const suppressedMetadataTokens = [...getIntegerRange(50257, 50363)]
-
-			const suppressedTokens = [...suppressedTextTokens, ...suppressedMetadataTokens]
-
-			this.tokenConfig.suppressedTokens = new Set(suppressedTokens)
 		}
 
 		this.randomGen = new XorShift32RNG(rngSeed)
@@ -283,6 +263,8 @@ export class Whisper {
 
 		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
 
+		const Onnx = await import('onnxruntime-node')
+
 		this.audioEncoder = await Onnx.InferenceSession.create(encoderFilePath, this.onnxOptions)
 
 		logger.end()
@@ -298,6 +280,8 @@ export class Whisper {
 		await logger.startAsync(`Create decoder model inference session for model '${this.modelName}'`)
 
 		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
+
+		const Onnx = await import('onnxruntime-node')
 
 		this.textDecoder = await Onnx.InferenceSession.create(decoderFilePath, this.onnxOptions)
 
@@ -463,6 +447,8 @@ export class Whisper {
 		const initialTokens = [sotToken]
 		const offset = 0
 
+		const Onnx = await import('onnxruntime-node')
+
 		const initialKvDimensions = this.getKvDimensions(1, initialTokens.length)
 		const kvCacheTensor = new Onnx.Tensor('float32', new Float32Array(initialKvDimensions[0] * initialKvDimensions[1] * initialKvDimensions[2] * initialKvDimensions[3]), initialKvDimensions)
 
@@ -515,20 +501,22 @@ export class Whisper {
 
 		const logger = new Logger()
 
+		const allowedPunctuationMarks = this.getAllowedPunctuationMarks()
+
 		await logger.startAsync('Decode text tokens with Whisper decoder model')
 
 		options = extendDeep(defaultWhisperOptions, options)
 
+		const Onnx = await import('onnxruntime-node')
+
 		const endOfTextToken = this.tokenConfig.endOfTextToken
 
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-		const suppressedTokens = this.tokenConfig.suppressedTokens
+		const suppressedTokens = new Set(this.getSuppressedTokens())
 
 		const spaceToken = this.textToTokens(' ')[0]
 
 		const maxDecodedTokenCount = options.maxTokensPerPart!
-
-		//const suppressedTokensText = Array.from(this.tokenConfig.suppressedTokens).map(token => this.tokenToText(token, true))
 
 		let decodedTokens = initialTokens.slice()
 		const initialKvDimensions = this.getKvDimensions(1, decodedTokens.length)
@@ -689,7 +677,7 @@ export class Whisper {
 						return maxScore
 					})
 
-					const thresholdRepetitionScore = 3
+					const thresholdRepetitionScore = 4
 
 					if (topCandidatesRepetitionScores.every(score => score >= thresholdRepetitionScore)) {
 						const indexOfMaxScore = topCandidatesRepetitionScores.indexOf(Math.max(...topCandidatesRepetitionScores))
@@ -717,7 +705,7 @@ export class Whisper {
 				const rankOfPromisingPunctuationToken = topCandidates.findIndex((entry, index) => {
 					const tokenText = this.tokenToText(entry.token).trim()
 
-					const isPunctuationToken = [',', '，', '、', '.', '。', '!', '?'].includes(tokenText)
+					const isPunctuationToken = allowedPunctuationMarks.includes(tokenText)
 
 					if (!isPunctuationToken) {
 						return false
@@ -794,6 +782,8 @@ export class Whisper {
 	async inferCrossAttentionQKs(tokens: number[], audioFeatures: Onnx.Tensor) {
 		const offset = 0
 
+		const Onnx = await import('onnxruntime-node')
+
 		const tokensTensor = new Onnx.Tensor('int64', new BigInt64Array(tokens.map(token => BigInt(token))), [1, tokens.length])
 		const offsetTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(offset)]), [])
 
@@ -841,6 +831,8 @@ export class Whisper {
 
 	async encodeAudio(rawAudio: RawAudio) {
 		await this.initializeEncoderSessionIfNeeded()
+
+		const Onnx = await import('onnxruntime-node')
 
 		const logger = new Logger()
 
@@ -1429,6 +1421,90 @@ export class Whisper {
 	getAlignmentHeadIndexes() {
 		return alignmentHeadsIndexes[this.modelName]
 	}
+
+	getSuppressedTokens() {
+		return [
+			...this.getSuppressedTextTokens(),
+			...this.getSuppressedMetadataTokens(),
+		]
+	}
+
+	getSuppressedTextTokens() {
+		const allowedPunctuationMarks = this.getAllowedPunctuationMarks()
+
+		const nonWordTokensData = this.getNonWordTokenData()
+
+		const suppressedTextTokens = nonWordTokensData
+			.filter(entry => !allowedPunctuationMarks.includes(entry.text))
+			.map(entry => entry.id)
+
+		return suppressedTextTokens
+	}
+
+	getSuppressedMetadataTokens() {
+		if (this.isMultiligualModel) {
+			return [50256, ...getIntegerRange(50258, 50364)]
+		} else {
+			return [...getIntegerRange(50257, 50363)]
+		}
+	}
+
+	getAllowedPunctuationMarks() {
+		const generalPunctuation = [`'`, ',', '.', '?', '!']
+
+		let allowedPunctuation: string[]
+
+		if (this.isMultiligualModel) {
+			const spanish = ['¿', '¡']
+			const chinese = ['、', '，', '。', '？', '！']
+			const arabic = ['،', '؟']
+			const various = ['·', '•', '・']
+
+			allowedPunctuation = [...generalPunctuation, ...arabic, ...chinese, ...spanish, ...various]
+		} else {
+			allowedPunctuation = generalPunctuation
+		}
+
+		return allowedPunctuation
+	}
+
+	getNonWordTokenData() {
+		const nonWordTokenData: WhisperTokenData[] = []
+
+		const invalidUTF8Char = String.fromCharCode(65533)
+
+		for (let i = 0; i < this.tokenConfig.endOfTextToken; i++) {
+			const tokenText = this.tokenToText(i, false)
+			const tokenTextWithoutWhitespace = tokenText.replaceAll(/\s/g, '')
+
+			const isNonWordToken = /^[\p{Punctuation}\p{Symbol}]+$/u.test(tokenTextWithoutWhitespace)
+
+			const containsInvalidUTF8 = getUTF32Chars(tokenTextWithoutWhitespace).utf32chars.includes(invalidUTF8Char)
+
+			if (isNonWordToken && !containsInvalidUTF8) {
+				nonWordTokenData.push({
+					id: i,
+					text: tokenText,
+				})
+			}
+		}
+
+		return nonWordTokenData
+	}
+
+
+	getTokensData(tokens: number[]) {
+		const tokensData: WhisperTokenData[] = []
+
+		for (const token of tokens) {
+			tokensData.push({
+				id: token,
+				text: this.tokenToText(token, true),
+			})
+		}
+
+		return tokensData
+	}
 }
 
 const filterbanks: Filterbank[] = [
@@ -1635,6 +1711,11 @@ export function isMultilingualModel(modelName: WhisperModelName) {
 
 export function isEnglishOnlyModel(modelName: WhisperModelName) {
 	return modelName.endsWith('.en')
+}
+
+export type WhisperTokenData = {
+	id: number
+	text: string
 }
 
 export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
