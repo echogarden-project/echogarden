@@ -535,6 +535,8 @@ export class Whisper {
 			decodedTokensCrossAttentionQKs.push(undefined as any)
 		}
 
+		let bufferedTokensToPrint: number[] = []
+
 		// Start decoding loop
 		for (let decodedTokenCount = 0; decodedTokenCount < maxDecodedTokenCount; decodedTokenCount++) {
 			const isInitialState = decodedTokens.length == initialTokens.length
@@ -574,7 +576,7 @@ export class Whisper {
 			const allTokenLogits = Array.from(resultLogits[resultLogits.length - 1])
 			const timestampTokenLogits = allTokenLogits.slice(timestampTokensStart)
 
-			// Suppress tokens
+			// Suppress logits for tokens in the suppressed set
 			for (let logitIndex = 0; logitIndex < allTokenLogits.length; logitIndex++) {
 				const isWrongTokenForInitialState =
 					isInitialState &&
@@ -589,9 +591,6 @@ export class Whisper {
 				}
 			}
 
-			// Derive token probabilities
-			let bufferedTokensToPrint: number[] = []
-
 			// Add best token
 			function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number) {
 				decodedTokens.push(tokenToAdd)
@@ -603,6 +602,7 @@ export class Whisper {
 			let shouldDecodeNonTimestampToken = true
 
 			if (options.decodeTimestampTokens) {
+				// Derive token probabilities
 				const probabilities = softmax(allTokenLogits as any, 1.0)
 				const logProbabilities = logOfVector(probabilities)
 
@@ -732,6 +732,13 @@ export class Whisper {
 				}
 
 				const chosenToken = topCandidates[chosenCandidateRank].token
+				const chosenTokenConfidence = topCandidateProbabilities[chosenCandidateRank]
+
+				addToken(chosenToken, timestampTokenLogits, chosenTokenConfidence)
+
+				if (chosenToken === endOfTextToken) {
+					break
+				}
 
 				if (this.isTextToken(chosenToken)) {
 					bufferedTokensToPrint.push(chosenToken)
@@ -747,14 +754,6 @@ export class Whisper {
 
 						bufferedTokensToPrint = []
 					}
-				}
-
-				const confidence = topCandidateProbabilities[chosenCandidateRank]
-
-				addToken(chosenToken, timestampTokenLogits, confidence)
-
-				if (chosenToken === endOfTextToken) {
-					break
 				}
 			}
 
@@ -1036,7 +1035,7 @@ export class Whisper {
 
 		const resultTimeline: Timeline = []
 
-		let groups: TimelineEntry[][] = []
+		let groups: Timeline[] = []
 
 		for (let tokenIndex = 0; tokenIndex < tokenTimeline.length; tokenIndex++) {
 			const entry = tokenTimeline[tokenIndex]
@@ -1056,25 +1055,27 @@ export class Whisper {
 			}
 		}
 
-		const newGroups: TimelineEntry[][] = []
+		{
+			const splitGroups: Timeline[] = []
 
-		for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
-			const group = groups[groupIndex]
-			const nextGroup = groups[groupIndex + 1]
+			for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+				const group = groups[groupIndex]
+				const nextGroup = groups[groupIndex + 1]
 
-			if (
-				group.length > 1 &&
-				group[group.length - 1].text === '.' &&
-				(!nextGroup || [' ', '['].includes(nextGroup[0].text[0]))) {
+				if (
+					group.length > 1 &&
+					group[group.length - 1].text === '.' &&
+					(!nextGroup || [' ', '['].includes(nextGroup[0].text[0]))) {
 
-				newGroups.push(group.slice(0, group.length - 1))
-				newGroups.push(group.slice(group.length - 1))
-			} else {
-				newGroups.push(group)
+					splitGroups.push(group.slice(0, group.length - 1))
+					splitGroups.push(group.slice(group.length - 1))
+				} else {
+					splitGroups.push(group)
+				}
 			}
-		}
 
-		groups = newGroups
+			groups = splitGroups
+		}
 
 		for (const group of groups) {
 			let groupText = this.tokensToText(group.map(entry => entry.id!))
