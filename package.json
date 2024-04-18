@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -90,7 +90,7 @@
 		"ndarray": "^1.0.19",
 		"ndarray-ops": "^1.2.2",
 		"onnxruntime-node": "^1.17.0",
-		"openai": "^4.37.0",
+		"openai": "^4.37.1",
 		"sam-js": "^0.2.1",
 		"strip-ansi": "^7.1.0",
 		"tar": "^7.0.1",
@@ -125,7 +125,7 @@
 		"@types/ndarray-ops": "^1.2.7",
 		"@types/node": "^20.12.7",
 		"@types/recursive-readdir": "^2.2.4",
-		"@types/tar": "^6.1.12",
+		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.5.10",
 		"ts-json-schema-generator": "^2.0.1",
 		"typescript": "^5.4.5"
