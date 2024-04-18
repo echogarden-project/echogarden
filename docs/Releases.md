@@ -1,5 +1,9 @@
 # Release notes
 
+## Releases after `1.0.0`
+
+For releases after `1.0.0`, see the [GitHub releases page](https://github.com/echogarden-project/echogarden/releases).
+
 ## `1.0.0` (April 12, 2024)
 
 **New features**:
