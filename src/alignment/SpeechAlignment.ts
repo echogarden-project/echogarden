@@ -452,7 +452,7 @@ export async function alignPhoneTimelines(
 	return alignedWordTimeline
 }
 
-export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions, insertSeparators = true) {
+export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions) {
 	const progressLogger = new Logger()
 
 	progressLogger.start("Load espeak module")
