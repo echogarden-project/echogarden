@@ -1,7 +1,7 @@
 {
 	"name": "echogarden",
-	"version": "1.0.5",
-	"description": "An integrated speech toolset, providing a variety of synthesis, recognition, alignment, and other processing tools, designed to be directly accessible to end-users.",
+	"version": "1.1.0",
+	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
 	"keywords": [
@@ -14,7 +14,8 @@
 		"forced alignment",
 		"speech translation",
 		"language identification",
-		"language detection"
+		"language detection",
+		"source separation"
 	],
 	"repository": {
 		"type": "git",
@@ -73,7 +74,6 @@
 		"cldr-segmentation": "^2.2.0",
 		"command-exists": "^1.2.9",
 		"compromise": "^14.13.0",
-		"compromise-dates": "^3.5.0",
 		"fs-extra": "^11.2.0",
 		"gaxios": "^6.5.0",
 		"graceful-fs": "^4.2.11",
@@ -87,10 +87,8 @@
 		"microsoft-cognitiveservices-speech-sdk": "^1.36.0",
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
-		"ndarray": "^1.0.19",
-		"ndarray-ops": "^1.2.2",
-		"onnxruntime-node": "^1.17.0",
-		"openai": "^4.37.1",
+		"onnxruntime-node": "^1.17.3",
+		"openai": "^4.38.2",
 		"sam-js": "^0.2.1",
 		"strip-ansi": "^7.1.0",
 		"tar": "^7.0.1",
@@ -121,13 +119,11 @@
 		"@types/graceful-fs": "^4.1.9",
 		"@types/jsdom": "^21.1.6",
 		"@types/msgpack-lite": "^0.1.11",
-		"@types/ndarray": "^1.0.14",
-		"@types/ndarray-ops": "^1.2.7",
 		"@types/node": "^20.12.7",
 		"@types/recursive-readdir": "^2.2.4",
 		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.5.10",
-		"ts-json-schema-generator": "^2.0.1",
+		"ts-json-schema-generator": "^2.1.0",
 		"typescript": "^5.4.5"
 	}
 }
