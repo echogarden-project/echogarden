@@ -233,7 +233,7 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 async function parseResultObject(resultObject: WhisperCppVerboseResult, modelName: WhisperModelName, totalDuration: number, enableDTW: boolean): Promise<RecognitionResult> {
 	const { Whisper } = await import('../recognition/WhisperSTT.js')
 
-	const whisper = new Whisper(modelName, '')
+	const whisper = new Whisper(modelName, '', [], [])
 	await whisper.initializeTokenizerIfNeeded()
 
 	const tokenTimeline: Timeline = []

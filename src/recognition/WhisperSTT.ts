@@ -2,14 +2,14 @@ import type * as Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
-import { clip, getIntegerRange, getRepetitionScoreRelativeToFirstSubstring, getUTF32Chars, logToStderr, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianFilter, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
+import { clip, containsInvalidCodepoint, getIntegerRange, getTokenRepetitionScore, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
-import { getRawAudioDuration, RawAudio } from '../audio/AudioUtilities.js'
+import { getRawAudioDuration, RawAudio, sliceRawAudio } from '../audio/AudioUtilities.js'
 import { readFile } from '../utilities/FileSystem.js'
 import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
@@ -19,9 +19,21 @@ import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
-import { isPunctuation, isWhitespace } from '../nlp/Segmentation.js'
+import { isPunctuation, isWhitespace, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
+import { medianOf5Filter } from '../math/MedianFilter.js'
+import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
+import { getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
 
-export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, task: WhisperTask, sourceLanguage: string, options: WhisperOptions) {
+export async function recognize(
+	sourceRawAudio: RawAudio,
+	modelName: WhisperModelName,
+	modelDir: string,
+	task: WhisperTask,
+	sourceLanguage: string,
+	options: WhisperOptions) {
+
+	options = extendDeep(defaultWhisperOptions, options)
+
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -46,14 +58,34 @@ export async function recognize(sourceRawAudio: RawAudio, modelName: WhisperMode
 		seed = Math.max(Math.floor(seed), 1) | 0
 	}
 
-	const whisper = new Whisper(modelName, modelDir, seed)
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : []
+
+	const whisper = new Whisper(
+		modelName,
+		modelDir,
+		encoderProviders,
+		decoderProviders,
+		seed)
 
 	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options)
 
 	return result
 }
 
-export async function align(sourceRawAudio: RawAudio, referenceText: string, modelName: WhisperModelName, modelDir: string, sourceLanguage: string) {
+export async function align(
+	sourceRawAudio: RawAudio,
+	transcript: string,
+	modelName: WhisperModelName,
+	modelDir: string,
+	sourceLanguage: string,
+	options: WhisperAlignmentOptions) {
+
+	options = extendDeep(defaultWhisperAlignmentOptions, options)
+
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -68,14 +100,72 @@ export async function align(sourceRawAudio: RawAudio, referenceText: string, mod
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir)
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
 
-	const timeline = await whisper.align(sourceRawAudio, referenceText, sourceLanguage)
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : []
+
+	const whisper = new Whisper(
+		modelName,
+		modelDir,
+		encoderProviders,
+		decoderProviders,)
+
+	const timeline = await whisper.align(sourceRawAudio, transcript, sourceLanguage, 'transcribe', options)
 
 	return timeline
 }
 
-export async function detectLanguage(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelDir: string, temperature: number) {
+export async function alignEnglishTranslation(
+	sourceRawAudio: RawAudio,
+	translatedTranscript: string,
+	modelName: WhisperModelName,
+	modelDir: string,
+	sourceLanguage: string,
+	options: WhisperAlignmentOptions) {
+
+	options = extendDeep(defaultWhisperAlignmentOptions, options)
+
+	if (sourceRawAudio.sampleRate != 16000) {
+		throw new Error('Source audio must have a sampling rate of 16000')
+	}
+
+	sourceLanguage = getShortLanguageCode(sourceLanguage)
+
+	if (!(sourceLanguage in languageIdLookup)) {
+		throw new Error(`The source language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+	}
+
+	if (isEnglishOnlyModel(modelName)) {
+		throw new Error(`Translation alignment can only be done with multilingual models.`)
+	}
+
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : []
+
+	const whisper = new Whisper(
+		modelName,
+		modelDir,
+		encoderProviders,
+		decoderProviders,)
+
+	const timeline = await whisper.align(sourceRawAudio, translatedTranscript, sourceLanguage, 'translate', options)
+
+	return timeline
+}
+
+export async function detectLanguage(
+	sourceRawAudio: RawAudio,
+	modelName: WhisperModelName,
+	modelDir: string,
+	options: WhisperLanguageDetectionOptions) {
+
+	options = extendDeep(defaultWhisperLanguageDetectionOptions, options)
+
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sampling rate of 16000')
 	}
@@ -84,15 +174,25 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		throw new Error(`Language detection is only supported with multilingual models.`)
 	}
 
-	if (temperature < 0) {
+	if (options.temperature! < 0) {
 		throw new Error(`Temperature cannot be negative`)
 	}
 
-	const whisper = new Whisper(modelName, modelDir)
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : []
+
+	const whisper = new Whisper(
+		modelName,
+		modelDir,
+		encoderProviders,
+		decoderProviders)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
 		const audioFeatures = await whisper.encodeAudio(partAudio)
-		const partResults = await whisper.detectLanguage(audioFeatures, temperature)
+		const partResults = await whisper.detectLanguage(audioFeatures, options.temperature!)
 
 		return partResults
 	}
@@ -104,21 +204,71 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 	return results
 }
 
-export class Whisper {
-	modelName: WhisperModelName
-	modelDir: string
+export async function detectVoiceActivity(
+	sourceRawAudio: RawAudio,
+	modelName: WhisperModelName,
+	modelDir: string,
+	options: WhisperVADOptions) {
 
+	options = extendDeep(defaultWhisperVADOptions, options)
+
+	if (sourceRawAudio.sampleRate != 16000) {
+		throw new Error('Source audio must have a sampling rate of 16000')
+	}
+
+	if (options.temperature! < 0) {
+		throw new Error(`Temperature cannot be negative`)
+	}
+
+	const audioSamples = sourceRawAudio.audioChannels[0]
+
+	const partDuration = 5
+	const maxSamplesCountForPart = sourceRawAudio.sampleRate * partDuration
+
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : []
+
+	const whisper = new Whisper(
+		modelName,
+		modelDir,
+		encoderProviders,
+		decoderProviders)
+
+	const partProbabilities: Timeline = []
+
+	for (let sampleOffset = 0; sampleOffset < audioSamples.length; sampleOffset += maxSamplesCountForPart) {
+		const partSamples = sliceRawAudio(sourceRawAudio, sampleOffset, sampleOffset + maxSamplesCountForPart)
+
+		const samplesCountForPart = partSamples.audioChannels[0].length
+
+		const startTime = sampleOffset / sourceRawAudio.sampleRate
+		const endTime = (sampleOffset + samplesCountForPart) / sourceRawAudio.sampleRate
+
+		const encodedPartSamples = await whisper.encodeAudio(partSamples)
+		const probabilityForPart = await whisper.detectVoiceActivity(encodedPartSamples, options.temperature!)
+
+		partProbabilities.push({
+			type: 'segment',
+			text: '',
+			startTime,
+			endTime,
+			confidence: probabilityForPart,
+		})
+	}
+
+	return { partProbabilities }
+}
+
+export class Whisper {
 	isMultiligualModel: boolean
 
 	audioEncoder?: Onnx.InferenceSession
 	textDecoder?: Onnx.InferenceSession
 
 	tiktoken?: Tiktoken
-
-	onnxOptions: Onnx.InferenceSession.SessionOptions = {
-		logSeverityLevel: 2,
-		executionProviders: ['cpu']
-	}
 
 	tokenConfig: {
 		endOfTextToken: number
@@ -139,9 +289,12 @@ export class Whisper {
 
 	randomGen: XorShift32RNG
 
-	constructor(modelName: WhisperModelName, modelDir: string, rngSeed = 461845907) {
-		this.modelName = modelName
-		this.modelDir = modelDir
+	constructor(
+		public readonly modelName: WhisperModelName,
+		public readonly modelDir: string,
+		public readonly encoderExecutionProviders: OnnxExecutionProvider[],
+		public readonly decoderExecutionProviders: OnnxExecutionProvider[],
+		rngSeed = 461845907) {
 
 		this.isMultiligualModel = isMultilingualModel(this.modelName)
 
@@ -184,127 +337,39 @@ export class Whisper {
 		this.randomGen = new XorShift32RNG(rngSeed)
 	}
 
-	async initializeIfNeeded() {
-		await this.initializeTokenizerIfNeeded()
-		await this.initializeEncoderSessionIfNeeded()
-		await this.initializeDecoderSessionIfNeeded()
-	}
-
-	async initializeTokenizerIfNeeded() {
-		if (this.tiktoken) {
-			return
-		}
-
-		const logger = new Logger()
-		await logger.startAsync('Load tokenizer data')
-
-		const tiktokenModulePackagePath = await loadPackage('whisper-tiktoken-data')
-
-		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
-		let tiktokenData = await readFile(tiktokenDataFilePath, { encoding: 'utf8' })
-
-		const tokenConfig = this.tokenConfig
-
-		const metadataTokens: Record<number, string> = {
-			[tokenConfig.endOfTextToken]: '[EndOfText]',
-			[tokenConfig.startOfTextToken]: '[StartOfText]',
-			[tokenConfig.translateTaskToken]: '[TranslateTask]',
-			[tokenConfig.transcribeTaskToken]: '[TranscribeTask]',
-			[tokenConfig.startOfPromptToken]: '[StartOfPrompt]',
-			[tokenConfig.nonSpeechToken]: '[NonSpeech]',
-			[tokenConfig.noTimestampsToken]: '[NoTimestamps]',
-		}
-
-		if (this.isMultiligualModel) {
-			metadataTokens[50256] = '[Unused_50256]'
-			metadataTokens[50360] = '[Unused_50360]'
-		}
-
-		const languageTokenCount = tokenConfig.languageTokensEnd - tokenConfig.languageTokensStart
-
-		for (let i = 0; i < languageTokenCount; i++) {
-			const tokenIndex = this.tokenConfig.languageTokensStart + i
-
-			metadataTokens[tokenIndex] = `[Language_${i}]`
-		}
-
-		const timestampTokensCount = 1501
-
-		for (let i = 0; i < timestampTokensCount; i++) {
-			const tokenIndex = this.tokenConfig.timestampTokensStart + i
-			const tokenTime = this.timestampTokenToSeconds(tokenIndex)
-
-			metadataTokens[tokenIndex] = `[Timestamp_${tokenTime.toFixed(2)}]`
-		}
-
-		const inverseMetadataTokensLookup: Record<string, number> = {}
-
-		for (const [key, value] of Object.entries(metadataTokens)) {
-			inverseMetadataTokensLookup[value] = parseInt(key)
-		}
-
-		const patternString = `'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+`
-
-		const { Tiktoken } = await import('tiktoken/lite')
-
-		this.tiktoken = new Tiktoken(tiktokenData, inverseMetadataTokensLookup, patternString)
-
-		logger.end()
-	}
-
-	async initializeEncoderSessionIfNeeded() {
-		if (this.audioEncoder) {
-			return
-		}
-
-		const logger = new Logger()
-
-		await logger.startAsync(`Create encoder model inference session for model '${this.modelName}'`)
-
-		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
-
-		const Onnx = await import('onnxruntime-node')
-
-		this.audioEncoder = await Onnx.InferenceSession.create(encoderFilePath, this.onnxOptions)
-
-		logger.end()
-	}
-
-	async initializeDecoderSessionIfNeeded() {
-		if (this.textDecoder) {
-			return
-		}
-
-		const logger = new Logger()
-
-		await logger.startAsync(`Create decoder model inference session for model '${this.modelName}'`)
-
-		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
-
-		const Onnx = await import('onnxruntime-node')
-
-		this.textDecoder = await Onnx.InferenceSession.create(decoderFilePath, this.onnxOptions)
-
-		logger.end()
-	}
-
-	async recognize(rawAudio: RawAudio, task: WhisperTask, language: string, options: WhisperOptions) {
+	async recognize(
+		rawAudio: RawAudio,
+		task: WhisperTask,
+		language: string,
+		options: WhisperOptions,
+		logitFilter?: WhisperLogitFilter,
+	) {
 		await this.initializeIfNeeded()
 
 		const logger = new Logger()
 
+		options = extendDeep(defaultWhisperOptions, options)
+		options.model = this.modelName
+
 		const audioSamples = rawAudio.audioChannels[0]
 		const sampleRate = rawAudio.sampleRate
 		const prompt = options.prompt
+		const decodeTimestampTokens = options.decodeTimestampTokens!
 
 		const maxAudioSamplesPerPart = sampleRate * 30
-
-		const decodeTimestampTokens = options.decodeTimestampTokens!
 
 		let previousPartTextTokens: number[] = []
 
 		let timeline: Timeline = []
 		let allDecodedTokens: number[] = []
+
+		let wrappedLogitFilter: WhisperLogitFilter | undefined
+
+		if (logitFilter) {
+			wrappedLogitFilter = (logits, partDecodedTokens, isFirstPart, isFinalPart) => {
+				return logitFilter(logits, [...allDecodedTokens, ...partDecodedTokens], isFirstPart, isFinalPart)
+			}
+		}
 
 		for (let audioOffset = 0; audioOffset < audioSamples.length;) {
 			const segmentStartTime = audioOffset / sampleRate
@@ -338,9 +403,17 @@ export class Whisper {
 
 			let {
 				decodedTokens: partTokens,
-				crossAttentionQKs: partCrossAttentionQKs,
-				decodedTokensConfidence
-			} = await this.decodeTokens(audioPartFeatures, initialTokens, audioPartDuration, isFirstPart, isFinalPart, options)
+				decodedTokensConfidence: partTokensConfidence,
+				decodedTokensCrossAttentionQKs: partCrossAttentionQKs,
+			} = await this.decodeTokens(
+				audioPartFeatures,
+				initialTokens,
+				audioPartDuration,
+				isFirstPart,
+				isFinalPart,
+				options,
+				wrappedLogitFilter,
+			)
 
 			const lastToken = partTokens[partTokens.length - 1]
 			const lastTokenIsTimestamp = this.isTimestampToken(lastToken)
@@ -364,27 +437,36 @@ export class Whisper {
 				throw new Error('Unexpected: partTokens.length != partCrossAttentionQKs.length')
 			}
 
+			// Prepare tokens
 			partTokens = partTokens.slice(initialTokens.length)
-
-			//const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens))).ratio
-
+			partTokensConfidence = partTokensConfidence.slice(initialTokens.length)
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
-			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
-			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, decodedTokensConfidence)
+			// Compute compression ratio for part
+			if (false) {
+				const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens))).ratio
+			}
 
-			audioOffset = audioEndOffset
+			// Find alignment path
+			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
+
+			// Generate timeline from alignment path
+			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, partTokensConfidence)
 
 			allDecodedTokens.push(...partTokens)
 			timeline.push(...partTimeline)
 
 			previousPartTextTokens = partTokens.filter(token => this.isTextToken(token))
 
+			audioOffset = audioEndOffset
+
 			logger.end()
 		}
 
+		// Convert token timeline to word timeline
 		timeline = this.tokenTimelineToWordTimeline(timeline, language)
 
+		// Convert tokens to transcript
 		const transcript = this.tokensToText(allDecodedTokens).trim()
 
 		logger.end()
@@ -392,42 +474,82 @@ export class Whisper {
 		return { transcript, timeline }
 	}
 
-	async align(rawAudio: RawAudio, referenceText: string, language: string) {
-		await this.initializeIfNeeded()
+	async align(rawAudio: RawAudio, transcript: string, sourceLanguage: string, task: 'transcribe' | 'translate', whisperAlignmentOptions: WhisperAlignmentOptions) {
+		await this.initializeTokenizerIfNeeded()
 
-		const logger = new Logger()
+		whisperAlignmentOptions = extendDeep(defaultWhisperAlignmentOptions, whisperAlignmentOptions)
 
-		await logger.startAsync('Prepare for alignment')
+		const shouldSplitToSentences = false
 
-		referenceText = referenceText.replaceAll(/\s+/g, ' ')
+		let simplifiedTranscript = ''
 
-		const audioDuration = Math.min(getRawAudioDuration(rawAudio), 30)
-		const audioFrameCount = this.secondsToFrame(audioDuration)
+		if (shouldSplitToSentences) {
+			const sentences = splitToSentences(transcript, 'en')
 
-		const initialTokens = this.getTextStartTokens(language, 'transcribe', true)
+			for (const sentence of sentences) {
+				let sentenceWords = await splitToWords(sentence, 'en')
+				sentenceWords = sentenceWords.filter(word => isWord(word))
 
+				simplifiedTranscript += sentenceWords.join(' ')
+				simplifiedTranscript += ' '
+			}
+		} else {
+			let words = await splitToWords(transcript, 'en')
+			words = words.map(word => word.trim())
+			words = words.filter(word => isWord(word))
+			simplifiedTranscript = words.join(' ')
+		}
+
+		// Tokenize the transcript
+		const simplifiedTranscriptTokens = this.textToTokens(simplifiedTranscript)
+
+		// Initialize custom logit filter that allows only the transcript tokens to be decoded
+		// in order.
 		const endOfTextToken = this.tokenConfig.endOfTextToken
 
-		let tokens = [...initialTokens, ...this.textToTokens(referenceText), endOfTextToken]
+		const logitFilter: WhisperLogitFilter = (logits, decodedTokens, isFirstPart, isFinalPart) => {
+			const decodedTextTokens = decodedTokens.filter(token => this.isTextToken(token))
 
-		logger.end()
-		const audioFeatures = await this.encodeAudio(rawAudio)
+			const nextTokenToDecode = simplifiedTranscriptTokens[decodedTextTokens.length] ?? endOfTextToken
 
-		await logger.startAsync('Infer cross-attention QKs')
-		let crossAttentionQKs = await this.inferCrossAttentionQKs(tokens, audioFeatures)
+			const newLogits = logits.map((logit, index) => {
+				if (index === nextTokenToDecode) {
+					return logit
+				}
 
-		tokens = tokens.slice(initialTokens.length, tokens.length - 1)
-		crossAttentionQKs = crossAttentionQKs.slice(initialTokens.length, crossAttentionQKs.length - 1)
+				// If it's the final part, the ent-of-text token logit is set to -Infinity.
+				// This will force to force all transcript tokens to be decoded even if the model doesn't
+				// recognize them.
+				if (!isFinalPart && index === endOfTextToken) {
+					return logit
+				}
 
-		await logger.startAsync('Extract word timeline')
-		const alignmentPath = await this.findAlignmentPathFromQKs(crossAttentionQKs, tokens, 0, audioFrameCount)//, this.getAlignmentHeadIndexes())
-		const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, tokens, 0, audioDuration)
+				return -Infinity
+			})
 
-		const wordTimeline = this.tokenTimelineToWordTimeline(tokenTimeline, language)
+			return newLogits
+		}
 
-		logger.end()
+		// Set options for alignment
+		const options: WhisperOptions = {
+			model: this.modelName,
+			temperature: 0.0,
+			prompt: undefined,
+			topCandidateCount: 1,
+			punctuationThreshold: Infinity,
+			autoPromptParts: false,
+			maxTokensPerPart: Infinity,
+			suppressRepetition: false,
+			decodeTimestampTokens: true,
+			endTokenThreshold: whisperAlignmentOptions!.endTokenThreshold!,
+			includeEndTokenInCandidates: false,
+			seed: undefined,
+		}
 
-		return wordTimeline
+		// Recognize
+		const { timeline } = await this.recognize(rawAudio, task, sourceLanguage, options, logitFilter)
+
+		return timeline
 	}
 
 	async detectLanguage(audioFeatures: Onnx.Tensor, temperature: number): Promise<LanguageDetectionResults> {
@@ -435,7 +557,6 @@ export class Whisper {
 			throw new Error('Language detection is only supported with multilingual models')
 		}
 
-		await this.initializeTokenizerIfNeeded()
 		await this.initializeDecoderSessionIfNeeded()
 
 		// Prepare and run decoder
@@ -488,20 +609,62 @@ export class Whisper {
 		return results
 	}
 
+	async detectVoiceActivity(audioFeatures: Onnx.Tensor, temperature: number): Promise<number> {
+		await this.initializeDecoderSessionIfNeeded()
+
+		// Prepare and run decoder
+		const logger = new Logger()
+		await logger.startAsync('Detect voice activity with Whisper model')
+
+		const sotToken = this.tokenConfig.startOfTextToken
+
+		const initialTokens = [sotToken]
+		const offset = 0
+
+		const Onnx = await import('onnxruntime-node')
+
+		const initialKvDimensions = this.getKvDimensions(1, initialTokens.length)
+		const kvCacheTensor = new Onnx.Tensor('float32', new Float32Array(initialKvDimensions[0] * initialKvDimensions[1] * initialKvDimensions[2] * initialKvDimensions[3]), initialKvDimensions)
+
+		const tokensTensor = new Onnx.Tensor('int64', new BigInt64Array(initialTokens.map(token => BigInt(token))), [1, initialTokens.length])
+		const offsetTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(offset)]), [])
+
+		const decoderInputs = {
+			tokens: tokensTensor,
+			audio_features: audioFeatures,
+			kv_cache: kvCacheTensor,
+			offset: offsetTensor
+		}
+
+		const decoderOutputs = await this.textDecoder!.run(decoderInputs)
+		const logitsBuffer = decoderOutputs['logits'].data as Float32Array
+
+		const tokenConfig = this.tokenConfig
+
+		const logits = Array.from(logitsBuffer)
+
+		const probabilities = softmax(logits, temperature)
+
+		const noSpeechProbability = probabilities[tokenConfig.nonSpeechToken]
+
+		return 1.0 - noSpeechProbability
+	}
+
+	// Decode tokens using the decoder model
 	async decodeTokens(
 		audioFeatures: Onnx.Tensor,
 		initialTokens: number[],
 		audioDuration: number,
 		isFirstPart: boolean,
 		isFinalPart: boolean,
-		options: WhisperOptions) {
+		options: WhisperOptions,
+		logitFilter?: WhisperLogitFilter) {
 
+		// Initialize
 		await this.initializeTokenizerIfNeeded()
 		await this.initializeDecoderSessionIfNeeded()
 
 		const logger = new Logger()
-
-		const allowedPunctuationMarks = this.getAllowedPunctuationMarks()
 
 		await logger.startAsync('Decode text tokens with Whisper decoder model')
 
@@ -509,43 +672,50 @@ export class Whisper {
 
 		const Onnx = await import('onnxruntime-node')
 
+		// Get token information
 		const endOfTextToken = this.tokenConfig.endOfTextToken
-
 		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-		const suppressedTokens = new Set(this.getSuppressedTokens())
+
+		const suppressedTextTokens = this.getSuppressedTextTokens()
+		const suppressedMetadataTokens = this.getSuppressedMetadataTokens()
+
+		const allowedPunctuationMarks = this.getAllowedPunctuationMarks()
 
 		const spaceToken = this.textToTokens(' ')[0]
 
-		const maxDecodedTokenCount = options.maxTokensPerPart!
-
+		// Initialize variables for decoding loop
 		let decodedTokens = initialTokens.slice()
 		const initialKvDimensions = this.getKvDimensions(1, decodedTokens.length)
 		let kvCacheTensor = new Onnx.Tensor('float32', new Float32Array(initialKvDimensions[0] * initialKvDimensions[1] * initialKvDimensions[2] * initialKvDimensions[3]), initialKvDimensions)
 
-		let decodedTokensTimestampLogits: number[][] = [new Array(1501)]
-
-		let lastTimestampTokenIndex = -1
-
-		let timestampsSeenCount = 0
-
-		const decodedTokensConfidence: number[] = []
-		let decodedTokensCrossAttentionQKs: Onnx.Tensor[] = []
+		let decodedTokensTimestampLogits: number[][] = []
+		let decodedTokensConfidence: number[] = []
+		let decodedTokensCrossAttentionQKs: OnnxLikeFloat32Tensor[] = []
 
 		for (let i = 0; i < decodedTokens.length; i++) {
+			decodedTokensTimestampLogits.push(new Array(1501))
+			decodedTokensConfidence.push(1.0)
 			decodedTokensCrossAttentionQKs.push(undefined as any)
 		}
 
+		let lastTimestampTokenIndex = -1
+		let timestampTokenSeenCount = 0
 		let bufferedTokensToPrint: number[] = []
 
+		// Define method to add a token to output
+		function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number, crossAttentionQKs: OnnxLikeFloat32Tensor) {
+			decodedTokens.push(tokenToAdd)
+			decodedTokensTimestampLogits.push(timestampLogits)
+			decodedTokensConfidence.push(confidence)
+			decodedTokensCrossAttentionQKs.push(crossAttentionQKs)
+		}
+
 		// Start decoding loop
-		for (let decodedTokenCount = 0; decodedTokenCount < maxDecodedTokenCount; decodedTokenCount++) {
+		for (let decodedTokenCount = 0; decodedTokenCount < options.maxTokensPerPart!; decodedTokenCount++) {
 			const isInitialState = decodedTokens.length == initialTokens.length
 
-			const tokensToDecode = isInitialState ? decodedTokens : [decodedTokens[decodedTokens.length - 1]]
-			const offset = isInitialState ? 0 : decodedTokens.length
-
+			// If not in initial state, reshape KV Cache tensor to accomodate a new output token
 			if (!isInitialState) {
-				// Reshape KV Cache tensor
 				const dims = kvCacheTensor.dims
 
 				const currentKvCacheGroups = splitFloat32Array(kvCacheTensor.data as Float32Array, dims[2] * dims[3])
@@ -560,274 +730,327 @@ export class Whisper {
 				kvCacheTensor = reshapedKvCacheTensor
 			}
 
-			// Prepare and run decoder
+			// Prepare values for decoder
+			const tokensToDecode = isInitialState ? decodedTokens : [decodedTokens[decodedTokens.length - 1]]
+			const offset = isInitialState ? 0 : decodedTokens.length
+
 			const tokensTensor = new Onnx.Tensor('int64', new BigInt64Array(tokensToDecode.map(token => BigInt(token))), [1, tokensToDecode.length])
 			const offsetTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(offset)]), [])
 
-			const decoderInputs = { tokens: tokensTensor, audio_features: audioFeatures, kv_cache: kvCacheTensor, offset: offsetTensor }
+			const decoderInputs = {
+				tokens: tokensTensor,
+				audio_features: audioFeatures,
+				kv_cache: kvCacheTensor,
+				offset: offsetTensor
+			}
 
+			// Run decoder
 			const decoderOutputs = await this.textDecoder!.run(decoderInputs)
 
+			// Store results
 			const logitsBuffer = decoderOutputs['logits'].data as Float32Array
 			kvCacheTensor = decoderOutputs['output_kv_cache'] as any
 
-			// Compute logits
-			const resultLogits = splitFloat32Array(logitsBuffer, logitsBuffer.length / decoderOutputs['logits'].dims[1])
-			const allTokenLogits = Array.from(resultLogits[resultLogits.length - 1])
+			const crossAttentionQKsForTokenOnnx = decoderOutputs['cross_attention_qks']
+			const crossAttentionQKsForToken = makeOnnxLikeFloat32Tensor(crossAttentionQKsForTokenOnnx)
+			crossAttentionQKsForTokenOnnx.dispose()
+
+			// Get logits
+			const resultLogitsFloatArrays = splitFloat32Array(logitsBuffer, logitsBuffer.length / decoderOutputs['logits'].dims[1])
+			const allTokenLogits = Array.from(resultLogitsFloatArrays[resultLogitsFloatArrays.length - 1])
+
+			// Suppress metadata tokens in the suppression set
+			for (const suppressedTokenIndex of suppressedMetadataTokens) {
+				allTokenLogits[suppressedTokenIndex] = -Infinity
+			}
+
+			if (isInitialState) {
+				// If in initial state, suppress end-of-text token
+				allTokenLogits[endOfTextToken] = -Infinity
+			}
+
 			const timestampTokenLogits = allTokenLogits.slice(timestampTokensStart)
 
-			// Suppress logits for tokens in the suppressed set
-			for (let logitIndex = 0; logitIndex < allTokenLogits.length; logitIndex++) {
-				const isWrongTokenForInitialState =
-					isInitialState &&
-					(logitIndex === spaceToken || logitIndex === endOfTextToken)
+			const decodeTimestampTokenIfNeeded = () => {
+				// Try to decode a timestamp token, if needed
 
-				const isInSuppressedList = suppressedTokens.has(logitIndex)
-
-				const shouldSuppressToken = isWrongTokenForInitialState || isInSuppressedList
-
-				if (shouldSuppressToken) {
-					allTokenLogits[logitIndex] = -Infinity
+				// If timestamp tokens is disabled in options, don't decode a timestamp
+				if (!options.decodeTimestampTokens) {
+					return false
 				}
-			}
 
-			// Add best token
-			function addToken(tokenToAdd: number, timestampLogits: number[], confidence: number) {
-				decodedTokens.push(tokenToAdd)
-				decodedTokensTimestampLogits.push(timestampLogits)
-				decodedTokensCrossAttentionQKs.push(decoderOutputs['cross_attention_qks'])
-				decodedTokensConfidence.push(confidence)
-			}
+				const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
+				const secondPreviousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
 
-			let shouldDecodeNonTimestampToken = true
+				// If there are two successive timestamp tokens decoded, or the previous timestamp was the first token,
+				// don't decode a timestamp
+				if (previousTokenWasTimestamp &&
+					(decodedTokens.length === initialTokens.length + 1) || secondPreviousTokenWasTimestamp) {
+					return false
+				}
 
-			if (options.decodeTimestampTokens) {
 				// Derive token probabilities
 				const probabilities = softmax(allTokenLogits as any, 1.0)
 				const logProbabilities = logOfVector(probabilities)
 
 				const nonTimestampTokenLogProbs = logProbabilities.slice(0, timestampTokensStart)
 
+				// Find highest non-timestamp token
 				const indexOfMaxNonTimestampLogProb = indexOfMax(nonTimestampTokenLogProbs)
 				const valueOfMaxNonTimestampLogProb = nonTimestampTokenLogProbs[indexOfMaxNonTimestampLogProb]
 
+				// Find highest timestamp token
 				const timestampTokenLogProbs = logProbabilities.slice(timestampTokensStart)
 				const indexOfMaxTimestampLogProb = indexOfMax(timestampTokenLogProbs)
 
+				// Compute the log of the sum of exponentials of the log probabilities
+				// of the timestamp tokens
 				const logSumExpOfTimestampTokenLogProbs = logSumExp(timestampTokenLogProbs)
 
-				const shouldDecodeTimestampToken = logSumExpOfTimestampTokenLogProbs > valueOfMaxNonTimestampLogProb
-
-				const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
-				const secondPreviousTokenWasTimestamp = decodedTokens.length < 2 || this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
-
-				if (shouldDecodeTimestampToken && !previousTokenWasTimestamp) {
-					timestampsSeenCount += 1
+				// If the sum isn't greater than the log probability of the highest non-timestamp token,
+				// don't decode a timestamp
+				if (logSumExpOfTimestampTokenLogProbs <= valueOfMaxNonTimestampLogProb) {
+					return false
 				}
 
-				if (shouldDecodeTimestampToken || (previousTokenWasTimestamp && !secondPreviousTokenWasTimestamp)) {
-					if (previousTokenWasTimestamp) {
-						const previousToken = decodedTokens[decodedTokens.length - 1]
-						const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
-						const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
+				// Decode a timestamp token
+				timestampTokenSeenCount += 1
 
-						addToken(previousToken, previousTokenTimestampLogits, previousTokenConfidence)
+				if (previousTokenWasTimestamp) {
+					const previousToken = decodedTokens[decodedTokens.length - 1]
+					const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
+					const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
 
-						lastTimestampTokenIndex = decodedTokens.length
+					addToken(previousToken, previousTokenTimestampLogits, previousTokenConfidence, crossAttentionQKsForToken)
 
-						const previousTokenTimestamp = this.timestampTokenToSeconds(previousToken)
+					lastTimestampTokenIndex = decodedTokens.length
+				} else {
+					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
+					const confidence = probabilities[timestampToken]
 
-						if (previousTokenTimestamp >= audioDuration) {
-							break
-						}
-					} else {
-						const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
-						const confidence = probabilities[timestampToken]
+					addToken(timestampToken, timestampTokenLogits, confidence, crossAttentionQKsForToken)
+				}
 
-						addToken(timestampToken, timestampTokenLogits, confidence)
-					}
+				return true
+			}
 
-					shouldDecodeNonTimestampToken = false
+			const timestampTokenDecoded = decodeTimestampTokenIfNeeded()
+
+			if (timestampTokenDecoded) {
+				await yieldToEventLoop()
+
+				continue
+			}
+
+			// Decode a non-timestamp token
+			let nonTimestampTokenLogits = allTokenLogits.slice(0, timestampTokensStart)
+
+			let shouldDecodeEndfOfTextToken = false
+
+			// If not in initial state, and the end-of-text token's probability is sufficiently higher than
+			// the second highest ranked token, then set to accept it
+			if (!isInitialState) {
+				const endOfTextTokenLogit = nonTimestampTokenLogits[endOfTextToken]
+
+				const otherTokensLogits = nonTimestampTokenLogits.slice()
+				otherTokensLogits[endOfTextToken] = -Infinity
+
+				const indexOfMaximumOtherTokenLogit = indexOfMax(otherTokensLogits)
+				const maximumOtherTokenLogit = nonTimestampTokenLogits[indexOfMaximumOtherTokenLogit]
+
+				const endProbabilities = softmax([endOfTextTokenLogit, maximumOtherTokenLogit], 1.0)
+
+				if (endProbabilities[0] > options.endTokenThreshold!) {
+					shouldDecodeEndfOfTextToken = true
 				}
 			}
 
-			if (shouldDecodeNonTimestampToken) {
-				const topLogitCount = options.topCandidateCount!
+			if (logitFilter) {
+				// Apply custom logit filter function if given
+				nonTimestampTokenLogits = logitFilter(nonTimestampTokenLogits, decodedTokens, isFirstPart, isFinalPart)
 
-				const nonTimestampTokenLogits = allTokenLogits.slice(0, timestampTokensStart)
+				// If the custom filter set the end-of-text token to be Infinity, or -Infinity,
+				// then override any previous decision and accept or reject it, respectively
+				if (nonTimestampTokenLogits[endOfTextToken] === Infinity) {
+					shouldDecodeEndfOfTextToken = true
+				} else if (nonTimestampTokenLogits[endOfTextToken] === -Infinity) {
+					shouldDecodeEndfOfTextToken = false
+				}
 
-				const sortedNonTimestampTokenLogitsWithIndexes =
-					Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+				// If filter caused all word token logits to be -Infinity, then there is no
+				// other token to decode. Fall back to accept end-of-text
+				if (nonTimestampTokenLogits.slice(0, endOfTextToken).every(logit => logit === -Infinity)) {
+					shouldDecodeEndfOfTextToken = true
+				}
+			} else {
+				// Otherwise, suppress text tokens in the suppression set
+				for (const suppressedTokenIndex of suppressedTextTokens) {
+					nonTimestampTokenLogits[suppressedTokenIndex] = -Infinity
+				}
 
-				sortedNonTimestampTokenLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+				// Suppress space token if at initial state
+				if (isInitialState) {
+					nonTimestampTokenLogits[spaceToken] = -Infinity
+				}
+			}
 
-				let topCandidates = sortedNonTimestampTokenLogitsWithIndexes.slice(0, topLogitCount)
-					.map(entry => ({
-						token: entry.token,
-						logit: entry.logit,
-						text: this.tokenToText(entry.token, true)
-					}))
+			// If end-of-text token should be decoded, then add it and break
+			// out of the loop
+			if (shouldDecodeEndfOfTextToken) {
+				addToken(endOfTextToken, timestampTokenLogits, 1.0, crossAttentionQKsForToken)
 
-				//// Repetition suppression code
-				if (options.suppressRepetition) {
-					const topCandidatesRepetitionScores = topCandidates.map(entry => {
-						const lastDecodedTextTokens = decodedTokens.filter(token => this.isTextToken(token)).reverse().slice(0, 20)
-						const { maxScore } = getRepetitionScoreRelativeToFirstSubstring([entry.token, ...lastDecodedTextTokens])
+				break
+			}
 
-						return maxScore
+			// Suppress end-of-text if it shouldn't be included in candidates
+			if (!options.includeEndTokenInCandidates) {
+				nonTimestampTokenLogits[endOfTextToken] = -Infinity
+			}
+
+			// Find top candidates
+			const sortedNonTimestampLogitsWithIndexes =
+				Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+
+			sortedNonTimestampLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+
+			let topCandidates = sortedNonTimestampLogitsWithIndexes.slice(0, options.topCandidateCount!)
+				.map(entry => ({
+					token: entry.token,
+					logit: entry.logit,
+					text: this.tokenToText(entry.token, true)
+				}))
+
+			// Apply repetition suppression if enabled
+			if (options.suppressRepetition) {
+				// Using some hardcoded constants, for now
+				const tokenWindowSize = 30
+				const thresholdMatchLength = 6
+				const thresholdCycleRepetition = 2.0
+
+				const filteredCandidates: typeof topCandidates = []
+
+				for (const candidate of topCandidates) {
+					const lastDecodedTextTokens = decodedTokens
+						.filter(token => this.isTextToken(token))
+						.reverse()
+						.slice(0, tokenWindowSize)
+
+					const { longestMatch, longestCycleRepetition } = getTokenRepetitionScore([candidate.token, ...lastDecodedTextTokens])
+
+					if (longestMatch >= thresholdMatchLength || longestCycleRepetition >= thresholdCycleRepetition) {
+						continue
+					}
+
+					filteredCandidates.push(candidate)
+				}
+
+				// If all candidates have been filtered out, accept an end-of-text token
+				if (filteredCandidates.length === 0) {
+					filteredCandidates.push({
+						token: endOfTextToken,
+						logit: Infinity,
+						text: this.tokenToText(endOfTextToken, true)
 					})
+				}
 
-					const thresholdRepetitionScore = 4
+				topCandidates = filteredCandidates
+			}
 
-					if (topCandidatesRepetitionScores.every(score => score >= thresholdRepetitionScore)) {
-						const indexOfMaxScore = topCandidatesRepetitionScores.indexOf(Math.max(...topCandidatesRepetitionScores))
-						topCandidates = [topCandidates[indexOfMaxScore]]
-					} else {
-						topCandidates = topCandidates.filter((candidate, index) => topCandidatesRepetitionScores[index] < thresholdRepetitionScore)
+			// Compute top candidate probabilities
+			const topCandidateProbabilities = softmax(topCandidates.map(a => a.logit), options.temperature)
+
+			// Find highest ranking punctuation token
+			const rankOfPromisingPunctuationToken = topCandidates.findIndex((entry, index) => {
+				const tokenText = this.tokenToText(entry.token).trim()
+
+				const isPunctuationToken = allowedPunctuationMarks.includes(tokenText)
+
+				if (!isPunctuationToken) {
+					return false
+				}
+
+				const tokenProb = topCandidateProbabilities[index]
+
+				return tokenProb >= options.punctuationThreshold!
+			})
+
+			// Find rank of space token
+			let rankOfSpaceToken = topCandidates.findIndex(candidate => candidate.token === spaceToken)
+
+			if (rankOfSpaceToken < 0) {
+				rankOfSpaceToken = Infinity
+			}
+
+			// Choose token
+			let chosenCandidateRank: number
+
+			// Select a high-ranking punctuation token if found, and it has
+			// a rank higher than the space token,
+			if (rankOfPromisingPunctuationToken >= 0 &&
+				rankOfPromisingPunctuationToken < rankOfSpaceToken) {
+
+				chosenCandidateRank = rankOfPromisingPunctuationToken
+			} else {
+				// Otherwise, select randomly from top k distribution
+				chosenCandidateRank = this.randomGen.selectRandomIndexFromDistribution(topCandidateProbabilities)
+			}
+
+			// Add chosen token
+			const chosenToken = topCandidates[chosenCandidateRank].token
+			const chosenTokenConfidence = topCandidateProbabilities[chosenCandidateRank]
+
+			addToken(chosenToken, timestampTokenLogits, chosenTokenConfidence, crossAttentionQKsForToken)
+
+			// If chosen token is the end-of-text token, break
+			if (chosenToken === endOfTextToken) {
+				break
+			}
+
+			// Print token if needed
+			if (this.isTextToken(chosenToken)) {
+				bufferedTokensToPrint.push(chosenToken)
+
+				let textToPrint = this.tokensToText(bufferedTokensToPrint)
+
+				// If the decoded text is valid, print it
+				if (!containsInvalidCodepoint(textToPrint)) {
+					if (isFirstPart && decodedTokens.every(token => this.isMetadataToken(token))) {
+						textToPrint = textToPrint.trimStart()
 					}
-				}
-				////
 
-				const topCandidateProbabilities = softmax(topCandidates.map(a => a.logit), options.temperature)
+					logger.write(textToPrint)
 
-				//// Remove end-of-text token from candidates if its probability isn't high enough
-				if (options.decodeTimestampTokens === false) {
-					topCandidates = topCandidates.filter((candidate, index) => {
-						if (candidate.token === endOfTextToken) {
-							return topCandidateProbabilities[index] >= 0.9
-						}
-
-						return true
-					})
-				}
-				////
-
-				const rankOfPromisingPunctuationToken = topCandidates.findIndex((entry, index) => {
-					const tokenText = this.tokenToText(entry.token).trim()
-
-					const isPunctuationToken = allowedPunctuationMarks.includes(tokenText)
-
-					if (!isPunctuationToken) {
-						return false
-					}
-
-					const tokenProb = topCandidateProbabilities[index]
-
-					return tokenProb >= options.punctuationThreshold!
-				})
-
-				let rankOfSpaceToken = topCandidates.findIndex(candidate => candidate.token === spaceToken)
-
-				if (rankOfSpaceToken < 0) {
-					rankOfSpaceToken = Infinity
-				}
-
-				let chosenCandidateRank: number
-
-				if (rankOfPromisingPunctuationToken >= 0 &&
-					rankOfPromisingPunctuationToken < rankOfSpaceToken) {
-					chosenCandidateRank = rankOfPromisingPunctuationToken
-				} else {
-					chosenCandidateRank = this.randomGen.selectRandomIndexFromDistribution(topCandidateProbabilities)
-				}
-
-				const chosenToken = topCandidates[chosenCandidateRank].token
-				const chosenTokenConfidence = topCandidateProbabilities[chosenCandidateRank]
-
-				addToken(chosenToken, timestampTokenLogits, chosenTokenConfidence)
-
-				if (chosenToken === endOfTextToken) {
-					break
-				}
-
-				if (this.isTextToken(chosenToken)) {
-					bufferedTokensToPrint.push(chosenToken)
-
-					let textToPrint = this.tokensToText(bufferedTokensToPrint)
-
-					if (textToPrint.codePointAt(0) !== 65533) {
-						if (isFirstPart && decodedTokens.every(token => this.isMetadataToken(token))) {
-							textToPrint = textToPrint.trimStart()
-						}
-
-						logger.write(textToPrint)
-
-						bufferedTokensToPrint = []
-					}
+					bufferedTokensToPrint = []
 				}
 			}
 
 			await yieldToEventLoop()
 		}
 
-		if (timestampsSeenCount >= 2 && !isFinalPart) {
-			decodedTokens = decodedTokens.slice(0, lastTimestampTokenIndex)
-			decodedTokensTimestampLogits = decodedTokensTimestampLogits.slice(0, lastTimestampTokenIndex)
-			decodedTokensCrossAttentionQKs = decodedTokensCrossAttentionQKs.slice(0, lastTimestampTokenIndex)
+		// If at least two timestamp tokens were decoded and it's not the final part,
+		// truncate up to the last timestamp token
+		if (timestampTokenSeenCount >= 2 && !isFinalPart) {
+			const sliceEndTokenIndex = lastTimestampTokenIndex
+
+			decodedTokens = decodedTokens.slice(0, sliceEndTokenIndex)
+			decodedTokensTimestampLogits = decodedTokensTimestampLogits.slice(0, sliceEndTokenIndex)
+			decodedTokensCrossAttentionQKs = decodedTokensCrossAttentionQKs.slice(0, sliceEndTokenIndex)
+			decodedTokensConfidence = decodedTokensConfidence.slice(0, sliceEndTokenIndex)
 		}
 
 		logger.write('\n')
 		logger.end()
 
-		// Return the tokens
+		// Return the decoded tokens
 		return {
 			decodedTokens,
 			decodedTokensTimestampLogits,
-			crossAttentionQKs: decodedTokensCrossAttentionQKs,
-			decodedTokensConfidence
+			decodedTokensConfidence,
+			decodedTokensCrossAttentionQKs,
 		}
 	}
 
-	async inferCrossAttentionQKs(tokens: number[], audioFeatures: Onnx.Tensor) {
-		const offset = 0
-
-		const Onnx = await import('onnxruntime-node')
-
-		const tokensTensor = new Onnx.Tensor('int64', new BigInt64Array(tokens.map(token => BigInt(token))), [1, tokens.length])
-		const offsetTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(offset)]), [])
-
-		const initialKvDimensions = this.getKvDimensions(1, tokens.length)
-		const kvCacheTensor = new Onnx.Tensor('float32', new Float32Array(initialKvDimensions[0] * initialKvDimensions[1] * initialKvDimensions[2] * initialKvDimensions[3]), initialKvDimensions)
-
-		const decoderInputs = { tokens: tokensTensor, audio_features: audioFeatures, kv_cache: kvCacheTensor, offset: offsetTensor }
-
-		const decoderOutputs = await this.textDecoder!.run(decoderInputs)
-
-		const crossAttentionQKsTensor = decoderOutputs['cross_attention_qks']
-
-		const tensorShape = crossAttentionQKsTensor.dims.slice()
-
-		const ndarray = (await import('ndarray')).default
-
-		let qkArray = ndarray(crossAttentionQKsTensor.data, crossAttentionQKsTensor.dims.slice())
-		qkArray = qkArray.transpose(3, 0, 1, 2, 4)
-
-		const tokenCrossAttentionQKsTensors: Onnx.Tensor[] = []
-
-		for (let i0 = 0; i0 < qkArray.shape[0]; i0++) {
-			const dataForToken: number[] = []
-
-			for (let i1 = 0; i1 < qkArray.shape[1]; i1++) {
-				for (let i2 = 0; i2 < qkArray.shape[2]; i2++) {
-					for (let i3 = 0; i3 < qkArray.shape[3]; i3++) {
-						for (let i4 = 0; i4 < qkArray.shape[4]; i4++) {
-							dataForToken.push(qkArray.get(i0, i1, i2, i3, i4) as number)
-						}
-					}
-				}
-			}
-
-			const newTensorShape = tensorShape.slice()
-			newTensorShape[3] = 1
-
-			const newTensor = new Onnx.Tensor('float32', dataForToken, newTensorShape)
-
-			tokenCrossAttentionQKsTensors.push(newTensor)
-		}
-
-		return tokenCrossAttentionQKsTensors
-	}
-
+	// Encode audio using the encoder model
 	async encodeAudio(rawAudio: RawAudio) {
 		await this.initializeEncoderSessionIfNeeded()
 
@@ -845,10 +1068,14 @@ export class Whisper {
 		const maxAudioSamples = sampleRate * 30
 		const maxAudioFrames = 3000
 
+		if (audioSamples.length > maxAudioSamples) {
+			throw new Error(`Audio part is longer than 30 seconds`)
+		}
+
 		await logger.startAsync('Extract mel spectogram from audio part')
 
 		const paddedAudioSamples = new Float32Array(maxAudioSamples)
-		paddedAudioSamples.set(audioSamples.subarray(0, maxAudioSamples), 0)
+		paddedAudioSamples.set(audioSamples, 0)
 
 		const rawAudioPart: RawAudio = { audioChannels: [paddedAudioSamples], sampleRate }
 
@@ -892,128 +1119,6 @@ export class Whisper {
 		return encodedAudioFeatures
 	}
 
-	addSegmentsToTimeline(timeline: Timeline, tokens: number[], initialTimeOffset: number, audioDuration: number) {
-		const timestampTokensStart = this.tokenConfig.timestampTokensStart
-
-		for (let i = 0; i < tokens.length; i++) {
-			const token = tokens[i]
-
-			if (token == this.tokenConfig.startOfTextToken || token == this.tokenConfig.endOfTextToken) {
-				continue
-			}
-
-			const tokenIsTimestamp = token >= timestampTokensStart
-			const previousTokenWasTimestamp = tokens.length > 1 && tokens[i - 1] >= timestampTokensStart
-
-			if (tokenIsTimestamp) {
-				if (previousTokenWasTimestamp) {
-					continue
-				}
-
-				let startTime = initialTimeOffset + this.timestampTokenToSeconds(token)
-
-				startTime = Math.min(startTime, audioDuration)
-
-				if (timeline.length > 0) {
-					timeline[timeline.length - 1].endTime = startTime
-				}
-
-				timeline.push({
-					type: 'segment',
-					text: '',
-					startTime,
-					endTime: -1,
-				})
-			} else {
-				if (timeline.length == 0) {
-					timeline.push({
-						type: 'segment',
-						text: '',
-						startTime: initialTimeOffset,
-						endTime: -1,
-					})
-				}
-
-				const tokenText = this.tokenToText(token)
-
-				timeline[timeline.length - 1].text += tokenText
-			}
-		}
-	}
-
-	async addWordsToTimeline(timeline: Timeline, tokens: number[], rawAudio: RawAudio, crossAttentionQKs: Onnx.Tensor[], initialAudioTimeOffset: number, duration: number) {
-		let segmentStartTime = 0
-		let segmentTokens: number[] = []
-		let segmentCrossAttentionQKs: Onnx.Tensor[] = []
-
-		for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
-			const token = tokens[tokenIndex]
-			const tokenCrossAttentionQKs = crossAttentionQKs[tokenIndex]
-
-			const segmentTokensWithoutTimestamps = segmentTokens.filter(token => this.isNonTimestampToken(token))
-
-			const isTimestamp = this.isTimestampToken(token)
-
-			if (isTimestamp || tokenIndex == tokens.length - 1) {
-				let tokenTime: number
-
-				if (isTimestamp) {
-					tokenTime = this.timestampTokenToSeconds(token)
-				} else {
-					tokenTime = duration
-				}
-
-				if (segmentTokensWithoutTimestamps.length > 0) {
-					const segmentEndTime = tokenTime
-
-					const segmentStartFrame = this.secondsToFrame(segmentStartTime)
-					let segmentEndFrame = this.secondsToFrame(segmentEndTime)
-
-					if (segmentStartFrame == segmentEndFrame) {
-						segmentEndFrame += 1
-					}
-
-					const segmentFrameCount = segmentEndFrame - segmentStartFrame
-
-					const reinferCrossAttentionQKs = true
-
-					if (reinferCrossAttentionQKs) {
-						const initialTokens = this.getTextStartTokens('en', 'transcribe')
-						const tokensToDecode = [...initialTokens, ...segmentTokensWithoutTimestamps]
-
-						//const segmentAudioFeaturesBuffer = audioFeatures.data.slice(segmentStartFrame * audioFeatures.dims[2], segmentEndFrame * audioFeatures.dims[2])
-						//const segmentAudioFeatures = new Onnx.Tensor('float32', segmentAudioFeaturesBuffer, [1, segmentFrameCount, audioFeatures.dims[2]])
-
-						const segmentAudioSamples = rawAudio.audioChannels[0].slice(Math.floor(segmentStartTime * rawAudio.sampleRate), Math.floor(segmentEndTime * rawAudio.sampleRate))
-						const segmentRawAudio: RawAudio = { audioChannels: [segmentAudioSamples], sampleRate: rawAudio.sampleRate }
-
-						const segmentAudioFeatures = await this.encodeAudio(segmentRawAudio)
-
-						const reinferredCrossAttentionQKs = await this.inferCrossAttentionQKs(tokensToDecode, segmentAudioFeatures)
-						reinferredCrossAttentionQKs.slice(initialTokens.length)
-
-						const alignmentPath = await this.findAlignmentPathFromQKs(reinferredCrossAttentionQKs, tokensToDecode, 0, segmentFrameCount)//, alignmentHeadsIndexes[modelName])
-						const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, segmentTokensWithoutTimestamps, initialAudioTimeOffset + segmentStartTime, initialAudioTimeOffset + segmentEndTime)
-
-						timeline.push(...tokenTimeline)
-					} else {
-						const alignmentPath = await this.findAlignmentPathFromQKs(segmentCrossAttentionQKs, segmentTokens, segmentStartFrame, segmentEndFrame)//, alignmentHeadsIndexes[modelName])
-						const tokenTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, segmentTokens, initialAudioTimeOffset, initialAudioTimeOffset + segmentEndTime)
-
-						timeline.push(...tokenTimeline)
-					}
-				}
-
-				segmentStartTime = tokenTime
-				segmentTokens = []
-				segmentCrossAttentionQKs = []
-			}
-
-			segmentTokens.push(token)
-			segmentCrossAttentionQKs.push(tokenCrossAttentionQKs)
-		}
-	}
-
 	tokenTimelineToWordTimeline(tokenTimeline: Timeline, language: string): Timeline {
 		function isSeparatorCharacter(char: string) {
 			const nonSeparatingPunctuation = [`'`, `-`, `.`, `·`, `•`]
@@ -1031,6 +1136,10 @@ export class Whisper {
 
 		function endsWithSeparatorCharacter(text: string) {
 			return isSeparatorCharacter(text[text.length - 1])
+		}
+
+		if (language != 'zh' && language != 'ja') {
+			tokenTimeline = tokenTimeline.filter(entry => this.isTextToken(entry.id!))
 		}
 
 		const resultTimeline: Timeline = []
@@ -1151,7 +1260,7 @@ export class Whisper {
 		return tokenTimeline
 	}
 
-	async findAlignmentPathFromQKs(qksTensors: Onnx.Tensor[], tokens: number[], segmentStartFrame: number, segmentEndFrame: number, headIndexes?: number[]) {
+	async findAlignmentPathFromQKs(qksTensors: OnnxLikeFloat32Tensor[], tokens: number[], segmentStartFrame: number, segmentEndFrame: number, headIndexes?: number[]) {
 		const segmentFrameCount = segmentEndFrame - segmentStartFrame
 
 		if (segmentFrameCount === 0 || tokens.length === 0 || qksTensors.length === 0) {
@@ -1194,13 +1303,12 @@ export class Whisper {
 		const applySoftmax = true
 		const normalize = true
 		const applyMedianFilter = true
-		const fixateTimestampTokens = false
+		const anchorTimestampTokens = false
 
 		const softmaxTemperature = 1.0
-		const medianFilterWidth = 7
 
+		// Apply softmax to each token's frames, if enabled
 		if (applySoftmax) {
-			// Apply softmax to each token's frames
 			for (const head of attentionHeads) {
 				for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
 					head[tokenIndex] = softmax(head[tokenIndex], softmaxTemperature)
@@ -1208,27 +1316,29 @@ export class Whisper {
 			}
 		}
 
+		// Normalize all weights in each individual head, if enabled
 		if (normalize) {
-			// Normalize all weights in each individual head
 			for (const head of attentionHeads) {
 				const allWeightsForHead = head.flatMap(tokenFrames => tokenFrames)
 
-				const meanOfAllWeights = meanOfVector(allWeightsForHead)
-				const stdDeviationOfAllWeights = stdDeviationOfVector(allWeightsForHead) + 1e-10
+				const meanOfAllWeightsForHead = meanOfVector(allWeightsForHead)
+				const stdDeviationOfAllWeightsForHead = stdDeviationOfVector(allWeightsForHead, 'population', meanOfAllWeightsForHead) + 1e-10
+
+				const stdDeviationReciprocal = 1.0 / (stdDeviationOfAllWeightsForHead + 1e-10)
 
 				for (const tokenFrames of head) {
 					for (let frameIndex = 0; frameIndex < tokenFrames.length; frameIndex++) {
-						tokenFrames[frameIndex] = (tokenFrames[frameIndex] - meanOfAllWeights) / stdDeviationOfAllWeights
+						tokenFrames[frameIndex] = (tokenFrames[frameIndex] - meanOfAllWeightsForHead) * stdDeviationReciprocal
 					}
 				}
 			}
 		}
 
+		// Apply median filter to each token's frames, if enabled
 		if (applyMedianFilter) {
-			// Apply median filter to each token's frames
 			for (const head of attentionHeads) {
 				for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
-					head[tokenIndex] = medianFilter(head[tokenIndex], medianFilterWidth)
+					head[tokenIndex] = medianOf5Filter(head[tokenIndex])
 				}
 			}
 		}
@@ -1256,8 +1366,8 @@ export class Whisper {
 			}
 		}
 
-		if (fixateTimestampTokens) {
-			// Fixate timestamp tokens to the original ones detected
+		// Anchor timestamp tokens timestamps to their original values, if enabled
+		if (anchorTimestampTokens) {
 			const timestampTokensStart = this.tokenConfig.timestampTokensStart
 
 			for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
@@ -1274,8 +1384,8 @@ export class Whisper {
 		}
 
 		// Perform DTW
-		const tokenIndexes = [...Array(tokenCount).keys()]
-		const frameIndexes = [...Array(segmentFrameCount).keys()]
+		const tokenIndexes = getIntegerRange(0, tokenCount)
+		const frameIndexes = getIntegerRange(0, segmentFrameCount)
 
 		let { path } = alignDTWWindowed(tokenIndexes, frameIndexes, (tokenIndex, frameIndex) => {
 			return -frameMeansForToken[tokenIndex][frameIndex]
@@ -1284,6 +1394,114 @@ export class Whisper {
 		path = path.map(entry => ({ source: entry.source, dest: segmentStartFrame + entry.dest }))
 
 		return path
+	}
+
+	async initializeIfNeeded() {
+		await this.initializeTokenizerIfNeeded()
+		await this.initializeEncoderSessionIfNeeded()
+		await this.initializeDecoderSessionIfNeeded()
+	}
+
+	async initializeTokenizerIfNeeded() {
+		if (this.tiktoken) {
+			return
+		}
+
+		const logger = new Logger()
+		await logger.startAsync('Load tokenizer data')
+
+		const tiktokenModulePackagePath = await loadPackage('whisper-tiktoken-data')
+
+		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
+		let tiktokenData = await readFile(tiktokenDataFilePath, { encoding: 'utf8' })
+
+		const tokenConfig = this.tokenConfig
+
+		const metadataTokens: Record<number, string> = {
+			[tokenConfig.endOfTextToken]: '[EndOfText]',
+			[tokenConfig.startOfTextToken]: '[StartOfText]',
+			[tokenConfig.translateTaskToken]: '[TranslateTask]',
+			[tokenConfig.transcribeTaskToken]: '[TranscribeTask]',
+			[tokenConfig.startOfPromptToken]: '[StartOfPrompt]',
+			[tokenConfig.nonSpeechToken]: '[NonSpeech]',
+			[tokenConfig.noTimestampsToken]: '[NoTimestamps]',
+		}
+
+		if (this.isMultiligualModel) {
+			metadataTokens[50256] = '[Unused_50256]'
+			metadataTokens[50360] = '[Unused_50360]'
+		}
+
+		const languageTokenCount = tokenConfig.languageTokensEnd - tokenConfig.languageTokensStart
+
+		for (let i = 0; i < languageTokenCount; i++) {
+			const tokenIndex = this.tokenConfig.languageTokensStart + i
+
+			metadataTokens[tokenIndex] = `[Language_${i}]`
+		}
+
+		const timestampTokensCount = 1501
+
+		for (let i = 0; i < timestampTokensCount; i++) {
+			const tokenIndex = this.tokenConfig.timestampTokensStart + i
+			const tokenTime = this.timestampTokenToSeconds(tokenIndex)
+
+			metadataTokens[tokenIndex] = `[Timestamp_${tokenTime.toFixed(2)}]`
+		}
+
+		const inverseMetadataTokensLookup: Record<string, number> = {}
+
+		for (const [key, value] of Object.entries(metadataTokens)) {
+			inverseMetadataTokensLookup[value] = parseInt(key)
+		}
+
+		const patternString = `'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+`
+
+		const { Tiktoken } = await import('tiktoken/lite')
+
+		this.tiktoken = new Tiktoken(tiktokenData, inverseMetadataTokensLookup, patternString)
+
+		logger.end()
+	}
+
+	async initializeEncoderSessionIfNeeded() {
+		if (this.audioEncoder) {
+			return
+		}
+
+		const logger = new Logger()
+
+		await logger.startAsync(`Create encoder inference session for model '${this.modelName}'`)
+
+		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
+
+		const Onnx = await import('onnxruntime-node')
+
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.encoderExecutionProviders })
+
+		this.audioEncoder = await Onnx.InferenceSession.create(encoderFilePath, onnxSessionOptions)
+
+		logger.end()
+	}
+
+	async initializeDecoderSessionIfNeeded() {
+		if (this.textDecoder) {
+			return
+		}
+
+		const logger = new Logger()
+
+		await logger.startAsync(`Create decoder inference session for model '${this.modelName}'`)
+
+		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
+
+		const Onnx = await import('onnxruntime-node')
+
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.decoderExecutionProviders })
+
+		this.textDecoder = await Onnx.InferenceSession.create(decoderFilePath, onnxSessionOptions)
+
+		logger.end()
 	}
 
 	getKvDimensions(groupCount: number, length: number) {
@@ -1433,7 +1651,7 @@ export class Whisper {
 	getSuppressedTextTokens() {
 		const allowedPunctuationMarks = this.getAllowedPunctuationMarks()
 
-		const nonWordTokensData = this.getNonWordTokenData()
+		const nonWordTokensData = this.getWordTokenData().nonWordTokenData
 
 		const suppressedTextTokens = nonWordTokensData
 			.filter(entry => !allowedPunctuationMarks.includes(entry.text))
@@ -1469,30 +1687,32 @@ export class Whisper {
 		return allowedPunctuation
 	}
 
-	getNonWordTokenData() {
+	getWordTokenData() {
+		const wordTokenData: WhisperTokenData[] = []
 		const nonWordTokenData: WhisperTokenData[] = []
-
-		const invalidUTF8Char = String.fromCharCode(65533)
 
 		for (let i = 0; i < this.tokenConfig.endOfTextToken; i++) {
 			const tokenText = this.tokenToText(i, false)
-			const tokenTextWithoutWhitespace = tokenText.replaceAll(/\s/g, '')
 
-			const isNonWordToken = /^[\p{Punctuation}\p{Symbol}]+$/u.test(tokenTextWithoutWhitespace)
+			const isNonWordToken = /^[\s\p{Punctuation}\p{Symbol}]+$/u.test(tokenText)
 
-			const containsInvalidUTF8 = getUTF32Chars(tokenTextWithoutWhitespace).utf32chars.includes(invalidUTF8Char)
+			const containsInvalidUTF8 = containsInvalidCodepoint(tokenText)
 
-			if (isNonWordToken && !containsInvalidUTF8) {
+			if (isNonWordToken && (this.isEnglishOnlyModel || !containsInvalidUTF8)) {
 				nonWordTokenData.push({
+					id: i,
+					text: tokenText,
+				})
+			} else {
+				wordTokenData.push({
 					id: i,
 					text: tokenText,
 				})
 			}
 		}
 
-		return nonWordTokenData
+		return { wordTokenData, nonWordTokenData }
 	}
-
 
 	getTokensData(tokens: number[]) {
 		const tokensData: WhisperTokenData[] = []
@@ -1506,6 +1726,194 @@ export class Whisper {
 
 		return tokensData
 	}
+}
+
+export async function loadPackagesAndGetPaths(modelName: WhisperModelName | undefined, languageCode: string | undefined) {
+	if (modelName) {
+		modelName = normalizeWhisperModelName(modelName, languageCode)
+	} else {
+		if (languageCode) {
+			const shortLanguageCode = getShortLanguageCode(languageCode)
+
+			modelName = shortLanguageCode == 'en' ? 'tiny.en' : 'tiny'
+		} else {
+			modelName = 'tiny'
+		}
+	}
+
+	if (modelName.startsWith('large')) {
+		throw new Error(`Large models are not currently supported by the integrated Whisper engine due to model size restrictions of onnxruntime-node. To use large models, you can select the whisper.cpp engine instead.`)
+	}
+
+	const packageName = modelNameToPackageName[modelName]
+
+	const modelDir = await loadPackage(packageName)
+
+	return { modelName, modelDir }
+}
+
+export function normalizeWhisperModelName(modelName: WhisperModelName, languageCode: string | undefined): WhisperModelName {
+	if (languageCode != 'en' && modelName.endsWith('.en')) {
+		const originalModelName = modelName
+		modelName = modelName.slice(0, modelName.length - 3) as WhisperModelName
+
+		const logger = new Logger()
+		logger.logTitledMessage(`Warning`, `The model '${originalModelName}' is English only and cannot be used to transcribe language '${languageCode}'. using '${modelName}' instead.`, chalk.yellowBright)
+	}
+
+	return modelName
+}
+
+export function isMultilingualModel(modelName: WhisperModelName) {
+	return !isEnglishOnlyModel(modelName)
+}
+
+export function isEnglishOnlyModel(modelName: WhisperModelName) {
+	return modelName.endsWith('.en')
+}
+
+export type WhisperTokenData = {
+	id: number
+	text: string
+}
+
+export type WhisperLogitFilter = (logits: number[], decodedTokens: number[], isFirstPart: boolean, isFinalPart: boolean) => number[]
+
+export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
+export type WhisperTask = 'transcribe' | 'translate' | 'detect-language'
+
+export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
+	'tiny': 'whisper-tiny',
+	'tiny.en': 'whisper-tiny.en',
+	'base': 'whisper-base',
+	'base.en': 'whisper-base.en',
+	'small': 'whisper-small',
+	'small.en': 'whisper-small.en',
+	'medium': 'whisper-medium',
+	'medium.en': 'whisper-medium.en',
+	'large': 'whisper-large-v3',
+	'large-v1': 'whisper-large-v1',
+	'large-v2': 'whisper-large-v2',
+	'large-v3': 'whisper-large-v3'
+}
+
+export const tokenizerPackageName = 'whisper-tokenizer'
+
+const languageIdLookup: { [s: string]: number } = {
+	'en': 0,
+	'zh': 1,
+	'de': 2,
+	'es': 3,
+	'ru': 4,
+	'ko': 5,
+	'fr': 6,
+	'ja': 7,
+	'pt': 8,
+	'tr': 9,
+	'pl': 10,
+	'ca': 11,
+	'nl': 12,
+	'ar': 13,
+	'sv': 14,
+	'it': 15,
+	'id': 16,
+	'hi': 17,
+	'fi': 18,
+	'vi': 19,
+	'iw': 20,
+	'uk': 21,
+	'el': 22,
+	'ms': 23,
+	'cs': 24,
+	'ro': 25,
+	'da': 26,
+	'hu': 27,
+	'ta': 28,
+	'no': 29,
+	'th': 30,
+	'ur': 31,
+	'hr': 32,
+	'bg': 33,
+	'lt': 34,
+	'la': 35,
+	'mi': 36,
+	'ml': 37,
+	'cy': 38,
+	'sk': 39,
+	'te': 40,
+	'fa': 41,
+	'lv': 42,
+	'bn': 43,
+	'sr': 44,
+	'az': 45,
+	'sl': 46,
+	'kn': 47,
+	'et': 48,
+	'mk': 49,
+	'br': 50,
+	'eu': 51,
+	'is': 52,
+	'hy': 53,
+	'ne': 54,
+	'mn': 55,
+	'bs': 56,
+	'kk': 57,
+	'sq': 58,
+	'sw': 59,
+	'gl': 60,
+	'mr': 61,
+	'pa': 62,
+	'si': 63,
+	'km': 64,
+	'sn': 65,
+	'yo': 66,
+	'so': 67,
+	'af': 68,
+	'oc': 69,
+	'ka': 70,
+	'be': 71,
+	'tg': 72,
+	'sd': 73,
+	'gu': 74,
+	'am': 75,
+	'yi': 76,
+	'lo': 77,
+	'uz': 78,
+	'fo': 79,
+	'ht': 80,
+	'ps': 81,
+	'tk': 82,
+	'nn': 83,
+	'mt': 84,
+	'sa': 85,
+	'lb': 86,
+	'my': 87,
+	'bo': 88,
+	'tl': 89,
+	'mg': 90,
+	'as': 91,
+	'tt': 92,
+	'haw': 93,
+	'ln': 94,
+	'ha': 95,
+	'ba': 96,
+	'jw': 97,
+	'su': 98,
+}
+
+const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
+	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22],
+	'tiny': [14, 18, 20, 21, 22, 23],
+	'base.en': [27, 39, 41, 45, 47],
+	'base': [25, 34, 35, 39, 41, 42, 44, 46],
+	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136],
+	'small': [63, 69, 96, 100, 103, 104, 108, 115, 117, 125],
+	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348],
+	'medium': [223, 244, 255, 257, 320, 372],
+	'large-v1': [199, 222, 224, 237, 447, 451, 457, 462, 475],
+	'large-v2': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
+	'large-v3': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555], // Temporary (may not be correct)
+	'large': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
 }
 
 const filterbanks: Filterbank[] = [
@@ -1670,192 +2078,7 @@ const filterbanks: Filterbank[] = [
 /* 79 */ { startIndex: 186, weights: [0.000366741674952209, 0.0008330700220540166, 0.0012993983691558242, 0.0017657268326729536, 0.0022320549469441175, 0.002698383294045925, 0.0031647118739783764, 0.003141313325613737, 0.002692554146051407, 0.0022437951993197203, 0.00179503601975739, 0.0013462770730257034, 0.000897518009878695, 0.0004487590049393475,] },
 ]
 
-export async function loadPackagesAndGetPaths(modelName: WhisperModelName | undefined, languageCode: string | undefined) {
-	if (modelName) {
-		modelName = normalizeWhisperModelName(modelName, languageCode)
-	} else {
-		if (languageCode) {
-			const shortLanguageCode = getShortLanguageCode(languageCode)
-
-			modelName = shortLanguageCode == 'en' ? 'tiny.en' : 'tiny'
-		} else {
-			modelName = 'tiny'
-		}
-	}
-
-	if (modelName.startsWith('large')) {
-		throw new Error(`Large models are not currently supported by the integrated Whisper engine due to model size restrictions of onnxruntime-node. To use large models, you can select the whisper.cpp engine instead.`)
-	}
-
-	const packageName = modelNameToPackageName[modelName]
-
-	const modelDir = await loadPackage(packageName)
-
-	return { modelName, modelDir }
-}
-
-export function normalizeWhisperModelName(modelName: WhisperModelName, languageCode: string | undefined): WhisperModelName {
-	if (languageCode != 'en' && modelName.endsWith('.en')) {
-		const originalModelName = modelName
-		modelName = modelName.slice(0, modelName.length - 3) as WhisperModelName
-
-		const logger = new Logger()
-		logger.logTitledMessage(`Warning`, `The model '${originalModelName}' is English only and cannot be used to transcribe language '${languageCode}'. using '${modelName}' instead.`, chalk.yellowBright)
-	}
-
-	return modelName
-}
-
-export function isMultilingualModel(modelName: WhisperModelName) {
-	return !isEnglishOnlyModel(modelName)
-}
-
-export function isEnglishOnlyModel(modelName: WhisperModelName) {
-	return modelName.endsWith('.en')
-}
-
-export type WhisperTokenData = {
-	id: number
-	text: string
-}
-
-export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
-export type WhisperTask = 'transcribe' | 'translate' | 'detect-language'
-
-export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
-	'tiny': 'whisper-tiny',
-	'tiny.en': 'whisper-tiny.en',
-	'base': 'whisper-base',
-	'base.en': 'whisper-base.en',
-	'small': 'whisper-small',
-	'small.en': 'whisper-small.en',
-	'medium': 'whisper-medium',
-	'medium.en': 'whisper-medium.en',
-	'large': 'whisper-large-v3',
-	'large-v1': 'whisper-large-v1',
-	'large-v2': 'whisper-large-v2',
-	'large-v3': 'whisper-large-v3'
-}
-
-export const tokenizerPackageName = 'whisper-tokenizer'
-
-const languageIdLookup: { [s: string]: number } = {
-	'en': 0,
-	'zh': 1,
-	'de': 2,
-	'es': 3,
-	'ru': 4,
-	'ko': 5,
-	'fr': 6,
-	'ja': 7,
-	'pt': 8,
-	'tr': 9,
-	'pl': 10,
-	'ca': 11,
-	'nl': 12,
-	'ar': 13,
-	'sv': 14,
-	'it': 15,
-	'id': 16,
-	'hi': 17,
-	'fi': 18,
-	'vi': 19,
-	'iw': 20,
-	'uk': 21,
-	'el': 22,
-	'ms': 23,
-	'cs': 24,
-	'ro': 25,
-	'da': 26,
-	'hu': 27,
-	'ta': 28,
-	'no': 29,
-	'th': 30,
-	'ur': 31,
-	'hr': 32,
-	'bg': 33,
-	'lt': 34,
-	'la': 35,
-	'mi': 36,
-	'ml': 37,
-	'cy': 38,
-	'sk': 39,
-	'te': 40,
-	'fa': 41,
-	'lv': 42,
-	'bn': 43,
-	'sr': 44,
-	'az': 45,
-	'sl': 46,
-	'kn': 47,
-	'et': 48,
-	'mk': 49,
-	'br': 50,
-	'eu': 51,
-	'is': 52,
-	'hy': 53,
-	'ne': 54,
-	'mn': 55,
-	'bs': 56,
-	'kk': 57,
-	'sq': 58,
-	'sw': 59,
-	'gl': 60,
-	'mr': 61,
-	'pa': 62,
-	'si': 63,
-	'km': 64,
-	'sn': 65,
-	'yo': 66,
-	'so': 67,
-	'af': 68,
-	'oc': 69,
-	'ka': 70,
-	'be': 71,
-	'tg': 72,
-	'sd': 73,
-	'gu': 74,
-	'am': 75,
-	'yi': 76,
-	'lo': 77,
-	'uz': 78,
-	'fo': 79,
-	'ht': 80,
-	'ps': 81,
-	'tk': 82,
-	'nn': 83,
-	'mt': 84,
-	'sa': 85,
-	'lb': 86,
-	'my': 87,
-	'bo': 88,
-	'tl': 89,
-	'mg': 90,
-	'as': 91,
-	'tt': 92,
-	'haw': 93,
-	'ln': 94,
-	'ha': 95,
-	'ba': 96,
-	'jw': 97,
-	'su': 98,
-}
-
-const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
-	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22],
-	'tiny': [14, 18, 20, 21, 22, 23],
-	'base.en': [27, 39, 41, 45, 47],
-	'base': [25, 34, 35, 39, 41, 42, 44, 46],
-	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136],
-	'small': [63, 69, 96, 100, 103, 104, 108, 115, 117, 125],
-	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348],
-	'medium': [223, 244, 255, 257, 320, 372],
-	'large-v1': [199, 222, 224, 237, 447, 451, 457, 462, 475],
-	'large-v2': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
-	'large-v3': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555], // Temporary (may not be correct)
-	'large': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
-}
-
+// Recognition options
 export interface WhisperOptions {
 	model?: WhisperModelName
 	temperature?: number
@@ -1866,6 +2089,10 @@ export interface WhisperOptions {
 	maxTokensPerPart?: number
 	suppressRepetition?: boolean
 	decodeTimestampTokens?: boolean
+	endTokenThreshold?: number
+	includeEndTokenInCandidates?: boolean
+	encoderProvider?: OnnxExecutionProvider
+	decoderProvider?: OnnxExecutionProvider
 	seed?: number
 }
 
@@ -1879,5 +2106,54 @@ export const defaultWhisperOptions: WhisperOptions = {
 	maxTokensPerPart: 250,
 	suppressRepetition: true,
 	decodeTimestampTokens: true,
+	endTokenThreshold: 0.9,
+	includeEndTokenInCandidates: true,
+	encoderProvider: undefined,
+	decoderProvider: undefined,
 	seed: undefined,
+}
+
+// Alignment options
+export interface WhisperAlignmentOptions {
+	model?: WhisperModelName
+	endTokenThreshold?: number
+	encoderProvider?: OnnxExecutionProvider
+	decoderProvider?: OnnxExecutionProvider
+}
+
+export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
+	model: undefined,
+	endTokenThreshold: 0.9,
+	encoderProvider: undefined,
+	decoderProvider: undefined
+}
+
+// Language detection options
+export interface WhisperLanguageDetectionOptions {
+	model?: WhisperModelName
+	temperature?: number
+	encoderProvider?: OnnxExecutionProvider
+	decoderProvider?: OnnxExecutionProvider
+}
+
+export const defaultWhisperLanguageDetectionOptions: WhisperLanguageDetectionOptions = {
+	model: undefined,
+	temperature: 1.0,
+	encoderProvider: undefined,
+	decoderProvider: undefined,
+}
+
+// Voice activity detection options
+export interface WhisperVADOptions {
+	model?: WhisperModelName
+	temperature?: number
+	encoderProvider?: OnnxExecutionProvider
+	decoderProvider?: OnnxExecutionProvider
+}
+
+export const defaultWhisperVADOptions: WhisperVADOptions = {
+	model: undefined,
+	temperature: 1.0,
+	encoderProvider: undefined,
+	decoderProvider: undefined,
 }

@@ -5,7 +5,7 @@ import { inspect } from 'node:util'
 import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
-import { ChildProcessWithoutNullStreams } from 'node:child_process'
+import { ChildProcessWithoutNullStreams, exec } from 'node:child_process'
 
 const log = logToStderr
 
@@ -69,6 +69,10 @@ export function simplifyPunctuationCharacters(text: string) {
 		.replaceAll(`：`, `:`)
 		.replaceAll(`；`, `;`)
 		.replaceAll(`。`, `.`)
+
+		.replaceAll(`？`, `?`)
+		.replaceAll(`！`, `!`)
+		.replaceAll(`؟`, `?`)
 }
 
 export function writeToStderr(message: any) {
@@ -427,7 +431,7 @@ export async function resolveModuleMainPath(moduleName: string) {
 	const { resolve } = await import('import-meta-resolve')
 	const { fileURLToPath } = await import('url')
 
-	return fileURLToPath(await resolve(moduleName, import.meta.url))
+	return fileURLToPath(resolve(moduleName, import.meta.url))
 }
 
 export function getWithDefault<T>(value: T | undefined, defaultValue: T) {
@@ -480,89 +484,47 @@ export function getUTF32Chars(str: string) {
 	return { utf32chars, mapping }
 }
 
-export function getRepetitionScoreRelativeToFirstSubstring(tokens: string[] | number[]) {
-	const maxOrder = Math.floor(tokens.length)
+export function getTokenRepetitionScore(tokens: string[] | number[]) {
+	const maxCycleLength = Math.floor(tokens.length / 2)
 
-	const matchCountForOrder: number[] = []
+	const matchLengthForCycleLength: number[] = [0]
 
-	for (let i = 0; i <= maxOrder; i++) {
-		matchCountForOrder.push(0)
-	}
+	for (let cycleLength = 1; cycleLength <= maxCycleLength; cycleLength++) {
+		let matchCount = 0
 
-	for (let offset = 0; offset < tokens.length; offset++) {
-		for (let order = 1; order <= maxOrder; order++) {
-			const referenceToken = tokens[-1 + order]
-			const targetToken = tokens[offset + order]
+		for (let leftIndex = cycleLength; leftIndex < tokens.length; leftIndex++) {
+			const referenceIndex = leftIndex - cycleLength
 
-			if (targetToken == referenceToken) {
-				matchCountForOrder[order] += 1
-			} else {
+			if (tokens[leftIndex] !== tokens[referenceIndex]) {
 				break
 			}
+
+			matchCount += 1
+		}
+
+		const score = matchCount
+
+		matchLengthForCycleLength.push(score)
+	}
+
+	let longestMatch = -Infinity
+	let longestCycleRepetition = -Infinity
+
+	for (let i = 1; i <= matchLengthForCycleLength.length; i++) {
+		const matchLength = matchLengthForCycleLength[i]
+
+		if (matchLength > longestMatch) {
+			longestMatch = matchLength
+		}
+
+		const cycleCount = matchLength / i
+
+		if (cycleCount > longestCycleRepetition) {
+			longestCycleRepetition = cycleCount
 		}
 	}
 
-	const scores = matchCountForOrder.map((count, index) => count * index)
-
-	let maxScoreOrder = -1
-	let maxScore = -Infinity
-
-	for (let i = 1; i <= matchCountForOrder.length; i++) {
-		const score = scores[i]
-
-		if (score > maxScore) {
-			maxScoreOrder = i
-			maxScore = score
-		}
-	}
-
-	return { maxScore, maxScoreOrder }
-}
-
-export function getConsecutiveRepetitionScoreRelativeToFirstSubstring(tokens: string[] | number[]) {
-	function countRepetitionForLength(len: number) {
-		let count = 0
-
-		for (let offset = len; offset < tokens.length; offset += len) {
-			for (let i = 0; i < len; i++) {
-				if (tokens[i] != tokens[offset + i]) {
-					return count
-				}
-			}
-
-			count += 1
-		}
-
-		return count
-	}
-
-	const maxLength = Math.floor(tokens.length / 2)
-
-	const repeatCountForLength: number[] = []
-
-	for (let i = 0; i <= maxLength; i++) {
-		repeatCountForLength.push(0)
-	}
-
-	for (let targetLen = 1; targetLen <= maxLength; targetLen++) {
-		repeatCountForLength[targetLen] = countRepetitionForLength(targetLen)
-	}
-
-	const scores = repeatCountForLength.map((count, index) => count * index)
-
-	let maxScoreLength = -1
-	let maxScore = -Infinity
-
-	for (let i = 1; i <= repeatCountForLength.length; i++) {
-		const score = scores[i]
-
-		if (score > maxScore) {
-			maxScoreLength = i
-			maxScore = score
-		}
-	}
-
-	return { maxScore, maxScoreLength, repeatCountForLength }
+	return { longestMatch, longestCycleRepetition }
 }
 
 export async function resolveModuleScriptPath(moduleName: string) {
@@ -646,4 +608,14 @@ export function getIntegerRange(start: number, end: number): number[] {
 	}
 
 	return result
+}
+
+export function containsInvalidCodepoint(str: string) {
+	for (const char of str) {
+		if (char.codePointAt(0) === 65533) {
+			return true
+		}
+	}
+
+	return false
 }

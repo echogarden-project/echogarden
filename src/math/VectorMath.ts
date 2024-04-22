@@ -1,5 +1,3 @@
-import createMedianFilter from 'moving-median'
-
 export function covarianceMatrixOfSamples(samples: number[][], weights?: number[], biased = false) {
 	if (samples.length == 0) {
 		throw new Error('No vectors given')
@@ -507,7 +505,7 @@ export function cosineSimilarity(vector1: number[], vector2: number[]) {
 		squaredMagnitude2 += vector2[i] ** 2
 	}
 
-	const result = dotProduct / (Math.sqrt(squaredMagnitude1) * Math.sqrt(squaredMagnitude2))
+	const result = dotProduct / (Math.sqrt(squaredMagnitude1) * Math.sqrt(squaredMagnitude2) + 1e-40)
 
 	return zeroIfNaN(result)
 }
@@ -651,28 +649,6 @@ export function indexOfMin(vector: number[]) {
 	return result
 }
 
-export function exponentialSmoothingMeanOfVectors(vectors: number[][], smoothingFactor: number) {
-	const vectorCount = vectors.length
-
-	if (vectorCount == 0) {
-		return []
-	}
-
-	const featureCount = vectors[0].length
-
-	const currentEstimate = createVector(featureCount)
-
-	for (let i = 0; i < vectorCount; i++) {
-		for (let j = 0; j < featureCount; j++) {
-			const value = vectors[i][j]
-
-			currentEstimate[j] = (smoothingFactor * value) + ((1 - smoothingFactor) * currentEstimate[j])
-		}
-	}
-
-	return currentEstimate
-}
-
 export function sigmoid(x: number) {
 	const result = 1 / (1 + Math.exp(-x))
 
@@ -723,17 +699,6 @@ export function hammingDistance(value1: number, value2: number, bitLength = 32) 
 	for (let i = 0; i < bitLength; i++) {
 		result += valueXor & 1
 		valueXor = valueXor >> 1
-	}
-
-	return result
-}
-
-export function medianFilter(vector: number[], width: number) {
-	const filter = createMedianFilter(width)
-	const result = []
-
-	for (let i = 0; i < vector.length; i++) {
-		result.push(filter(vector[i]))
 	}
 
 	return result
