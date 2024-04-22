@@ -80,7 +80,7 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 
 ## Speech-to-translated-transcript alignment
 
-These goal here is to match (or "align") a given spoken recording in one language, with a given translated transcript in a different language, as closely as possible.
+The goal here is to match (or "align") a given spoken recording in one language, with a given translated transcript in a different language, as closely as possible.
 
 * `whisper`: given a spoken recording in any of the [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages) supported by Whisper, and an English translation of its transcript, the translated transcript is tokenized and then decoded, in order, using a guided approach, with any multilingual Whisper model, set to its `translate` task mode. In this way, the approximate mapping between the spoken audio and each word of the translation is estimated
 
