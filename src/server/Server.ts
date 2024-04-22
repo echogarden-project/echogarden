@@ -7,8 +7,8 @@ import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread, startMessageChannel } from './Worker.js'
 import { Worker } from 'node:worker_threads'
 import { IncomingMessage, ServerResponse } from 'node:http'
-import { Logger } from '../utilities/Logger.js'
 import chalk from 'chalk'
+import { Logger } from '../utilities/Logger.js'
 
 const log = logToStderr
 

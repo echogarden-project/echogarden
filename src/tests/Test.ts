@@ -1,4 +1,4 @@
-import { getRepetitionScoreRelativeToFirstSubstring, logToStderr, setupProgramTerminationListeners, writeToStderr } from '../utilities/Utilities.js'
+import { getTokenRepetitionScore, logToStderr, setupProgramTerminationListeners, writeToStderr } from '../utilities/Utilities.js'
 import { makeTarballsForInstalledPackages } from '../utilities/TarballMaker.js'
 import { testEspeakSynthesisWithPrePhonemizedInputs, testKirshenbaumPhonemization } from '../synthesis/EspeakTTS.js'
 
