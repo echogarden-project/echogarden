@@ -17,6 +17,9 @@
         "AlignmentOptions": {
           "$ref": "#/definitions/AlignmentOptions"
         },
+        "TranslationAlignmentOptions": {
+          "$ref": "#/definitions/TranslationAlignmentOptions"
+        },
         "SpeechTranslationOptions": {
           "$ref": "#/definitions/SpeechTranslationOptions"
         },
@@ -44,6 +47,7 @@
         "SynthesisOptions",
         "RecognitionOptions",
         "AlignmentOptions",
+        "TranslationAlignmentOptions",
         "SpeechTranslationOptions",
         "SpeechLanguageDetectionOptions",
         "TextLanguageDetectionOptions",
@@ -160,6 +164,9 @@
           "properties": {
             "speakerId": {
               "type": "number"
+            },
+            "provider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
             }
           },
           "additionalProperties": false
@@ -488,7 +495,7 @@
           "$ref": "#/definitions/SourceSeparationOptions"
         },
         "whisper": {
-          "$ref": "#/definitions/WhisperOptions"
+          "$ref": "#/definitions/WhisperAlignmentOptions"
         }
       },
       "additionalProperties": false
@@ -565,6 +572,9 @@
                 60,
                 90
               ]
+            },
+            "provider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
             }
           },
           "additionalProperties": false
@@ -572,6 +582,9 @@
         "rnnoise": {
           "type": "object",
           "additionalProperties": false
+        },
+        "whisper": {
+          "$ref": "#/definitions/WhisperVADOptions"
         },
         "adaptiveGate": {
           "$ref": "#/definitions/AdaptiveGateVADOptions"
@@ -585,7 +598,50 @@
         "webrtc",
         "silero",
         "rnnoise",
+        "whisper",
         "adaptive-gate"
+      ]
+    },
+    "OnnxExecutionProvider": {
+      "type": "string",
+      "enum": [
+        "cpu",
+        "dml"
+      ]
+    },
+    "WhisperVADOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/WhisperModelName"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "encoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
+        "decoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WhisperModelName": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny.en",
+        "base",
+        "base.en",
+        "small",
+        "small.en",
+        "medium",
+        "medium.en",
+        "large",
+        "large-v1",
+        "large-v2",
+        "large-v3"
       ]
     },
     "AdaptiveGateVADOptions": {
@@ -754,13 +810,7 @@
           "additionalProperties": false
         },
         "silero": {
-          "type": "object",
-          "properties": {
-            "modelPath": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/SileroRecognitionOptions"
         },
         "googleCloud": {
           "type": "object",
@@ -848,20 +898,10 @@
           "type": "boolean"
         },
         "silero": {
-          "type": "object",
-          "additionalProperties": false
+          "$ref": "#/definitions/SileroLanguageDetectionOptions"
         },
         "whisper": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/WhisperModelName"
-            },
-            "temperature": {
-              "type": "number"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/WhisperLanguageDetectionOptions"
         },
         "whisperCpp": {
           "$ref": "#/definitions/WhisperCppOptions"
@@ -880,22 +920,32 @@
         "whisper.cpp"
       ]
     },
-    "WhisperModelName": {
-      "type": "string",
-      "enum": [
-        "tiny",
-        "tiny.en",
-        "base",
-        "base.en",
-        "small",
-        "small.en",
-        "medium",
-        "medium.en",
-        "large",
-        "large-v1",
-        "large-v2",
-        "large-v3"
-      ]
+    "SileroLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WhisperLanguageDetectionOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/WhisperModelName"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "encoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
+        "decoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        }
+      },
+      "additionalProperties": false
     },
     "WhisperCppOptions": {
       "type": "object",
@@ -987,6 +1037,9 @@
           "properties": {
             "model": {
               "type": "string"
+            },
+            "executionProvider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
             }
           },
           "additionalProperties": false
@@ -1028,8 +1081,32 @@
         "decodeTimestampTokens": {
           "type": "boolean"
         },
+        "endTokenThreshold": {
+          "type": "number"
+        },
+        "includeEndTokenInCandidates": {
+          "type": "boolean"
+        },
+        "encoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
+        "decoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
         "seed": {
           "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SileroRecognitionOptions": {
+      "type": "object",
+      "properties": {
+        "modelPath": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
         }
       },
       "additionalProperties": false
@@ -1061,6 +1138,24 @@
         },
         "maxRetries": {
           "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WhisperAlignmentOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/WhisperModelName"
+        },
+        "endTokenThreshold": {
+          "type": "number"
+        },
+        "encoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
+        "decoderProvider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
         }
       },
       "additionalProperties": false
@@ -1307,6 +1402,9 @@
           "properties": {
             "speakerId": {
               "type": "number"
+            },
+            "provider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
             }
           },
           "additionalProperties": false
@@ -1491,6 +1589,49 @@
         }
       },
       "additionalProperties": false
+    },
+    "TranslationAlignmentOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TranslationAlignmentEngine"
+        },
+        "sourceLanguage": {
+          "type": "string"
+        },
+        "targetLanguage": {
+          "type": "string"
+        },
+        "isolate": {
+          "type": "boolean"
+        },
+        "crop": {
+          "type": "boolean"
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/SpeechLanguageDetectionOptions"
+        },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
+        },
+        "plainText": {
+          "$ref": "#/definitions/PlainTextOptions"
+        },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
+        "sourceSeparation": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        },
+        "whisper": {
+          "$ref": "#/definitions/WhisperAlignmentOptions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TranslationAlignmentEngine": {
+      "type": "string",
+      "const": "whisper"
     },
     "SpeechTranslationOptions": {
       "type": "object",
