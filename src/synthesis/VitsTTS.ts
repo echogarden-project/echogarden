@@ -7,17 +7,25 @@ import { Timeline } from '../utilities/Timeline.js'
 import { readAndParseJsonFile, readdir } from '../utilities/FileSystem.js'
 import path from 'node:path'
 import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
+import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 
-export async function synthesizeSentence(text: string, voiceName: string, modelPath: string, lengthScale: number, speakerId = 0, lexicons?: Lexicon[]) {
+export async function synthesizeSentence(
+	text: string,
+	voiceName: string,
+	modelPath: string,
+	lengthScale: number,
+	speakerId: number,
+	lexicons: Lexicon[],
+	executionProviders: OnnxExecutionProvider[]) {
+
 	const cacheLookupKey = modelPath
 
 	let vitsTTS: VitsTTS | undefined = cachedInstanceLookup.get(cacheLookupKey)
 
 	if (!vitsTTS) {
-		vitsTTS = new VitsTTS(voiceName, modelPath)
-		await vitsTTS.initialize()
+		vitsTTS = new VitsTTS(voiceName, modelPath, executionProviders)
 
 		cachedInstanceLookup.clear()
 		cachedInstanceLookup.set(cacheLookupKey, vitsTTS)
@@ -29,55 +37,20 @@ export async function synthesizeSentence(text: string, voiceName: string, modelP
 }
 
 export class VitsTTS {
-	voiceName: string
-	modelPath: string
-
-	modelSession?: Onnx.InferenceSession
+	session?: Onnx.InferenceSession
 	metadata?: any
 	phonemeMap?: Map<string, number[]>
 
-	constructor(voiceName: string, modelPath: string) {
-		this.voiceName = voiceName
-		this.modelPath = modelPath
-	}
-
-	async initialize() {
-		const logger = new Logger()
-		await logger.startAsync('Initialize VITS ONNX synthesis model')
-
-		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
-			logSeverityLevel: 3
-		}
-
-		const { default: Onnx } = await import('onnxruntime-node')
-
-		const filesInModelPath = await readdir(this.modelPath)
-		const onnxModelFilename = filesInModelPath.find(filename => filename.endsWith('.onnx'))
-
-		if (!onnxModelFilename) {
-			throw new Error(`Couldn't file any ONNX model file in ${this.modelPath}`)
-		}
-
-		const onnxModelFilepath = path.join(this.modelPath, onnxModelFilename)
-
-		this.modelSession = await Onnx.InferenceSession.create(onnxModelFilepath, onnxOptions)
-		this.metadata = await readAndParseJsonFile(`${onnxModelFilepath}.json`)
-
-		this.phonemeMap = new Map<string, number[]>()
-
-		for (const key in this.metadata.phoneme_id_map) {
-			this.phonemeMap.set(key, this.metadata.phoneme_id_map[key])
-		}
-
-		logger.end()
+	constructor(
+		public readonly voiceName: string,
+		public readonly modelPath: string,
+		public readonly executionProviders: OnnxExecutionProvider[]) {
 	}
 
 	async synthesizeSentence(sentence: string, lengthScale: number, speakerId = 0, lexicons?: Lexicon[]) {
 		const logger = new Logger()
 
-		if (!this.modelSession) {
-			throw new Error('Model has not been initialized')
-		}
+		await this.initializeIfNeeded()
 
 		await logger.startAsync('Prepare for synthesis')
 
@@ -100,7 +73,12 @@ export class VitsTTS {
 
 		logger.end()
 
-		const espeakOptions: EspeakOptions = { ...defaultEspeakOptions, voice: espeakVoice, useKlatt: false }
+		const espeakOptions: EspeakOptions = {
+			...defaultEspeakOptions,
+			voice: espeakVoice,
+			useKlatt: false
+		}
+		
 		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, languageCode, espeakOptions, lexicons)
 
 		if (phonemizedSentence.length == 0) {
@@ -180,7 +158,7 @@ export class VitsTTS {
 
 		const modelInputs = { input: inputTensor, input_lengths: inputLengthsTensor, scales: scalesTensor, sid: speakerIdTensor }
 
-		const modelResults = await this.modelSession.run(modelInputs)
+		const modelResults = await this.session!.run(modelInputs)
 		const modelOutput = modelResults['output']
 
 		const modelOutputAudioSamples = modelOutput['data'] as Float32Array
@@ -199,6 +177,39 @@ export class VitsTTS {
 		logger.end()
 
 		return { rawAudio: synthesizedAudio, timeline: mappedTimeline, referenceSynthesizedAudio, referenceTimeline }
+	}
+
+	async initializeIfNeeded() {
+		if (this.session) {
+			return
+		}
+
+		const logger = new Logger()
+		await logger.startAsync('Initialize VITS ONNX synthesis model')
+
+		const { default: Onnx } = await import('onnxruntime-node')
+
+		const filesInModelPath = await readdir(this.modelPath)
+		const onnxModelFilename = filesInModelPath.find(filename => filename.endsWith('.onnx'))
+
+		if (!onnxModelFilename) {
+			throw new Error(`Couldn't file any ONNX model file in ${this.modelPath}`)
+		}
+
+		const onnxModelFilepath = path.join(this.modelPath, onnxModelFilename)
+
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.executionProviders })
+
+		this.session = await Onnx.InferenceSession.create(onnxModelFilepath, onnxSessionOptions)
+		this.metadata = await readAndParseJsonFile(`${onnxModelFilepath}.json`)
+
+		this.phonemeMap = new Map<string, number[]>()
+
+		for (const key in this.metadata.phoneme_id_map) {
+			this.phonemeMap.set(key, this.metadata.phoneme_id_map[key])
+		}
+
+		logger.end()
 	}
 }
 

@@ -2,10 +2,14 @@ import type * as Onnx from 'onnxruntime-node'
 
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
+import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 
-let sileroVad: SileroVAD
-
-export async function detectVoiceActivity(rawAudio: RawAudio, modelPath: string, frameDuration: 30 | 60 | 90) {
+export async function detectVoiceActivity(
+	rawAudio: RawAudio,
+	modelPath: string,
+	frameDuration: 30 | 60 | 90,
+	executionProviders: OnnxExecutionProvider[]) {
+		
 	if (rawAudio.sampleRate != 16000) {
 		throw new Error('Audio sample rate must be 16KHz')
 	}
@@ -14,9 +18,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, modelPath: string,
 
 	const frameLength = Math.floor(16000 * (frameDuration / 1000))
 
-	if (!sileroVad) {
-		sileroVad = new SileroVAD(modelPath)
-	}
+	const sileroVad = new SileroVAD(modelPath, executionProviders)
 
 	const frameProbabilities: number[] = []
 
@@ -42,10 +44,9 @@ export class SileroVAD {
 	modelStateC?: Onnx.Tensor
 	modelSampleRate?: Onnx.Tensor
 
-	modelPath: string
-
-	constructor(modelPath: string) {
-		this.modelPath = modelPath
+	constructor(
+		public readonly modelPath: string,
+		public readonly executionProviders: OnnxExecutionProvider[]) {
 	}
 
 	async predictAudioFrame(frame: Float32Array) {
@@ -66,6 +67,7 @@ export class SileroVAD {
 
 		return probability
 	}
+
 	private async initializeIfNeeded() {
 		if (this.session) {
 			return
@@ -81,10 +83,8 @@ export class SileroVAD {
 
 		this.modelSampleRate = new Onnx.Tensor('int64', new BigInt64Array([BigInt(16000)]), [])
 
-		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
-			logSeverityLevel: 3
-		}
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.executionProviders })
 
-		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxOptions)
+		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxSessionOptions)
 	}
 }

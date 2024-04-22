@@ -5,10 +5,20 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
 import { detectSpeechLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
+import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 
-export async function detectLanguage(rawAudio: RawAudio, modelPath: string, languageDictionaryPath: string, languageGroupDictionaryPath: string) {
-	const languageDetection = new SileroLanguageDetection(modelPath, languageDictionaryPath, languageGroupDictionaryPath)
-	await languageDetection.initialize()
+export async function detectLanguage(
+	rawAudio: RawAudio,
+	modelPath: string,
+	languageDictionaryPath: string,
+	languageGroupDictionaryPath: string,
+	onnxExecutionProviders: OnnxExecutionProvider[]) {
+
+	const languageDetection = new SileroLanguageDetection(
+		modelPath,
+		languageDictionaryPath,
+		languageGroupDictionaryPath,
+		onnxExecutionProviders)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
 		const { languageResults } = await languageDetection.detectLanguage(partAudio)
@@ -24,40 +34,21 @@ export async function detectLanguage(rawAudio: RawAudio, modelPath: string, lang
 }
 
 export class SileroLanguageDetection {
-	modelPath: string
-	languageDictionaryPath: string
-	languageGroupDictionaryPath: string
+	languageDictionary?: any
+	languageGroupDictionary?: any
 
-	languageDictionary: any
-	languageGroupDictionary: any
+	session?: Onnx.InferenceSession
 
-	session: Onnx.InferenceSession | undefined
-
-	constructor(modelPath: string, languageDictionaryPath: string, languageGroupDictionaryPath: string) {
-		this.modelPath = modelPath
-		this.languageDictionaryPath = languageDictionaryPath
-		this.languageGroupDictionaryPath = languageGroupDictionaryPath
-	}
-
-	async initialize() {
-		const logger = new Logger()
-		logger.start('Initialize ONNX inference session')
-
-		this.languageDictionary = await readAndParseJsonFile(this.languageDictionaryPath)
-		this.languageGroupDictionary = await readAndParseJsonFile(this.languageGroupDictionaryPath)
-
-		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
-			logSeverityLevel: 3
-		}
-
-		const Onnx = await import('onnxruntime-node')
-
-		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxOptions)
-
-		logger.end()
+	constructor(
+		public readonly modelPath: string,
+		public readonly languageDictionaryPath: string,
+		public readonly languageGroupDictionaryPath: string,
+		public readonly onnxExecutionProviders: OnnxExecutionProvider[]) {
 	}
 
 	async detectLanguage(rawAudio: RawAudio) {
+		await this.initializeIfNeeded()
+
 		const logger = new Logger()
 
 		logger.start('Detect language with Silero')
@@ -65,7 +56,7 @@ export class SileroLanguageDetection {
 		const audioSamples = rawAudio.audioChannels[0]
 
 		const Onnx = await import('onnxruntime-node')
-		
+
 		const inputTensor = new Onnx.Tensor('float32', audioSamples, [1, audioSamples.length])
 
 		const inputs = { input: inputTensor }
@@ -106,4 +97,33 @@ export class SileroLanguageDetection {
 
 		return { languageResults, languageGroupResults }
 	}
+
+	async initializeIfNeeded() {
+		if (this.session) {
+			return
+		}
+
+		const logger = new Logger()
+
+		logger.start('Initialize ONNX inference session for Silero language detection')
+
+		this.languageDictionary = await readAndParseJsonFile(this.languageDictionaryPath)
+		this.languageGroupDictionary = await readAndParseJsonFile(this.languageGroupDictionaryPath)
+
+		const Onnx = await import('onnxruntime-node')
+
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.onnxExecutionProviders })
+
+		this.session = await Onnx.InferenceSession.create(this.modelPath, onnxSessionOptions)
+
+		logger.end()
+	}
+}
+
+export interface SileroLanguageDetectionOptions {
+	provider?: OnnxExecutionProvider
+}
+
+export const defaultSileroLanguageDetectionOptions: SileroLanguageDetectionOptions = {
+	provider: undefined
 }
