@@ -4,11 +4,16 @@ import { binBufferToComplex, complexToBinBuffer, getWindowWeights, stftr, stiftr
 import { ComplexNumber } from '../math/VectorMath.js';
 import { logToStderr } from '../utilities/Utilities.js';
 import { Logger } from '../utilities/Logger.js';
+import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js';
 
 const log = logToStderr
 
-export async function isolate(rawAudio: RawAudio, modelFilePath: string) {
-	const model = new MDXNet(modelFilePath)
+export async function isolate(
+	rawAudio: RawAudio,
+	modelFilePath: string,
+	executionProviders: OnnxExecutionProvider[]) {
+
+	const model = new MDXNet(modelFilePath, executionProviders)
 
 	return model.processAudio(rawAudio)
 }
@@ -16,7 +21,9 @@ export async function isolate(rawAudio: RawAudio, modelFilePath: string) {
 export class MDXNet {
 	session?: Onnx.InferenceSession
 
-	constructor(public readonly modelFilePath: string) {
+	constructor(
+		public readonly modelFilePath: string,
+		public readonly executionProviders: OnnxExecutionProvider[]) {
 	}
 
 	async processAudio(rawAudio: RawAudio) {
@@ -28,9 +35,7 @@ export class MDXNet {
 			throw new Error(`Input audio must have a 44100 Hz sampling rate`)
 		}
 
-		if (!this.session) {
-			await this.initializeSession(this.modelFilePath)
-		}
+		await this.initializeSessionIfNeeded()
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -75,6 +80,9 @@ export class MDXNet {
 				let writePosition = 0
 
 				for (let tensorChannelIndex = 0; tensorChannelIndex < 4; tensorChannelIndex++) {
+					const isEvenTensorChannelIndex = tensorChannelIndex % 2 === 0
+					const inChannelIndex = tensorChannelIndex < 2 ? 0 : 1
+
 					for (let binIndex = 0; binIndex < fftCount; binIndex++) {
 						for (let frameIndex = 0; frameIndex < segmentSize; frameIndex++) {
 							let value = 0
@@ -82,7 +90,7 @@ export class MDXNet {
 							if (frameIndex < segmentLength && binIndex >= 0) {
 								let frame: ComplexNumber[]
 
-								if (tensorChannelIndex < 2) {
+								if (inChannelIndex === 0) {
 									frame = fftFramesLeftComplexForSegment[frameIndex]
 								} else {
 									frame = fftFramesRightComplexForSegment[frameIndex]
@@ -90,7 +98,7 @@ export class MDXNet {
 
 								const bin = frame[binIndex]
 
-								if (tensorChannelIndex % 2 === 0) {
+								if (isEvenTensorChannelIndex) {
 									value = bin.real
 								} else {
 									value = bin.imaginary
@@ -105,7 +113,11 @@ export class MDXNet {
 
 			const inputTensor = new Onnx.Tensor('float32', flattenedInputTensor, [1, 4, 2048, 256])
 
+			logger.start('Run MDXNet model')
+
 			const { output: outputTensor } = await session.run({ input: inputTensor })
+
+			logger.start('Process MDXNet model output')
 
 			const flattenedOutputTensor = outputTensor.data as Float32Array
 
@@ -131,13 +143,16 @@ export class MDXNet {
 				let readPosition = 0
 
 				for (let tensorChannelIndex = 0; tensorChannelIndex < 4; tensorChannelIndex++) {
+					const isEvenTensorChannelIndex = tensorChannelIndex % 2 === 0
 					const outChannelIndex = tensorChannelIndex < 2 ? 0 : 1
+
+					const binsForOutputChannel = outputChannelComplexFrames[outChannelIndex]
 
 					for (let binIndex = 0; binIndex < 2048; binIndex++) {
 						for (let frameIndex = 0; frameIndex < 256; frameIndex++) {
-							const bin = outputChannelComplexFrames[outChannelIndex][frameIndex][binIndex]
+							const bin = binsForOutputChannel[frameIndex][binIndex]
 
-							if (tensorChannelIndex % 2 === 0) {
+							if (isEvenTensorChannelIndex) {
 								bin.real = flattenedOutputTensor[readPosition++]
 							} else {
 								bin.imaginary = flattenedOutputTensor[readPosition++]
@@ -149,10 +164,12 @@ export class MDXNet {
 
 			const outputAudioChannels: Float32Array[] = []
 
-			//logger.start(`Compute inverse STFT for segment`)
+			logger.start(`Compute inverse STFT for segment`)
 			for (let channelIndex = 0; channelIndex < 2; channelIndex++) {
+				const fftSizeReciprocal = 1 / fftSize
+
 				let outputChannelFlattenedFrames = outputChannelComplexFrames[channelIndex]
-					.map(frame => complexToBinBuffer(frame).map(value => value / fftSize))
+					.map(frame => complexToBinBuffer(frame).map(value => value * fftSizeReciprocal))
 
 				const samples = await stiftr(
 					outputChannelFlattenedFrames,
@@ -163,9 +180,6 @@ export class MDXNet {
 
 				outputAudioChannels.push(samples)
 			}
-
-			//logger.log(`Reconstructed waveform peak: ${getAudioPeakDecibels(outputAudioChannels).toFixed(3)}dB`)
-			//await playAudioSamples({ audioChannels: outputAudioChannels, sampleRate })
 
 			audioForSegments.push(outputAudioChannels)
 		}
@@ -220,13 +234,15 @@ export class MDXNet {
 		return isolatedRawAudio
 	}
 
-	private async initializeSession(modelPath: string) {
-		const onnxOptions: Onnx.InferenceSession.SessionOptions = {
-			logSeverityLevel: 3
+	private async initializeSessionIfNeeded() {
+		if (this.session) {
+			return
 		}
 
 		const Onnx = await import('onnxruntime-node')
 
-		this.session = await Onnx.InferenceSession.create(modelPath, onnxOptions)
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.executionProviders })
+
+		this.session = await Onnx.InferenceSession.create(this.modelFilePath, onnxSessionOptions)
 	}
 }
