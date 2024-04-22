@@ -6,6 +6,7 @@ export interface APIOptions {
 	SynthesisOptions: API.SynthesisOptions
 	RecognitionOptions: API.RecognitionOptions
 	AlignmentOptions: API.AlignmentOptions
+	TranslationAlignmentOptions: API.TranslationAlignmentOptions
 	SpeechTranslationOptions: API.SpeechTranslationOptions
 	SpeechLanguageDetectionOptions: API.SpeechLanguageDetectionOptions
 	TextLanguageDetectionOptions: API.TextLanguageDetectionOptions

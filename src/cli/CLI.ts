@@ -13,8 +13,8 @@ import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/
 import path, { parse as parsePath } from 'node:path'
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 import { playAudioSamples, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
-import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
-import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties } from '../utilities/Timeline.js'
 import { ensureDir, existsSync, readAndParseJsonFile, readFile, readdir, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
@@ -167,6 +167,8 @@ const commandHelp = [
 	`    Align audio file to the reference transcript file\n`,
 	`${executableName} ${chalk.magentaBright('translate-speech')} inputFile [output files...] [options...]`,
 	`    Transcribe audio file directly to a different language\n`,
+	`${executableName} ${chalk.magentaBright('align-translation')} audioFile referenceFile [output files...] [options...]`,
+	`    Align audio file to the reference translated transcript file\n`,
 	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [output files...] [options...]`,
 	`    Detect language of audio file\n`,
 	`${executableName} ${chalk.magentaBright('detect-text-language')} inputFile [output files...] [options...]`,
@@ -217,6 +219,11 @@ async function startWithArgs(parsedArgs: CLIArguments) {
 
 		case 'translate-speech': {
 			await translateSpeech(parsedArgs.commandArgs, parsedArgs.options)
+			break
+		}
+
+		case 'align-translation': {
+			await alignTranslation(parsedArgs.commandArgs, parsedArgs.options)
 			break
 		}
 
@@ -561,6 +568,112 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { timeline, wordTimeline, transcript, language, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.align(audioFilename, text, options)
+
+	if (outputFilenames.length > 0) {
+		logger.start('\nWrite output files')
+	}
+
+	if (includesPlaceholderPattern) {
+		for (let segmentIndex = 0; segmentIndex < timeline.length; segmentIndex++) {
+			const segmentEntry = timeline[segmentIndex]
+			const segmentAudio = sliceRawAudioByTime(inputRawAudio, segmentEntry.startTime, segmentEntry.endTime)
+			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
+
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
+		}
+	}
+
+	for (const outputFilename of outputFilenames) {
+		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
+
+		if (partPatternMatch) {
+			continue
+		}
+
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+
+		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
+
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+	}
+
+	logger.end()
+
+	if ((options as any).play) {
+		let audioToPlay: RawAudio
+
+		if (isolatedRawAudio) {
+			audioToPlay = isolatedRawAudio
+		} else {
+			audioToPlay = inputRawAudio
+		}
+
+		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
+
+		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript)
+	}
+}
+
+async function alignTranslation(commandArgs: string[], cliOptions: Map<string, string>) {
+	const logger = new Logger()
+
+	const audioFilename = commandArgs[0]
+	const outputFilenames = commandArgs.slice(2)
+
+	if (audioFilename == undefined) {
+		throw new Error(`align-translation requires an argument containing the audio file path.`)
+	}
+
+	if (!existsSync(audioFilename)) {
+		throw new Error(`The given source file '${audioFilename}' was not found.`)
+	}
+
+	const alignmentReferenceFile = commandArgs[1]
+
+	if (alignmentReferenceFile == undefined) {
+		throw new Error(`align-translation requires a second argument containing the translated reference file path.`)
+	}
+
+	if (!existsSync(alignmentReferenceFile)) {
+		throw new Error(`The given reference file '${alignmentReferenceFile}' was not found.`)
+	}
+
+	const referenceFileExtension = getLowercaseFileExtension(alignmentReferenceFile)
+	const fileContent = await readFile(alignmentReferenceFile, { encoding: 'utf-8' })
+
+	let text: string
+
+	if (referenceFileExtension == 'txt') {
+		text = fileContent
+	} else if (referenceFileExtension == 'html' || referenceFileExtension == 'htm') {
+		text = await convertHtmlToText(fileContent)
+	} else if (referenceFileExtension == 'srt' || referenceFileExtension == 'vtt') {
+		text = subtitlesToText(fileContent)
+	} else {
+		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+	}
+
+	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
+	additionalOptionsSchema.set('play', { type: 'boolean' })
+	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
+
+	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
+		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	}
+
+	const options: API.TranslationAlignmentOptions = await cliOptionsMapToOptionsObject(cliOptions, 'TranslationAlignmentOptions', additionalOptionsSchema)
+
+	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
+
+	const {
+		timeline,
+		wordTimeline,
+		transcript,
+		language,
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio } = await API.alignTranslation(audioFilename, text, options)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -972,6 +1085,12 @@ async function listEngines(commandArgs: string[], cliOptions: Map<string, string
 
 		case 'align': {
 			engines = API.alignmentEngines
+
+			break
+		}
+
+		case 'align-translation': {
+			engines = API.translationAlignmentEngines
 
 			break
 		}
