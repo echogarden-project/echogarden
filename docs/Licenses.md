@@ -1,9 +1,8 @@
 # Echogarden components licensing
 
-## Engines and libraries:
+## Engines and libraries
 
 * `onnxruntime-node`: [MIT License](https://github.com/microsoft/onnxruntime/blob/main/LICENSE)
-* `whisper.cpp`: [MIT License](https://github.com/ggerganov/whisper.cpp/blob/master/LICENSE)
 * `espeak`: [GNU GPL v3](https://github.com/espeak-ng/espeak-ng/blob/master/COPYING)
 * `flite`: [BSD License](https://github.com/festvox/flite/blob/master/COPYING)
 * `pico`: [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
@@ -31,11 +30,11 @@ All are freely distributable, with varying licenses:
 * SVOX Pico resources (`pico-`): [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
 * Silero VAD (`silero-vad`) and Silero language classifier (`silero-lang-classifier-95`): [MIT License](https://github.com/snakers4/silero-vad/blob/master/LICENSE)
 * Silero speech recognition models (`silero-en-`, `silero-de-`, `silero-es-`, `silero-ua-`): [BY-NC-SA](https://github.com/snakers4/silero-models/blob/master/LICENSE)
-* VITS pre-trained models (`vits-`): licensed under various creative commons licenses: [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/), [CC-BY](https://creativecommons.org/licenses/by/4.0/) and [BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/), and few are public domain (you can view the individual license for each model in the model cards on the [samples page](https://rhasspy.github.io/piper-samples/)). The [Piper system](https://github.com/rhasspy/piper) itself is published under the [MIT License](https://github.com/rhasspy/piper/blob/master/LICENSE.md)
+* VITS pre-trained models (`vits-`): licensed under various creative commons licenses: [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/), [CC-BY](https://creativecommons.org/licenses/by/4.0/) and [BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/), and few are public domain. You can view the individual license for each model in the model cards on the [Piper samples page](https://rhasspy.github.io/piper-samples/)
 * Whisper pre-trained models (`whisper-`): [MIT License](https://github.com/openai/whisper/blob/main/LICENSE)
 * MDX-NET source separation models (`mdxnet-`): [MIT License](https://github.com/kuielab/mdx-net/blob/main/LICENSE)
 
-Tool binary distributions:
+Tool binary distributions
 * FFmpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
 * SoX: [GPL v2 License](https://github.com/chirlu/sox/blob/master/LICENSE.GPL)
 * whisper.cpp: [MIT License](https://github.com/ggerganov/whisper.cpp/blob/master/LICENSE)

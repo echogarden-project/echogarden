@@ -4,13 +4,13 @@
 
 ### Alignment
 
-* In DTW-RA, recognition transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline.
-* DTW-RA will not work correctly with Polish language texts, due to issues with the eSpeak engine pronouncing `|` characters, which are intended to be used as separators and ignored by all other eSpeak languages.
+* In DTW-RA, recognition transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline
+* DTW-RA will not work correctly with Polish language texts, due to issues with the eSpeak engine pronouncing `|` characters, which are intended to be used as separators and ignored by all other eSpeak languages
 
 ### Synthesis
 
 ### Phoneme processing
-* IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this.
+* IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
 
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
@@ -34,17 +34,9 @@
 
 ## Features and enhancements
 
-### Server
-* Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
-
-### Worker
-* Add cancellation checks in more operations
-* Support more operations
-
 ### CLI
 * Show names of files written do disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
 * Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg
-* Mode to print IPA words when speaking
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
@@ -55,7 +47,8 @@
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
 * Multiple configuration files in `--config=..` taking precedence by order
 * Generate JSON configuration file schema
-* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help to give better error messages when the given file type is wrong.
+* Use a file type detector like `file-type` that uses magic numbers to detect the type of a binary file regardless of its extension. This would help to give better error messages when the given file type is wrong
+* Mode to print IPA words when speaking
 
 ### CLI / playback
 * Option to set audio output device for playback
@@ -64,7 +57,7 @@
 * Add phone playback support
 
 ### CLI / `speak`
-* Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`.
+* Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`
 
 ### CLI / `speak-wikipedia`
 * Correctly detect language when a Wikipedia URL is passed instead of an article name
@@ -84,7 +77,7 @@
 * `play-with-timeline`: Preview timeline in terminal
 * `subtitles-to-text`, `subtitles-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
 * `text-to-ipa`, `arpabet-to-ipa`, `ipa-to-arpabet`
-* `phonemize-text`
+* `phonemize`
 * `normalize-text`
 * `transcribe-youtube`: Transcribe the audio in a YouTube video (requires fetching the audio somehow - which can't be done using the normal YouTube API)
 * `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
@@ -98,7 +91,7 @@
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
-* Better error message when package is not found remotely. Currently, it just gives a `404 not found` without any other information.
+* Better error message when package is not found remotely. Currently, it just gives a `404 not found` without any other information
 * Retry on network failure
 
 ### Speech language detection
@@ -111,7 +104,7 @@
 * See if it's possible to reliably use eSpeak as a segmentation engine
 
 ### Subtitles
-* Split long words if needed. This is especially important for Chinese
+* Split long words if needed. This is especially important for Chinese and Japanese
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * Add more clause separators, for even more special cases
@@ -119,26 +112,26 @@
 * Parse VTT's language
 
 ### Synthesis
-* Option to disable alignment (only for some engines). Alternative: use a low granularity setting that is very fast to compute
+* Option to disable alignment (only for some engines). Alternative: use a low granularity DTW setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
-* An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech.
+* An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech
 * Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" and ".NET" as well
 * Find way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
 * Decide whether asterisk `*` should be spoken when using `speak-url` or `speak-wikipedia`
-* Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible.
-* Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`.
-* eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically).
+* Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible
+* Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`
+* eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically)
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
 * Speaker-specific voice option
 * Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
-* When `splitToSentences` is set to `false`, the timeline doesn't include proper sentences. Find a way to pass larger sections to the TTS, but still have proper sentences in the timeline.
+* When `splitToSentences` is set to `false`, the timeline doesn't include proper sentences. Find a way to pass larger sections to the TTS, but still have proper sentences in the timeline
 
 ### Synthesis / preprocessing
 * Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`, `August 21, 2023`)
-* Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules.
+* Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules
 * Add support for multiple words in `precededBy` and `succeededBy`
 * Support substituting to graphemes in lexicons, not only phonemes
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
@@ -160,30 +153,33 @@
 ### Recognition
 * Recognized word entries that span VAD segment boundaries can be split
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
-* Option to split recognized audio to segments or sentences, as is done with synthesized audio
-* Try to exclude the timing for trailing punctuation tokens in words that contain them. This can help narrow down the end timestamp to cover the word more tightly
 
 ### Recognition / Whisper
-* May get stuck in a token repeat loop when silence or non-speech segment encountered in audio. Decide what to do
+* Whisper's Chinese and Japanese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
 * Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * Cache last model (if enough memory available)
-* Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 * The segment output can be used to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
-* Use compression ratios on the decoded tokens of individual segments and discard if too much repetition detected
-* Way to specify model size only, such that the English-only/multilingual variant would be automatically selected for sizes other than `tiny`?
-* Timestamps extracted from cross-attention are still not as accurate as what the official Python implementation gets. Try to see if you can make them better
-* Whisper's Chinese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
+* Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment
 
 * Aligned words entries that span VAD boundaries may be split
 
 ### Alignment / DTW-RA
-* Remove emojis and other special characters, that are not likely to be pronounced in the speech, from the transcript timeline before it is synthesized. For example Whisper may produce 'note' emojis when it detects singing or music. Pronouncing them reduces the accuracy of the alignment
-* Optional mode to pass Whisper a special vocabulary of tokens that can appear in the transcript. All other tokens would be suppressed
 
 ### Alignment / Whisper
-* New mode to decode the transcript tokens in order using a more standard decoding approach (updating the KV cache at each step). This would allow audio inputs longer than 30 seconds. See if this produces better results
+
+### Source separation / MDX-NET
+* Since MDX-NET requires FFT with large window sizes, the FFT computation overhead currently acts as a bottleneck, especially when GPU is used for inference. Currently it uses a WASM port of KissFFT, running on a single thread, which is still relatively fast. To get higher performance, try to (optionally) use native, SIMD optimized FFT like FFTW3 via a NAPI addon, with multi-threading enabled
+* Option to customize overlap
+* Add more models
+
+### Server
+* Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
+
+### Worker
+* Add cancellation checks in more operations
+* Support more operations
 
 ### Browser extension
 * Options UI
@@ -212,7 +208,7 @@
 * See if the installation of `winax` can be automated and only initiate if it is in a Windows environment
 * Ensure that all modules have no internal state other than caching
 * Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, and which cannot?
-* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag and rebuild them. Support for node.js modules was only added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915).
+* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag and rebuild them. Support for node.js modules was added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915)
 * Remove built-in voices from `flite` to reduce size?
 * Slim down `kuromoji` package to reduce base installation size
 
@@ -223,7 +219,6 @@
 * Test synthesis, recognition and alignment with empty input. Do they still work?
 * Test everything's fine on macOS
 * Test that cloud services all still work correctly, especially with SSML inputs
-
 
 ## Future features and enhancements
 
@@ -259,18 +254,10 @@
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment
-* Implement alignment with speech-to-text translation assistance, which would enable multilingual subtitle replacement for translated subtitles
 * Method to align audio file to audio file
-* Make `dtw` mode work with more speech synthesizers to produce its reference
-* Predict timing for individual letters (graphemes) based on phoneme timestamps
+* Allow `dtw` mode work with more speech synthesizers to produce its reference
+* Predict timing for individual letters (graphemes) based on phoneme timestamps (especially useful for Chinese and Japanese)
 
-### Voice activity detection
-
-* Whisper-based VAD. Use Whisper's 'no speech' token to determine if the audio contains speech
-
-### Source separation
-* Option to customize overlap
-* Add more MDX-NET models
 
 ## Possible new engines or platforms
 
@@ -280,13 +267,13 @@
 * Coqui STT server connection
 * [MarbleNet VAD](https://github.com/NVIDIA/NeMo/blob/main/tutorials/asr/Online_Offline_Microphone_VAD_Demo.ipynb), included of the NVIDIA NeMo framework, can be exported to ONNX
 * Silero text enhancement engine can be ported to ONNX
-* See what can be done on supporting WinRT speech: in particular `windows.media.speechsynthesis` and `windows.media.speechrecognition` support, possibly using NodeRT or some other method.
-* Figure out how to support `julius` speech recognition via WASM.
+* See what can be done for supporting WinRT speech: in particular `windows.media.speechsynthesis` and `windows.media.speechrecognition` support, possibly using NodeRT or some other method
+* Figure out how to support `julius` speech recognition via WASM
 * Any way to support RHVoice?
 
 ## Maybe?
 
-* Using a machine translation model to provide speech translation to languages other than English?
+* Using a machine translation model to provide speech translation to languages other than English? How would the timing be determined?
 * Is it possible to get sentence boundaries without punctuation using NLP techniques like part of speech tagging?
 
 ## May or may not be good ideas
@@ -298,10 +285,10 @@
 
 * Support alignment of EPUB 3 eBooks with corresponding audiobook
 * Voice cloning
-* Speech to speech voice conversion
-* Speech-to-speech translation (need to find a good model)
+* Speech-to-speech voice conversion
+* Speech-to-speech translation
 * HTML generator, that includes text and audio, with playback and word highlighting
 * Video generator
 * Desktop app that uses the tool to transcribe the PC audio output
-* Special method to use time stretching to project between different utterances of the same text
+* Special method to use time stretching to project between different aligned utterances of the same text
 * Is it possible to combine the Silero speech recognizer and a language model and try to perform Viterbi decoding to find alignments?

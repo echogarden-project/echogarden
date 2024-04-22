@@ -3,12 +3,10 @@
 All CLI command lines have the general structure:
 
 ```bash
-echogarden [command] [one or more inputs..] [one or more outputs...] [options...]
+echogarden [operation] [one or more inputs..] [one or more outputs...] [options...]
 ```
 
-Here's a quick tour of the main operations available via the CLI.
-
-Each command can accept one or more options, in the form `--[optionName]=[value]` (The `=` is required).
+Each operation can accept one or more options, in the form `--[optionName]=[value]` (The `=` is required).
 
 **Keyboard shortcuts**:
 * While the program is running, you can press `esc` to exit immediately
@@ -20,7 +18,7 @@ Each command can accept one or more options, in the form `--[optionName]=[value]
 
 ## Text-to-speech
 
-**Task**: given a text file, synthesize spoken audio for it.
+**Task**: Given a text file, synthesize spoken audio for it.
 
 This would synthesize "Hello World" and play the result in the terminal:
 ```bash
@@ -64,7 +62,7 @@ echogarden speak-wikipedia "Psychologie" --language=fr
 
 ## Speech-to-text
 
-**Task**: given an audio recording containing speech, find a textual transcription that best matches it.
+**Task**: Given an audio recording containing speech, find a textual transcription that best matches it.
 
 This would transcribe the audio file `speech.mp3`, and then play the audio, along with the recognized text, in the terminal:
 ```bash
@@ -78,7 +76,7 @@ echogarden transcribe speech.mp3 result.txt result.srt result.json
 
 ## Speech-to-transcript alignment
 
-**Task**: given an audio file and its transcript, try to approximate the timing of the start and end of each spoken word (and its subparts).
+**Task**: Given an audio file and its transcript, try to approximate the timing of the start and end of each spoken word (and its subparts).
 
 This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and would play the synchronized result in the terminal:
 ```bash
@@ -87,12 +85,12 @@ echogarden align speech.mp3 transcript.txt
 
 This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and store the resulting subtitles in `result.srt`, and a full timeline tree in `result.json`:
 ```bash
-echogarden speak-file text.txt transcript.txt result.srt result.json
+echogarden align speech.mp3 transcript.txt result.srt result.json
 ```
 
 ## Speech-to-text translation
 
-**Task**: given an audio file containing speech in one language, transcribe it to a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
+**Task**: Given an audio file containing speech in one language, transcribe it to a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
 
 This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
 ```bash
@@ -105,6 +103,20 @@ echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --tar
 ```
 
 **Note**: currently, only English is supported as target language. This is a limitation of the `whisper` Engine, which is the only one used for speech translation, at this time.
+
+## Speech-to-translated-transcript alignment
+
+**Task**: Given an audio file and its translated transcript, try to approximate the timing of the start and end of each translated word.
+
+This would align the audio file `dutch-speech.mp3` with the translated transcript provided in `english-translation.txt`, and would play the synchronized result in the terminal:
+```bash
+echogarden align-translation dutch-speech.mp3 english-translation.txt
+```
+
+This would align the audio file `dutch-speech.mp3` with the translated transcript provided in `english-translation.txt`, and store the resulting subtitles in `result.srt`, and a full timeline tree in `result.json`:
+```bash
+echogarden align-translation dutch-speech.mp3 english-translation.txt result.srt result.json
+```
 
 ## Using output templates to split the output to multiple files
 
@@ -208,7 +220,7 @@ Flattened property names are also accepted:
 
 ### Language detection
 
-**Task**: given audio or textual input, try to identify which language it is spoken or written in.
+**Task**: Given audio or textual input, try to identify which language it is spoken or written in.
 
 Try to identify the language of an audio file containing speech, and print the probabilities to the terminal:
 ```bash
@@ -227,7 +239,7 @@ echogarden detect-text-language story.txt detection-results.json
 
 ### Voice activity detection
 
-**Task**: given an audio file, try to classify which parts of the audio contain speech, and which don't.
+**Task**: Given an audio file, try to classify which parts of the audio contain speech, and which don't.
 
 This would apply VAD and play the audio, synchronized with `speech` and `nonspeech` indicators, printed to the terminal.
 ```bash
@@ -241,7 +253,7 @@ echogarden detect-voice-activity speech.mp3 timeline.json
 
 ### Speech denoising
 
-**Task**: attempt to reduce the amount of background noise in a spoken recording.
+**Task**: Attempt to reduce the amount of background noise in a spoken recording.
 
 This would apply denoising and play the denoised audio:
 ```bash
@@ -255,7 +267,7 @@ echogarden denoise speech.mp3 denoised-speech.mp3
 
 ### Source separation
 
-**Task**: try to isolate a vocal track (or other type of track, depending on model used), from the audio.
+**Task**: Try to isolate a vocal track (or other type of track, depending on model used), from the audio.
 
 This would apply source separation and play the isolated audio:
 ```bash

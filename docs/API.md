@@ -1,8 +1,6 @@
-# API reference
+# Node.js API reference
 
-This is a reference for the main methods available in both the JavaScript/TypeScript API and WebSocket messaging-based API.
-
-**Note**: the API is not stable yet. It may change at every new version. There are many methods, types and internal data structures that are not yet exposed.
+**Note**: the API is not fully stable yet. It may change at every new version. There are many methods, types and internal data structures that are not yet exposed.
 
 ### Importing as a Node.js module
 To import the `echograden` package as a Node.js module:
@@ -17,24 +15,24 @@ Import with:
 import * as Echogarden from 'echogarden'
 ```
 
-All methods, properties and arguments have TypeScript type information. You can use it to get more detailed and up-to-date type information that may not be covered in the documentation.
+All methods, properties and arguments have TypeScript type information. You can use it to get more detailed and up-to-date type information that may not be covered here.
 
 ### Related pages
 * [Options reference](Options.md)
 * [List of all supported engines](Engines.md)
-* [Quick guide for the command line interface](CLI.md)
-* [WebSocket server guide](Server.md)
+* [Quick guide to the command line interface](CLI.md)
+* [WebSocket server reference](Server.md)
 
-## Synthesis
+## Text-to-speech
 
 ### `synthesize(input, options, onSegment, onSentence)`
 
 Synthesizes the given input.
 
-* `input`: Text to synthesize, can be a `string`, or a `string[]`. When given an array of strings, the elements of the array would be seen as predefined segments (this is useful if you would like to have more control over how segments are split, or your input has a special format requiring a custom splitting method).
-* `options`: Synthesis options object
-* `onSegment`: A callback that is called whenever a segment has been synthesized (optional)
-* `onSentence`: A callback that is called whenever a sentence has been synthesized (optional)
+* `input`: text to synthesize, can be a `string`, or a `string[]`. When given an array of strings, the elements of the array would be seen as predefined segments (this is useful if you would like to have more control over how segments are split, or your input has a special format requiring a custom splitting method).
+* `options`: synthesis options object
+* `onSegment`: a callback that is called whenever a segment has been synthesized (optional)
+* `onSentence`: a callback that is called whenever a sentence has been synthesized (optional)
 
 #### Returns (via promise):
 
@@ -86,7 +84,7 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 
 Requests a list of voices for a particular engine.
 
-* `options`: Voice list request options object
+* `options`: voice list request options object
 
 #### Returns (via promise):
 
@@ -97,14 +95,14 @@ Requests a list of voices for a particular engine.
 }
 ```
 
-## Recognition
+## Speech-to-text
 
 ### `recognize(input, options)`
 
 Applies speech recognition to the input.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Recognition options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: recognition options object
 
 #### Returns (via promise):
 
@@ -117,14 +115,15 @@ Applies speech recognition to the input.
 }
 ```
 
-## Alignment
+## Speech-to-transcript alignment
 
 ### `align(input, transcript, options)`
 
 Aligns input audio with the given transcript.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Alignment options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `transcript`: the transcript to align to
+* `options`: alignment options object
 
 #### Returns (via promise):
 
@@ -143,8 +142,8 @@ Aligns input audio with the given transcript.
 
 Translates speech audio directly to English text.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Speech translation options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: speech translation options object
 
 #### Returns (via promise):
 ```ts
@@ -157,14 +156,35 @@ Translates speech audio directly to English text.
 }
 ```
 
+## Speech-to-translated-transcript alignment
+
+### `alignTranslation(input, translatedTranscript, options)`
+
+Aligns input audio with the given translated transcript.
+
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `translatedTranscript`: the translated transcript to align to
+* `options`: translation alignment options object
+
+#### Returns (via promise):
+
+```ts
+{
+	timeline: Timeline
+	wordTimeline: Timeline
+	transcript: string
+	language: string
+}
+```
+
 ## Language detection
 
 ### `detectSpeechLanguage(input, options)`
 
 Detects language of spoken audio.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Speech language detection options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: speech language detection options object
 
 #### Returns (via promise):
 ```ts
@@ -179,8 +199,8 @@ Detects language of spoken audio.
 
 Detects language of text.
 
-* `input`: Input text as `string`
-* `options`: Text language detection options object
+* `input`: input text as `string`
+* `options`: text language detection options object
 
 #### Returns (via promise):
 ```ts
@@ -197,8 +217,8 @@ Detects language of text.
 
 Detects voice activity in audio (non-real-time).
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Voice activity detection options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: voice activity detection options object
 
 #### Returns (via promise):
 ```ts
@@ -213,8 +233,8 @@ Detects voice activity in audio (non-real-time).
 
 Tries to reduce background noise in spoken audio.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Denoising options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: denoising options object
 
 #### Returns (via promise):
 ```ts
@@ -229,8 +249,8 @@ Tries to reduce background noise in spoken audio.
 
 Attempts to isolate an individual [audio stem](https://en.wikipedia.org/wiki/Stem_(audio)), like human voice, or one or more musical instruments (depending on model training), from the given waveform.
 
-* `input`: Can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
-* `options`: Source separation options object
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `options`: source separation options object
 
 #### Returns (via promise):
 ```ts
@@ -247,8 +267,8 @@ Attempts to isolate an individual [audio stem](https://en.wikipedia.org/wiki/Ste
 
 Converts a timeline to subtitles.
 
-* `timeline`: Timeline object
-* `options`: Subtitles configuration object
+* `timeline`: timeline object
+* `options`: subtitles configuration object
 
 #### Returns:
 
@@ -258,7 +278,7 @@ Subtitle file content, as a string.
 
 Converts subtitles to a timeline.
 
-* `subtitles`: Timeline object
+* `subtitles`: timeline object
 
 **Note**: This function simply converts each individual cue to a segment entry in a timeline. Since subtitle cues may contain parts of sentences or phrases, this may not produce very useful results for your needs. However, you can use it as a means to parse a subtitle file (`srt` or `vtt`), and apply your own processing later.
 

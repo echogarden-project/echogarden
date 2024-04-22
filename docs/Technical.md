@@ -26,7 +26,7 @@ The base installed (uncompressed) size, including dependencies, is around 270MB.
 
 Currently, the largest contributors to the size are:
 
-* `onnxruntime-node` (NAPI): 92MB
+* `onnxruntime-node` (NAPI): 133MB
 * `kuromoji` (JavaScript) 40MB
 * `flite-wasi` (WASI): 20MB
 * `espeak-ng-emscripten` (WASM): 18MB

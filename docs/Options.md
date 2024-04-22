@@ -4,7 +4,7 @@ Here's a detailed reference for all the options accepted by the Echogarden CLI a
 
 **Related pages**:
 * [List of all supported engines](Engines.md)
-* [Quick guide for the command line interface](CLI.md)
+* [Quick guide to the command line interface](CLI.md)
 * [Node.js API reference](API.md)
 
 ## Text-to-speech
@@ -46,7 +46,8 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
 
 **VITS**:
-* `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Optional
+* `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Defaults to `0`
+* `vits.provider`: ONNX execution provider to use. Can be `cpu` or `dml` (https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only). Using GPU acceleration for VITS may or may not be faster than CPU, depending on your hardware. Defaults to `cpu`
 
 **eSpeak**:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
@@ -108,7 +109,7 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service
 * `microsoftEdge.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
-## Voice list request
+### Voice list request
 
 Applies to CLI operation: `list-voices`, API method: `requestVoiceList`
 
@@ -146,9 +147,11 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisper.punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
 * `whisper.autoPromptParts`: use previous part's recognized text as prompt for the next part. Disabling this may help to prevent repetition carrying over between parts, in some cases. Defaults to `true`
-* `whisper.maxTokensPerPart`: maximum number of tokens to decode for each 30 second audio part. Defaults to `250`
-* `whisper.suppressRepetition`: attempt to suppress decoding repeating token patterns. Defaults to `true`
-* `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens, since more accurate timing is already extracted via cross-attention weight alignment. For unclear reasons, setting to `false` can significantly reduce the occurrence of hallucinations and token repetition loops, and increases word timestamp accuracy. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
+* `whisper.maxTokensPerPart`: maximum number of tokens to decode for each audio part. Defaults to `250`
+* `whisper.suppressRepetition`: attempt to suppress decoding of repeating token patterns. Defaults to `true`
+* `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens. Setting to `false` can reduce the occurrence of hallucinations and token repetition loops, possibly due to the overall reduction in the number of tokens decoded. This has no impact on the accuracy of timestamps, since they are derived independently using cross-attention weights. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
+* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu` or `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
+* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu` or `dml` (Windows only). Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
 **Whisper.cpp**:
@@ -157,7 +160,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set `cpu`, `cublas-11.8.0`, `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-11.8.0`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
 * `whisperCpp.threadCount`: number of threads to use, defaults to `4`
 * `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the `whisper.cpp` CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
-* `whisperCpp.enableGPU`: enable GPU processing. Defaults to `true` on CUDA-enabled builds, otherwise `false`
+* `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`
 * `whisperCpp.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
 * `whisperCpp.repetitionThreshold`: minimal repetition / compressibility score to cause a decoded segment to be discarded. Defaults to `2.4`
@@ -170,6 +173,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **Silero**:
 * `silero.modelPath`: path to a Silero model. Note that latest `en`, `de`, `fr` and `uk` models are automatically installed when needed based on the selected language. This should only be used to manually specify a different model, otherwise specify `language` instead
+* `silero.provider`: ONNX execution provider to use. Can be `cpu` or `dml` (Windows only). Defaults to `cpu`, or `dml` if available
 
 **Google Cloud**:
 * `googleCloud.apiKey`: Google Cloud API key (required)
@@ -192,7 +196,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `openAICloud.model`: model to use. Can only be `whisper-1`
 * `openAICloud.organization`: organization identifier. Optional
 * `openAICloud.baseURL`: override the default base URL used by the API. Optional
-* `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0.0`
+* `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0`
 * `openAICloud.prompt`: initial prompt for the model. Optional
 * `openAICloud.timeout`: request timeout. Optional
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
@@ -220,12 +224,18 @@ Applies to CLI operation: `align`, API method: `align`
 * `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `auto` (auto-selected based on audio duration and task), `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['low','high']`. Defaults to `auto`.
 * `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Higher values consume quadratically larger amounts of memory. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided, like `dtw.windowDuration=[240,20]`. Auto-selected by default
 
-**DTW-RA only**:
+**DTW-RA**:
 * `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.engine = whisper` and `recognition.whisper.model = base.en`
 * `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolation`. Defaults to `dtw`
 
-**Whisper alignment only**:
-* `whisper`: prefix to provide Whisper options when the `whisper` alignment engine is used (does not apply to `dtw-ra` when `whisper` engine is used, for that use `recognition.whisper` prefix instead).
+**Whisper**:
+
+Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, use `recognition.whisper` instead.
+
+* `whisper.model`: Whisper model to use. Defaults to `tiny` or `tiny.en`
+* `whisper.endTokenThreshold`: minimal probability to accept an end-of-text token for a recognized part. The probability is measured via the softmax between the end-of-text token's logit and the second highest logit. You can try to adjust this threshold in cases the model is ending a part with too few, or many tokens decoded. Defaults to `0.9`. On the last audio part, it is always effectively set to `Infinity`, to ensure the remaining transcript tokens are decoded in full
+* `whisper.encoderProvider`: encoder ONNX provider. See details in recognition section above
+* `whisper.decoderProvider`: decoder ONNX provider. See details in recognition section above
 
 
 ## Speech-to-text translation
@@ -254,6 +264,25 @@ Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 * `openAICloud`: prefix to provide options for OpenAI cloud. Same options as detailed in the recognition section above
 
+## Speech-to-translated-transcript alignment
+
+Applies to CLI operation: `align-translation`, API method: `alignTranslation`
+
+**General**:
+* `engine`: alignment algorithm to use, can only be `whisper`. Defaults to `whisper`
+* `language`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
+* `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
+* `isolate`: apply source separation to isolate voice before starting alignment. Defaults to `false`
+* `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
+* `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
+* `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
+
+**Whisper**:
+* `whisper.model`: Whisper model to use. Only multilingual models can be used. Defaults to `tiny`
+* `whisper.endTokenThreshold`: see details in the alignment section above
+* `whisper.encoderProvider`: encoder ONNX execution provider. See details in recognition section above
+* `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
+
 ## Language detection
 
 ### Speech language detection
@@ -270,6 +299,11 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 **Whisper**:
 * `whisper.model`: Whisper model to use. See model list in the recognition section
 * `whisper.temperature`: impacts the distribution of candidate languages when applying the softmax function to compute language probabilities over the model output. Higher temperature causes the distribution to be more uniform, while lower temperature causes it to be more strongly weighted towards the best scoring candidates. Defaults to `1.0`
+* `whisper.encoderProvider`: encoder ONNX execution provider. See details in recognition section above
+* `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
+
+**Silero**:
+* `silero.provider`: ONNX execution provider to use. Can be `cpu` or `dml` (Windows only). Using GPU may be faster, but the initialization overhead is larger. **Note**: `dml` provider seems to be unstable at the moment for this model. Defaults to `cpu`
 
 ### Text language detection
 
@@ -294,6 +328,7 @@ Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActiv
 
 **Silero**:
 * `silero.frameDuration`: Silero frame duration (ms). Can be `30`, `60` or `90`. Defaults to `90`
+* `silero.provider`: ONNX provider to use. Can be `cpu` or `dml` (Windows only). Using GPU is likely to be slower than CPU due to inference being independently executed on each audio frame. Defaults to `cpu` (recommended)
 
 ## Speech denoising
 
@@ -319,6 +354,7 @@ Applies to CLI operation: `isolate`, API method: `isolate`
 **MDX-NET**:
 
 * `mdxNet.model`: model to use. Currently available models are `UVR_MDXNET_1_9703`, `UVR_MDXNET_2_9682`, `UVR_MDXNET_3_9662`, `UVR_MDXNET_KARA`. Defaults to `UVR_MDXNET_1_9703`
+* `mdxNet.provider`: ONNX execution provider to use. Can be `cpu` or `dml` ([DirectML](https://microsoft.github.io/DirectML/), Windows only). **Note**: `dml` provider seems to be unstable with MDX-NET models at the moment. Defaults to `cpu`
 
 # Common options
 

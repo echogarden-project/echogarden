@@ -1,6 +1,8 @@
-# Starting and interfacing with the WebSocket server
+# WebSocket server API reference
 
-This is a guide for the WebSocket server protocol. The protocol is still in an early development stage and may change on future releases.
+This is a guide to the WebSocket server protocol.
+
+**Note**: The protocol is still in early development and may change in future releases. Many features are currently missing, and the server hasn't been thoroughly tested.
 
 ## Starting the server
 
@@ -36,10 +38,10 @@ ws.on("open", async () => {
 })
 ```
 
-In the future, this module may be separated to an independent lightweight package.
-
-**TODO**: Document using the client class with a background worker.
-**TODO**: Add support for cancellation signals in the client class.
+**TODO**:
+* Separate the client to an independent, lightweight, Node.js package, with browser compatibility
+* Add support for cancellation signals
+* Document how to use with a background worker
 
 ## Protocol details
 
