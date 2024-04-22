@@ -355,5 +355,9 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 	})
 }
 
-export const charactersToWriteAhead =
-	[',', '.', '，', '、', '：', '；', '。', ':', ';', '?', '!', ')', ']', '}', `"`, `'`, '”', '’', '-', '—', '»']
+export const charactersToWriteAhead = [
+	',', '.', '，', '、', '：', '；',
+	'。', ':', ';', '?', '？', '!', '！',
+	')', ']', '}', `"`, `'`, '”', '’',
+	'-', '—', '»', '،', '؟'
+]
