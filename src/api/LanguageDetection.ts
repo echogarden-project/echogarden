@@ -6,11 +6,13 @@ import { Logger } from '../utilities/Logger.js'
 import * as API from './API.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import path from 'path'
-import { type WhisperModelName } from '../recognition/WhisperSTT.js'
+import { type WhisperLanguageDetectionOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
-import { WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type SileroLanguageDetectionOptions } from '../speech-language-detection/SileroLanguageDetection.js'
+import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
 
@@ -59,12 +61,14 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 			const modelPath = path.join(modelDir, 'lang_classifier_95.onnx')
 			const languageDictionaryPath = path.join(modelDir, 'lang_dict_95.json')
 			const languageGroupDictionaryPath = path.join(modelDir, 'lang_group_dict_95.json')
+			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []
 
 			const languageResults = await SileroLanguageDetection.detectLanguage(
 				sourceRawAudio,
 				modelPath,
 				languageDictionaryPath,
-				languageGroupDictionaryPath)
+				languageGroupDictionaryPath,
+				onnxExecutionProviders)
 
 			detectedLanguageProbabilities = languageResults
 
@@ -80,7 +84,11 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 			logger.end()
 
-			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(sourceRawAudio, modelName, modelDir, whisperOptions.temperature!)
+			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(
+				sourceRawAudio,
+				modelName,
+				modelDir,
+				whisperOptions)
 
 			break
 		}
@@ -198,13 +206,9 @@ export interface SpeechLanguageDetectionOptions {
 
 	crop?: boolean
 
-	silero?: {
-	}
+	silero?: SileroLanguageDetectionOptions
 
-	whisper?: {
-		model?: WhisperModelName
-		temperature?: number
-	}
+	whisper?: WhisperLanguageDetectionOptions
 
 	whisperCpp?: WhisperCppOptions
 

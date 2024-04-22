@@ -5,16 +5,16 @@ import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevel, trimAu
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { defaultWhisperOptions, type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
 import { EngineMetadata } from './Common.js'
 import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
 import chalk from 'chalk'
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
+import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
 import * as API from './API.js'
-import { type OpenAICloudSTTOptions, defaultOpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
-import { type WhisperCppOptions, defaultWhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
+import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 
 const log = logToStderr
 
@@ -263,15 +263,21 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 
 	languageDetection: undefined,
 
-	subtitles: defaultSubtitlesBaseConfig,
+	subtitles: {
+	},
 
 	vad: {
 		engine: 'adaptive-gate'
 	},
 
-	whisper: defaultWhisperOptions,
-	whisperCpp: defaultWhisperCppOptions,
-	openAICloud: defaultOpenAICloudSTTOptions,
+	whisper: {
+	},
+
+	whisperCpp: {
+	},
+
+	openAICloud: {
+	},
 }
 
 export const speechTranslationEngines: EngineMetadata[] = [

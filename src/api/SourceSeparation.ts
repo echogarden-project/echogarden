@@ -6,6 +6,7 @@ import { EngineMetadata } from './Common.js';
 import chalk from 'chalk';
 import { readdir } from '../utilities/FileSystem.js';
 import path from 'node:path';
+import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js';
 
 export async function isolate(input: AudioSourceParam, options: SourceSeparationOptions): Promise<SourceSeparationResult> {
 	const logger = new Logger()
@@ -26,6 +27,8 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 			const mdxNetOptions = options.mdxNet!
 
+			const executionProviders: OnnxExecutionProvider[] = mdxNetOptions.executionProvider ? [mdxNetOptions.executionProvider] : []
+
 			const packageDir = await loadPackage(`mdxnet-${mdxNetOptions.model!}`)
 			const modelFilename = (await readdir(packageDir)).filter(name => name.endsWith('onnx'))[0]
 
@@ -39,7 +42,7 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 			const audioStereo44100 = await ensureRawAudio(inputRawAudio, 44100, 2)
 
-			isolatedRawAudio = await MDXNetSourceSeparation.isolate(audioStereo44100, modelPath)
+			isolatedRawAudio = await MDXNetSourceSeparation.isolate(audioStereo44100, modelPath, executionProviders)
 
 			logger.end()
 
@@ -72,6 +75,7 @@ export interface SourceSeparationOptions {
 
 	mdxNet?: {
 		model?: string
+		executionProvider?: OnnxExecutionProvider
 	}
 }
 
@@ -79,7 +83,8 @@ export const defaultSourceSeparationOptions: SourceSeparationOptions = {
 	engine: 'mdx-net',
 
 	mdxNet: {
-		model: 'UVR_MDXNET_1_9703'
+		model: 'UVR_MDXNET_1_9703',
+		executionProvider: undefined,
 	}
 }
 

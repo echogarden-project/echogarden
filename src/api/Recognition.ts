@@ -6,13 +6,16 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
-import { OpenAICloudSTTOptions, defaultOpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
+
+import { type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
+import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
 import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type SileroRecognitionOptions } from '../recognition/SileroSTT.js'
+import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
 
@@ -172,9 +175,14 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 				modelPath = await loadPackage(packageName)
 			}
 
+			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []
+
 			logger.end();
 
-			({ transcript, timeline } = await SileroSTT.recognize(sourceRawAudio, modelPath))
+			({ transcript, timeline } = await SileroSTT.recognize(
+				sourceRawAudio,
+				modelPath,
+				onnxExecutionProviders))
 
 			break
 		}
@@ -346,9 +354,7 @@ export interface RecognitionOptions {
 		modelPath?: string
 	}
 
-	silero?: {
-		modelPath?: string
-	}
+	silero?: SileroRecognitionOptions
 
 	googleCloud?: {
 		apiKey?: string
@@ -389,7 +395,8 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	languageDetection: {
 	},
 
-	subtitles: defaultSubtitlesBaseConfig,
+	subtitles: {
+	},
 
 	vad: {
 		engine: 'adaptive-gate'
@@ -406,7 +413,6 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	},
 
 	silero: {
-		modelPath: undefined
 	},
 
 	googleCloud: {
@@ -428,7 +434,8 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 		secretAccessKey: undefined,
 	},
 
-	openAICloud: defaultOpenAICloudSTTOptions
+	openAICloud: {
+	},
 }
 
 export const recognitionEngines: API.EngineMetadata[] = [

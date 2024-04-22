@@ -4,7 +4,7 @@ import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, delay, runOperationWithRetries } from '../utilities/Utilities.js'
+import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
 import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -20,10 +20,11 @@ import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata, appName } from './Common.js'
 import { shouldCancelCurrentTask } from '../server/Worker.js'
 import chalk from 'chalk'
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
+import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
-import { type OpenAICloudTTSOptions, defaultOpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
-import { type ElevenlabsTTSOptions, defaultElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
+import { type OpenAICloudTTSOptions  } from '../synthesis/OpenAICloudTTS.js'
+import { type ElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
+import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
 
@@ -358,9 +359,9 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const lengthScale = 1 / speed
 
-			const engineOptions = options.vits!
+			const vitsOptions = options.vits!
 
-			const speakerId = engineOptions.speakerId
+			const speakerId = vitsOptions.speakerId
 
 			if (speakerId != undefined) {
 				if (selectedVoice.speakerCount == undefined) {
@@ -368,7 +369,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 						throw new Error('Selected VITS model has only one speaker. Speaker ID must be 0 if specified.')
 					}
 				} else if (speakerId < 0 || speakerId >= selectedVoice.speakerCount) {
-					throw new Error(`Selected VITS model has ${selectedVoice.speakerCount} voices. Speaker ID should be in the range ${0} to ${selectedVoice.speakerCount - 1}`)
+					throw new Error(`Selected VITS model has ${selectedVoice.speakerCount} speaker IDs. Speaker ID should be in the range ${0} to ${selectedVoice.speakerCount - 1}`)
 				}
 			}
 
@@ -376,9 +377,18 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const modelPath = voicePackagePath!
 
+			const onnxExecutionProviders: OnnxExecutionProvider[] = vitsOptions.provider ? [vitsOptions.provider] : []
+
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await vitsTTS.synthesizeSentence(text, voice, modelPath, lengthScale, speakerId, lexicons)
+			const { rawAudio, timeline: outTimeline } = await vitsTTS.synthesizeSentence(
+				text,
+				voice,
+				modelPath,
+				lengthScale,
+				speakerId ?? 0,
+				lexicons,
+				onnxExecutionProviders)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -1024,6 +1034,7 @@ export interface SynthesisOptions {
 
 	vits?: {
 		speakerId?: number
+		provider?: OnnxExecutionProvider
 	}
 
 	pico?: {
@@ -1153,10 +1164,12 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	languageDetection: undefined,
 
-	subtitles: defaultSubtitlesBaseConfig,
+	subtitles: {
+	},
 
 	vits: {
 		speakerId: undefined,
+		provider: undefined,
 	},
 
 	pico: {
@@ -1216,9 +1229,11 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		lexiconNames: undefined,
 	},
 
-	openAICloud: defaultOpenAICloudTTSOptions,
+	openAICloud: {
+	},
 
-	elevenlabs: defaultElevenlabsTTSOptions,
+	elevenlabs: {
+	},
 
 	googleTranslate: {
 		tld: 'us'
