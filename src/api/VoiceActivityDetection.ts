@@ -10,6 +10,8 @@ import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata } from './Common.js'
 import chalk from 'chalk'
 import { type AdaptiveGateVADOptions } from '../voice-activity-detection/AdaptiveGateVAD.js'
+import { type WhisperVADOptions } from '../recognition/WhisperSTT.js'
+import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
 
@@ -56,7 +58,14 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 			const modelPath = path.join(modelDir, 'silero-vad.onnx')
 			const frameDuration = sileroOptions.frameDuration!
 
-			const frameProbabilities = await SileroVAD.detectVoiceActivity(sourceRawAudio, modelPath, frameDuration)
+			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []
+
+			const frameProbabilities = await SileroVAD.detectVoiceActivity(
+				sourceRawAudio,
+				modelPath,
+				frameDuration,
+				onnxExecutionProviders)
+
 			const frameDurationSeconds = sileroOptions.frameDuration! / 1000
 
 			verboseTimeline = frameProbabilitiesToTimeline(frameProbabilities, frameDurationSeconds, activityThreshold)
@@ -77,6 +86,46 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 			const frameProbabilities = frameVadProbabilities
 
 			verboseTimeline = frameProbabilitiesToTimeline(frameProbabilities, frameDurationSeconds, activityThreshold)
+
+			break
+		}
+
+		case 'whisper': {
+			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+
+			const whisperVADOptions = options.whisper!
+
+			logger.end()
+
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperVADOptions.model, 'de')
+
+			logger.end();
+
+			const { partProbabilities } = await WhisperSTT.detectVoiceActivity(
+				sourceRawAudio,
+				modelName,
+				modelDir,
+				whisperVADOptions,
+			)
+
+			verboseTimeline = []
+
+			for (const entry of partProbabilities) {
+				const hasSpeech = entry.confidence! >= activityThreshold
+
+				const text = hasSpeech ? 'active' : 'inactive'
+
+				if (verboseTimeline.length === 0 || verboseTimeline[verboseTimeline.length - 1].text != text) {
+					verboseTimeline.push({
+						type: 'segment',
+						text,
+						startTime: entry.startTime,
+						endTime: entry.endTime
+					})
+				} else {
+					verboseTimeline[verboseTimeline.length - 1].endTime = entry.endTime
+				}
+			}
 
 			break
 		}
@@ -104,7 +153,12 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 	logger.log('')
 	logger.logDuration(`Total voice activity detection time`, startTimestamp, chalk.magentaBright)
 
-	return { timeline, verboseTimeline, inputRawAudio, croppedRawAudio }
+	return {
+		timeline,
+		verboseTimeline,
+		inputRawAudio,
+		croppedRawAudio
+	}
 }
 
 function frameProbabilitiesToTimeline(frameProbabilities: number[], frameDurationSeconds: number, activityThreshold: number) {
@@ -176,7 +230,7 @@ export interface VADResult {
 	croppedRawAudio: RawAudio
 }
 
-export type VADEngine = 'webrtc' | 'silero' | 'rnnoise' | 'adaptive-gate'
+export type VADEngine = 'webrtc' | 'silero' | 'rnnoise' | 'whisper' | 'adaptive-gate'
 
 export interface VADOptions {
 	engine?: VADEngine
@@ -190,10 +244,13 @@ export interface VADOptions {
 
 	silero?: {
 		frameDuration?: 30 | 60 | 90
+		provider?: OnnxExecutionProvider
 	}
 
 	rnnoise?: {
 	}
+
+	whisper?: WhisperVADOptions
 
 	adaptiveGate?: AdaptiveGateVADOptions
 }
@@ -210,9 +267,15 @@ export const defaultVADOptions: VADOptions = {
 
 	silero: {
 		frameDuration: 90,
+		provider: undefined,
 	},
 
 	rnnoise: {
+	},
+
+	whisper: {
+		model: 'tiny',
+		temperature: 1.0,
 	},
 
 	adaptiveGate: {
