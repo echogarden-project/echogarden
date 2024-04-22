@@ -7,11 +7,11 @@ import { Logger } from '../utilities/Logger.js'
 import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
-import { type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
-import { SubtitlesConfig, defaultSubtitlesBaseConfig } from '../subtitles/Subtitles.js'
-import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
+import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
+import { type EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 import { isWord } from '../nlp/Segmentation.js'
 
 const log = logToStderr
@@ -194,19 +194,15 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
 
-			const whisperOptions = options.whisper!
+			const whisperAlignmnentOptions = options.whisper!
 
 			const shortLanguageCode = getShortLanguageCode(language)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, language)
-
-			if (getRawAudioDuration(sourceRawAudio) > 30) {
-				throw new Error('Whisper based alignment currently only supports audio inputs that are 30s or less')
-			}
+			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperAlignmnentOptions.model, shortLanguageCode)
 
 			logger.end()
 
-			mappedTimeline = await WhisperSTT.align(sourceRawAudio, transcript, modelName, modelDir, shortLanguageCode)
+			mappedTimeline = await WhisperSTT.align(sourceRawAudio, transcript, modelName, modelDir, shortLanguageCode, whisperAlignmnentOptions)
 
 			break
 		}
@@ -315,7 +311,7 @@ export interface AlignmentOptions {
 
 	sourceSeparation?: API.SourceSeparationOptions
 
-	whisper?: WhisperOptions
+	whisper?: WhisperAlignmentOptions
 }
 
 export const defaultAlignmentOptions: AlignmentOptions = {
@@ -337,7 +333,8 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 		whitespace: 'collapse'
 	},
 
-	subtitles: defaultSubtitlesBaseConfig,
+	subtitles: {
+	},
 
 	dtw: {
 		granularity: 'auto',
@@ -354,7 +351,6 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 			autoPromptParts: false,
 			suppressRepetition: true,
 			decodeTimestampTokens: true,
-			seed: undefined,
 		}
 	},
 
@@ -385,7 +381,7 @@ export const alignmentEngines: API.EngineMetadata[] = [
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'Extracts timestamps from the internal state of the Whisper recognition model (note: currently limited to a maximum audio duration of 30 seconds).',
+		description: 'Extracts timestamps by guiding the Whisper recognition model to recognize the transcript tokens.',
 		type: 'local'
 	}
 ]
