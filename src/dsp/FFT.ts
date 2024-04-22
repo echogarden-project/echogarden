@@ -48,6 +48,7 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 		}
 
 		binsBufferRef.clear()
+		
 		m._kiss_fftr(statePtr, frameBufferRef.address, binsBufferRef.address)
 
 		const bins = binsBufferRef.view.slice(0, fftOrder + 2)
@@ -103,7 +104,9 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 		binsRef.view.set(binsForFrame)
 
 		frameBufferRef.clear()
+
 		m._kiss_fftri(statePtr, binsRef.address, frameBufferRef.address)
+
 		const frameSamples = frameBufferRef.view
 
 		const frameStartOffset = frameIndex * hopSize

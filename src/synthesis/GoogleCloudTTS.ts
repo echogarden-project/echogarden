@@ -4,7 +4,18 @@ import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
-export async function synthesize(text: string, apiKey: string, languageCode = 'en-US', voice = 'en-US-Wavenet-C', speakingRate = 1.0, pitchDeltaSemitones = 0.0, volumeGainDecibels = 0.0, ssml = false, audioEncoding: AudioEncoding = 'MP3_64_KBPS', sampleRate = 24000) {
+export async function synthesize(
+	text: string,
+	apiKey: string,
+	languageCode = 'en-US',
+	voice = 'en-US-Wavenet-C',
+	speakingRate = 1.0,
+	pitchDeltaSemitones = 0.0,
+	volumeGainDecibels = 0.0,
+	ssml = false,
+	audioEncoding: AudioEncoding = 'MP3_64_KBPS',
+	sampleRate = 24000) {
+		
 	const logger = new Logger()
 	logger.start('Request synthesis from Google Cloud')
 

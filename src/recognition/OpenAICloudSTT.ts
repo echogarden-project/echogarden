@@ -81,33 +81,6 @@ class FileLikeBlob extends Blob {
 	}
 }
 
-export interface OpenAICloudSTTOptions {
-	model?: 'whisper-1'
-
-	apiKey?: string
-	organization?: string
-	baseURL?: string
-
-	temperature?: number
-	prompt?: string
-
-	timeout?: number
-	maxRetries?: number
-}
-
-export const defaultOpenAICloudSTTOptions: OpenAICloudSTTOptions = {
-	apiKey: undefined,
-	organization: undefined,
-	baseURL: undefined,
-
-	model: 'whisper-1',
-	temperature: 0,
-	prompt: undefined,
-
-	timeout: undefined,
-	maxRetries: 10,
-}
-
 interface VerboseResponse {
 	task: string
 	language: string
@@ -140,3 +113,30 @@ interface VerboseResponse {
 }
 
 type Task = 'transcribe' | 'translate'
+
+export interface OpenAICloudSTTOptions {
+	model?: 'whisper-1'
+
+	apiKey?: string
+	organization?: string
+	baseURL?: string
+
+	temperature?: number
+	prompt?: string
+
+	timeout?: number
+	maxRetries?: number
+}
+
+export const defaultOpenAICloudSTTOptions: OpenAICloudSTTOptions = {
+	apiKey: undefined,
+	organization: undefined,
+	baseURL: undefined,
+
+	model: 'whisper-1',
+	temperature: 0,
+	prompt: undefined,
+
+	timeout: undefined,
+	maxRetries: 10,
+}

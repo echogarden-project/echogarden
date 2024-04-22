@@ -10,6 +10,7 @@ import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 const log = logToStderr
 
@@ -18,6 +19,8 @@ let espeakModule: any
 
 export async function preprocessAndSynthesize(text: string, language: string, espeakOptions: EspeakOptions, lexicons: Lexicon[] = []) {
 	const logger = new Logger()
+
+	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
 
 	await logger.startAsync('Tokenize and analyze text')
 
@@ -134,6 +137,8 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions) {
 	const logger = new Logger()
+
+	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
 
 	const sampleRate = await getSampleRate()
 
@@ -399,6 +404,9 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	const logger = new Logger()
+
+	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
+
 	logger.start('Get eSpeak Emscripten instance')
 
 	if (!espeakOptions.ssml) {
