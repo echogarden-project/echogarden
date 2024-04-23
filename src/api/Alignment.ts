@@ -125,6 +125,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	switch (options.engine) {
 		case 'dtw': {
+			logger.end()
+
 			const {
 				referenceRawAudio,
 				referenceTimeline
@@ -140,10 +142,10 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		}
 
 		case 'dtw-ra': {
+			logger.end()
+
 			const recognitionOptions: API.RecognitionOptions =
 				extendDeep({ crop: options.crop, language }, options.recognition)
-
-			logger.end()
 
 			// Recognize source audio
 			let { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
