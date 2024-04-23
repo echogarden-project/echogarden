@@ -4,7 +4,7 @@
 
 ### Alignment
 
-* In DTW-RA, recognition transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline
+* In DTW-RA, a recognized transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline
 * DTW-RA will not work correctly with Polish language texts, due to issues with the eSpeak engine pronouncing `|` characters, which are intended to be used as separators and ignored by all other eSpeak languages
 
 ### Synthesis
@@ -35,7 +35,7 @@
 ## Features and enhancements
 
 ### CLI
-* Show names of files written do disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
+* Show names of files written to disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
 * Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg
 * Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
@@ -67,7 +67,7 @@
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
 
 ### CLI / `list-voices`
-* When given a configuration file, see if you can fall back to take options from `speak` options, for example, to take API keys that are required for the both the synthesis request and voice list request and
+* When given a configuration file, see if you can fall back to take options from `speak` options, for example, to take API keys that are required for both the synthesis request and voice list request and
 
 ### CLI / `list-packages`
 * Support filters
@@ -91,7 +91,7 @@
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
-* Better error message when package is not found remotely. Currently, it just gives a `404 not found` without any other information
+* Better error message when a package is not found remotely. Currently, it just gives a `404 not found` without any other information
 * Retry on network failure
 
 ### Speech language detection
@@ -115,8 +115,8 @@
 * Option to disable alignment (only for some engines). Alternative: use a low granularity DTW setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech
-* Ensure abbreviations like "Ph.d" or names like are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" and ".NET" as well
-* Find way to manually reset voice list cache
+* Ensure abbreviations like "Ph.d" or similar names are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" and ".NET" as well
+* Find a way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
 * Decide whether asterisk `*` should be spoken when using `speak-url` or `speak-wikipedia`
@@ -155,11 +155,11 @@
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 
 ### Recognition / Whisper
-* Whisper's Chinese and Japanese output can be split to words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
+* Whisper's Chinese and Japanese output can be split into words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
 * Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
-* Cache last model (if enough memory available)
-* The segment output can be used to split to segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
-* Bring back option to use eSpeak DTW based alignment on segments, as an alternative approach
+* Cache last model (if enough memory is available)
+* The segment output can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
+Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment
 
@@ -170,7 +170,7 @@
 ### Alignment / Whisper
 
 ### Source separation / MDX-NET
-* Since MDX-NET requires FFT with large window sizes, the FFT computation overhead currently acts as a bottleneck, especially when GPU is used for inference. Currently it uses a WASM port of KissFFT, running on a single thread, which is still relatively fast. To get higher performance, try to (optionally) use native, SIMD optimized FFT like FFTW3 via a NAPI addon, with multi-threading enabled
+* Since MDX-NET requires FFT with large window sizes, the FFT computation overhead currently acts as a bottleneck, especially when GPU is used for inference. Currently, it uses a WASM port of KissFFT, running on a single thread, which is still relatively fast. To get higher performance, try to (optionally) use native, SIMD optimized FFT like FFTW3 via a NAPI addon, with multi-threading enabled
 * Option to customize overlap
 * Add more models
 
@@ -225,7 +225,7 @@
 ### CLI
 * Auto-generate options file, with comments, based on default options of the API
 * Have the CLI launch a background worker (in a thread) to enable better parallelism
-* Play back result audio while synthesis or recognition is still processing in the background
+* Playback result audio while synthesis or recognition is still processing in the background
 * Auto-import and extract project Gutenberg texts (by URL or from a file)
 * `stdin` input support
 * `stdout` output support
@@ -243,7 +243,7 @@
 * Add capitalization and punctuation to recognized outputs if needed (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
 
 ### Synthesis
-* Synthesize given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
+* Synthesize the given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
 
 ### Recognition
 * Low latency recognition mode. Make the partial transcription available as fast as possible
@@ -274,7 +274,7 @@
 ## Maybe?
 
 * Using a machine translation model to provide speech translation to languages other than English? How would the timing be determined?
-* Is it possible to get sentence boundaries without punctuation using NLP techniques like part of speech tagging?
+* Is it possible to get sentence boundaries without punctuation using NLP techniques like part-of-speech tagging?
 
 ## May or may not be good ideas
 
@@ -283,7 +283,7 @@
 
 ## Other ideas
 
-* Support alignment of EPUB 3 eBooks with corresponding audiobook
+* Support alignment of EPUB 3 eBooks with a corresponding audiobook
 * Voice cloning
 * Speech-to-speech voice conversion
 * Speech-to-speech translation

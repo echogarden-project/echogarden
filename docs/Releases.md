@@ -14,7 +14,7 @@ For releases after `1.0.0`, see the [GitHub releases page](https://github.com/ec
 * Integrate optional vocal isolation to speech recognition, alignment and translation operations using the new `--isolate` option, allowing for higher accuracy in difficult cases like achieving word-level lyrics alignment
 * Add the new `adaptive-gate` VAD engine using a custom bandlimited adaptive gate. Fast and robust. Works well for relatively clean tracks or tracks that have already been processed using vocal isolation
 * Add optional token-level repetition suppression to Whisper engine
-* Expose several new configuration options for the Whisper engine: a settings for maximum tokens per part, and a setting to enable/disable repetition suppression, set custom random seed, disable/enable decoding of timestamp tokens
+* Expose several new configuration options for the Whisper engine: settings for maximum tokens per part, and a setting to enable/disable repetition suppression, set custom random seed, disable/enable decoding of timestamp tokens
 * Expose more options for the Elevenlabs engine
 
 **Enhancements**:
@@ -25,13 +25,13 @@ For releases after `1.0.0`, see the [GitHub releases page](https://github.com/ec
 **Behavioral and breaking changes**:
 * Minimal required node version changed to `18.0.0`
 * All recognition, alignment, translation and language recognition operations first apply the new adaptive gate VAD (can be changed to any other VAD engine via the `vad.` option prefix) and remove any sections that are not identified as containing voice, before starting processing. This should improve results in most cases, and reduce processing time
-* To reduce Whisper hallucinations and repetition loops, these change were made:
+* To reduce Whisper hallucinations and repetition loops, these changes were made:
 	* Pre-cropping by default can significantly help with reducing hallucinations, giving the model less "empty space" to hallucinate on
 	* Enable new token-level repetition suppression (`suppressRepetition = true`) during decoding
 	* Disable decoding of timestamp tokens by default (`decodeTimestampTokens = false`), since more accurate timing is already extracted via cross-attention weight alignment. For unclear reasons, this can significantly reduce the occurrence of token repetition loops, and increases word timestamp accuracy. However, there are cases where this causes the model to end a part prematurely, especially in singing and less speech-like voice segments. In those cases the it can be enabled with `decodeTimestampTokens = true`
 * When `transcribe`, `align` or `translate-speech` operations are run with `--isolate` enabled, they will output the isolated part in `some-output-file.isolated.wav` and background part (isolated subtracted from original) in `some-output-file.background.wav` (any supported codec other than `wav` can be used - this is just an example)
 * VAD operations now return a timeline including only the active sections, labeled as `active`
-* When the specified language is not English, but an `.en` Whisper model was specified, a warning would be shown, and the model would be automatically switched to the corresponding multilingual model (omitting the `.en`), instead of producing an error
+* When the specified language is not English, but an `.en` Whisper model was specified, a warning would be shown, and the model will be automatically switched to the corresponding multilingual model (omitting the `.en`), instead of producing an error
 * Default speech language detection engine is now changed to `whisper`
 * Default voice activity detection engine is now changed to `silero`
 * CLI: duplicate file name outputs would now append the `_001` suffix pattern instead of ` (1)`. This change is meant to simplify sorting and typing the resulting file names and remove the space and parenthesis characters, to ensure compatibility with all operating systems
@@ -40,7 +40,7 @@ For releases after `1.0.0`, see the [GitHub releases page](https://github.com/ec
 * `dryMixGainDb` denoising option renamed to `dryMixGain`
 
 **Fixes**:
-* Integrated `whisper` engine now uses `tiktoken` to tokenize text, which produces near identical tokenization compared to the official Python implementation. This fixes issues with decoding Chinese characters, correctly encoding prompts, and several others languages with characters that span multiple tokens
+* Integrated `whisper` engine now uses `tiktoken` to tokenize text, which produces near identical tokenization compared to the official Python implementation. This fixes issues with decoding Chinese characters, correctly encoding prompts, and several other languages with characters that span multiple tokens
 * Fix voice language lists for multilingual voices in Elevenlabs TTS engine
 * Fix runtime error with `rnnoise` when used as VAD engine
 * Fix issue in CLI where supported output media formats weren't reported correctly
@@ -132,7 +132,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Expose subtitle configuration options to CLI
 
 **Enhancements**:
-* Improve speech language detection to work with arbitrary length audio. Split audio to overlapping parts and detect each part individually. Then average the results.
+* Improve speech language detection to work with arbitrary length audio. Split audio into overlapping parts and detect each part individually. Then average the results.
 * Add more heteronyms
 
 **Behavioral changes**:
@@ -251,8 +251,8 @@ Many features, enhancements, and fixes were incrementally added over the span of
 **New features**:
 
 **Enhancements**:
-* Show current sentence and segment in synthesis log.
-* Add check for cancellation flag.
+* Show current sentence and segment in synthesis log
+* Add check for cancellation flag
 * Add support to additional VITS voices
 * Improve auto TTS engine selection
 * Many Enhancements
