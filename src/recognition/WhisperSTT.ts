@@ -442,7 +442,7 @@ export class Whisper {
 			partTokensConfidence = partTokensConfidence.slice(initialTokens.length)
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
-			// Compute compression ratio for part
+			// Compute compression ratio for part (disabled for now)
 			if (false) {
 				const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens))).ratio
 			}
@@ -453,9 +453,11 @@ export class Whisper {
 			// Generate timeline from alignment path
 			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, partTokensConfidence)
 
+			// Add tokens to output
 			allDecodedTokens.push(...partTokens)
 			timeline.push(...partTimeline)
 
+			// Update previous text tokens
 			previousPartTextTokens = partTokens.filter(token => this.isTextToken(token))
 
 			audioOffset = audioEndOffset
@@ -479,22 +481,24 @@ export class Whisper {
 
 		whisperAlignmentOptions = extendDeep(defaultWhisperAlignmentOptions, whisperAlignmentOptions)
 
+		const targetLanguage = task === 'transcribe' ? sourceLanguage : 'en'
+
 		const shouldSplitToSentences = false
 
 		let simplifiedTranscript = ''
 
 		if (shouldSplitToSentences) {
-			const sentences = splitToSentences(transcript, 'en')
+			const sentences = splitToSentences(transcript, targetLanguage)
 
 			for (const sentence of sentences) {
-				let sentenceWords = await splitToWords(sentence, 'en')
+				let sentenceWords = await splitToWords(sentence, targetLanguage)
 				sentenceWords = sentenceWords.filter(word => isWord(word))
 
 				simplifiedTranscript += sentenceWords.join(' ')
 				simplifiedTranscript += ' '
 			}
 		} else {
-			let words = await splitToWords(transcript, 'en')
+			let words = await splitToWords(transcript, targetLanguage)
 			words = words.map(word => word.trim())
 			words = words.filter(word => isWord(word))
 			simplifiedTranscript = words.join(' ')
@@ -744,10 +748,10 @@ export class Whisper {
 				offset: offsetTensor
 			}
 
-			// Run decoder
+			// Run decoder model
 			const decoderOutputs = await this.textDecoder!.run(decoderInputs)
 
-			// Store results
+			// Extract decoder model results
 			const logitsBuffer = decoderOutputs['logits'].data as Float32Array
 			kvCacheTensor = decoderOutputs['output_kv_cache'] as any
 
@@ -755,7 +759,7 @@ export class Whisper {
 			const crossAttentionQKsForToken = makeOnnxLikeFloat32Tensor(crossAttentionQKsForTokenOnnx)
 			crossAttentionQKsForTokenOnnx.dispose()
 
-			// Get logits
+			// Compute logits
 			const resultLogitsFloatArrays = splitFloat32Array(logitsBuffer, logitsBuffer.length / decoderOutputs['logits'].dims[1])
 			const allTokenLogits = Array.from(resultLogitsFloatArrays[resultLogitsFloatArrays.length - 1])
 
@@ -817,6 +821,7 @@ export class Whisper {
 				timestampTokenSeenCount += 1
 
 				if (previousTokenWasTimestamp) {
+					// If previously decoded token was a timestamp token, repeat it
 					const previousToken = decodedTokens[decodedTokens.length - 1]
 					const previousTokenTimestampLogits = decodedTokensTimestampLogits[decodedTokensTimestampLogits.length - 1]
 					const previousTokenConfidence = decodedTokensConfidence[decodedTokensConfidence.length - 1]
@@ -825,6 +830,7 @@ export class Whisper {
 
 					lastTimestampTokenIndex = decodedTokens.length
 				} else {
+					// Otherwise decode the highest probability timestamp
 					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
 					const confidence = probabilities[timestampToken]
 
@@ -834,6 +840,7 @@ export class Whisper {
 				return true
 			}
 
+			// Call the method to decode timestamp token if needed
 			const timestampTokenDecoded = decodeTimestampTokenIfNeeded()
 
 			if (timestampTokenDecoded) {
@@ -848,7 +855,7 @@ export class Whisper {
 			let shouldDecodeEndfOfTextToken = false
 
 			// If not in initial state, and the end-of-text token's probability is sufficiently higher than
-			// the second highest ranked token, then set to accept it
+			// the second highest ranked token, then accept end-of-text
 			if (!isInitialState) {
 				const endOfTextTokenLogit = nonTimestampTokenLogits[endOfTextToken]
 
@@ -888,7 +895,7 @@ export class Whisper {
 					nonTimestampTokenLogits[suppressedTokenIndex] = -Infinity
 				}
 
-				// Suppress space token if at initial state
+				// Suppress the space token if at initial state
 				if (isInitialState) {
 					nonTimestampTokenLogits[spaceToken] = -Infinity
 				}
@@ -902,7 +909,7 @@ export class Whisper {
 				break
 			}
 
-			// Suppress end-of-text if it shouldn't be included in candidates
+			// Suppress end-of-text token if it shouldn't be included in candidates
 			if (!options.includeEndTokenInCandidates) {
 				nonTimestampTokenLogits[endOfTextToken] = -Infinity
 			}
@@ -1072,8 +1079,10 @@ export class Whisper {
 			throw new Error(`Audio part is longer than 30 seconds`)
 		}
 
+		// Compute a mel spectogram
 		await logger.startAsync('Extract mel spectogram from audio part')
 
+		// Pad audio samples to ensure that have a duration of 30 seconds
 		const paddedAudioSamples = new Float32Array(maxAudioSamples)
 		paddedAudioSamples.set(audioSamples, 0)
 
@@ -1084,6 +1093,8 @@ export class Whisper {
 		await logger.startAsync('Normalize mel spectogram')
 
 		const logMelSpectogram = melSpectogram.map(spectrum => spectrum.map(mel => Math.log10(Math.max(mel, 1e-10))))
+
+		// Find maximum log mel value in the spectrum
 		let maxLogMel = -Infinity
 
 		for (const spectrum of logMelSpectogram) {
@@ -1094,9 +1105,11 @@ export class Whisper {
 			}
 		}
 
+		// Normalize log mel spectogram (based on Python reference code)
 		const normalizedLogMelSpectogram = logMelSpectogram.map(spectrum => spectrum.map(
 			logMel => (Math.max(logMel, maxLogMel - 8) + 4) / 4))
 
+		// Flatten the normalized log mel spectogram
 		const flattenedNormalizedLogMelSpectogram = new Float32Array(maxAudioFrames * filterbankCount)
 
 		for (let i = 0; i < filterbankCount; i++) {
@@ -1105,6 +1118,7 @@ export class Whisper {
 			}
 		}
 
+		// Run the encoder model
 		await logger.startAsync('Encode mel spectogram with Whisper encoder model')
 
 		const inputTensor = new Onnx.Tensor('float32', flattenedNormalizedLogMelSpectogram, [1, filterbankCount, maxAudioFrames])
