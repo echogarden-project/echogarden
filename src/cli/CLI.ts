@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
-import { CLIArguments, parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
+import { parseCLIArguments } from './CLIParser.js'
+import { clip, convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchema.js'
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
@@ -25,6 +25,7 @@ import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import JSON5 from 'json5'
 import { getLowercaseFileExtension, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
+import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
 
 //const log = logToStderr
 
@@ -56,92 +57,150 @@ async function startIfInWorkerThread() {
 	start(process.argv.slice(2))
 }
 
+type CLIOperationData = {
+	operation: string
+	operationArgs: string[]
+
+	globalOptions: API.GlobalOptions
+	cliOptions: CLIOptions
+
+	operationOptionsLookup: Map<string, string>
+}
+
 export async function start(processArgs: string[]) {
 	const logger = new Logger()
 
-	let args: CLIArguments
+	const operationData: CLIOperationData = {
+		operation: '',
+		operationArgs: [],
+
+		globalOptions: {},
+		cliOptions: {},
+
+		operationOptionsLookup: new Map<string, string>(),
+	}
 
 	try {
 		const packageData = await readAndParseJsonFile(resolveToModuleRootDir('package.json'))
 
 		logger.log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
 
-		const command = processArgs[0]
+		const operation = processArgs[0]
 
-		if (!command || command == 'help') {
-			logger.log(`Supported operations:\n\n${commandHelp.join('\n')}`)
+		if (!operation || operation == 'help') {
+			logger.log(`Supported operations:\n\n${help.join('\n')}`)
 			process.exit(0)
 		}
 
-		if (command == '--help') {
-			logger.log(`There's no command called '--help'. Did you mean to run 'echogarden help'?`)
-			process.exit(0)
+		if (operation == '--help' || operation == '-h') {
+			logger.log(`There's no operation called '${operation}'. Did you mean to run 'echogarden help'?`)
+			process.exit(1)
 		}
 
-		args = parseCLIArguments(command, processArgs.slice(1))
+		if (operation.startsWith('-')) {
+			logger.log(`Operation name '${operation}' is invalid. It cannot start with a hyphen.`)
+			process.exit(1)
+		}
 
-		if (!args.options.has('config')) {
+		const { operationArgs, parsedArgumentsLookup }  = parseCLIArguments(processArgs.slice(1))
+
+		if (!parsedArgumentsLookup.has('config')) {
 			const defaultConfigFile = `./${appName}.config`
 			const defaultJsonConfigFile = defaultConfigFile + '.json'
 
 			if (existsSync(defaultConfigFile)) {
-				args.options.set('config', defaultConfigFile)
+				parsedArgumentsLookup.set('config', defaultConfigFile)
 			} else if (existsSync(defaultJsonConfigFile)) {
-				args.options.set('config', defaultJsonConfigFile)
+				parsedArgumentsLookup.set('config', defaultJsonConfigFile)
 			}
 		}
 
-		if (args.options.has('config')) {
-			const configFilePath = args.options.get('config')!
-			args.options.delete('config')
+		if (parsedArgumentsLookup.has('config')) {
+			const configFilePath = parsedArgumentsLookup.get('config')!
+			parsedArgumentsLookup.delete('config')
 
-			let parsedOptionFile: ParsedConfigFile
+			let parsedConfigFile: ParsedConfigFile
 
 			if (configFilePath.endsWith('.config')) {
-				parsedOptionFile = await parseConfigFile(configFilePath)
+				parsedConfigFile = await parseConfigFile(configFilePath)
 			} else if (configFilePath.endsWith('.config.json')) {
-				parsedOptionFile = await parseJSONConfigFile(configFilePath)
+				parsedConfigFile = await parseJSONConfigFile(configFilePath)
 			} else {
 				throw new Error(`Specified config file '${configFilePath}' doesn't have a supported extension. Should be either '.config' or '.config.json'`)
 			}
 
-			let sectionName = args.command
+			let sectionName = operation
 
 			if (sectionName.startsWith('speak-')) {
 				sectionName = 'speak'
 			}
 
-			const newOptions = parsedOptionFile.get(sectionName) || new Map<string, string>()
+			const globalOptionsLookup = new Map<string, string>()
+			const cliOptionsLookup = new Map<string, string>()
+			const operationsOptionsLookup = new Map<string, string>()
 
-			for (const [key, value] of args.options) {
-				newOptions.set(key, value)
+			if (parsedConfigFile.has('global')) {
+				for (const [key, value] of parsedConfigFile.get('global')!) {
+					globalOptionsLookup.set(key, value)
+				}
 			}
 
-			args.options = newOptions
+			if (parsedConfigFile.has('cli')) {
+				for (const [key, value] of parsedConfigFile.get('cli')!) {
+					cliOptionsLookup.set(key, value)
+				}
+			}
+
+			if (parsedConfigFile.has(sectionName)) {
+				for (const [key, value] of parsedConfigFile.get(sectionName)!) {
+					operationsOptionsLookup.set(key, value)
+				}
+			}
+
+			const globalOptionsKeys = API.listGlobalOptions()
+			const cliOptionsKeys = CLIOptionsKeys
+
+			for (const [key, value] of parsedArgumentsLookup) {
+				if (globalOptionsKeys.includes(key)) {
+					globalOptionsLookup.set(key, value)
+				} else if (cliOptionsKeys.includes(key as any)) {
+					cliOptionsLookup.set(key, value)
+				} else {
+					operationsOptionsLookup.set(key, value)
+				}
+			}
+
+			operationData.operation = operation
+			operationData.operationArgs = operationArgs
+
+			operationData.globalOptions = await optionsLookupToTypedObject(globalOptionsLookup, 'GlobalOptions')
+			operationData.cliOptions = await optionsLookupToTypedObject(cliOptionsLookup, 'CLIOptions')
+			operationData.operationOptionsLookup = operationsOptionsLookup
 		}
 	} catch (e: any) {
 		resetActiveLogger()
 
-		logger.logTitledMessage(`Error`, e.message, chalk.redBright)
+		logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
 		process.exit(1)
 	}
 
-	let debugMode = false
-	if (args.options.has('debug')) {
-		args.options.delete('debug')
+	for (const key in operationData.globalOptions) {
+		const value = (operationData.globalOptions as any)[key]
 
-		debugMode = true
+		API.setGlobalOption(key as any, value)
 	}
 
+	const debugMode = operationData.cliOptions.debug || false
+
 	try {
-		await startWithArgs(args)
+		await startWithArgs(operationData)
 	} catch (e: any) {
 		resetActiveLogger()
 
 		if (debugMode) {
-			logger.log(e)
+			logger.log(e, 'error')
 		} else {
-			logger.logTitledMessage(`Error`, e.message, chalk.redBright)
+			logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
 		}
 
 		process.exit(1)
@@ -152,7 +211,7 @@ export async function start(processArgs: string[]) {
 
 const executableName = `${chalk.cyanBright('echogarden')}`
 
-const commandHelp = [
+const help = [
 	`${executableName} ${chalk.magentaBright('speak')} text [output files...] [options...]`,
 	`    Speak the given text\n`,
 	`${executableName} ${chalk.magentaBright('speak-file')} inputFile [output files...] [options...]`,
@@ -192,124 +251,123 @@ const commandHelp = [
 	`${executableName} ${chalk.magentaBright('serve')} [options...]`,
 	`    Start a server\n`,
 	`Options reference: ${chalk.blueBright('https://bit.ly/echogarden-options')}`
-	//`    ${chalk.blueBright('https://github.com/echogarden-project/echogarden/blob/main/docs/Options.md')}`
 ]
 
-async function startWithArgs(parsedArgs: CLIArguments) {
+async function startWithArgs(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	switch (parsedArgs.command) {
+	switch (operationData.operation) {
 		case 'speak':
 		case 'speak-file':
 		case 'speak-url':
 		case 'speak-wikipedia': {
-			await speak(parsedArgs.command, parsedArgs.commandArgs, parsedArgs.options)
+			await speak(operationData)
 			break
 		}
 
 		case 'transcribe': {
-			await transcribe(parsedArgs.commandArgs, parsedArgs.options)
+			await transcribe(operationData)
 			break
 		}
 
 		case 'align': {
-			await align(parsedArgs.commandArgs, parsedArgs.options)
+			await align(operationData)
 			break
 		}
 
 		case 'translate-speech': {
-			await translateSpeech(parsedArgs.commandArgs, parsedArgs.options)
+			await translateSpeech(operationData)
 			break
 		}
 
 		case 'align-translation': {
-			await alignTranslation(parsedArgs.commandArgs, parsedArgs.options)
+			await alignTranslation(operationData)
 			break
 		}
 
 		case 'detect-language': {
-			await detectLanguage(parsedArgs.commandArgs, parsedArgs.options, 'auto')
+			await detectLanguage(operationData, 'auto')
 			break
 		}
 
 		case 'detect-speech-language': {
-			await detectLanguage(parsedArgs.commandArgs, parsedArgs.options, 'speech')
+			await detectLanguage(operationData, 'speech')
 			break
 		}
 
 		case 'detect-text-language': {
-			await detectLanguage(parsedArgs.commandArgs, parsedArgs.options, 'text')
+			await detectLanguage(operationData, 'text')
 			break
 		}
 
 		case 'detect-voice-activity': {
-			await detectVoiceActivity(parsedArgs.commandArgs, parsedArgs.options)
+			await detectVoiceActivity(operationData)
 			break
 		}
 
 		case 'denoise': {
-			await denoise(parsedArgs.commandArgs, parsedArgs.options)
+			await denoise(operationData)
 			break
 		}
 
 		case 'isolate': {
-			await isolate(parsedArgs.commandArgs, parsedArgs.options)
+			await isolate(operationData)
 			break
 		}
 
 		case 'list-engines': {
-			await listEngines(parsedArgs.commandArgs, parsedArgs.options)
+			await listEngines(operationData)
 			break
 		}
 
 		case 'list-voices': {
-			await listTTSVoices(parsedArgs.commandArgs, parsedArgs.options)
+			await listTTSVoices(operationData)
 			break
 		}
 
 		case 'install': {
-			await installPackages(parsedArgs.commandArgs, parsedArgs.options)
+			await installPackages(operationData)
 			break
 		}
 
 		case 'uninstall': {
-			await uninstallPackages(parsedArgs.commandArgs, parsedArgs.options)
+			await uninstallPackages(operationData)
 			break
 		}
 
 		case 'list-packages': {
-			await listPackages(parsedArgs.commandArgs, parsedArgs.options)
+			await listPackages(operationData)
 			break
 		}
 
 		case 'serve': {
-			await serve(parsedArgs.commandArgs, parsedArgs.options)
+			await serve(operationData)
 			break
 		}
 
 		default: {
-			logger.logTitledMessage(`Unknown command`, parsedArgs.command, chalk.redBright)
+			logger.logTitledMessage(`Unknown operation`, operationData.operation, chalk.redBright, 'error')
 			process.exit(1)
 		}
 	}
 }
 
-type SpeakCommand = 'speak' | 'speak-file' | 'speak-url' | 'speak-wikipedia'
-
-async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: Map<string, string>) {
+async function speak(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const mainArg = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operation, operationOptionsLookup, cliOptions } = operationData
+
+	const mainArg = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (mainArg == undefined) {
-		if (command == 'speak') {
+		if (operation == 'speak') {
 			throw new Error(`'speak' requires an argument containing the text to speak.`)
-		} else if (command == 'speak-file') {
+		} else if (operation == 'speak-file') {
 			throw new Error(`'speak-file' requires an argument containing the file to speak.`)
-		} else if (command == 'speak-url') {
+		} else if (operation == 'speak-url') {
 			throw new Error(`'speak-url' requires an argument containing the url to speak.`)
-		} else if (command == 'speak-wikipedia') {
+		} else if (operation == 'speak-wikipedia') {
 			throw new Error(`'speak-wikipedia' requires an argument containing the name of the Wikipedia article to speak.`)
 		}
 
@@ -320,13 +378,13 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	additionalOptionsSchema.set('play', { type: 'boolean' })
 	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.SynthesisOptions = await cliOptionsMapToOptionsObject(cliOptions, 'SynthesisOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'SynthesisOptions', additionalOptionsSchema)
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	let plainText: string | undefined = undefined
@@ -335,7 +393,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	const plainTextParagraphBreaks = options.plainText?.paragraphBreaks || API.defaultSynthesisOptions.plainText!.paragraphBreaks!
 	const plainTextWhitespace = options.plainText?.whitespace || API.defaultSynthesisOptions.plainText!.whitespace!
 
-	if (command == 'speak') {
+	if (operation == 'speak') {
 		if (options.ssml) {
 			textSegments = [mainArg]
 		} else {
@@ -343,7 +401,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		}
 
 		plainText = mainArg
-	} else if (command == 'speak-file') {
+	} else if (operation == 'speak-file') {
 		const sourceFile = mainArg
 
 		if (!existsSync(sourceFile)) {
@@ -373,9 +431,9 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		} else {
 			throw new Error(`'speak-file' only supports inputs with extensions 'txt', 'html', 'htm', 'xml', 'ssml', 'srt', 'vtt'`)
 		}
-	} else if (command == 'speak-url') {
+	} else if (operation == 'speak-url') {
 		if (options.ssml) {
-			throw new Error(`speak-url doesn't provide SSML inputs`)
+			throw new Error(`speak-url doesn't accept SSML inputs`)
 		}
 
 		const url = mainArg
@@ -388,7 +446,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 		const textContent = await fetchDocumentText(url)
 
 		textSegments = splitToParagraphs(textContent, 'single', 'preserve')
-	} else if (command == 'speak-wikipedia') {
+	} else if (operation == 'speak-wikipedia') {
 		if (options.ssml) {
 			throw new Error(`speak-wikipedia doesn't provide SSML inputs`)
 		}
@@ -400,7 +458,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 		textSegments = await parseWikipediaArticle(mainArg, getShortLanguageCode(options.language))
 	} else {
-		throw new Error('Invalid command')
+		throw new Error(`Invalid operation specified: '${operation}'`)
 	}
 
 	async function onSegment(segmentData: API.SynthesisSegmentEventData) {
@@ -412,7 +470,7 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 
 		logger.end()
 
-		if ((options as any).play) {
+		if (cliOptions.play) {
 			let gainAmount = -3 - segmentData.peakDecibelsSoFar
 			//gainAmount = Math.min(gainAmount, 0)
 
@@ -451,11 +509,13 @@ async function speak(command: SpeakCommand, commandArgs: string[], cliOptions: M
 	logger.end()
 }
 
-async function transcribe(commandArgs: string[], cliOptions: Map<string, string>) {
+async function transcribe(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const sourceFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const sourceFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (sourceFilename == undefined) {
 		throw new Error(`'transcribe' requires an argument containing the source file name.`)
@@ -465,17 +525,13 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 		throw new Error(`The given source audio file '${sourceFilename}' was not found.`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.RecognitionOptions = await cliOptionsMapToOptionsObject(cliOptions, 'RecognitionOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'RecognitionOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { transcript, timeline, wordTimeline, language, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.recognize(sourceFilename, options)
@@ -500,7 +556,7 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		let audioToPlay: RawAudio
 
 		if (isolatedRawAudio) {
@@ -515,11 +571,13 @@ async function transcribe(commandArgs: string[], cliOptions: Map<string, string>
 	}
 }
 
-async function align(commandArgs: string[], cliOptions: Map<string, string>) {
+async function align(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const audioFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(2)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(2)
 
 	if (audioFilename == undefined) {
 		throw new Error(`align requires an argument containing the audio file path.`)
@@ -529,7 +587,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`The given source file '${audioFilename}' was not found.`)
 	}
 
-	const alignmentReferenceFile = commandArgs[1]
+	const alignmentReferenceFile = operationArgs[1]
 
 	if (alignmentReferenceFile == undefined) {
 		throw new Error(`align requires a second argument containing the alignment reference file path.`)
@@ -554,17 +612,12 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'AlignmentOptions')
 
-	const options: API.AlignmentOptions = await cliOptionsMapToOptionsObject(cliOptions, 'AlignmentOptions', additionalOptionsSchema)
-
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const { timeline, wordTimeline, transcript, language, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.align(audioFilename, text, options)
@@ -599,7 +652,7 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		let audioToPlay: RawAudio
 
 		if (isolatedRawAudio) {
@@ -614,11 +667,13 @@ async function align(commandArgs: string[], cliOptions: Map<string, string>) {
 	}
 }
 
-async function alignTranslation(commandArgs: string[], cliOptions: Map<string, string>) {
+async function alignTranslation(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const audioFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(2)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(2)
 
 	if (audioFilename == undefined) {
 		throw new Error(`align-translation requires an argument containing the audio file path.`)
@@ -628,7 +683,7 @@ async function alignTranslation(commandArgs: string[], cliOptions: Map<string, s
 		throw new Error(`The given source file '${audioFilename}' was not found.`)
 	}
 
-	const alignmentReferenceFile = commandArgs[1]
+	const alignmentReferenceFile = operationArgs[1]
 
 	if (alignmentReferenceFile == undefined) {
 		throw new Error(`align-translation requires a second argument containing the translated reference file path.`)
@@ -653,17 +708,13 @@ async function alignTranslation(commandArgs: string[], cliOptions: Map<string, s
 		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.TranslationAlignmentOptions = await cliOptionsMapToOptionsObject(cliOptions, 'TranslationAlignmentOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TranslationAlignmentOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
 	const {
@@ -705,7 +756,7 @@ async function alignTranslation(commandArgs: string[], cliOptions: Map<string, s
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		let audioToPlay: RawAudio
 
 		if (isolatedRawAudio) {
@@ -720,11 +771,13 @@ async function alignTranslation(commandArgs: string[], cliOptions: Map<string, s
 	}
 }
 
-async function translateSpeech(commandArgs: string[], cliOptions: Map<string, string>) {
+async function translateSpeech(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const inputFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const inputFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (inputFilename == undefined) {
 		throw new Error(`translate-speech requires an argument containing the input file path.`)
@@ -734,17 +787,13 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 		throw new Error(`The given input file '${inputFilename}' was not found.`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.SpeechTranslationOptions = await cliOptionsMapToOptionsObject(cliOptions, 'SpeechTranslationOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'SpeechTranslationOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
@@ -770,7 +819,7 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		let audioToPlay: RawAudio
 
 		if (isolatedRawAudio) {
@@ -809,18 +858,17 @@ async function translateSpeech(commandArgs: string[], cliOptions: Map<string, st
 	}
 }
 
-async function detectLanguage(commandArgs: string[], cliOptions: Map<string, string>, mode: 'speech' | 'text' | 'auto') {
+async function detectLanguage(operationData: CLIOperationData, mode: 'speech' | 'text' | 'auto') {
 	const logger = new Logger()
 
-	const inputFilePath = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const inputFilePath = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (!existsSync(inputFilePath)) {
 		throw new Error(`The given input file '${inputFilePath}' was not found.`)
 	}
-
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
 	const inputFileExtension = getLowercaseFileExtension(inputFilePath)
 	const supportedInputTextFormats = ['txt', 'srt', 'vtt']
@@ -838,8 +886,8 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 			throw new Error(`'detect-text-language' doesn't support input file extension '${inputFileExtension}'`)
 		}
 
-		const options: API.TextLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, 'TextLanguageDetectionOptions', additionalOptionsSchema)
-		allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+		const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TextLanguageDetectionOptions')
+		allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 		await checkOutputFilenames(outputFilenames, false, true, false)
 
@@ -857,8 +905,8 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 			throw new Error(`detect-speech-language requires an argument containing the input audio file path.`)
 		}
 
-		const options: API.SpeechLanguageDetectionOptions = await cliOptionsMapToOptionsObject(cliOptions, 'SpeechLanguageDetectionOptions', additionalOptionsSchema)
-		allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+		const options = await optionsLookupToTypedObject(operationOptionsLookup, 'SpeechLanguageDetectionOptions')
+		allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 		await checkOutputFilenames(outputFilenames, false, true, false)
 
@@ -880,18 +928,20 @@ async function detectLanguage(commandArgs: string[], cliOptions: Map<string, str
 	} else {
 		const resultsAsText = results.slice(0, 10).map(result => `${formatLanguageCodeWithName(result.language)}: ${result.probability.toFixed(5)}`).join('\n')
 
-		logger.log('')
-		logger.log(resultsAsText)
+		logger.log('', 'output')
+		logger.log(resultsAsText, 'output')
 	}
 
 	logger.end()
 }
 
-async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string, string>) {
+async function detectVoiceActivity(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const audioFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (audioFilename == undefined) {
 		throw new Error(`detect-voice-activity requires an argument containing the audio file path.`)
@@ -901,17 +951,13 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 		throw new Error(`The given source audio file '${audioFilename}' was not found.`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.VADOptions = await cliOptionsMapToOptionsObject(cliOptions, 'VADOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'VADOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
@@ -947,7 +993,7 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
 		const timelineToPlay = verboseTimeline.map(entry => {
@@ -958,11 +1004,13 @@ async function detectVoiceActivity(commandArgs: string[], cliOptions: Map<string
 	}
 }
 
-async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
+async function denoise(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const audioFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (audioFilename == undefined) {
 		throw new Error(`'denoise' requires an argument containing the audio file path.`)
@@ -972,17 +1020,13 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`The given source audio file '${audioFilename}' was not found.`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.DenoisingOptions = await cliOptionsMapToOptionsObject(cliOptions, 'DenoisingOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'DenoisingOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, true, false, false)
 
@@ -1000,16 +1044,18 @@ async function denoise(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		await playAudioSamples(denoisedAudio)
 	}
 }
 
-async function isolate(commandArgs: string[], cliOptions: Map<string, string>) {
+async function isolate(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const audioFilename = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (audioFilename == undefined) {
 		throw new Error(`'isolate' requires an argument containing the audio file path.`)
@@ -1019,17 +1065,13 @@ async function isolate(commandArgs: string[], cliOptions: Map<string, string>) {
 		throw new Error(`The given source audio file '${audioFilename}' was not found.`)
 	}
 
-	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
-	additionalOptionsSchema.set('play', { type: 'boolean' })
-	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
-
-	if (!cliOptions.has('play') && !cliOptions.has('no-play')) {
-		cliOptions.set('play', `${outputFilenames.length == 0}`)
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options: API.SourceSeparationOptions = await cliOptionsMapToOptionsObject(cliOptions, 'SourceSeparationOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'SourceSeparationOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, true, false, false)
 
@@ -1045,18 +1087,20 @@ async function isolate(commandArgs: string[], cliOptions: Map<string, string>) {
 
 	logger.end()
 
-	if ((options as any).play) {
+	if (cliOptions.play) {
 		await playAudioSamples(isolatedRawAudio)
 	}
 }
 
-async function listEngines(commandArgs: string[], cliOptions: Map<string, string>) {
+async function listEngines(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const targetOperation = commandArgs[0]
+	const { operationArgs } = operationData
+
+	const targetOperation = operationArgs[0]
 
 	if (!targetOperation) {
-		throw new Error(`The 'list-engines' command requires an argument specifying the operation to list engines for, like 'echogarden list-engines transcribe'.`)
+		throw new Error(`The 'list-engines' operation requires an argument specifying the operation to list engines for, like 'echogarden list-engines transcribe'.`)
 	}
 
 	let engines: API.EngineMetadata[]
@@ -1150,22 +1194,24 @@ async function listEngines(commandArgs: string[], cliOptions: Map<string, string
 	}
 
 	for (const [index, engine] of engines.entries()) {
-		logger.logTitledMessage('Identifier', chalk.magentaBright(engine.id))
-		logger.logTitledMessage('Name', engine.name)
-		logger.logTitledMessage('Description', engine.description)
-		logger.logTitledMessage('Type', engine.type)
+		logger.logTitledMessage('Identifier', chalk.magentaBright(engine.id), undefined, 'output')
+		logger.logTitledMessage('Name', engine.name, undefined, 'output')
+		logger.logTitledMessage('Description', engine.description, undefined, 'output')
+		logger.logTitledMessage('Type', engine.type, undefined, 'output')
 
 		if (index < engines.length - 1) {
-			logger.log('')
+			logger.log('', 'output')
 		}
 	}
 }
 
-async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, string>) {
+async function listTTSVoices(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	const targetEngine = commandArgs[0]
-	const outputFilenames = commandArgs.slice(1)
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const targetEngine = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
 
 	if (!targetEngine) {
 		const optionsSchema = await getOptionsSchema()
@@ -1177,11 +1223,11 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 	const additionalOptionsSchema = new Map<string, SchemaTypeDefinition>()
 	additionalOptionsSchema.set('overwrite', { type: 'boolean' })
 
-	cliOptions.set('engine', targetEngine)
+	operationOptionsLookup.set('engine', targetEngine)
 
-	const options: API.VoiceListRequestOptions = await cliOptionsMapToOptionsObject(cliOptions, 'VoiceListRequestOptions', additionalOptionsSchema)
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'VoiceListRequestOptions')
 
-	const allowOverwrite = getWithDefault((options as any).overwrite, overwriteByDefault)
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, false, true, false)
 
@@ -1215,67 +1261,71 @@ async function listTTSVoices(commandArgs: string[], cliOptions: Map<string, stri
 			await fileSaver(getEmptyRawAudio(0, 0), voiceList as any, voiceListTextWithoutColors)
 		}
 	} else {
-		logger.log(voiceListText)
+		logger.log(voiceListText, 'output')
 	}
 
 	logger.end()
 }
 
-async function installPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+async function installPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	if (commandArgs.length == 0) {
+	const { operationArgs } = operationData
+
+	if (operationArgs.length == 0) {
 		throw new Error('No package names specified')
 	}
 
 	const failedPackageNames: string[] = []
 
-	for (const packageName of commandArgs) {
+	for (const packageName of operationArgs) {
 		try {
 			await loadPackage(packageName)
 		} catch (e) {
 			resetActiveLogger()
 
-			logger.log(`Failed installing package ${packageName}: ${e}`)
+			logger.logTitledMessage(`Failed installing package ${packageName}`, e, chalk.redBright, 'error')
 			failedPackageNames.push(packageName)
 		}
 	}
 
 	if (failedPackageNames.length > 0) {
 		if (failedPackageNames.length == 1) {
-			logger.log(`The package ${failedPackageNames[0]} failed to install`)
+			logger.log(`The package ${failedPackageNames[0]} failed to install`, 'error')
 		} else {
-			logger.log(`The packages ${failedPackageNames.join(', ')} failed to install`)
+			logger.log(`The packages ${failedPackageNames.join(', ')} failed to install`, 'error')
 		}
 	}
 }
 
-async function uninstallPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+async function uninstallPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
-	if (commandArgs.length == 0) {
+	const { operationArgs } = operationData
+
+	if (operationArgs.length == 0) {
 		throw new Error('No package names specified')
 	}
 
 	const failedPackageNames: string[] = []
 
-	for (const packageName of commandArgs) {
+	for (const packageName of operationArgs) {
 		try {
 			await removePackage(packageName)
 		} catch (e) {
 			resetActiveLogger()
 
-			logger.log(`Failed uninstalling package ${packageName}: ${e}`)
+			logger.logTitledMessage(`Failed uninstalling package ${packageName}`, e, chalk.redBright, 'error')
 			failedPackageNames.push(packageName)
 		}
 	}
 
 	if (failedPackageNames.length > 0) {
-		logger.log(`The packages ${failedPackageNames.join(', ')} failed to uninstall`)
+		logger.log(`The packages ${failedPackageNames.join(', ')} failed to uninstall`, 'error')
 	}
 }
 
-async function listPackages(commandArgs: string[], cliOptions: Map<string, string>) {
+async function listPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const packagesDir = await ensureAndGetPackagesDir()
@@ -1302,13 +1352,15 @@ async function listPackages(commandArgs: string[], cliOptions: Map<string, strin
 
 	installedPackageNamesFormatted.sort()
 
-	logger.log(`Total of ${installedPackageNamesFormatted.length} packages installed in '${packagesDir}'\n`)
-
+	logger.log(`Total of ${installedPackageNamesFormatted.length} packages installed in '${packagesDir}'`)
+	logger.log(``)
 	logger.log(installedPackageNamesFormatted.join('\n'))
 }
 
-async function serve(commandArgs: string[], cliOptions: Map<string, string>) {
-	const options: ServerOptions = await cliOptionsMapToOptionsObject(cliOptions, 'ServerOptions')
+async function serve(operationData: CLIOperationData) {
+	const { operationOptionsLookup } = operationData
+
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'ServerOptions')
 
 	async function onServerStarted(serverOptions: ServerOptions) {
 		// Run a test routine (early development)
@@ -1343,7 +1395,7 @@ async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isola
 	}
 }
 
-async function cliOptionsMapToOptionsObject(cliOptionsMap: Map<string, string>, optionsRoot: keyof APIOptions, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>) {
+async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptionsMap: Map<string, string>, optionsRoot: K, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>): Promise<APIOptions[K]> {
 	const optionsSchema = await getOptionsSchema()
 	const resultingObj: any = {}
 

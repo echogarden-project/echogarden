@@ -56,10 +56,10 @@ export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFil
 
 	const result: ParsedConfigFile = new Map()
 
-	for (const command in parsedJSON) {
-		const commandObj = parsedJSON[command]
+	for (const operation in parsedJSON) {
+		const operationObj = parsedJSON[operation]
 
-		const commandMap = new Map<string, string>()
+		const operationMap = new Map<string, string>()
 
 		function addFromObject(obj: any, pathPrefix: string): void {
 			for (const propertyName in obj) {
@@ -70,19 +70,19 @@ export async function parseJSONConfigFile(path: string): Promise<ParsedConfigFil
 
 				if (typeof propertyValue == 'object') {
 					if (Array.isArray(propertyValue)) {
-						commandMap.set(propertyPath, JSON.stringify(propertyValue))
+						operationMap.set(propertyPath, JSON.stringify(propertyValue))
 					} else {
 						addFromObject(propertyValue, propertyPath)
 					}
 				} else {
-					commandMap.set(propertyPath, propertyValue)
+					operationMap.set(propertyPath, propertyValue)
 				}
 			}
 		}
 
-		addFromObject(commandObj, '')
+		addFromObject(operationObj, '')
 
-		result.set(command, commandMap)
+		result.set(operation, operationMap)
 	}
 
 	return result

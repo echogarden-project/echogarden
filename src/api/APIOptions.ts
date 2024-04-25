@@ -1,5 +1,6 @@
 import * as API from './API.js'
 import type { ServerOptions } from '../server/Server.js'
+import { CLIOptions } from '../cli/CLIOptions.js'
 
 export interface APIOptions {
 	VoiceListRequestOptions: API.VoiceListRequestOptions
@@ -14,4 +15,6 @@ export interface APIOptions {
 	DenoisingOptions: API.DenoisingOptions
 	SourceSeparationOptions: API.SourceSeparationOptions
 	ServerOptions: ServerOptions
+	GlobalOptions: API.GlobalOptions
+	CLIOptions: CLIOptions
 }

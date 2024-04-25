@@ -1,8 +1,7 @@
-export function parseCLIArguments(command: string, args: string[]): CLIArguments {
-	const parsedArgs: CLIArguments = {
-		command,
-		commandArgs: [],
-		options: new Map(),
+export function parseCLIArguments(args: string[]): ParsedCLIArguments {
+	const parsedArgs: ParsedCLIArguments = {
+		operationArgs: [],
+		parsedArgumentsLookup: new Map(),
 	}
 
 	for (let i = 0; i < args.length; i++) {
@@ -16,26 +15,30 @@ export function parseCLIArguments(command: string, args: string[]): CLIArguments
 
 			const optionText = currentArg.substring(2)
 
-			const indexOfEquals = optionText.indexOf('=')
-			if (indexOfEquals == 0) {
+			const indexOfEqualSign = optionText.indexOf('=')
+			if (indexOfEqualSign == 0) {
 				throw new Error('An option cannot have an empty name.')
-			} else if (indexOfEquals == -1) {
-				parsedArgs.options.set(optionText, '')
+			} else if (indexOfEqualSign == -1) {
+				if (optionText.startsWith('no-')) {
+					parsedArgs.parsedArgumentsLookup.set(optionText.substring(3), 'false')
+				} else {
+					parsedArgs.parsedArgumentsLookup.set(optionText, '')
+				}
 			} else {
-				const key = optionText.substring(0, indexOfEquals)
-				const value = optionText.substring(indexOfEquals + 1)
-				parsedArgs.options.set(key, value)
+				const key = optionText.substring(0, indexOfEqualSign)
+				const value = optionText.substring(indexOfEqualSign + 1)
+
+				parsedArgs.parsedArgumentsLookup.set(key, value)
 			}
 		} else {
-			parsedArgs.commandArgs.push(currentArg)
+			parsedArgs.operationArgs.push(currentArg)
 		}
 	}
 
 	return parsedArgs
 }
 
-export type CLIArguments = {
-	command: string
-	commandArgs: string[]
-	options: Map<string, string>
+export interface ParsedCLIArguments {
+	operationArgs: string[]
+	parsedArgumentsLookup: Map<string, string>
 }
