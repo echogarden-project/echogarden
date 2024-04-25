@@ -40,6 +40,12 @@
         },
         "ServerOptions": {
           "$ref": "#/definitions/ServerOptions"
+        },
+        "GlobalOptions": {
+          "$ref": "#/definitions/GlobalOptions"
+        },
+        "CLIOptions": {
+          "$ref": "#/definitions/CLIOptions"
         }
       },
       "required": [
@@ -54,7 +60,9 @@
         "VADOptions",
         "DenoisingOptions",
         "SourceSeparationOptions",
-        "ServerOptions"
+        "ServerOptions",
+        "GlobalOptions",
+        "CLIOptions"
       ],
       "additionalProperties": false
     },
@@ -1742,6 +1750,53 @@
         },
         "useWorkerThread": {
           "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GlobalOptions": {
+      "type": "object",
+      "properties": {
+        "ffmpegPath": {
+          "type": "string"
+        },
+        "soxPath": {
+          "type": "string"
+        },
+        "packageBaseURL": {
+          "type": "string"
+        },
+        "logLevel": {
+          "$ref": "#/definitions/LogLevel"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LogLevel": {
+      "type": "string",
+      "enum": [
+        "silent",
+        "output",
+        "error",
+        "warning",
+        "info",
+        "trace"
+      ]
+    },
+    "CLIOptions": {
+      "type": "object",
+      "properties": {
+        "play": {
+          "type": "boolean"
+        },
+        "overwrite": {
+          "type": "boolean"
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "config": {
+          "type": "string"
         }
       },
       "additionalProperties": false
