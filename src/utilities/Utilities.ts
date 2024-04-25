@@ -517,7 +517,7 @@ export function getTokenRepetitionScore(tokens: string[] | number[]) {
 			longestMatch = matchLength
 		}
 
-		const cycleCount = matchLength / i
+		const cycleCount = (matchLength / i) + 1
 
 		if (cycleCount > longestCycleRepetition) {
 			longestCycleRepetition = cycleCount
@@ -540,7 +540,7 @@ export async function resolveModuleScriptPath(moduleName: string) {
 export async function runOperationWithRetries<R>(
 	operationFunc: () => Promise<R>,
 	logger: Logger,
-	opreationName = 'Operation',
+	operationName = 'Operation',
 	delayBetweenRetries = 2000,
 	maxRetries = 200) {
 
@@ -560,21 +560,21 @@ export async function runOperationWithRetries<R>(
 
 			logger.setAsActiveLogger()
 
-			logger.logTitledMessage(`Error`, e.message, chalk.redBright)
-			logger.log(``)
-			logger.logTitledMessage(`${opreationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, chalk.redBright)
+			logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
+			logger.log('', 'error')
+			logger.logTitledMessage(`${operationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, chalk.redBright, 'error')
 
 			await delay(delayBetweenRetries)
 
-			logger.log(``)
-			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, chalk.yellowBright)
-			logger.log(``)
+			logger.log(``, 'warning')
+			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, chalk.yellowBright, 'warning')
+			logger.log(``, 'warning')
 
 			logger.unsetAsActiveLogger()
 		}
 	}
 
-	throw new Error(`${opreationName} failed after ${maxRetries} retry attempts`)
+	throw new Error(`${operationName} failed after ${maxRetries} retry attempts`)
 }
 
 export function writeToStdinInChunks(process: ChildProcessWithoutNullStreams, buffer: Buffer, chunkSize: number) {

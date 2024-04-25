@@ -716,7 +716,8 @@ export class Whisper {
 
 		// Start decoding loop
 		for (let decodedTokenCount = 0; decodedTokenCount < options.maxTokensPerPart!; decodedTokenCount++) {
-			const isInitialState = decodedTokens.length == initialTokens.length
+			const isInitialState = decodedTokens.length === initialTokens.length
+			const atLeastOneTextTokenDecoded = decodedTokens.slice(initialTokens.length).some(token => this.isTextToken(token))
 
 			// If not in initial state, reshape KV Cache tensor to accomodate a new output token
 			if (!isInitialState) {
@@ -759,7 +760,7 @@ export class Whisper {
 			const crossAttentionQKsForToken = makeOnnxLikeFloat32Tensor(crossAttentionQKsForTokenOnnx)
 			crossAttentionQKsForTokenOnnx.dispose()
 
-			// Compute logits
+			// Get logits
 			const resultLogitsFloatArrays = splitFloat32Array(logitsBuffer, logitsBuffer.length / decoderOutputs['logits'].dims[1])
 			const allTokenLogits = Array.from(resultLogitsFloatArrays[resultLogitsFloatArrays.length - 1])
 
@@ -768,7 +769,7 @@ export class Whisper {
 				allTokenLogits[suppressedTokenIndex] = -Infinity
 			}
 
-			if (isInitialState) {
+			if (!atLeastOneTextTokenDecoded) {
 				// If in initial state, suppress end-of-text token
 				allTokenLogits[endOfTextToken] = -Infinity
 			}
@@ -783,13 +784,19 @@ export class Whisper {
 					return false
 				}
 
+				if (isInitialState) {
+					addToken(timestampTokensStart, timestampTokenLogits, 1.0, crossAttentionQKsForToken)
+
+					return true
+				}
+
 				const previousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 1])
 				const secondPreviousTokenWasTimestamp = this.isTimestampToken(decodedTokens[decodedTokens.length - 2])
 
 				// If there are two successive timestamp tokens decoded, or the previous timestamp was the first token,
 				// don't decode a timestamp
 				if (previousTokenWasTimestamp &&
-					(decodedTokens.length === initialTokens.length + 1) || secondPreviousTokenWasTimestamp) {
+					((decodedTokens.length === initialTokens.length + 1) || secondPreviousTokenWasTimestamp)) {
 					return false
 				}
 
@@ -854,9 +861,9 @@ export class Whisper {
 
 			let shouldDecodeEndfOfTextToken = false
 
-			// If not in initial state, and the end-of-text token's probability is sufficiently higher than
-			// the second highest ranked token, then accept end-of-text
-			if (!isInitialState) {
+			// If at least one text token was decoded, and the end-of-text token's probability is
+			// sufficiently higher than the second highest ranked token, then accept end-of-text
+			if (atLeastOneTextTokenDecoded) {
 				const endOfTextTokenLogit = nonTimestampTokenLogits[endOfTextToken]
 
 				const otherTokensLogits = nonTimestampTokenLogits.slice()
@@ -931,8 +938,8 @@ export class Whisper {
 			if (options.suppressRepetition) {
 				// Using some hardcoded constants, for now
 				const tokenWindowSize = 30
-				const thresholdMatchLength = 6
-				const thresholdCycleRepetition = 2.0
+				const thresholdMatchLength = 4
+				const thresholdCycleRepetition = 3
 
 				const filteredCandidates: typeof topCandidates = []
 
@@ -1772,7 +1779,7 @@ export function normalizeWhisperModelName(modelName: WhisperModelName, languageC
 		modelName = modelName.slice(0, modelName.length - 3) as WhisperModelName
 
 		const logger = new Logger()
-		logger.logTitledMessage(`Warning`, `The model '${originalModelName}' is English only and cannot be used to transcribe language '${languageCode}'. using '${modelName}' instead.`, chalk.yellowBright)
+		logger.logTitledMessage(`Warning`, `The model '${originalModelName}' is English only and cannot be used to transcribe language '${languageCode}'. Using '${modelName}' instead.`, chalk.yellowBright, 'warning')
 	}
 
 	return modelName
