@@ -9,6 +9,7 @@ import path from 'node:path'
 import { extractTarball } from './Compression.js'
 import { createWriteStream, move, remove, readdir, ensureDir } from './FileSystem.js'
 import chalk from 'chalk'
+import { logLevelGreaterOrEqualTo } from '../api/GlobalOptions.js'
 
 export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = 'archive') {
 	const logger = new Logger()
@@ -18,7 +19,10 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	const tempDirPath = path.join(baseTempPath, `/${randomID}`)
 	await ensureDir(tempDirPath)
 
+	logger.end()
+
 	await downloadFile(options, tempTarballPath, `${chalk.cyanBright('Downloading')} ${chalk.greenBright(displayName)}`)
+
 	logger.end()
 
 	logger.start(`Extracting ${displayName}`)
@@ -40,7 +44,7 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 }
 
 export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = 'Downloading') {
-	const write = writeToStderr
+	const write = logLevelGreaterOrEqualTo('info') ? writeToStderr : () => {}
 
 	const downloadPromise = new OpenPromise<void>()
 

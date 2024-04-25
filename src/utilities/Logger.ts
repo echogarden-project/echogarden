@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import { Timer } from './Timer.js'
 import { logToStderr, writeToStderr, yieldToEventLoop } from './Utilities.js'
+import { LogLevel, logLevelGreaterOrEqualTo, logLevelSmallerThan } from '../api/GlobalOptions.js'
 
 let currentActiveLogger: Logger | null = null
 
@@ -23,7 +24,9 @@ export class Logger {
 			await yieldToEventLoop()
 		}
 
-		writeToStderr(`${titleColor(title)}.. `)
+		if (logLevelGreaterOrEqualTo('info')) {
+			writeToStderr(`${titleColor(title)}.. `)
+		}
 
 		this.setAsActiveLogger()
 
@@ -44,30 +47,41 @@ export class Logger {
 		if (this.active && currentActiveLogger == this) {
 			const elapsedTime = this.timer.elapsedTime
 
-			writeToStderr(`${elapsedTime.toFixed(1)}ms\n`)
+			if (logLevelGreaterOrEqualTo('info')) {
+				writeToStderr(`${elapsedTime.toFixed(1)}ms\n`)
+			}
+
 			currentActiveLogger = null
 		}
 
 		this.active = false
 	}
 
-	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright) {
+	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright, logLevel: LogLevel = 'info') {
 		const duration = Timer.currentTime - startTime
 
-		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`)
+		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`, logLevel)
 	}
 
-	logTitledMessage(title: string, content: string, titleColor = chalk.cyanBright) {
-		this.log(`${titleColor(title)}: ${content}`)
+	logTitledMessage(title: string, content: any, titleColor = chalk.cyanBright, logLevel: LogLevel = 'info') {
+		this.log(`${titleColor(title)}: ${content}`, logLevel)
 	}
 
-	log(message: any) {
+	log(message: any, logLevel: LogLevel = 'info') {
+		if (logLevelSmallerThan(logLevel)) {
+			return
+		}
+
 		if (currentActiveLogger == this || currentActiveLogger == null) {
 			logToStderr(message)
 		}
 	}
 
-	write(message: any) {
+	write(message: any, logLevel: LogLevel = 'info') {
+		if (logLevelSmallerThan(logLevel)) {
+			return
+		}
+
 		if (currentActiveLogger == this || currentActiveLogger == null) {
 			writeToStderr(message)
 		}

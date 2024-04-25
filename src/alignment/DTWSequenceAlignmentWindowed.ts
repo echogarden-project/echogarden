@@ -1,3 +1,5 @@
+import chalk from 'chalk'
+import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { AlignmentPath } from './SpeechAlignment.js'
 
@@ -164,7 +166,11 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 		}
 
 		if (upCost == Infinity && leftCost == Infinity && upAndLeftCost == Infinity) {
-			log(`computeBestPath: Unexpected - all cost directions are equal to infinity (${columnIndex}, ${rowIndex}).`)
+			const logger = new Logger()
+
+			logger.setAsActiveLogger()
+			logger.logTitledMessage(`computeBestPath`, `unexpected - all cost directions are equal to infinity (${columnIndex}, ${rowIndex}).`, chalk.yellowBright, 'warning')
+			logger.unsetAsActiveLogger()
 		}
 
 		const smallestCostDirection = argIndexOfMinimumOf3(upCost, leftCost, upAndLeftCost)
