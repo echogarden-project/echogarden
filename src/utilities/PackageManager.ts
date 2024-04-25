@@ -4,6 +4,7 @@ import { getAppDataDir, ensureDir, existsSync, remove } from './FileSystem.js'
 import { appName } from '../api/Common.js'
 import { GaxiosOptions } from 'gaxios'
 import { getAppTempDir } from './PathUtilities.js'
+import { getGlobalOption } from '../api/GlobalOptions.js'
 
 export async function loadPackage(packageName: string) {
 	packageName = resolveToVersionedPackageNameIfNeeded(packageName)
@@ -16,13 +17,15 @@ export async function loadPackage(packageName: string) {
 		return packagePath
 	}
 
+	const packageBaseURL = getGlobalOption('packageBaseURL')
+
 	const tempPath = getAppTempDir(appName)
 
 	const headers = {
 	}
 
 	const options: GaxiosOptions = {
-		url: `${basePackageUrl}${packageName}.tar.gz`,
+		url: `${packageBaseURL}${packageName}.tar.gz`,
 		headers
 	}
 
@@ -75,8 +78,6 @@ export function getVersionTagFromPackageName(packageName: string) {
 export function resolveVersionTagForUnversionedPackageName(unversionedPackageName: string) {
 	return packageVersionTagResolutionLookup[unversionedPackageName] || defaultVersionTag
 }
-
-const basePackageUrl = 'https://huggingface.co/echogarden/echogarden-packages/resolve/main/'
 
 const defaultVersionTag = '20230718'
 
