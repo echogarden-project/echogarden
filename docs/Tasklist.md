@@ -83,7 +83,6 @@
 * `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
 
 ### API
-* Option to control logging verbosity
 * Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
 * See whether it's possible to detect and include / remove Emoji characters in timelines
@@ -100,8 +99,7 @@
 * Deploy and add the new n-gram based text language detection model
 
 ### Segmentation
-* Split long words
-* See if it's possible to reliably use eSpeak as a segmentation engine
+* See if it's possible or useful to reliably use eSpeak as a segmentation engine.
 
 ### Subtitles
 * Split long words if needed. This is especially important for Chinese and Japanese
@@ -159,7 +157,7 @@
 * Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
 * Cache last model (if enough memory is available)
 * The segment output can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
-Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
+* Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment
 
@@ -246,7 +244,7 @@ Bring back the option to use eSpeak DTW based alignment on segments, as an alter
 * Synthesize the given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
 
 ### Recognition
-* Low latency recognition mode. Make the partial transcription available as fast as possible
+* Low latency, streaming recognition mode. Make the partial transcription available as fast as possible
 * Live input / microphone recognition
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder

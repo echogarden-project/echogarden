@@ -61,9 +61,9 @@ I don't think that `stdin` and `stdout` are able to capture the type of complex,
 
 ## Why does the CLI use `--option=value` and not `--option value` syntax?
 
-I would have allowed `--option value` if I could. The reason `--option=value` syntax is used is because the options are defined using an auto-generated schema, which is different for each command. This means I don't know ahead of time which options require an extra value, like `--voice Bob`, and which don't, like `--play`, at the time the command line is parsed. This makes it difficult to intersperse switches and inputs/outputs like `echogarden speak "Hello" --play output.mp3 --voice Bob`.
+I would have allowed `--option value` if I could. The reason `--option=value` syntax is used is because the options are defined using an auto-generated schema, which is different for each operation. This means I don't know ahead of time which options require an extra value, like `--voice Bob`, and which don't, like `--play`, at the time the command line is parsed. This makes it difficult to intersperse switches and inputs/outputs like `echogarden speak "Hello" --play output.mp3 --voice Bob`.
 
-In order to support a syntax like `--option value` I will need to parse the command line separately for each command, but then it would be difficult to share common options between all of them.
+In order to support a syntax like `--option value` I will need to parse the command line separately for each operation, but then it would be difficult to share common options between all of them.
 
 Also, `option=value` is more similar to the syntax used in the configuration file, which makes it more consistent, and since the CLI accepts arbitrary numbers of free arguments, it helps prevent confusion on whether an argument is related to an option or a free one.
 

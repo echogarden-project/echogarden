@@ -370,3 +370,26 @@ These are shared between text-to-speech, speech-to-text and alignment operations
 * `maxAddedDuration`: maximum extra time (in seconds) that may be added after a cue's end time. This gives the reader additional time to read the cue, and also ensures that very short duration cues aren't shown in a flash. Defaults to `3.0`
 
 **Note**: options `maxLineCount`, `maxLineWidth`, `minWordsInLine`, `separatePhrases`, are only effective when using the `segment` and `sentence` modes, and are ignored in all other modes. `maxAddedDuration` doesn't apply to modes `word`, `phone` and `word+phone` (they always use the exact start and end timestamps).
+
+## Global options
+
+On the CLI, global options can be used with any operation. To set global options via the API, use the `setGlobalOption(key, value)` method (see the [API reference](API.md) for more details).
+
+* `ffmpegPath`: sets a custom path for the FFmpeg executable
+* `soxPath`: sets a custom path for the SoX executable
+* `packageBaseURL`: sets a custom base URL for the remote package repository used to download missing packages. Default is `https://huggingface.co/echogarden/echogarden-packages/resolve/main/`. If `huggingface.co` isn't accessible in your location, you can set to use a mirror by changing `huggingface.co` to alternative a domain like `hf-mirror.com`
+* `logLevel`: adjusts the quantity of log messages shown during processing. Possible values: `silent`, `output`, `error`, `warning`, `info`, `trace`. Defaults to `info`
+
+
+## CLI options
+
+These options are for the CLI only.
+
+* `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
+* `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
+* `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
+* `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json`, if found at the current directory
+
+## Using a configuration file
+
+The CLI supports loading options from a default or custom configuration file in various formats. See the [CLI Guide](CLI.md) for more details.

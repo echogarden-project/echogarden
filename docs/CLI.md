@@ -118,6 +118,73 @@ This would align the audio file `dutch-speech.mp3` with the translated transcrip
 echogarden align-translation dutch-speech.mp3 english-translation.txt result.srt result.json
 ```
 
+## Language detection
+
+**Task**: Given audio or textual input, try to identify which language it is spoken or written in.
+
+Try to identify the language of an audio file containing speech, and print the probabilities to the terminal:
+```bash
+echogarden detect-speech-language speech.mp3
+```
+
+Try to identify the language of a text file, and print the probabilities to the terminal:
+```bash
+echogarden detect-text-language story.txt
+```
+
+Try to identify the language of a text file, and store the detailed probabilities in a JSON file:
+```bash
+echogarden detect-text-language story.txt detection-results.json
+```
+
+## Voice activity detection
+
+**Task**: Given an audio file, try to classify which parts of the audio contain speech, and which don't.
+
+This would apply VAD and play the audio, synchronized with `speech` and `nonspeech` indicators, printed to the terminal.
+```bash
+echogarden detect-voice-activity speech.mp3
+```
+
+This would apply VAD and store the results in a timeline JSON file.
+```bash
+echogarden detect-voice-activity speech.mp3 timeline.json
+```
+
+## Speech denoising
+
+**Task**: Attempt to reduce the amount of background noise in a spoken recording.
+
+This would apply denoising and play the denoised audio:
+```bash
+echogarden denoise speech.mp3
+```
+
+This would apply denoising, and save the denoised audio to a file:
+```bash
+echogarden denoise speech.mp3 denoised-speech.mp3
+```
+
+## Source separation
+
+**Task**: Try to isolate a vocal track (or other type of track, depending on model used), from the audio.
+
+This would apply source separation and play the isolated audio:
+```bash
+echogarden isolate voice-with-music.mp3
+```
+
+This would apply source separation, and save both the isolated and background audio:
+```bash
+echogarden isolate voice-with-music.mp3 voice-isolated.mp3
+```
+
+Written files would be:
+```
+voice-isolated.mp3
+voice-isolated.background.mp3
+```
+
 ## Using output templates to split the output to multiple files
 
 Echogarden can split the output to multiple parts based on the segment boundaries detected. For example:
@@ -151,7 +218,7 @@ echogarden transcribe speech.mp3 --no-play
 
 ## File overwriting
 
-By default, the CLI doesn't overwrite existing files. If an output file `out.mp3` already exists, it will save it as `out_001.mp3`.
+By default, the CLI doesn't overwrite existing files. If an output file `out.mp3` already exists, it will save it as `out_00x.mp3`.
 
 To have existing files be overwritten, you can pass the `--overwrite` option.
 
@@ -161,9 +228,26 @@ Since there are many possible configuration options, it may be more convenient t
 
 When a file named `echogarden.config` is found at the current directory, it will be loaded automatically and its content would be used as default options. You can also specify a particular configuration file path with the option `--config=path/to/your-config-file.config`.
 
-The configuration file format is simple and has a dedicated section for each command (all `speak-` commands are grouped together under `speak`):
+The configuration file format is simple and has a dedicated section for each command (all `speak-` commands are grouped together under `speak`), `global` section for global API options, and `cli` for CLI-specific options. `#` is used as a comment character.
 
+Example:
 ```conf
+[global]
+
+# Custom remote packages base URL:
+packageBaseURL = https://hf-mirror.com/echogarden/echogarden-packages/resolve/main/
+
+# Log level:
+logLevel = info
+
+[cli]
+
+# Should play audio in the terminal:
+play = true
+
+# Overwrite existing files:
+overwrite = true
+
 [speak]
 
 # Engine for synthesis:
@@ -180,8 +264,9 @@ customLexiconPaths = ["lexicon1.json", "lexicon2.json"]
 # Engine for recognition:
 engine = whisper
 
-# Whisper model to use:
+# Whisper options:
 whisper.model = tiny
+whisper.temperature = 0.15
 ```
 
 ### JSON configuration file
@@ -216,74 +301,6 @@ Flattened property names are also accepted:
 }
 ```
 
-## Other operations
-
-### Language detection
-
-**Task**: Given audio or textual input, try to identify which language it is spoken or written in.
-
-Try to identify the language of an audio file containing speech, and print the probabilities to the terminal:
-```bash
-echogarden detect-speech-language speech.mp3
-```
-
-Try to identify the language of a text file, and print the probabilities to the terminal:
-```bash
-echogarden detect-text-language story.txt
-```
-
-Try to identify the language of a text file, and store the detailed probabilities in a JSON file:
-```bash
-echogarden detect-text-language story.txt detection-results.json
-```
-
-### Voice activity detection
-
-**Task**: Given an audio file, try to classify which parts of the audio contain speech, and which don't.
-
-This would apply VAD and play the audio, synchronized with `speech` and `nonspeech` indicators, printed to the terminal.
-```bash
-echogarden detect-voice-activity speech.mp3
-```
-
-This would apply VAD and store the results in a timeline JSON file.
-```bash
-echogarden detect-voice-activity speech.mp3 timeline.json
-```
-
-### Speech denoising
-
-**Task**: Attempt to reduce the amount of background noise in a spoken recording.
-
-This would apply denoising and play the denoised audio:
-```bash
-echogarden denoise speech.mp3
-```
-
-This would apply denoising, and save the denoised audio to a file:
-```bash
-echogarden denoise speech.mp3 denoised-speech.mp3
-```
-
-### Source separation
-
-**Task**: Try to isolate a vocal track (or other type of track, depending on model used), from the audio.
-
-This would apply source separation and play the isolated audio:
-```bash
-echogarden isolate voice-with-music.mp3
-```
-
-This would apply source separation, and save both the isolated and background audio:
-```bash
-echogarden isolate voice-with-music.mp3 voice-isolated.mp3
-```
-
-Written files would be:
-```
-voice-isolated.mp3
-voice-isolated.background.mp3
-```
 
 ## Information and lists
 
@@ -324,9 +341,3 @@ Uninstall one or more expansion packages
 
 Show a list of installed expansion packages
 
-## General CLI options
-
-* `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
-* `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
-* `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
-* `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json`, if found at the current directory

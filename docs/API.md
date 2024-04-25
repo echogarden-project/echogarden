@@ -290,21 +290,14 @@ Timeline object.
 
 ### `setGlobalOption(key, value)`
 
-Set a global option.
+Sets a global option.
 
-Supported keys:
+See the [options reference](Options.md) for more details about the available global options.
 
-* `'ffmpegPath'`: override FFmpeg executable path
-* `'soxPath'`: override SoX executable path
 
 ### `getGlobalOption(key)`
 
-Get a global option.
-
-Supported keys:
-
-* `'ffmpegPath'`: get FFmpeg executable path
-* `'soxPath'`: get SoX executable path
+Gets a global option.
 
 #### Returns:
 

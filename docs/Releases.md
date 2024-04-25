@@ -172,7 +172,7 @@ Many features, enhancements, and fixes were incrementally added over the span of
 * Add support for custom lexicons. Change lexicon object structure to include language code and allow for multiple languages in a single lexicon
 * Add support for SSML inputs (currently only supported by Google, Microsoft and Amazon cloud engines). Ensure they are not split to segments or sentences
 * CLI: Add flag to enable or disable file overwriting in CLI
-* CLI: Add command to list engines
+* CLI: Add operation to list engines
 * Add arguments to customize paragraph parsing
 * Change whitespace option to include option for collapsing all whitespace
 
