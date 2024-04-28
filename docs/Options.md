@@ -377,7 +377,7 @@ On the CLI, global options can be used with any operation. To set global options
 
 * `ffmpegPath`: sets a custom path for the FFmpeg executable
 * `soxPath`: sets a custom path for the SoX executable
-* `packageBaseURL`: sets a custom base URL for the remote package repository used to download missing packages. Default is `https://huggingface.co/echogarden/echogarden-packages/resolve/main/`. If `huggingface.co` isn't accessible in your location, you can set to use a mirror by changing `huggingface.co` to alternative a domain like `hf-mirror.com`
+* `packageBaseURL`: sets a custom base URL for the remote package repository used to download missing packages. Default is `https://huggingface.co/echogarden/echogarden-packages/resolve/main/`. If `huggingface.co` isn't accessible in your location, you can set to use a mirror by changing `huggingface.co` to an alternative domain like `hf-mirror.com`
 * `logLevel`: adjusts the quantity of log messages shown during processing. Possible values: `silent`, `output`, `error`, `warning`, `info`, `trace`. Defaults to `info`
 
 

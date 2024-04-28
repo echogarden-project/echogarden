@@ -228,7 +228,7 @@ Since there are many possible configuration options, it may be more convenient t
 
 When a file named `echogarden.config` is found at the current directory, it will be loaded automatically and its content would be used as default options. You can also specify a particular configuration file path with the option `--config=path/to/your-config-file.config`.
 
-The configuration file format is simple and has a dedicated section for each command (all `speak-` commands are grouped together under `speak`), `global` section for global API options, and `cli` for CLI-specific options. `#` is used as a comment character.
+The configuration file format is simple and has a dedicated section for each command (all `speak-` commands are grouped together under `speak`), `global` section for global API options, and `cli` for common CLI options. `#` is used as a comment character.
 
 Example:
 ```conf
@@ -327,17 +327,17 @@ echogarden list-tts-voices google-cloud google-cloud-voices.json
 
 ## Internal package management
 
-Manage the Echogarden packages that are locally installed
+Manage the Echogarden packages that are locally installed.
 
 ### `install`
 
-Install one or more expansion packages
+Install one or more packages
 
 ### `uninstall`
 
-Uninstall one or more expansion packages
+Uninstall one or more packages
 
 ### `list-packages`
 
-Show a list of installed expansion packages
+Show a list of installed packages
 
