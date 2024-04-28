@@ -102,7 +102,11 @@ export async function start(processArgs: string[]) {
 			process.exit(1)
 		}
 
-		const { operationArgs, parsedArgumentsLookup }  = parseCLIArguments(processArgs.slice(1))
+		const { operationArgs, parsedArgumentsLookup } = parseCLIArguments(processArgs.slice(1))
+
+		const globalOptionsLookup = new Map<string, string>()
+		const cliOptionsLookup = new Map<string, string>()
+		const operationsOptionsLookup = new Map<string, string>()
 
 		if (!parsedArgumentsLookup.has('config')) {
 			const defaultConfigFile = `./${appName}.config`
@@ -135,10 +139,6 @@ export async function start(processArgs: string[]) {
 				sectionName = 'speak'
 			}
 
-			const globalOptionsLookup = new Map<string, string>()
-			const cliOptionsLookup = new Map<string, string>()
-			const operationsOptionsLookup = new Map<string, string>()
-
 			if (parsedConfigFile.has('global')) {
 				for (const [key, value] of parsedConfigFile.get('global')!) {
 					globalOptionsLookup.set(key, value)
@@ -156,27 +156,27 @@ export async function start(processArgs: string[]) {
 					operationsOptionsLookup.set(key, value)
 				}
 			}
-
-			const globalOptionsKeys = API.listGlobalOptions()
-			const cliOptionsKeys = CLIOptionsKeys
-
-			for (const [key, value] of parsedArgumentsLookup) {
-				if (globalOptionsKeys.includes(key)) {
-					globalOptionsLookup.set(key, value)
-				} else if (cliOptionsKeys.includes(key as any)) {
-					cliOptionsLookup.set(key, value)
-				} else {
-					operationsOptionsLookup.set(key, value)
-				}
-			}
-
-			operationData.operation = operation
-			operationData.operationArgs = operationArgs
-
-			operationData.globalOptions = await optionsLookupToTypedObject(globalOptionsLookup, 'GlobalOptions')
-			operationData.cliOptions = await optionsLookupToTypedObject(cliOptionsLookup, 'CLIOptions')
-			operationData.operationOptionsLookup = operationsOptionsLookup
 		}
+
+		const globalOptionsKeys = API.listGlobalOptions()
+		const cliOptionsKeys = CLIOptionsKeys
+
+		for (const [key, value] of parsedArgumentsLookup) {
+			if (globalOptionsKeys.includes(key)) {
+				globalOptionsLookup.set(key, value)
+			} else if (cliOptionsKeys.includes(key as any)) {
+				cliOptionsLookup.set(key, value)
+			} else {
+				operationsOptionsLookup.set(key, value)
+			}
+		}
+
+		operationData.operation = operation
+		operationData.operationArgs = operationArgs
+
+		operationData.globalOptions = await optionsLookupToTypedObject(globalOptionsLookup, 'GlobalOptions')
+		operationData.cliOptions = await optionsLookupToTypedObject(cliOptionsLookup, 'CLIOptions')
+		operationData.operationOptionsLookup = operationsOptionsLookup
 	} catch (e: any) {
 		resetActiveLogger()
 
@@ -997,7 +997,7 @@ async function detectVoiceActivity(operationData: CLIOperationData) {
 		const normalizedAudio = normalizeAudioLevel(inputRawAudio)
 
 		const timelineToPlay = verboseTimeline.map(entry => {
-			return {...entry, type: 'word' } as TimelineEntry
+			return { ...entry, type: 'word' } as TimelineEntry
 		})
 
 		await playAudioWithWordTimeline(normalizedAudio, timelineToPlay)
