@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -55,8 +55,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.556.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.556.0",
+		"@aws-sdk/client-polly": "^3.564.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.564.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -71,7 +71,7 @@
 		"alawmulaw": "^6.0.0",
 		"buffer-split": "^1.0.0",
 		"chalk": "^5.3.0",
-		"cldr-segmentation": "^2.2.0",
+		"cldr-segmentation": "^2.2.1",
 		"command-exists": "^1.2.9",
 		"compromise": "^14.13.0",
 		"fs-extra": "^11.2.0",
@@ -94,7 +94,7 @@
 		"tar": "^7.0.1",
 		"tiktoken": "^1.0.14",
 		"tinyld": "^1.3.4",
-		"ws": "^8.16.0",
+		"ws": "^8.17.0",
 		"wtf_wikipedia": "^10.3.0"
 	},
 	"peerDependencies": {
