@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { type WhisperOptions } from '../recognition/WhisperSTT.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLangaugeCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { EngineMetadata } from './Common.js'
 import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
 import chalk from 'chalk'
@@ -62,28 +62,31 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
-	if (!options.sourceLanguage) {
+	if (options.sourceLanguage) {
+		const languageData = await parseLangIdentifier(options.sourceLanguage)
+
+		options.sourceLanguage = languageData.Name
+
+		logger.end()
+		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(options.sourceLanguage))
+	} else {
 		logger.start('No source language specified. Detecting speech language')
 		const { detectedLanguage } = await detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
 
+		options.sourceLanguage = detectedLanguage
+
 		logger.end()
 		logger.logTitledMessage('Source language detected', formatLanguageCodeWithName(detectedLanguage))
-
-		options.sourceLanguage = detectedLanguage
-	} else {
-		logger.end()
-
-		const specifiedLanguageFormatted = formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.sourceLanguage)))
-
-		logger.logTitledMessage('Source language', specifiedLanguageFormatted)
 	}
 
-	logger.logTitledMessage('Target language', formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.targetLanguage!))))
+	options.targetLanguage = await normalizeIdentifierToLangaugeCode(options.targetLanguage!)
+
+	logger.logTitledMessage('Target language', formatLanguageCodeWithName(options.targetLanguage))
 
 	logger.start('Preprocess audio for translation')
 
 	const engine = options.engine!
-	const sourceLanguage = normalizeLanguageCode(options.sourceLanguage!)
+	const sourceLanguage = options.sourceLanguage!
 	const targetLanguage = options.targetLanguage!
 
 	let transcript: string
@@ -119,10 +122,6 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, 'translate', sourceLanguage, whisperOptions))
 
-			addWordTextOffsetsToTimeline(wordTimeline, transcript);
-
-			({ segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, targetLanguage, 'single', 'preserve'))
-
 			break
 		}
 
@@ -155,9 +154,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 				modelName,
 				modelPath,
 				whisperCppOptions,
-			));
-
-			({ segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, targetLanguage, 'single', 'preserve'))
+			))
 
 			break
 		}
@@ -194,11 +191,19 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 	// If the audio was cropped before recognition, map the timestamps back to the original audio
 	if (sourceUncropTimeline && sourceUncropTimeline.length > 0) {
-		API.convertCroppedToUncroppedTimeline(segmentTimeline, sourceUncropTimeline)
-
 		if (wordTimeline) {
 			API.convertCroppedToUncroppedTimeline(wordTimeline, sourceUncropTimeline)
+		} else if (segmentTimeline) {
+			API.convertCroppedToUncroppedTimeline(segmentTimeline, sourceUncropTimeline)
 		}
+	}
+
+	if (wordTimeline) {
+		addWordTextOffsetsToTimeline(wordTimeline, transcript)
+	}
+
+	if (!segmentTimeline) {
+		({ segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(wordTimeline!, transcript, targetLanguage, 'single', 'preserve'))
 	}
 
 	logger.log('')
