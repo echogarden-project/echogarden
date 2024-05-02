@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, parseLangIdentifier } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 
@@ -62,24 +62,27 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 	const engine = options.engine!
 
-	if (!options.language) { // && options.engine != 'whisper') {
+	if (options.language) {
+		const languageData = await parseLangIdentifier(options.language)
+
+		options.language = languageData.Name
+
+		logger.end()
+		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(options.language))
+	} else {
 		logger.start('No language specified. Detecting speech language')
 		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection!)
 
+		options.language = detectedLanguage
+
 		logger.end()
 		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
-
-		options.language = detectedLanguage
-	} else {
-		logger.end()
-
-		const specifiedLanguageFormatted = formatLanguageCodeWithName(getShortLanguageCode(normalizeLanguageCode(options.language)))
-
-		logger.logTitledMessage('Language specified', specifiedLanguageFormatted)
 	}
 
-	const languageCode = normalizeLanguageCode(options.language)
-	const shortLanguageCode = getShortLanguageCode(languageCode)
+	const languageData = await parseLangIdentifier(options.language)
+
+	const languageCode = languageData.Name
+	const shortLanguageCode = languageData.TwoLetterISOLanguageName
 
 	let transcript: string
 	let timeline: Timeline | undefined

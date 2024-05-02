@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLangaugeCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
@@ -57,18 +57,25 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 	let sourceLanguage: string
 
 	if (options.sourceLanguage) {
-		sourceLanguage = normalizeLanguageCode(options.sourceLanguage!)
+		const languageData = await parseLangIdentifier(options.sourceLanguage)
+
+		sourceLanguage = languageData.Name
+
+		logger.end()
+		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(sourceLanguage))
 	} else {
 		logger.start('No source language specified. Detecting speech language')
 		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
 
+		sourceLanguage = detectedLanguage
+
 		logger.end()
 		logger.logTitledMessage('Source language detected', formatLanguageCodeWithName(detectedLanguage))
-
-		sourceLanguage = detectedLanguage
 	}
 
-	const targetLanguage = normalizeLanguageCode(options.targetLanguage!)
+	const targetLanguage = await normalizeIdentifierToLangaugeCode(options.targetLanguage!)
+
+	logger.logTitledMessage('Target language', formatLanguageCodeWithName(targetLanguage))
 
 	let mappedTimeline: Timeline
 

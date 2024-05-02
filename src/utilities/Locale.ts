@@ -22,6 +22,39 @@ export function formatLanguageCodeWithName(languageCode: string, styleId: 1 | 2 
 	}
 }
 
+export async function normalizeIdentifierToLangaugeCode(langIdentifier: string) {
+	const result = await parseLangIdentifier(langIdentifier)
+
+	return result.Name
+}
+
+export async function normalizeIdentifierToShortLanguageCode(langIdentifier: string) {
+	const result = await parseLangIdentifier(langIdentifier)
+
+	return result.TwoLetterISOLanguageName
+}
+
+export async function parseLangIdentifier(langIdentifier: string) {
+	if (!langIdentifier) {
+		return emptyLangInfoEntry
+	}
+
+	await loadLangInfoEntriesIfNeeded()
+
+	langIdentifier = langIdentifier.trim().toLowerCase()
+
+	for (const entry of langInfoEntries) {
+		if (langIdentifier === entry.NameLowerCase ||
+			langIdentifier === entry.ThreeLetterISOLanguageName ||
+			langIdentifier === entry.EnglishNameLowerCase) {
+
+			return entry
+		}
+	}
+
+	throw new Error(`Couldn't parse language identifier '${langIdentifier}'.`)
+}
+
 export function getShortLanguageCode(langCode: string) {
 	const dashIndex = langCode.indexOf('-')
 
@@ -48,7 +81,7 @@ export function normalizeLanguageCode(langCode: string) {
 
 const isoToLcidLookup = new Map<string, number>()
 const lcidToIsoLookup = new Map<number, string[]>()
-const lcidEntries: LCIDEntry[] = []
+let langInfoEntries: LangInfoEntry[] = []
 
 export async function isoToLcidLanguageCode(iso: string) {
 	await loadLcidLookupIfNeeded()
@@ -63,19 +96,13 @@ export async function lcidToIsoLanguageCode(lcid: number) {
 }
 
 async function loadLcidLookupIfNeeded() {
-	if (lcidEntries.length > 0) {
-		return lcidEntries
-	}
+	await loadLangInfoEntriesIfNeeded()
 
-	const lcidLookup: LCIDLookup = await readAndParseJsonFile(resolveToModuleRootDir('data/tables/lcid-table.json'))
-
-	for (const isoName in lcidLookup) {
-		const lcidEntry = lcidLookup[isoName]
-		lcidEntries.push(lcidEntry)
-
+	for (const lcidEntry of langInfoEntries) {
+		const name = lcidEntry.Name
 		const lcidValue = lcidEntry.LCID
 
-		isoToLcidLookup.set(isoName, lcidValue)
+		isoToLcidLookup.set(name, lcidValue)
 
 		let entry = lcidToIsoLookup.get(lcidValue)
 
@@ -84,10 +111,25 @@ async function loadLcidLookupIfNeeded() {
 			lcidToIsoLookup.set(lcidValue, entry)
 		}
 
-		entry.push(isoName)
+		entry.push(name)
 	}
 
-	return lcidEntries
+	return langInfoEntries
+}
+
+async function loadLangInfoEntriesIfNeeded() {
+	if (langInfoEntries.length > 0) {
+		return
+	}
+
+	const entries = await readAndParseJsonFile(resolveToModuleRootDir('data/tables/lcid-table.json')) as LangInfoEntry[]
+
+	for (const entry of entries) {
+		entry.NameLowerCase = entry.Name.toLowerCase()
+		entry.EnglishNameLowerCase = entry.EnglishName.toLowerCase()
+
+		langInfoEntries.push(entry)
+	}
 }
 
 export function getDefaultDialectForLanguageCodeIfPossible(langCode: string) {
@@ -107,14 +149,34 @@ export const defaultDialectForLanguageCode: { [lang: string]: string } = {
 	'nl': 'nl-NL'
 }
 
-type LCIDLookup = { [isoLangCode: string]: LCIDEntry }
+export interface LangInfoEntry {
+	LCID: number
 
-export interface LCIDEntry {
-	'LCID': number
-	'Name': string
-	'TwoLetterISOLanguageName': string,
-	'ThreeLetterISOLanguageName': string,
-	'ThreeLetterWindowsLanguageName': string,
-	'EnglishName': string
-	'ANSICodePage': string
+	Name: string
+	NameLowerCase: string
+
+	TwoLetterISOLanguageName: string
+	ThreeLetterISOLanguageName: string
+	ThreeLetterWindowsLanguageName: string
+
+	EnglishName: string
+	EnglishNameLowerCase: string
+
+	ANSICodePage: string
+}
+
+export const emptyLangInfoEntry: LangInfoEntry = {
+	LCID: -1,
+
+	Name: '',
+	NameLowerCase: '',
+
+	TwoLetterISOLanguageName: '',
+	ThreeLetterISOLanguageName: '',
+	ThreeLetterWindowsLanguageName: '',
+
+	EnglishName: 'Empty',
+	EnglishNameLowerCase: 'empty',
+
+	ANSICodePage: ''
 }

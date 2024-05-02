@@ -13,7 +13,7 @@ import { getRawAudioDuration, RawAudio, sliceRawAudio } from '../audio/AudioUtil
 import { readFile } from '../utilities/FileSystem.js'
 import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
-import { getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
@@ -35,13 +35,13 @@ export async function recognize(
 	options = extendDeep(defaultWhisperOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sampling rate of 16000 Hz')
 	}
 
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
 
 	if (!(sourceLanguage in languageIdLookup)) {
-		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+		throw new Error(`The language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
 	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
@@ -93,7 +93,7 @@ export async function align(
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
 
 	if (!(sourceLanguage in languageIdLookup)) {
-		throw new Error(`The language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+		throw new Error(`The language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
 	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
@@ -134,7 +134,7 @@ export async function alignEnglishTranslation(
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
 
 	if (!(sourceLanguage in languageIdLookup)) {
-		throw new Error(`The source language ${languageCodeToName(sourceLanguage)} is not supported by the Whisper engine.`)
+		throw new Error(`The source language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
 	if (isEnglishOnlyModel(modelName)) {
@@ -784,6 +784,8 @@ export class Whisper {
 					return false
 				}
 
+				// If this is the first token in the part, unconditionally decode a timestamp token
+				// for time 0.0
 				if (isInitialState) {
 					addToken(timestampTokensStart, timestampTokenLogits, 1.0, crossAttentionQKsForToken)
 

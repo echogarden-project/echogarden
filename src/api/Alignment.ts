@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, normalizeLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
@@ -72,14 +72,20 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	let language: string
 
 	if (options.language) {
-		language = normalizeLanguageCode(options.language!)
+		const languageData = await parseLangIdentifier(options.language)
+
+		language = languageData.Name
+
+		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(language))
 	} else {
 		logger.start('No language specified. Detecting language')
 		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
+
 		language = detectedLanguage
 
 		logger.end()
-		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(detectedLanguage))
+
+		logger.logTitledMessage('Language detected', formatLanguageCodeWithName(language))
 	}
 
 	language = getDefaultDialectForLanguageCodeIfPossible(language)
