@@ -15,7 +15,7 @@ import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 import * as API from './API.js'
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from '../utilities/Timeline.js'
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, parseLangIdentifier, normalizeIdentifierToLangaugeCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata, appName } from './Common.js'
 import { shouldCancelCurrentTask } from '../server/Worker.js'
@@ -328,7 +328,15 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	logger.start(`Initialize ${engine} module`)
 
 	const voice = selectedVoice.name
-	const language = options.language ? normalizeLanguageCode(options.language) : selectedVoice.languages[0]
+
+	let language: string
+
+	if (options.language) {
+		language = await normalizeIdentifierToLangaugeCode(options.language)
+	} else {
+		language = selectedVoice.languages[0]
+	}
+
 	const voiceGender = selectedVoice.gender
 
 	const speed = clip(options.speed!, 0.1, 10.0)
@@ -1548,7 +1556,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 		voiceList = await loadVoiceList()
 	}
 
-	const languageCode = normalizeLanguageCode(options.language || '')
+	const languageCode = await normalizeIdentifierToLangaugeCode(options.language || '')
 
 	if (languageCode) {
 		let filteredVoiceList = voiceList.filter(voice => voice.languages.includes(languageCode))
@@ -1611,7 +1619,7 @@ export interface RequestVoiceListResult {
 }
 
 export async function selectBestOfflineEngineForLanguage(language: string): Promise<SynthesisEngine> {
-	language = normalizeLanguageCode(language)
+	language = await normalizeIdentifierToLangaugeCode(language)
 
 	const VitsTTS = await import('../synthesis/VitsTTS.js')
 
@@ -1619,22 +1627,6 @@ export async function selectBestOfflineEngineForLanguage(language: string): Prom
 
 	if (vitsLanguages.includes(language)) {
 		return 'vits'
-	}
-
-	const FliteTTS = await import('../synthesis/FliteTTS.js')
-
-	const fliteLanguages = getAllLangCodesFromVoiceList(FliteTTS.voiceList)
-
-	if (fliteLanguages.includes(language)) {
-		return 'flite'
-	}
-
-	const SvoxPicoTTS = await import('../synthesis/SvoxPicoTTS.js')
-
-	const picoLanguages = getAllLangCodesFromVoiceList(SvoxPicoTTS.voiceList)
-
-	if (picoLanguages.includes(language)) {
-		return 'pico'
 	}
 
 	return 'espeak'
