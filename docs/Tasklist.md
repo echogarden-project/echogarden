@@ -2,7 +2,7 @@
 
 ## Bugs
 
-### Alignment
+### Alignment / DTW-RA
 
 * In DTW-RA, a recognized transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline
 * DTW-RA will not work correctly with Polish language texts, due to issues with the eSpeak engine pronouncing `|` characters, which are intended to be used as separators and ignored by all other eSpeak languages
@@ -83,7 +83,6 @@
 * `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
 
 ### API
-* Accept full language names as language identifiers
 * Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
 * See whether it's possible to detect and include / remove Emoji characters in timelines
 * Add support for phrases in timelines
@@ -120,7 +119,7 @@
 * Decide whether asterisk `*` should be spoken when using `speak-url` or `speak-wikipedia`
 * Add partial SSML support for all engines. In particular, allow changing language or voice using the `<voice>` and `<lang>` tags, `<say-as>` and `<phoneme>` where possible
 * Try to remove reliance on `()` after `.` character hack in `EspeakTTS.synthesizeFragments`
-* eSpeak IPA output puts stress marks on vowels, not syllables - which is the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically)
+* eSpeak IPA output applies stress marks on vowels, not syllables - which is usually the standard for IPA. Consider how to make a conversion to and from these two approaches (possibly detect it automatically), to provide users with more useful phonemizations
 * Decide if `msspeech` engine should be selected if available. This would require attempting to load a matching voice, and falling back if it is not installed
 * Speaker-specific voice option
 * Use VAD on the synthesized audio file to get more accurate sentence or word segmentation
@@ -149,7 +148,6 @@
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
 
 ### Recognition
-* Recognized word entries that span VAD segment boundaries can be split
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 
 ### Recognition / Whisper
@@ -160,8 +158,6 @@
 * Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment
-
-* Aligned words entries that span VAD boundaries may be split
 
 ### Alignment / DTW-RA
 
@@ -256,6 +252,15 @@
 * Allow `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps (especially useful for Chinese and Japanese)
 
+### Translation
+* Add text-to-text translation with cloud translation APIs like Google Translate or DeepL, or offline models like OpenNMT or  NLLB-200
+
+### Translation alignment
+* Perform word-level alignment of text-to-text translations from and to any language (not just English) using methods like multilingual embeddings, or specialized models, and then use the text-based alignment to align speech in any recognized language, to its translated transcript in any language supported by the text-to-text alignment approach
+
+### Speech-to-text translation
+
+* Hybrid approach: recognize speech in its language using any recognition model, then translate the resulting transcript using a text-to-text translation engine, and then align the translated transcript to the original one using text-to-text alignment, and map back to the original speech using the recognition timestamps, to get word-level alignment for the translated transcript
 
 ## Possible new engines or platforms
 
