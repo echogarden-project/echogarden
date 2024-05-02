@@ -1,6 +1,6 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from '../utilities/Utilities.js'
+import { logToStderr, roundToDigits } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -191,35 +191,69 @@ function frameProbabilitiesToTimeline(frameProbabilities: number[], frameDuratio
 }
 
 export function convertCroppedToUncroppedTimeline(timeline: Timeline, uncropTimeline: Timeline) {
-	for (const entry of timeline) {
-		entry.startTime = mapTimestampUsingUncropTimeline(entry.startTime, uncropTimeline)
-		entry.endTime = mapTimestampUsingUncropTimeline(entry.endTime, uncropTimeline)
+	if (timeline.length === 0) {
+		return
+	}
 
-		if (entry.timeline) {
-			convertCroppedToUncroppedTimeline(entry.timeline, uncropTimeline)
+	for (const entry of timeline) {
+		const {
+			mappedStartTime,
+			mappedEndTime
+		} = mapUsingUncropTimeline(entry.startTime, entry.endTime, uncropTimeline)
+
+		const mapSubTimeline = (subTimeline: Timeline | undefined) => {
+			if (!subTimeline) {
+				return
+			}
+
+			for (const subEntry of subTimeline) {
+				subEntry.startTime = Math.min(mappedStartTime + (subEntry.startTime - entry.startTime), mappedEndTime)
+				subEntry.endTime = Math.min(mappedStartTime + (subEntry.endTime - entry.startTime), mappedEndTime)
+
+				mapSubTimeline(subEntry.timeline)
+			}
 		}
+
+		mapSubTimeline(entry.timeline)
+
+		entry.startTime = mappedStartTime
+		entry.endTime = mappedEndTime
 	}
 }
 
-export function mapTimestampUsingUncropTimeline(timeInCroppedAudio: number, uncropTimeline: Timeline) {
+function mapUsingUncropTimeline(startTimeInCroppedAudio: number, endTimeInCroppedAudio: number, uncropTimeline: Timeline) {
 	let offsetInCroppedAudio = 0
 
-	for (let i = 0; i < uncropTimeline.length; i++) {
-		const entry = uncropTimeline[i]
+	let bestOverlapDuration = -1
+	let mappedStartTime = -1
+	let mappedEndTime = -1
 
-		const entryDuration = entry.endTime - entry.startTime
+	for (const uncropEntry of uncropTimeline) {
+		const uncropEntryDuration = uncropEntry.endTime - uncropEntry.startTime
 
-		const endOffset = offsetInCroppedAudio + entryDuration
+		const overlapStartTime = Math.max(startTimeInCroppedAudio, offsetInCroppedAudio)
+		const overlapEndTime = Math.min(endTimeInCroppedAudio, offsetInCroppedAudio + uncropEntryDuration)
 
-		if ((i === uncropTimeline.length - 1) ||
-			(timeInCroppedAudio >= offsetInCroppedAudio && timeInCroppedAudio < endOffset)) {
-			return entry.startTime + (timeInCroppedAudio - offsetInCroppedAudio)
+		const overlapDuration = overlapEndTime - overlapStartTime
+
+		if (overlapDuration >= 0 && overlapDuration > bestOverlapDuration) {
+			bestOverlapDuration = overlapDuration
+
+			mappedStartTime = uncropEntry.startTime + (overlapStartTime - offsetInCroppedAudio)
+			mappedEndTime = uncropEntry.startTime + (overlapEndTime - offsetInCroppedAudio)
 		}
 
-		offsetInCroppedAudio += entryDuration
+		offsetInCroppedAudio += uncropEntryDuration
 	}
 
-	throw new Error(`Should not be reached`)
+	if (bestOverlapDuration === -1) {
+		throw new Error(`No match found in uncrop timeline (should not occur)`)
+	}
+
+	return {
+		mappedStartTime,
+		mappedEndTime
+	}
 }
 
 export interface VADResult {
