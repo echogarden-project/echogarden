@@ -11,8 +11,8 @@ export function encodeRawAudioToWave(rawAudio: RawAudio, bitDepth: BitDepth = 16
 	return encodeWave(rawAudio, bitDepth, sampleFormat, speakerPositionMask)
 }
 
-export function decodeWaveToRawAudio(waveFileBuffer: Buffer, ignoreTruncatedChunks = false) {
-	return decodeWave(waveFileBuffer, ignoreTruncatedChunks)
+export function decodeWaveToRawAudio(waveFileBuffer: Buffer, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
+	return decodeWave(waveFileBuffer, ignoreTruncatedChunks, ignoreOverflowingDataChunks)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

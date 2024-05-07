@@ -18,18 +18,20 @@ export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFo
 
 	const dataSubChunkBuffer = Buffer.alloc(4 + 4 + audioDataLength)
 	dataSubChunkBuffer.write('data', 0, 'ascii')
-	dataSubChunkBuffer.writeUint32LE(audioDataLength, 4)
+	const dataChunkLength = Math.min(audioDataLength, 4294967295) // Ensure large data chunk length is clipped to max
+	dataSubChunkBuffer.writeUint32LE(dataChunkLength, 4)
 	dataSubChunkBuffer.set(audioBuffer, 8)
 
 	const riffChunkHeaderBuffer = Buffer.alloc(12)
 	riffChunkHeaderBuffer.write('RIFF', 0, 'ascii')
-	riffChunkHeaderBuffer.writeUint32LE(4 + formatSubChunkBuffer.length + dataSubChunkBuffer.length, 4)
+	const riffChunkLength = Math.min(4 + formatSubChunkBuffer.length + dataSubChunkBuffer.length, 4294967295) // Ensure large RIFF chunk length is clipped to max
+	riffChunkHeaderBuffer.writeUint32LE(riffChunkLength, 4)
 	riffChunkHeaderBuffer.write('WAVE', 8, 'ascii')
 
 	return Buffer.concat([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
 }
 
-export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
+export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
 	let readOffset = 0
 
 	const riffId = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
@@ -40,7 +42,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 
 	readOffset += 4
 
-	const riffChunkSize = waveData.readUInt32LE(readOffset)
+	let riffChunkSize = waveData.readUInt32LE(readOffset)
 
 	readOffset += 4
 
@@ -48,6 +50,10 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 
 	if (waveId != 'WAVE') {
 		throw new Error('Not a valid wave file. No WAVE id found at offset 8.')
+	}
+
+	if (ignoreOverflowingDataChunks && riffChunkSize === 4294967295) {
+		riffChunkSize = waveData.length - 8
 	}
 
 	if (riffChunkSize < waveData.length - 8) {
@@ -67,7 +73,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 		const subChunkIdentifier = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
 		readOffset += 4
 
-		const subChunkSize = waveData.readUInt32LE(readOffset)
+		let subChunkSize = waveData.readUInt32LE(readOffset)
 		readOffset += 4
 
 		if (!ignoreTruncatedChunks && subChunkSize > waveData.length - readOffset) {
@@ -79,6 +85,10 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = false) {
 		} else if (subChunkIdentifier == 'data') {
 			if (!formatSubChunkBodyBuffer) {
 				throw new Error('A data subchunk was encountered before a format subchunk')
+			}
+
+			if (ignoreOverflowingDataChunks && subChunkSize === 4294967295) {
+				subChunkSize = waveData.length - readOffset
 			}
 
 			// If the data chunk is truncated, but truncations are ignored,
