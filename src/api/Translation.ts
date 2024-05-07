@@ -43,8 +43,10 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.end()
 		logger.log(``)
 
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
 	} else {
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	}
 
@@ -57,7 +59,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.end()
 	}
 
-	logger.start('Prepare for speech translation')
+	logger.start('Normalize and trim audio')
 
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])

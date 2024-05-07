@@ -21,7 +21,7 @@ export async function synthesize(text: string, speakerId: string | null, serverU
 
 	const waveData = Buffer.from(response.data)
 
-	const rawAudio = decodeWaveToRawAudio(waveData).rawAudio
+	const { rawAudio } = decodeWaveToRawAudio(waveData)
 
 	logger.end()
 

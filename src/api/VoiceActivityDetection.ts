@@ -20,15 +20,14 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start('Prepare for voice activity detection')
-
 	const inputRawAudio = await ensureRawAudio(input)
 
+	logger.start(`Resample audio to 16kHz mono`)
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 
-	options = extendDeep(defaultVADOptions, options)
-
 	logger.start(`Detect voice activity with ${options.engine}`)
+
+	options = extendDeep(defaultVADOptions, options)
 
 	const activityThreshold = options.activityThreshold!
 

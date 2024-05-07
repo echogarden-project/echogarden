@@ -37,7 +37,11 @@ export async function decodeToChannels(input: string | Buffer, outSampleRate?: n
 
 	const waveAudio = await transcode(input, outputOptions)
 
-	const { rawAudio } = decodeWaveToRawAudio(waveAudio, true)
+	const logger = new Logger()
+
+	logger.start(`Convert wave buffer to raw audio`)
+	const { rawAudio } = decodeWaveToRawAudio(waveAudio)
+	logger.end()
 
 	return rawAudio
 }

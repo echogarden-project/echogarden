@@ -13,10 +13,15 @@ import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignmen
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 import { isWord } from '../nlp/Segmentation.js'
+import { alignText } from '../alignment/TextAlignment.js'
+import { translateText } from '../text-translation/NLLBTextTranslation.js'
 
 const log = logToStderr
 
 export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
+	//await alignText(transcript, transcript)
+	//await translateText(transcript, 'en', 'de')
+
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -38,8 +43,10 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		logger.end()
 		logger.log(``)
 
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
 	} else {
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	}
 
@@ -52,7 +59,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		logger.end()
 	}
 
-	logger.start('Prepare for alignment')
+	logger.start('Normalize and trim audio')
 
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
@@ -68,6 +75,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			options.dtw!.windowDuration = 12 * 60
 		}
 	}
+
+	logger.end()
 
 	let language: string
 

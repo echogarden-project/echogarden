@@ -14,8 +14,6 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const logger = new Logger()
 	const startTime = logger.getTimestamp()
 
-	logger.start('Prepare for denoising')
-
 	options = extendDeep(defaultDenoisingOptions, options)
 
 	const inputRawAudio = await ensureRawAudio(input)

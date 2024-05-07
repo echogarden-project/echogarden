@@ -301,7 +301,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start('Prepare for synthesis')
+	logger.start('Prepare text for synthesis')
 
 	const simplifiedText = simplifyPunctuationCharacters(text)
 

@@ -52,7 +52,7 @@ export class VitsTTS {
 
 		await this.initializeIfNeeded()
 
-		await logger.startAsync('Prepare for synthesis')
+		await logger.startAsync('Prepare for VITS synthesis')
 
 		const metadata = this.metadata
 		const phonemeMap = this.phonemeMap!
@@ -78,7 +78,7 @@ export class VitsTTS {
 			voice: espeakVoice,
 			useKlatt: false
 		}
-		
+
 		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, languageCode, espeakOptions, lexicons)
 
 		if (phonemizedSentence.length == 0) {

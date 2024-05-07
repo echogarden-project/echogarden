@@ -35,8 +35,10 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 		logger.end()
 		logger.log(``)
 
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
 	} else {
+		logger.start(`Resample audio to 16kHz mono`)
 		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	}
 
@@ -49,10 +51,12 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 		logger.end()
 	}
 
-	logger.start('Prepare for alignment')
+	logger.start('Normalize and trim audio')
 
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
+
+	logger.end()
 
 	let sourceLanguage: string
 
