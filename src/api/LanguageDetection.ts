@@ -28,6 +28,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 	const inputRawAudio = await ensureRawAudio(input)
 
+	logger.start(`Resample audio to 16kHz mono`)
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
@@ -39,12 +40,10 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 		logger.end()
 	}
 
-	logger.start('Prepare for speech language detection')
+	logger.start(`Initialize ${options.engine} module`)
 
 	const defaultLanguage = options.defaultLanguage!
 	const fallbackThresholdProbability = options.fallbackThresholdProbability!
-
-	logger.start(`Initialize ${options.engine} module`)
 
 	let detectedLanguageProbabilities: LanguageDetectionResults
 
