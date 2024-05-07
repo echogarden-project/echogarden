@@ -12,9 +12,8 @@ const scriptArgs = process.argv.slice(2)
 const cliScriptPath = resolveToModuleRootDir('dist/cli/CLIStarter.js')
 
 const args = [
-	'--no-warnings',
-	'--no-experimental-fetch',
 	'--experimental-wasi-unstable-preview1',
+	'--no-warnings',
 	cliScriptPath,
 	...scriptArgs
 ]
