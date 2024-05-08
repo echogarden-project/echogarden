@@ -223,6 +223,10 @@ export function convertCroppedToUncroppedTimeline(timeline: Timeline, uncropTime
 function mapUsingUncropTimeline(startTimeInCroppedAudio: number, endTimeInCroppedAudio: number, uncropTimeline: Timeline) {
 	let offsetInCroppedAudio = 0
 
+	if (endTimeInCroppedAudio < startTimeInCroppedAudio) {
+		endTimeInCroppedAudio = startTimeInCroppedAudio
+	}
+
 	let bestOverlapDuration = -1
 	let mappedStartTime = -1
 	let mappedEndTime = -1
