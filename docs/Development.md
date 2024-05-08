@@ -82,7 +82,7 @@ Add a `.vscode/launch.json` file to launch the CLI in debug mode:
 			"program": "${workspaceFolder}/dist/cli/CLIStarter.js",
 			"outputCapture": "std",
 			"console": "integratedTerminal",
-			"runtimeArgs": ["--no-warnings", "--no-experimental-fetch", "--experimental-wasi-unstable-preview1", "--trace-uncaught"],
+			"runtimeArgs": ["--experimental-wasi-unstable-preview1", "--no-warnings", "--trace-uncaught"],
 
 			"args": ["speak", "Hello World!", "--debug"]
 		}

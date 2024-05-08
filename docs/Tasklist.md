@@ -260,7 +260,7 @@
 
 ### Speech-to-text translation
 
-* Hybrid approach: recognize speech in its language using any recognition model, then translate the resulting transcript using a text-to-text translation engine, and then align the translated transcript to the original one using text-to-text alignment, and map back to the original speech using the recognition timestamps, to get word-level alignment for the translated transcript
+* Hybrid approach: recognize speech in its native language using any recognition model, then translate the resulting transcript using a text-to-text translation engine, and then align the translated transcript to the original one using text-to-text alignment, and map back to the original speech using the recognition timestamps, to get word-level alignment for the translated transcript
 
 ## Possible new engines or platforms
 

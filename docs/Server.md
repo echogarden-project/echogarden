@@ -45,7 +45,7 @@ ws.on("open", async () => {
 
 ## Protocol details
 
-The protocol is based on binary WebSocket messages, for both request and response objects. Messages are encoded using the [MessagePack](https://msgpack.org/index.html) encoding scheme.
+The protocol is based on binary WebSocket messages, for both request and response objects. Messages are encoded using the [MessagePack](https://msgpack.org) encoding scheme.
 
 All messages are objects and have the basic structure:
 
