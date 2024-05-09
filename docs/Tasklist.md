@@ -9,7 +9,9 @@
 
 ### Synthesis
 
-### Phoneme processing
+### eSpeak
+
+* Missing marker errors occurs in rare cases, when processing very long inputs. It is possibly related to `'` characters, but it's not 100% clear what the true cause is
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
 
 ### Browser extension
@@ -151,8 +153,7 @@
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 
 ### Recognition / Whisper
-* Whisper's Chinese and Japanese output can be split into words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no spaces within them
-* Automatically disable using previous section recognized transcript as prompt for the next section when lots of repetition occurred in previous section
+* Whisper's Chinese and Japanese output can be split into words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no punctuation characters to aid on guessing word boundaries
 * Cache last model (if enough memory is available)
 * The segment output can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
 * Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
