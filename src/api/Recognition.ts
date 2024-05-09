@@ -72,7 +72,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 		logger.end()
 		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(options.language))
 	} else {
-		logger.start('No language specified. Detecting speech language')
+		logger.start('No language specified. Detect speech language')
 		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection!)
 
 		options.language = detectedLanguage

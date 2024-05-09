@@ -72,7 +72,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.end()
 		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(options.sourceLanguage))
 	} else {
-		logger.start('No source language specified. Detecting speech language')
+		logger.start('No source language specified. Detect speech language')
 		const { detectedLanguage } = await detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
 
 		options.sourceLanguage = detectedLanguage

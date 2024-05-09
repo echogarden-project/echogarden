@@ -68,7 +68,7 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 		logger.end()
 		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(sourceLanguage))
 	} else {
-		logger.start('No source language specified. Detecting speech language')
+		logger.start('No source language specified. Detect speech language')
 		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
 
 		sourceLanguage = detectedLanguage

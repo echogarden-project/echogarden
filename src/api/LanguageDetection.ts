@@ -158,7 +158,7 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 		const endOffset = Math.min(audioTimeOffset + audioPartDuration, audioDuration)
 		const audioPartLength = endOffset - startOffset
 
-		logger.logTitledMessage(`\nDetecting speech language starting at audio offset`, `${startOffset.toFixed(1)}`, chalk.magentaBright)
+		logger.logTitledMessage(`\nDetect speech language starting at audio offset`, `${startOffset.toFixed(1)}`, chalk.magentaBright)
 		const audioPart = sliceRawAudioByTime(sourceRawAudio, startOffset, endOffset)
 
 		const resultsForPart = await getResultsForAudioPart(audioPart)
