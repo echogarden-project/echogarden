@@ -88,7 +88,9 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 
 		process.on('close', (exitCode) => {
 			if (exitCode == 0) {
-				resolve(Buffer.concat(stdoutChunks))
+				const concatenatedChunks = Buffer.concat(stdoutChunks)
+
+				resolve(concatenatedChunks)
 			} else {
 				reject(`ffmpeg exited with code ${exitCode}`)
 				log(stderrOutput)

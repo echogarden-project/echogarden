@@ -87,13 +87,15 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 				throw new Error('A data subchunk was encountered before a format subchunk')
 			}
 
+			// If the data chunk is truncated or extended beyond 4 GiB,
+			// the data would be read up to the end of the buffer
 			if (ignoreOverflowingDataChunks && subChunkSize === 4294967295) {
 				subChunkSize = waveData.length - readOffset
 			}
 
-			// If the data chunk is truncated, but truncations are ignored,
-			// it would be read up to the end of the buffer
-			dataBuffers.push(waveData.subarray(readOffset, readOffset + subChunkSize))
+			const subChunkData = waveData.subarray(readOffset, readOffset + subChunkSize)
+
+			dataBuffers.push(subChunkData)
 		}
 		// All sub chunks other than 'data' (e.g. 'LIST', 'fact', 'plst', 'junk' etc.) are ignored
 
@@ -111,6 +113,10 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 		throw new Error('No format subchunk was found in the wave file')
 	}
 
+	if (dataBuffers.length === 0) {
+		throw new Error('No data subchunks were found in the wave file')
+	}
+
 	const waveFormat = WaveFormat.deserializeFrom(formatSubChunkBodyBuffer)
 
 	const sampleFormat = waveFormat.sampleFormat
@@ -120,6 +126,8 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 	const speakerPositionMask = waveFormat.speakerPositionMask
 
 	const concatenatedDataBuffers = Buffer.concat(dataBuffers)
+	dataBuffers.length = 0 // Allow the garbage collector to free up memory held by the data buffers
+
 	const audioChannels = AudioBufferConversion.decodeToChannels(concatenatedDataBuffers, channelCount, bitDepth, sampleFormat)
 
 	return {
