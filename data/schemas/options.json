@@ -1086,6 +1086,9 @@
         "suppressRepetition": {
           "type": "boolean"
         },
+        "repetitionThreshold": {
+          "type": "number"
+        },
         "decodeTimestampTokens": {
           "type": "boolean"
         },

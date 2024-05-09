@@ -107,6 +107,6 @@ export async function getDeflateCompressionMetricsForString(str: string) {
 	return {
 		originalSize: originalStringBytes.length,
 		compressedSize: compressedStringBytes.length,
-		ratio: compressedStringBytes.length / originalStringBytes.length
+		ratio: originalStringBytes.length / compressedStringBytes.length
 	}
 }

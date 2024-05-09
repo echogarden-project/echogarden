@@ -442,11 +442,6 @@ export class Whisper {
 			partTokensConfidence = partTokensConfidence.slice(initialTokens.length)
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
-			// Compute compression ratio for part (disabled for now)
-			if (false) {
-				const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens))).ratio
-			}
-
 			// Find alignment path
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
 
@@ -457,8 +452,17 @@ export class Whisper {
 			allDecodedTokens.push(...partTokens)
 			timeline.push(...partTimeline)
 
-			// Update previous text tokens
-			previousPartTextTokens = partTokens.filter(token => this.isTextToken(token))
+			// Determine compression ratio for recognized text (normalized to lowercase) of this part
+			const compressionRatioForPart = (await getDeflateCompressionMetricsForString(this.tokensToText(partTokens).toLocaleLowerCase())).ratio
+
+			// If the recognized text isn't too repetitive
+			if (compressionRatioForPart < options.repetitionThreshold!) {
+				// Set current part tokens as the previous part text tokens
+				previousPartTextTokens = partTokens.filter(token => this.isTextToken(token))
+			} else {
+				// Otherwise, set previous part tokens to an empty array
+				previousPartTextTokens = []
+			}
 
 			audioOffset = audioEndOffset
 
@@ -544,6 +548,7 @@ export class Whisper {
 			autoPromptParts: false,
 			maxTokensPerPart: Infinity,
 			suppressRepetition: false,
+			repetitionThreshold: Infinity,
 			decodeTimestampTokens: true,
 			endTokenThreshold: whisperAlignmentOptions!.endTokenThreshold!,
 			includeEndTokenInCandidates: false,
@@ -2111,6 +2116,7 @@ export interface WhisperOptions {
 	autoPromptParts?: boolean
 	maxTokensPerPart?: number
 	suppressRepetition?: boolean
+	repetitionThreshold?: number
 	decodeTimestampTokens?: boolean
 	endTokenThreshold?: number
 	includeEndTokenInCandidates?: boolean
@@ -2128,6 +2134,7 @@ export const defaultWhisperOptions: WhisperOptions = {
 	autoPromptParts: true,
 	maxTokensPerPart: 250,
 	suppressRepetition: true,
+	repetitionThreshold: 2.4,
 	decodeTimestampTokens: true,
 	endTokenThreshold: 0.9,
 	includeEndTokenInCandidates: true,
