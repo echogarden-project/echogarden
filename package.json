@@ -25,7 +25,7 @@
 		"url": "https://github.com/echogarden-project/echogarden/issues"
 	},
 	"engines": {
-		"node": ">=18"
+		"node": ">=18.16.0 <19.0.0 || >=19.8.0"
 	},
 	"os": [
 		"win32",
