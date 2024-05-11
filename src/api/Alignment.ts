@@ -112,7 +112,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				// If up to 30 minutes, set granularity to low, single pass
 				granularities = ['low']
 			} else {
-				// Otherwisek, use multipass processing, first with xx-low granularity, then low
+				// Otherwise, use multipass processing, first with xx-low granularity, then low
 				granularities = ['xx-low', 'low']
 			}
 		}
