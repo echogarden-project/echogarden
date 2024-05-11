@@ -38,12 +38,12 @@ export async function alignUsingDtw(
 	let relativeCenters: number[] | undefined
 
 	for (let passIndex = 0; passIndex < windowDurations.length; passIndex++) {
+		const granularity = granularities[passIndex]
 		const windowDuration = windowDurations[passIndex]
-		const granularity = resolveAutoGranularityIfNeeded(granularities[passIndex], rawAudioDuration)
 
 		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `max window duration: ${windowDuration}s, granularity: ${granularity}`, chalk.magentaBright)
 
-		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity, rawAudioDuration), zeroFirstCoefficient: true }) as MfccOptions
+		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity), zeroFirstCoefficient: true }) as MfccOptions
 
 		framesPerSecond = 1 / mfccOptions.hopDuration!
 
@@ -67,7 +67,7 @@ export async function alignUsingDtw(
 			}
 		}
 
-		logger.start('Align MFCC features using DTW')
+		logger.start('Align reference and source MFCC features using DTW')
 		const dtwWindowLength = Math.floor(windowDuration * framesPerSecond)
 
 		let centerIndexes: number[] | undefined
@@ -458,7 +458,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 	progressLogger.start("Load espeak module")
 	const Espeak = await import("../synthesis/EspeakTTS.js")
 
-	progressLogger.start("Create alignment reference with eSpeak")
+	progressLogger.start("Synthesize alignment reference with eSpeak")
 
 	const result = await Espeak.synthesizeFragments(fragments, espeakOptions)
 
@@ -476,7 +476,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 export async function createAlignmentReferenceUsingEspeak(transcript: string, language: string, plaintextOptions?: API.PlainTextOptions, customLexiconPaths?: string[], insertSeparators?: boolean) {
 	const logger = new Logger()
 
-	logger.start('Create alignment reference with eSpeak')
+	logger.start('Synthesize alignment reference with eSpeak')
 
 	const synthesisOptions: API.SynthesisOptions = {
 		engine: 'espeak',
@@ -544,24 +544,8 @@ function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: 
 	return mappedFrameIndex
 }
 
-function resolveAutoGranularityIfNeeded(granularity: DtwGranularity, audioDuration: number) {
-	if (granularity != 'auto') {
-		return granularity
-	}
-
-	if (audioDuration < 60) {
-		return 'high'
-	} else if (audioDuration < 60 * 10) {
-		return 'medium'
-	} else {
-		return 'low'
-	}
-}
-
-function getMfccOptionsForGranularity(granularity: DtwGranularity, audioDuration: number) {
+function getMfccOptionsForGranularity(granularity: DtwGranularity) {
 	let mfccOptions: MfccOptions
-
-	granularity = resolveAutoGranularityIfNeeded(granularity, audioDuration)
 
 	if (granularity == 'xx-low') {
 		mfccOptions = { windowDuration: 0.400, hopDuration: 0.160, fftOrder: 8192 }
@@ -595,4 +579,4 @@ export type CompactedPathEntry = {
 	first: number, last: number
 }
 
-export type DtwGranularity = 'auto' | 'xx-low' | 'x-low' | 'low' | 'medium' | 'high' | 'x-high'
+export type DtwGranularity = 'xx-low' | 'x-low' | 'low' | 'medium' | 'high' | 'x-high'

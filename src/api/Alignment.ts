@@ -64,18 +64,6 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
-	if (options.dtw!.windowDuration == null) {
-		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
-
-		if (sourceAudioDuration < 5 * 60) { // If up to 5 minutes, set window to one minute
-			options.dtw!.windowDuration = 60
-		} else if (sourceAudioDuration < 60 * 60) { // If up to 1 hour, set window to 20% of total duration
-			options.dtw!.windowDuration = Math.ceil(sourceAudioDuration * 0.2)
-		} else { // If 1 hour or more, set window to 12 minutes
-			options.dtw!.windowDuration = 12 * 60
-		}
-	}
-
 	logger.end()
 
 	let language: string
@@ -87,7 +75,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(language))
 	} else {
-		logger.start('No language specified. Detecting language')
+		logger.start('No language specified. Detect language')
 		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
 
 		language = detectedLanguage
@@ -103,7 +91,9 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	const { alignUsingDtwWithRecognition, alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
-	function getDtwWindowDurationsAndGranularities() {
+	function getDtwWindowGranularitiesAndDurations() {
+		const sourceAudioDuration = getRawAudioDuration(sourceRawAudio)
+
 		let granularities: DtwGranularity[]
 		let windowDurations: number[]
 
@@ -112,25 +102,52 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		} else if (Array.isArray(options.dtw!.granularity)) {
 			granularities = options.dtw!.granularity
 		} else {
-			granularities = ['auto']
+			if (sourceAudioDuration < 1 * 60) {
+				// If up to 1 minute, set granularity to high, single pass
+				granularities = ['high']
+			} else if (sourceAudioDuration < 5 * 60) {
+				// If up to 5 minutes, set granularity to medium, single pass
+				granularities = ['medium']
+			} else if (sourceAudioDuration < 30 * 60) {
+				// If up to 30 minutes, set granularity to low, single pass
+				granularities = ['low']
+			} else {
+				// Otherwisek, use multipass processing, first with xx-low granularity, then low
+				granularities = ['xx-low', 'low']
+			}
 		}
 
-		if (typeof options.dtw!.windowDuration == 'number') {
-			if (granularities.length == 1) {
+		if (options.dtw!.windowDuration) {
+			if (typeof options.dtw!.windowDuration === 'number') {
 				windowDurations = [options.dtw!.windowDuration]
-			} else if (granularities.length == 2) {
-				windowDurations = [options.dtw!.windowDuration, 15]
+			} else if (Array.isArray(options.dtw!.windowDuration)) {
+				windowDurations = options.dtw!.windowDuration
 			} else {
+				throw new Error(`'dtw.windowDuration' must be a number or an array of numbers.`)
+			}
+		} else {
+			if (granularities.length > 2) {
 				throw new Error(`More than two passes requested, this requires window durations to be explicitly specified for each pass. For example 'dtw.windowDuration=[600,60,10]'.`)
 			}
-		} else if (Array.isArray(options.dtw!.windowDuration)) {
-			windowDurations = options.dtw!.windowDuration
-		} else {
-			throw new Error('No window duration given')
+
+			if (sourceAudioDuration < 5 * 60) {
+				// If up to 5 minutes, set window duration to one minute
+				windowDurations = [60]
+			} else if (sourceAudioDuration < 2.5 * 60 * 60) {
+				// If less than 2.5 hours, set window duration to 20% of total duration
+				windowDurations = [Math.ceil(sourceAudioDuration * 0.2)]
+			} else {
+				// Otherwise, set window duration to 30 minutes
+				windowDurations = [30 * 60]
+			}
+		}
+
+		if (granularities.length === 2 && windowDurations.length === 1) {
+			windowDurations = [windowDurations[0], 15]
 		}
 
 		if (granularities.length != windowDurations.length) {
-			throw new Error(`Unequal element counts in options. 'dtw.granularity' has ${granularities.length} items, but 'dtw.windowDuration' has ${windowDurations.length} items. Can't infer what number of DTW passes were intended.`)
+			throw new Error(`The option 'dtw.granularity' has ${granularities.length} values, but 'dtw.windowDuration' has ${windowDurations.length} values. The lengths should be equal.`)
 		}
 
 		return { windowDurations, granularities }
@@ -140,6 +157,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	switch (options.engine) {
 		case 'dtw': {
+			const { windowDurations, granularities } = getDtwWindowGranularitiesAndDurations()
+
 			logger.end()
 
 			const {
@@ -149,14 +168,14 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 			logger.end()
 
-			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
-
 			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, granularities, windowDurations)
 
 			break
 		}
 
 		case 'dtw-ra': {
+			const { windowDurations, granularities } = getDtwWindowGranularitiesAndDurations()
+
 			logger.end()
 
 			const recognitionOptions: API.RecognitionOptions =
@@ -180,8 +199,6 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false)
 
 			logger.end()
-
-			const { windowDurations, granularities } = getDtwWindowDurationsAndGranularities()
 
 			const phoneAlignmentMethod = options.dtw!.phoneAlignmentMethod!
 
@@ -228,6 +245,8 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			throw new Error(`Engine '${options.engine}' is not supported`)
 		}
 	}
+
+	logger.start(`Postprocess timeline`)
 
 	// If the audio was cropped before recognition, map the timestamps back to the original audio
 	if (sourceUncropTimeline && sourceUncropTimeline.length > 0) {
@@ -354,7 +373,7 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	},
 
 	dtw: {
-		granularity: 'auto',
+		granularity: undefined,
 		windowDuration: undefined,
 		phoneAlignmentMethod: 'dtw'
 	},
