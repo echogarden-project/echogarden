@@ -257,7 +257,7 @@ export async function detectTextLanguage(input: string, options: TextLanguageDet
 		case 'tinyld': {
 			const { detectLanguage } = await import('../text-language-detection/TinyLDLanguageDetection.js')
 
-			logger.start('Detecting text language using tinyld')
+			logger.start('Detect text language using tinyld')
 
 			detectedLanguageProbabilities = await detectLanguage(input)
 
@@ -267,7 +267,7 @@ export async function detectTextLanguage(input: string, options: TextLanguageDet
 		case 'fasttext': {
 			const { detectLanguage } = await import('../text-language-detection/FastTextLanguageDetection.js')
 
-			logger.start('Detecting text language using FastText')
+			logger.start('Detect text language using FastText')
 
 			detectedLanguageProbabilities = await detectLanguage(input)
 

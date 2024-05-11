@@ -54,7 +54,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	options = extendDeep(defaultSynthesisOptions, options)
 
 	if (!options.language && !options.voice) {
-		logger.start('No language or voice specified. Detecting language')
+		logger.start('No language or voice specified. Detect language')
 
 		let segmentsPlainText = segments
 

@@ -44,7 +44,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	for (let i = 0; i < words.length; i++) {
 		const currentWord = words[i]
-		const previousWord = words[i-1]
+		const previousWord = words[i - 1]
 
 		if (i > 0 && currentWord == previousWord && !wordCharacterPattern.test(currentWord)) {
 			wordsWithMerges[wordsWithMerges.length - 1] += currentWord
@@ -61,6 +61,12 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
 	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
+
+	for (let i = 0; i < normalizedFragments.length; i++) {
+		if ([`'`, `"`].includes(simplifiedFragments[i])) {
+			normalizedFragments[i] = '()'
+		}
+	}
 
 	for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
 		const fragment = normalizedFragments[fragmentIndex]
