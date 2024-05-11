@@ -222,7 +222,7 @@ Applies to CLI operation: `align`, API method: `align`
 * `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
 
 **DTW**:
-* `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `auto` (auto-selected based on audio duration and task), `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['low','high']`. Defaults to `auto`.
+* `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['xx-low','medium']`. Auto-selected by default.
 * `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Higher values consume quadratically larger amounts of memory. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided, like `dtw.windowDuration=[240,20]`. Auto-selected by default
 
 **DTW-RA**:

@@ -11,7 +11,6 @@
 
 ### eSpeak
 
-* Missing marker errors occurs in rare cases, when processing very long inputs. It is possibly related to `'` characters, but it's not 100% clear what the true cause is
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
 
 ### Browser extension
