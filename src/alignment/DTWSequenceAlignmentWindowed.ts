@@ -1,5 +1,3 @@
-import chalk from 'chalk'
-import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { AlignmentPath } from './SpeechAlignment.js'
 
@@ -11,7 +9,10 @@ export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunct
 	}
 
 	if (sequence1.length == 0 || sequence2.length == 0) {
-		return { path: [] as AlignmentPath, pathCost: 0 }
+		return {
+			path: [] as AlignmentPath,
+			pathCost: 0
+		}
 	}
 
 	// Compute accumulated cost matrix (transposed)
@@ -38,10 +39,10 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 
 	const accumulatedCostMatrixTransposed: Float32Array[] = new Array<Float32Array>(columnCount)
 
-	// Initialize window start offsets array
+	// Initialize an array to store window start offsets
 	const windowStartOffsets = new Int32Array(columnCount)
 
-	// Compute matrix column by column
+	// Compute accumulated cost matrix column by column
 	for (let columnIndex = 0; columnIndex < columnCount; columnIndex++) {
 		// Create new column and add it to the matrix
 		const currentColumn = new Float32Array(rowCount)
@@ -65,13 +66,13 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 			windowStartOffset = windowEndOffset - rowCount
 		}
 
-		// Store the start offset in the array
+		// Store the start offset for this column
 		windowStartOffsets[columnIndex] = windowStartOffset
 
 		// Get target sequence1 value
 		const targetSequence1Value = sequence1[columnIndex]
 
-		// If first column, fill it only using the 'up' neighbor
+		// If this is the first column, fill it only using the 'up' neighbors
 		if (columnIndex == 0) {
 			for (let rowIndex = 1; rowIndex < rowCount; rowIndex++) {
 				const cost = costFunction(targetSequence1Value, sequence2[windowStartOffset + rowIndex])
@@ -84,11 +85,15 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 		}
 
 		// If not first column
+
+		// Store the column to the left
 		const leftColumn = accumulatedCostMatrixTransposed[columnIndex - 1]
 
-		// Compute the delta between the current window offset and previous column's window offset
+		// Compute the delta between the current window start offset
+		// and left column's window offset
 		const windowOffsetDelta = windowStartOffset - windowStartOffsets[columnIndex - 1]
 
+		// Iterate over all rows in the window
 		for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
 			// Compute the cost for current cell
 			const cost = costFunction(targetSequence1Value, sequence2[windowStartOffset + rowIndex])
@@ -115,12 +120,25 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 				upAndLeftCost = leftColumn[upAndLeftRowIndex]
 			}
 
+			// Find the minimum of all neighbors
+			let minimumNeighborCost = minimumOf3(upCost, leftCost, upAndLeftCost)
+
+			// If all neighbors are infinity, then it means there is a "jump" between the window
+			// of the current column and the left column, and they don't have overlapping rows.
+			// In this case, only the cost of the current cell will be used
+			if (minimumNeighborCost === Infinity) {
+				minimumNeighborCost = 0
+			}
+
 			// Write cost + minimum neighbor cost to the current column
-			currentColumn[rowIndex] = cost + minimumOf3(upCost, leftCost, upAndLeftCost)
+			currentColumn[rowIndex] = cost + minimumNeighborCost
 		}
 	}
 
-	return { accumulatedCostMatrixTransposed, windowStartOffsets }
+	return {
+		accumulatedCostMatrixTransposed,
+		windowStartOffsets
+	}
 }
 
 function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array[], windowStartOffsets: Int32Array) {
@@ -129,6 +147,8 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 
 	const bestPath: AlignmentPath = []
 
+	// Start at the bottom right corner and find the best path
+	// towards the top left
 	let columnIndex = columnCount - 1
 	let rowIndex = rowCount - 1
 
@@ -136,19 +156,21 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 		const windowStartIndex = windowStartOffsets[columnIndex]
 		const windowStartDelta = columnIndex > 0 ? windowStartIndex - windowStartOffsets[columnIndex - 1] : 0
 
+		// Add the current cell to the best path
 		bestPath.push({
 			source: columnIndex,
 			dest: windowStartIndex + rowIndex
 		})
 
+		// Retrieve the cost for the 'up' (insertion) neighbor
 		const upRowIndex = rowIndex - 1
-		const upColumnIndex = columnIndex
 		let upCost = Infinity
 
 		if (upRowIndex >= 0) {
-			upCost = accumulatedCostMatrixTransposed[upColumnIndex][upRowIndex] // insertion
+			upCost = accumulatedCostMatrixTransposed[columnIndex][upRowIndex] // insertion
 		}
 
+		// Retrieve the cost for the 'left' (deletion) neighbor
 		const leftRowIndex = rowIndex + windowStartDelta
 		const leftColumnIndex = columnIndex - 1
 		let leftCost = Infinity
@@ -157,6 +179,7 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 			leftCost = accumulatedCostMatrixTransposed[leftColumnIndex][leftRowIndex] // deletion
 		}
 
+		// Retrieve the cost for the 'up and left' (match) neighbor
 		const upAndLeftRowIndex = rowIndex - 1 + windowStartDelta
 		const upAndLeftColumnIndex = columnIndex - 1
 		let upAndLeftCost = Infinity
@@ -165,25 +188,42 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 			upAndLeftCost = accumulatedCostMatrixTransposed[upAndLeftColumnIndex][upAndLeftRowIndex] // match
 		}
 
+		// If all neighbors have a cost of infinity, it means
+		// there is a "jump" between the window for the current and previous column
 		if (upCost == Infinity && leftCost == Infinity && upAndLeftCost == Infinity) {
-			const logger = new Logger()
+			// In that case:
+			//
+			// If there are rows above
+			if (upRowIndex >= 0) {
+				// Move upward
+				rowIndex = upRowIndex
+			} else if (leftColumnIndex >= 0) {
+				// Otherwise, move to the left
+				columnIndex = leftColumnIndex
+			} else {
+				// Since we know that either columnIndex > 0 or rowIndex > 0,
+				// one of these directions must be available.
+				// This error should never happen
 
-			logger.setAsActiveLogger()
-			logger.logTitledMessage(`computeBestPath`, `unexpected - all cost directions are equal to infinity (${columnIndex}, ${rowIndex}).`, chalk.yellowBright, 'warning')
-			logger.unsetAsActiveLogger()
-		}
-
-		const smallestCostDirection = argIndexOfMinimumOf3(upCost, leftCost, upAndLeftCost)
-
-		if (smallestCostDirection == 1) {
-			rowIndex = upRowIndex
-			columnIndex = upColumnIndex
-		} else if (smallestCostDirection == 2) {
-			rowIndex = leftRowIndex
-			columnIndex = leftColumnIndex
+				throw new Error(`Unexpected state: columnIndex: ${columnIndex}, rowIndex: ${rowIndex}`)
+			}
 		} else {
-			rowIndex = upAndLeftRowIndex
-			columnIndex = upAndLeftColumnIndex
+			// Choose the direction with the smallest cost
+			const smallestCostDirection = argIndexOfMinimumOf3(upCost, leftCost, upAndLeftCost)
+
+			if (smallestCostDirection == 1) {
+				// Move upward
+				rowIndex = upRowIndex
+				// The upper column index stays the same
+			} else if (smallestCostDirection == 2) {
+				// Move to the left
+				rowIndex = leftRowIndex
+				columnIndex = leftColumnIndex
+			} else {
+				// Move upward and to the left
+				rowIndex = upAndLeftRowIndex
+				columnIndex = upAndLeftColumnIndex
+			}
 		}
 	}
 
