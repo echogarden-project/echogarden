@@ -62,6 +62,10 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 
+	if ([`'`].includes(simplifiedFragments[0])) {
+		normalizedFragments[0] = `()`
+	}
+
 	for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
 		const fragment = normalizedFragments[fragmentIndex]
 
