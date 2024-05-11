@@ -26,7 +26,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	let lowerCaseLanguageCode = language.toLowerCase()
 
-	if (lowerCaseLanguageCode == 'en-gb') {
+	if (lowerCaseLanguageCode === 'en-gb') {
 		lowerCaseLanguageCode = 'en-gb-x-rp'
 	}
 
@@ -46,7 +46,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 		const currentWord = words[i]
 		const previousWord = words[i - 1]
 
-		if (i > 0 && currentWord == previousWord && !wordCharacterPattern.test(currentWord)) {
+		if (i > 0 && currentWord === previousWord && !wordCharacterPattern.test(currentWord)) {
 			wordsWithMerges[wordsWithMerges.length - 1] += currentWord
 		} else {
 			wordsWithMerges.push(currentWord)
@@ -61,12 +61,6 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
 	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
-
-	for (let i = 0; i < normalizedFragments.length; i++) {
-		if ([`'`, `"`].includes(simplifiedFragments[i])) {
-			normalizedFragments[i] = '()'
-		}
-	}
 
 	for (let fragmentIndex = 0; fragmentIndex < normalizedFragments.length; fragmentIndex++) {
 		const fragment = normalizedFragments[fragmentIndex]
@@ -150,7 +144,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 	//fragments = fragments.filter(fragment => fragment.trim() != '')
 
-	if (fragments.length == 0) {
+	if (fragments.length === 0) {
 		return {
 			rawAudio: getEmptyRawAudio(1, sampleRate),
 			timeline: [] as Timeline,
@@ -158,7 +152,13 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 	}
 
-	let textWithMarkers = '() '
+	let textWithMarkers: string
+
+	if (espeakOptions.insertSeparators) {
+		textWithMarkers = `() | `
+	} else {
+		textWithMarkers = `() `
+	}
 
 	for (let i = 0; i < fragments.length; i++) {
 		let fragment = fragments[i]
@@ -185,6 +185,21 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 	//log(textWithMarkers)
 
 	const { rawAudio, events } = await synthesize(textWithMarkers, { ...espeakOptions, ssml: true })
+
+	// Add first marker if missing
+	if (fragments.length > 0) {
+		const firstMarkerEvent = events.find(event => event.type === 'mark')
+
+		if (firstMarkerEvent && firstMarkerEvent.id === 'e-0') {
+			events.unshift({
+				type: 'mark',
+				text_position: 0,
+				word_length: 0,
+				audio_position: 0,
+				id: 's-0',
+			})
+		}
+	}
 
 	// Build word timeline from events
 	const wordTimeline: Timeline = fragments.map(word => ({
@@ -216,16 +231,16 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		const currentPhoneTimeline = currentTokenEntry.timeline!
 		const lastPhoneEntry = currentPhoneTimeline[currentPhoneTimeline.length - 1]
 
-		if (lastPhoneEntry && lastPhoneEntry.endTime == -1) {
+		if (lastPhoneEntry && lastPhoneEntry.endTime === -1) {
 			lastPhoneEntry.endTime = eventTime
 		}
 
-		if (event.type == 'word') {
-			if (!event.id || currentPhoneTimeline.length == 0) {
+		if (event.type === 'word') {
+			if (!event.id || currentPhoneTimeline.length === 0) {
 				continue
 			}
 
-			if (currentTokenEntry.endTime == -1) {
+			if (currentTokenEntry.endTime === -1) {
 				currentTokenEntry.endTime = eventTime
 			}
 
@@ -236,7 +251,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 				endTime: -1,
 				timeline: []
 			})
-		} else if (event.type == 'phoneme') {
+		} else if (event.type === 'phoneme') {
 			const phoneText = event.id as string
 
 			if (!phoneText || phoneText.startsWith('(')) {
@@ -252,7 +267,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 			currentTokenEntry.text += phoneText
 			currentTokenEntry.startTime = currentPhoneTimeline[0].startTime
-		} else if (event.type == 'mark') {
+		} else if (event.type === 'mark') {
 			const markerName = event.id! as string
 
 			if (markerName.startsWith('s-')) {
@@ -282,13 +297,13 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 				wordIndex += 1
 
-				if (wordIndex == wordTimeline.length) {
+				if (wordIndex === wordTimeline.length) {
 					break
 				}
 			} else {
 				continue
 			}
-		} else if (event.type == 'end') {
+		} else if (event.type === 'end') {
 			clauseEndIndexes.push(wordIndex)
 		}
 	}
@@ -299,11 +314,11 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 	for (const [index, wordEntry] of wordTimeline.entries()) {
 		const tokenTimeline = wordEntry.timeline
 
-		if (index == 0) {
+		if (index === 0) {
 			continue
 		}
 
-		if (!tokenTimeline || tokenTimeline.length == 0) {
+		if (!tokenTimeline || tokenTimeline.length === 0) {
 			throw new Error('Unexpected: token timeline should exist and have at least one token')
 		}
 
@@ -315,7 +330,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 		const wordReferenceIPA = wordReferencePhonemes.join(' ')
 
-		if (wordReferenceIPA.trim().length == 0) {
+		if (wordReferenceIPA.trim().length === 0) {
 			continue
 		}
 
@@ -388,7 +403,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 		for (let entryIndex = clauseStartIndex; entryIndex <= clauseEndIndex && entryIndex < wordTimeline.length; entryIndex++) {
 			const wordEntry = wordTimeline[entryIndex]
-			if (newClause.startTime == -1) {
+			if (newClause.startTime === -1) {
 				newClause.startTime = wordEntry.startTime
 			}
 
@@ -444,7 +459,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 		}
 
 		for (const event of events) {
-			if (event.type == 'word') {
+			if (event.type === 'word') {
 				const textPosition = event.text_position - 1;
 				(event as any)['text'] = text.substring(textPosition, textPosition + event.word_length)
 			}
