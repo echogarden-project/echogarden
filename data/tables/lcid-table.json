@@ -7423,5 +7423,14 @@
 		"ThreeLetterWindowsLanguageName": "ZHG",
 		"EnglishName": "Standard Moroccan Tamazight (Tifinagh, Morocco)",
 		"ANSICodePage": 0
+	},
+	{
+		"LCID": 4096,
+		"Name": "la",
+		"TwoLetterISOLanguageName": "la",
+		"ThreeLetterISOLanguageName": "lat",
+		"ThreeLetterWindowsLanguageName": "",
+		"EnglishName": "Latin",
+		"ANSICodePage": 0
 	}
 ]
