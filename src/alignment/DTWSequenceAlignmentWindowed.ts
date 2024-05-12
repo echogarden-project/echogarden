@@ -167,7 +167,7 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 		let upCost = Infinity
 
 		if (upRowIndex >= 0) {
-			upCost = accumulatedCostMatrixTransposed[columnIndex][upRowIndex] // insertion
+			upCost = accumulatedCostMatrixTransposed[columnIndex][upRowIndex]
 		}
 
 		// Retrieve the cost for the 'left' (deletion) neighbor
@@ -176,7 +176,7 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 		let leftCost = Infinity
 
 		if (leftColumnIndex >= 0 && leftRowIndex < rowCount) {
-			leftCost = accumulatedCostMatrixTransposed[leftColumnIndex][leftRowIndex] // deletion
+			leftCost = accumulatedCostMatrixTransposed[leftColumnIndex][leftRowIndex]
 		}
 
 		// Retrieve the cost for the 'up and left' (match) neighbor
@@ -185,7 +185,7 @@ function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array
 		let upAndLeftCost = Infinity
 
 		if (upAndLeftColumnIndex >= 0 && upAndLeftRowIndex >= 0 && upAndLeftRowIndex < rowCount) {
-			upAndLeftCost = accumulatedCostMatrixTransposed[upAndLeftColumnIndex][upAndLeftRowIndex] // match
+			upAndLeftCost = accumulatedCostMatrixTransposed[upAndLeftColumnIndex][upAndLeftRowIndex]
 		}
 
 		// If all neighbors have a cost of infinity, it means

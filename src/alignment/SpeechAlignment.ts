@@ -41,7 +41,7 @@ export async function alignUsingDtw(
 		const granularity = granularities[passIndex]
 		const windowDuration = windowDurations[passIndex]
 
-		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `max window duration: ${windowDuration}s, granularity: ${granularity}`, chalk.magentaBright)
+		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `granularity: ${granularity}, max window duration: ${windowDuration}s`, chalk.magentaBright)
 
 		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity), zeroFirstCoefficient: true }) as MfccOptions
 

@@ -75,7 +75,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(language))
 	} else {
-		logger.start('No language specified. Detect language')
+		logger.start('No language specified. Detect language using reference text')
 		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
 
 		language = detectedLanguage
