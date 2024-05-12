@@ -140,13 +140,11 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 }
 
 export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions) {
-	const logger = new Logger()
-
 	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
 
-	const sampleRate = await getSampleRate()
+	const voice = espeakOptions.voice
 
-	//fragments = fragments.filter(fragment => fragment.trim() != '')
+	const sampleRate = await getSampleRate()
 
 	if (fragments.length === 0) {
 		return {
@@ -156,9 +154,11 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 	}
 
+	const canInsertSeparators = !['roa/an', 'art/eo', 'trk/ky', 'zlw/pl', 'zle/uk'].includes(voice)
+
 	let textWithMarkers: string
 
-	if (espeakOptions.insertSeparators || !espeakOptions.voice.endsWith('/pl')) {
+	if (canInsertSeparators) {
 		textWithMarkers = `() | `
 	} else {
 		textWithMarkers = `() `
@@ -173,7 +173,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			.replaceAll('<', '&lt;')
 			.replaceAll('>', '&gt;')
 
-		if (espeakOptions.insertSeparators) {
+		if (espeakOptions.insertSeparators && canInsertSeparators) {
 			const separator = ` | `
 
 			textWithMarkers += `<mark name="s-${i}"/>${separator}${fragment}${separator}<mark name="e-${i}"/>`
@@ -185,8 +185,6 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			textWithMarkers += `<mark name="s-${i}"/>${fragment}<mark name="e-${i}"/> `
 		}
 	}
-
-	//log(textWithMarkers)
 
 	const { rawAudio, events } = await synthesize(textWithMarkers, { ...espeakOptions, ssml: true })
 
