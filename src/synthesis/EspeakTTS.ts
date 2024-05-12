@@ -158,7 +158,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 	let textWithMarkers: string
 
-	if (espeakOptions.insertSeparators) {
+	if (espeakOptions.insertSeparators || !espeakOptions.voice.endsWith('/pl')) {
 		textWithMarkers = `() | `
 	} else {
 		textWithMarkers = `() `
