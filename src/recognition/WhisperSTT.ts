@@ -1827,7 +1827,7 @@ export const modelNameToPackageName: { [modelName in WhisperModelName]: string }
 
 export const tokenizerPackageName = 'whisper-tokenizer'
 
-const languageIdLookup: { [s: string]: number } = {
+export const languageIdLookup: { [s: string]: number } = {
 	'en': 0,
 	'zh': 1,
 	'de': 2,
