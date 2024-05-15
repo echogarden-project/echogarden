@@ -185,4 +185,8 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 
 	'xenova-multilingual-e5-small-quantized': '20240504',
 	'xenova-nllb-200-distilled-600M-quantized': '20240505',
+	'xenova-multilingual-e5-small-fp16': '20240514',
+	'xenova-multilingual-e5-base-fp16': '20240514',
+	'xenova-multilingual-e5-base-quantized': '20240514',
+	'xenova-multilingual-e5-large-quantized': '20240514',
 }
