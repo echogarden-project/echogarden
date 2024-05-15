@@ -1,3 +1,5 @@
+import { clip } from "../utilities/Utilities.js"
+
 export function covarianceMatrixOfSamples(samples: number[][], weights?: number[], biased = false) {
 	if (samples.length == 0) {
 		throw new Error('No vectors given')
@@ -434,7 +436,7 @@ export function averageMeanSquaredError(actual: number[][], expected: number[][]
 	return sum / vectorCount
 }
 
-export function meanSquaredError(actual: number[], expected: number[]) {
+export function meanSquaredError(actual: ArrayLike<number>, expected: ArrayLike<number>) {
 	if (actual.length != expected.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -454,18 +456,18 @@ export function meanSquaredError(actual: number[], expected: number[]) {
 	return sum / featureCount
 }
 
-export function euclidianDistance(vector1: number[], vector2: number[]) {
+export function euclidianDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	return Math.sqrt(squaredEuclidianDistance(vector1, vector2))
 }
 
-export function squaredEuclidianDistance(vector1: number[], vector2: number[]) {
-	if (vector1.length != vector2.length) {
+export function squaredEuclidianDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	if (vector1.length !== vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
 
 	const elementCount = vector1.length
 
-	if (elementCount == 0) {
+	if (elementCount === 0) {
 		return 0
 	}
 
@@ -478,16 +480,41 @@ export function squaredEuclidianDistance(vector1: number[], vector2: number[]) {
 	return sum
 }
 
-export function cosineDistance(vector1: number[], vector2: number[]) {
+export function euclidianDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	return Math.sqrt(squaredEuclidianDistance13Dim(vector1, vector2))
+}
+
+export function squaredEuclidianDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	// Assumes the input has 13 dimensions (optimized for 13-dimensional MFCC vectors)
+
+	const result =
+		(vector1[0] - vector2[0]) ** 2 +
+		(vector1[1] - vector2[1]) ** 2 +
+		(vector1[2] - vector2[2]) ** 2 +
+		(vector1[3] - vector2[3]) ** 2 +
+		(vector1[4] - vector2[4]) ** 2 +
+		(vector1[5] - vector2[5]) ** 2 +
+		(vector1[6] - vector2[6]) ** 2 +
+		(vector1[7] - vector2[7]) ** 2 +
+		(vector1[8] - vector2[8]) ** 2 +
+		(vector1[9] - vector2[9]) ** 2 +
+		(vector1[10] - vector2[10]) ** 2 +
+		(vector1[11] - vector2[11]) ** 2 +
+		(vector1[12] - vector2[12]) ** 2
+
+	return result
+}
+
+export function cosineDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	return 1 - cosineSimilarity(vector1, vector2)
 }
 
-export function cosineSimilarity(vector1: number[], vector2: number[]) {
-	if (vector1.length != vector2.length) {
+export function cosineSimilarity(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	if (vector1.length !== vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
 
-	if (vector1.length == 0) {
+	if (vector1.length === 0) {
 		return 0
 	}
 
@@ -499,18 +526,53 @@ export function cosineSimilarity(vector1: number[], vector2: number[]) {
 	let squaredMagnitude2 = 0.0
 
 	for (let i = 0; i < elementCount; i++) {
-		dotProduct += vector1[i] * vector2[i]
+		const element1 = vector1[i]
+		const element2 = vector2[i]
 
-		squaredMagnitude1 += vector1[i] ** 2
-		squaredMagnitude2 += vector2[i] ** 2
+		dotProduct += element1 * element2
+
+		squaredMagnitude1 += element1 ** 2
+		squaredMagnitude2 += element2 ** 2
 	}
 
-	const result = dotProduct / (Math.sqrt(squaredMagnitude1) * Math.sqrt(squaredMagnitude2) + 1e-40)
+	let result = dotProduct / (Math.sqrt(squaredMagnitude1) * Math.sqrt(squaredMagnitude2) + 1e-40)
 
-	return zeroIfNaN(result)
+	result = zeroIfNaN(result)
+	result = clip(result, -1.0, 1.0)
+
+	return result
 }
 
-export function minkowskiDistance(vector1: number[], vector2: number[], power: number) {
+export function cosineDistancePrecomputedMagnitudes(vector1: ArrayLike<number>, vector2: ArrayLike<number>, magnitude1: number, magnitude2: number) {
+	return 1 - cosineSimilarityPrecomputedMagnitudes(vector1, vector2, magnitude1, magnitude2)
+}
+
+export function cosineSimilarityPrecomputedMagnitudes(vector1: ArrayLike<number>, vector2: ArrayLike<number>, magnitude1: number, magnitude2: number) {
+	if (vector1.length != vector2.length) {
+		throw new Error('Vectors are not the same length')
+	}
+
+	if (vector1.length == 0) {
+		return 0
+	}
+
+	const featureCount = vector1.length
+
+	let dotProduct = 0.0
+
+	for (let i = 0; i < featureCount; i++) {
+		dotProduct += vector1[i] * vector2[i]
+	}
+
+	let result = dotProduct / (magnitude1 * magnitude2 + 1e-40)
+
+	result = zeroIfNaN(result)
+	result = clip(result, -1.0, 1.0)
+
+	return result
+}
+
+export function minkowskiDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>, power: number) {
 	if (vector1.length != vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -530,33 +592,6 @@ export function minkowskiDistance(vector1: number[], vector2: number[], power: n
 	return sum ** (1 / power)
 }
 
-export function cosineDistancePrecomputedMagnitudes(vector1: number[], vector2: number[], magnitude1: number, magnitude2: number) {
-	return 1 - cosineSimilarityPrecomputedMagnitudes(vector1, vector2, magnitude1, magnitude2)
-}
-
-export function cosineSimilarityPrecomputedMagnitudes(vector1: number[], vector2: number[], magnitude1: number, magnitude2: number) {
-	if (vector1.length != vector2.length) {
-		throw new Error('Vectors are not the same length')
-	}
-
-	if (vector1.length == 0) {
-		return 0
-	}
-
-	const featureCount = vector1.length
-
-	let dotProduct = 0.0
-
-	for (let i = 0; i < featureCount; i++) {
-		dotProduct += vector1[i] * vector2[i]
-	}
-
-	const result = dotProduct / (magnitude1 * magnitude2)
-
-	return zeroIfNaN(result)
-}
-
-
 export function subtractVectors(vector1: number[], vector2: number[]) {
 	if (vector1.length != vector2.length) {
 		throw new Error('Vectors are not the same length')
@@ -571,7 +606,7 @@ export function subtractVectors(vector1: number[], vector2: number[]) {
 	return result
 }
 
-export function sumVector(vector: number[]) {
+export function sumVector(vector: ArrayLike<number>) {
 	let result = 0.0
 
 	for (let i = 0; i < vector.length; i++) {
@@ -581,7 +616,7 @@ export function sumVector(vector: number[]) {
 	return result
 }
 
-export function dotProduct(vector1: number[], vector2: number[]) {
+export function dotProduct(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	if (vector1.length != vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -597,7 +632,7 @@ export function dotProduct(vector1: number[], vector2: number[]) {
 	return result
 }
 
-export function magnitude(vector: number[]) {
+export function magnitude(vector: ArrayLike<number>) {
 	const featureCount = vector.length
 
 	let squaredMagnitude = 0.0
@@ -609,11 +644,11 @@ export function magnitude(vector: number[]) {
 	return Math.sqrt(squaredMagnitude)
 }
 
-export function maxValue(vector: number[]) {
+export function maxValue(vector: ArrayLike<number>) {
 	return vector[indexOfMax(vector)]
 }
 
-export function indexOfMax(vector: number[]) {
+export function indexOfMax(vector: ArrayLike<number>) {
 	if (vector.length == 0) {
 		return -1
 	}
@@ -631,11 +666,11 @@ export function indexOfMax(vector: number[]) {
 	return result
 }
 
-export function minValue(vector: number[]) {
+export function minValue(vector: ArrayLike<number>) {
 	return vector[indexOfMin(vector)]
 }
 
-export function indexOfMin(vector: number[]) {
+export function indexOfMin(vector: ArrayLike<number>) {
 	let minValue = Infinity
 	let result = -1
 

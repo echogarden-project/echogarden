@@ -93,7 +93,7 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 		// and left column's window offset
 		const windowOffsetDelta = windowStartOffset - windowStartOffsets[columnIndex - 1]
 
-		// Iterate over all rows in the window
+		// Compute the accumulated cost for all rows in the window
 		for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
 			// Compute the cost for current cell
 			const cost = costFunction(targetSequence1Value, sequence2[windowStartOffset + rowIndex])

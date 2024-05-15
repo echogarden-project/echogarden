@@ -1,21 +1,27 @@
-import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclidianDistance, magnitude } from '../math/VectorMath.js'
+import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclidianDistance, euclidianDistance13Dim, magnitude } from '../math/VectorMath.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 
 const log = logToStderr
 
-export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunction: 'euclidian' | 'cosine' = 'euclidian', centerIndexes?: number[]) {
-	if (distanceFunction == 'euclidian') {
+export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunctionKind: 'euclidian' | 'cosine' = 'euclidian', centerIndexes?: number[]) {
+	if (distanceFunctionKind == 'euclidian') {
+		let distanceFunction = euclidianDistance
+
+		if (mfccFrames1.length > 0 && mfccFrames1[0].length === 13) {
+			distanceFunction = euclidianDistance13Dim
+		}
+
 		const { path } = alignDTWWindowed(
 			mfccFrames1,
 			mfccFrames2,
-			euclidianDistance,
+			distanceFunction,
 			windowLength,
 			centerIndexes
 		)
 
 		return path
-	} else if (distanceFunction == 'cosine') {
+	} else if (distanceFunctionKind == 'cosine') {
 		const indexes1 = createVectorForIntegerRange(0, mfccFrames1.length)
 		const indexes2 = createVectorForIntegerRange(0, mfccFrames2.length)
 
