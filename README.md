@@ -26,7 +26,7 @@ Echogarden is an easy-to-use speech toolset that includes a variety of speech pr
 
 ## Installation
 
-Ensure you have [Node.js](https://nodejs.org/) `v18.0.0` or later installed.
+Ensure you have [Node.js](https://nodejs.org/) `v18.16.0` or later installed.
 
 then:
 ```bash
