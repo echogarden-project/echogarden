@@ -5,11 +5,11 @@
     "APIOptions": {
       "type": "object",
       "properties": {
-        "VoiceListRequestOptions": {
-          "$ref": "#/definitions/VoiceListRequestOptions"
-        },
         "SynthesisOptions": {
           "$ref": "#/definitions/SynthesisOptions"
+        },
+        "VoiceListRequestOptions": {
+          "$ref": "#/definitions/VoiceListRequestOptions"
         },
         "RecognitionOptions": {
           "$ref": "#/definitions/RecognitionOptions"
@@ -20,8 +20,17 @@
         "TranslationAlignmentOptions": {
           "$ref": "#/definitions/TranslationAlignmentOptions"
         },
+        "TranscriptAndTranslationAlignmentOptions": {
+          "$ref": "#/definitions/TranscriptAndTranslationAlignmentOptions"
+        },
+        "TimelineTranslationAlignmentOptions": {
+          "$ref": "#/definitions/TimelineTranslationAlignmentOptions"
+        },
         "SpeechTranslationOptions": {
           "$ref": "#/definitions/SpeechTranslationOptions"
+        },
+        "TextTranslationOptions": {
+          "$ref": "#/definitions/TextTranslationOptions"
         },
         "SpeechLanguageDetectionOptions": {
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
@@ -49,12 +58,15 @@
         }
       },
       "required": [
-        "VoiceListRequestOptions",
         "SynthesisOptions",
+        "VoiceListRequestOptions",
         "RecognitionOptions",
         "AlignmentOptions",
         "TranslationAlignmentOptions",
+        "TranscriptAndTranslationAlignmentOptions",
+        "TimelineTranslationAlignmentOptions",
         "SpeechTranslationOptions",
+        "TextTranslationOptions",
         "SpeechLanguageDetectionOptions",
         "TextLanguageDetectionOptions",
         "VADOptions",
@@ -66,7 +78,7 @@
       ],
       "additionalProperties": false
     },
-    "VoiceListRequestOptions": {
+    "SynthesisOptions": {
       "type": "object",
       "properties": {
         "engine": {
@@ -356,18 +368,6 @@
         "streamlabsPolly": {
           "type": "object",
           "additionalProperties": false
-        },
-        "cache": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string"
-            },
-            "duration": {
-              "type": "number"
-            }
-          },
-          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -513,6 +513,7 @@
       "enum": [
         "dtw",
         "dtw-ra",
+        "dtw-ea",
         "whisper"
       ]
     },
@@ -614,7 +615,8 @@
       "type": "string",
       "enum": [
         "cpu",
-        "dml"
+        "dml",
+        "cuda"
       ]
     },
     "WhisperVADOptions": {
@@ -1306,7 +1308,7 @@
       },
       "additionalProperties": false
     },
-    "SynthesisOptions": {
+    "VoiceListRequestOptions": {
       "type": "object",
       "properties": {
         "engine": {
@@ -1596,6 +1598,18 @@
         "streamlabsPolly": {
           "type": "object",
           "additionalProperties": false
+        },
+        "cache": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "duration": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -1642,6 +1656,236 @@
     "TranslationAlignmentEngine": {
       "type": "string",
       "const": "whisper"
+    },
+    "TranscriptAndTranslationAlignmentOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TranscriptAndTranslationAlignmentEngine"
+        },
+        "sourceLanguage": {
+          "type": "string"
+        },
+        "targetLanguage": {
+          "type": "string"
+        },
+        "isolate": {
+          "type": "boolean"
+        },
+        "crop": {
+          "type": "boolean"
+        },
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "timelineAlignment": {
+          "$ref": "#/definitions/TimelineTranslationAlignmentOptions"
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "vad": {
+          "$ref": "#/definitions/VADOptions"
+        },
+        "plainText": {
+          "$ref": "#/definitions/PlainTextOptions"
+        },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
+        "sourceSeparation": {
+          "$ref": "#/definitions/SourceSeparationOptions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TranscriptAndTranslationAlignmentEngine": {
+      "type": "string",
+      "const": "two-stage"
+    },
+    "TimelineTranslationAlignmentOptions": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "const": "e5"
+        },
+        "sourceLanguage": {
+          "type": "string"
+        },
+        "targetLanguage": {
+          "type": "string"
+        },
+        "audio": {
+          "$ref": "#/definitions/AudioSourceParam"
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "subtitles": {
+          "$ref": "#/definitions/SubtitlesConfig"
+        },
+        "e5": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "const": "small-fp16"
+            }
+          },
+          "required": [
+            "model"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "AudioSourceParam": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/global.Buffer"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "BYTES_PER_ELEMENT": {
+              "type": "number"
+            },
+            "buffer": {
+              "type": "object",
+              "properties": {
+                "byteLength": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "byteLength"
+              ],
+              "additionalProperties": false
+            },
+            "byteLength": {
+              "type": "number"
+            },
+            "byteOffset": {
+              "type": "number"
+            },
+            "length": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "BYTES_PER_ELEMENT",
+            "buffer",
+            "byteLength",
+            "byteOffset",
+            "length"
+          ],
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        {
+          "$ref": "#/definitions/RawAudio"
+        }
+      ]
+    },
+    "global.Buffer": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "properties": {
+        "BYTES_PER_ELEMENT": {
+          "type": "number"
+        },
+        "buffer": {
+          "type": "object",
+          "properties": {
+            "byteLength": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "byteLength"
+          ],
+          "additionalProperties": false
+        },
+        "byteLength": {
+          "type": "number"
+        },
+        "byteOffset": {
+          "type": "number"
+        },
+        "length": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "BYTES_PER_ELEMENT",
+        "buffer",
+        "byteLength",
+        "byteOffset",
+        "length"
+      ]
+    },
+    "RawAudio": {
+      "type": "object",
+      "properties": {
+        "audioChannels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "BYTES_PER_ELEMENT": {
+                "type": "number"
+              },
+              "buffer": {
+                "type": "object",
+                "properties": {
+                  "byteLength": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "byteLength"
+                ],
+                "additionalProperties": false
+              },
+              "byteLength": {
+                "type": "number"
+              },
+              "byteOffset": {
+                "type": "number"
+              },
+              "length": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "BYTES_PER_ELEMENT",
+              "buffer",
+              "byteLength",
+              "byteOffset",
+              "length"
+            ],
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "sampleRate": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "audioChannels",
+        "sampleRate"
+      ],
+      "additionalProperties": false
     },
     "SpeechTranslationOptions": {
       "type": "object",
@@ -1692,6 +1936,10 @@
         "whisper.cpp",
         "openai-cloud"
       ]
+    },
+    "TextTranslationOptions": {
+      "type": "object",
+      "additionalProperties": false
     },
     "DenoisingOptions": {
       "type": "object",
