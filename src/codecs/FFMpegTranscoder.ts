@@ -7,6 +7,7 @@ import { commandExists, logToStderr } from '../utilities/Utilities.js'
 import path from 'node:path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
+import { existsSync } from '../utilities/FileSystem.js'
 
 const log = logToStderr
 
@@ -67,6 +68,11 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 
 		if (Buffer.isBuffer(input)) {
 			process.stdin.end(input)
+		} else if (typeof input === 'string') {
+			if (!existsSync(input)) {
+				reject(`Audio file was not found: ${input}`)
+				return
+			}
 		}
 
 		const stdoutChunks: Buffer[] = []
