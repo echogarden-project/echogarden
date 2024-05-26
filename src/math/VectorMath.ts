@@ -177,7 +177,7 @@ export function scaleToSumTo1(vector: number[]) {
 	return scaledVector
 }
 
-export function normalizeVector(vector: number[], kind: 'population' | 'sample' = 'population') {
+export function normalizeVector(vector: ArrayLike<number>, kind: 'population' | 'sample' = 'population') {
 	if (vector.length == 0) {
 		throw new Error('Vector is empty')
 	}
@@ -329,15 +329,15 @@ export function varianceOfVectors(vectors: number[][], kind: 'population' | 'sam
 	return result
 }
 
-export function meanOfVector(vector: number[]) {
+export function meanOfVector(vector: ArrayLike<number>) {
 	if (vector.length == 0) {
-		throw new Error('Vector is empty')
+		return 0
 	}
 
 	return sumVector(vector) / vector.length
 }
 
-export function medianOfVector(vector: number[]) {
+export function medianOfVector(vector: ArrayLike<number>) {
 	if (vector.length == 0) {
 		throw new Error('Vector is empty')
 	}
@@ -345,13 +345,13 @@ export function medianOfVector(vector: number[]) {
 	return vector[Math.floor(vector.length / 2)]
 }
 
-export function stdDeviationOfVector(vector: number[], kind: 'population' | 'sample' = 'population', mean?: number) {
+export function stdDeviationOfVector(vector: ArrayLike<number>, kind: 'population' | 'sample' = 'population', mean?: number) {
 	return Math.sqrt(varianceOfVector(vector, kind, mean))
 }
 
-export function varianceOfVector(vector: number[], kind: 'population' | 'sample' = 'population', mean?: number) {
+export function varianceOfVector(vector: ArrayLike<number>, kind: 'population' | 'sample' = 'population', mean?: number) {
 	if (vector.length == 0) {
-		throw new Error('Vector is empty')
+		return 0
 	}
 
 	const sampleSizeMetric = kind == 'population' || vector.length == 1 ? vector.length : vector.length - 1
@@ -362,8 +362,8 @@ export function varianceOfVector(vector: number[], kind: 'population' | 'sample'
 
 	let result = 0.0
 
-	for (const value of vector) {
-		result += (value - mean) ** 2
+	for (let i = 0; i < vector.length; i++) {
+		result += (vector[i] - mean) ** 2
 	}
 
 	return result / sampleSizeMetric
