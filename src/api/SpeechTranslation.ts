@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { type WhisperOptions } from '../recognition/WhisperSTT.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLangaugeCode, parseLangIdentifier } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { EngineMetadata } from './Common.js'
 import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
 import chalk from 'chalk'
@@ -81,7 +81,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.logTitledMessage('Source language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
-	options.targetLanguage = await normalizeIdentifierToLangaugeCode(options.targetLanguage!)
+	options.targetLanguage = await normalizeIdentifierToLanguageCode(options.targetLanguage!)
 
 	logger.logTitledMessage('Target language', formatLanguageCodeWithName(options.targetLanguage))
 
