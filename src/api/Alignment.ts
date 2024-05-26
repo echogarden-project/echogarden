@@ -9,19 +9,14 @@ import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, wordTi
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
-import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
+import { DtwGranularity, alignUsingDtwWithEmbeddings, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 import { isWord } from '../nlp/Segmentation.js'
-import { alignText } from '../alignment/TextAlignment.js'
-import { translateText } from '../text-translation/NLLBTextTranslation.js'
 
 const log = logToStderr
 
 export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
-	//await alignText(transcript, transcript)
-	//await translateText(transcript, 'en', 'de')
-
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -164,7 +159,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			const {
 				referenceRawAudio,
 				referenceTimeline
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false)
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, false)
 
 			logger.end()
 
@@ -196,7 +191,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				referenceRawAudio,
 				referenceTimeline,
 				espeakVoice,
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false)
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, false)
 
 			logger.end()
 
@@ -221,6 +216,33 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				windowDurations,
 				espeakOptions,
 				phoneAlignmentMethod)
+
+			break
+		}
+
+		case 'dtw-ea': {
+			const { windowDurations, granularities } = getDtwWindowGranularitiesAndDurations()
+
+			logger.end()
+
+			logger.logTitledMessage(`Warning`, `The dtw-ea alignment engine is just an early experiment and doesn't currently perform as well as, or as efficiently as other alignment engines.`, chalk.yellow, 'warning')
+
+			const {
+				referenceRawAudio,
+				referenceTimeline
+			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, true)
+
+			logger.end()
+
+			const shortLanguageCode = getShortLanguageCode(language)
+
+			mappedTimeline = await alignUsingDtwWithEmbeddings(
+				sourceRawAudio,
+				referenceRawAudio,
+				referenceTimeline,
+				shortLanguageCode,
+				granularities,
+				windowDurations)
 
 			break
 		}
@@ -315,7 +337,7 @@ export interface AlignmentResult {
 	backgroundRawAudio?: RawAudio
 }
 
-export type AlignmentEngine = 'dtw' | 'dtw-ra' | 'whisper'
+export type AlignmentEngine = 'dtw' | 'dtw-ra' | 'dtw-ea' | 'whisper'
 export type PhoneAlignmentMethod = 'interpolation' | 'dtw'
 
 export interface AlignmentOptions {

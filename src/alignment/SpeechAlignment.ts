@@ -1,4 +1,4 @@
-import { clip } from '../utilities/Utilities.js'
+import { clip, splitFloat32Array } from '../utilities/Utilities.js'
 
 import * as API from '../api/API.js'
 
@@ -11,8 +11,11 @@ import chalk from 'chalk'
 import { synthesize } from '../api/API.js'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
-import { zeroIfNaN } from '../math/VectorMath.js'
+import { cosineDistance, euclidianDistance, zeroIfNaN } from '../math/VectorMath.js'
 import { EspeakOptions } from '../synthesis/EspeakTTS.js'
+import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
+import { loadPackage } from '../utilities/PackageManager.js'
+import path from 'path'
 
 export async function alignUsingDtw(
 	sourceRawAudio: RawAudio,
@@ -97,54 +100,7 @@ export async function alignUsingDtw(
 
 	logger.start('\nConvert path to timeline')
 
-	function getMappedTimelineEntry(timelineEntry: TimelineEntry, recurse = true): TimelineEntry {
-		const referenceStartFrameIndex = Math.floor(timelineEntry.startTime * framesPerSecond)
-		const referenceEndFrameIndex = Math.floor(timelineEntry.endTime * framesPerSecond)
-
-		if (referenceStartFrameIndex < 0 || referenceEndFrameIndex < 0) {
-			throw new Error('Unexpected: encountered a negative timestamp in timeline')
-		}
-
-		const mappedStartFrameIndex = getMappedFrameIndexForPath(referenceStartFrameIndex, compactedPath, 'first')
-		const mappedEndFrameIndex = getMappedFrameIndexForPath(referenceEndFrameIndex, compactedPath, 'first')
-
-		let innerTimeline: Timeline | undefined
-
-		if (recurse && timelineEntry.timeline != null) {
-			innerTimeline = timelineEntry.timeline.map((entry) => getMappedTimelineEntry(entry))
-		}
-
-		// Trim silent samples from start and end of mapped entry range
-		const sourceSamplesPerFrame = Math.floor(sourceRawAudio.sampleRate / framesPerSecond)
-
-		let startSampleIndex = mappedStartFrameIndex * sourceSamplesPerFrame
-		let endSampleIndex = mappedEndFrameIndex * sourceSamplesPerFrame
-
-		const frameSamples = sourceRawAudio.audioChannels[0].subarray(startSampleIndex, endSampleIndex)
-
-		const silenceThresholdDecibels = -40
-
-		startSampleIndex += getStartingSilentSampleCount(frameSamples, silenceThresholdDecibels)
-		endSampleIndex -= getEndingSilentSampleCount(frameSamples, silenceThresholdDecibels)
-
-		endSampleIndex = Math.max(endSampleIndex, startSampleIndex)
-
-		// Build mapped timeline entry
-		const startTime = startSampleIndex / sourceRawAudio.sampleRate
-		const endTime = endSampleIndex / sourceRawAudio.sampleRate
-
-		return {
-			type: timelineEntry.type,
-			text: timelineEntry.text,
-
-			startTime,
-			endTime,
-
-			timeline: innerTimeline
-		}
-	}
-
-	const mappedTimeline = referenceTimeline.map((timelineEntry) => getMappedTimelineEntry(timelineEntry))
+	const mappedTimeline = referenceTimeline.map(entry => getMappedTimelineEntry(entry, sourceRawAudio, framesPerSecond, compactedPath))
 
 	logger.end()
 
@@ -322,6 +278,170 @@ export async function alignUsingDtwWithRecognition(
 	return result
 }
 
+// This is experimental code. It does't work well enough to be usable for anything.
+// Just testing some alternative approaches.
+export async function alignUsingDtwWithEmbeddings(
+	sourceRawAudio: RawAudio,
+	referenceRawAudio: RawAudio,
+	referenceTimeline: Timeline,
+	language: string,
+	granularities: DtwGranularity[],
+	windowDurations: number[]) {
+
+	const logger = new Logger()
+
+	if (sourceRawAudio.sampleRate != 16000) {
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
+	}
+
+	if (referenceRawAudio.sampleRate != 16000) {
+		throw new Error('Reference audio must have a sample rate of 16000 Hz')
+	}
+
+	const embeddingType: 'w2v-bert-2.0' | 'whisper' = 'w2v-bert-2.0'
+
+	let sourceEmbeddings: Float32Array[]
+	let referenceEmbeddings: Float32Array[]
+	let framesPerSecond: number
+
+	if (embeddingType === 'w2v-bert-2.0') {
+		const packageName = 'w2v-bert-2.0-uint8'
+		const modelDir = await loadPackage(packageName)
+		const modelFilePath = path.join(modelDir, `${packageName}.onnx`)
+
+		const { Wav2Vec2BertFeatureEmbeddings } = await import('../speech-embeddings/WavToVec2BertFeatureEmbeddings.js')
+
+		const wav2vecBert = new Wav2Vec2BertFeatureEmbeddings(
+			modelFilePath,
+			['cpu'],
+		)
+
+		logger.start(`Extract source audio embeddings using the W2V-BERT-2.0 model`)
+		sourceEmbeddings = await wav2vecBert.computeEmbeddings(sourceRawAudio)
+
+		logger.start(`Extract reference audio embeddings using the W2V-BERT-2.0 model`)
+		referenceEmbeddings = await wav2vecBert.computeEmbeddings(referenceRawAudio)
+
+		framesPerSecond = 1000 / 10 / 2
+	} else if (embeddingType === 'whisper') {
+		const sourceSamples = sourceRawAudio.audioChannels[0]
+		const referenceSamples = referenceRawAudio.audioChannels[0]
+
+		const WhisperSTT = await import(`../recognition/WhisperSTT.js`)
+
+		const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths('base.en', language)
+
+		const whisper = new WhisperSTT.Whisper(modelName, modelDir, ['dml', 'cpu'], ['cpu'])
+
+		async function encodeToAudioFeatures(samples: Float32Array) {
+			const featureVectors: Float32Array[] = []
+
+			for (let i = 0; i < samples.length; i += 16000 * 30) {
+				const startSampleIndex = i
+				const endSampleIndex = Math.min(samples.length, i + 16000 * 30)
+				const partSampleCount = endSampleIndex - startSampleIndex
+
+				const audioPart = samples.subarray(startSampleIndex, endSampleIndex)
+				const rawAudioForPart = { audioChannels: [audioPart], sampleRate: 16000 } as RawAudio
+
+				const resultTensor = await whisper.encodeAudio(rawAudioForPart)
+
+				const vectorLength = resultTensor.dims[2]
+
+				let featureVectorsForPart = splitFloat32Array(resultTensor.data as Float32Array, vectorLength)
+
+				featureVectorsForPart = featureVectorsForPart.slice(0, Math.floor((partSampleCount / (16000 * 30)) * 1500))
+
+				featureVectors.push(...featureVectorsForPart)
+			}
+
+			return featureVectors
+		}
+
+		logger.start(`Extract source audio embeddings using the Whisper encoder model`)
+		sourceEmbeddings = await encodeToAudioFeatures(sourceSamples)
+
+		logger.start(`Extract reference audio embeddings using the Whisper encoder model`)
+		referenceEmbeddings = await encodeToAudioFeatures(referenceSamples)
+
+		framesPerSecond = 1500 / 30
+	} else {
+		throw new Error(`Unknown embedding type: ${embeddingType}`)
+	}
+
+	logger.start(`Align source and reference audio embeddings using DTW`)
+
+	const { path: alignmentPath } = alignDTWWindowed(
+		referenceEmbeddings,
+		sourceEmbeddings,
+		cosineDistance,
+		1000 * 1000
+	)
+
+	const compactedPath = compactPath(alignmentPath)
+
+	logger.start('\nConvert path to timeline')
+
+	const mappedTimeline = referenceTimeline.map(entry => getMappedTimelineEntry(entry, sourceRawAudio, framesPerSecond, compactedPath))
+
+	logger.end()
+
+	return mappedTimeline
+}
+
+function getMappedTimelineEntry(
+	timelineEntry: TimelineEntry,
+	sourceRawAudio: RawAudio,
+	framesPerSecond: number,
+	compactedPath: CompactedPath,
+	recurse = true): TimelineEntry {
+
+	const referenceStartFrameIndex = Math.floor(timelineEntry.startTime * framesPerSecond)
+	const referenceEndFrameIndex = Math.floor(timelineEntry.endTime * framesPerSecond)
+
+	if (referenceStartFrameIndex < 0 || referenceEndFrameIndex < 0) {
+		throw new Error('Unexpected: encountered a negative timestamp in timeline')
+	}
+
+	const mappedStartFrameIndex = getMappedFrameIndexForPath(referenceStartFrameIndex, compactedPath, 'first')
+	const mappedEndFrameIndex = getMappedFrameIndexForPath(referenceEndFrameIndex, compactedPath, 'first')
+
+	let innerTimeline: Timeline | undefined
+
+	if (recurse && timelineEntry.timeline != null) {
+		innerTimeline = timelineEntry.timeline.map((entry) => getMappedTimelineEntry(entry, sourceRawAudio, framesPerSecond, compactedPath, recurse))
+	}
+
+	// Trim silent samples from start and end of mapped entry range
+	const sourceSamplesPerFrame = Math.floor(sourceRawAudio.sampleRate / framesPerSecond)
+
+	let startSampleIndex = mappedStartFrameIndex * sourceSamplesPerFrame
+	let endSampleIndex = mappedEndFrameIndex * sourceSamplesPerFrame
+
+	const frameSamples = sourceRawAudio.audioChannels[0].subarray(startSampleIndex, endSampleIndex)
+
+	const silenceThresholdDecibels = -40
+
+	startSampleIndex += getStartingSilentSampleCount(frameSamples, silenceThresholdDecibels)
+	endSampleIndex -= getEndingSilentSampleCount(frameSamples, silenceThresholdDecibels)
+
+	endSampleIndex = Math.max(endSampleIndex, startSampleIndex)
+
+	// Build mapped timeline entry
+	const startTime = startSampleIndex / sourceRawAudio.sampleRate
+	const endTime = endSampleIndex / sourceRawAudio.sampleRate
+
+	return {
+		type: timelineEntry.type,
+		text: timelineEntry.text,
+
+		startTime,
+		endTime,
+
+		timeline: innerTimeline
+	}
+}
+
 export async function interpolatePhoneTimelines(sourceTimeline: Timeline, referenceTimeline: Timeline) {
 	const interpolatedTimeline: Timeline = []
 
@@ -473,7 +593,14 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 	return result
 }
 
-export async function createAlignmentReferenceUsingEspeak(transcript: string, language: string, plaintextOptions?: API.PlainTextOptions, customLexiconPaths?: string[], insertSeparators?: boolean) {
+export async function createAlignmentReferenceUsingEspeak(
+	transcript: string,
+	language: string,
+	plaintextOptions?: API.PlainTextOptions,
+	customLexiconPaths?: string[],
+	insertSeparators?: boolean,
+	useKlatt?: boolean) {
+
 	const logger = new Logger()
 
 	logger.start('Synthesize alignment reference with eSpeak')
@@ -486,7 +613,7 @@ export async function createAlignmentReferenceUsingEspeak(transcript: string, la
 		customLexiconPaths: customLexiconPaths,
 
 		espeak: {
-			useKlatt: false,
+			useKlatt,
 			insertSeparators,
 		}
 	}
