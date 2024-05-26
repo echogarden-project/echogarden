@@ -207,6 +207,20 @@ export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, c
 	return currentOffset
 }
 
+export function extractEntries(timeline: Timeline, predicate: (entry: TimelineEntry) => boolean): TimelineEntry[] {
+	const timelineWordEntries: TimelineEntry[] = []
+
+	for (const entry of timeline) {
+		if (predicate(entry)) {
+			timelineWordEntries.push(entry)
+		} else if (entry.timeline) {
+			timelineWordEntries.push(...extractEntries(entry.timeline, predicate))
+		}
+	}
+
+	return timelineWordEntries
+}
+
 export type TimelineEntryType = 'segment' | 'paragraph' | 'sentence' | 'clause' | 'phrase' | 'word' | 'token' | 'letter' | 'phone' | 'subphone'
 
 export type TimelineEntry = {
