@@ -183,10 +183,13 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'whisper.cpp-binaries-windows-x64-cublas-12.4.0-latest-patched': '20240409',
 	'whisper.cpp-binaries-windows-x64-cublas-11.8.0-latest-patched': '20240409',
 
-	'xenova-multilingual-e5-small-quantized': '20240504',
-	'xenova-nllb-200-distilled-600M-quantized': '20240505',
+	'xenova-multilingual-e5-small-q8': '20240504',
+	'xenova-nllb-200-distilled-600M-q8': '20240505',
 	'xenova-multilingual-e5-small-fp16': '20240514',
 	'xenova-multilingual-e5-base-fp16': '20240514',
-	'xenova-multilingual-e5-base-quantized': '20240514',
-	'xenova-multilingual-e5-large-quantized': '20240514',
+	'xenova-multilingual-e5-base-q8': '20240514',
+	'xenova-multilingual-e5-large-q8': '20240514',
+
+	'w2v-bert-2.0-int8': '20240517',
+	'w2v-bert-2.0-uint8': '20240517',
 }

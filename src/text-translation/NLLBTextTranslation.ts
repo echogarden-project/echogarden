@@ -6,7 +6,7 @@ export async function translateText(sourceText: string, sourceLanguage: string, 
 
 	const { AutoTokenizer,  M2M100ForConditionalGeneration } = await import('@echogarden/transformers-nodejs-lite')
 
-	const modelPath = await loadPackage(`xenova-nllb-200-distilled-600M-quantized`)
+	const modelPath = await loadPackage(`xenova-nllb-200-distilled-600M-q8`)
 
 	const tokenizer = await AutoTokenizer.from_pretrained(modelPath)
 	const model = await M2M100ForConditionalGeneration.from_pretrained(modelPath)
