@@ -6,14 +6,14 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLangaugeCode, parseLangIdentifier } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
 const log = logToStderr
 
-export async function alignTranslation(input: AudioSourceParam, transcript: string, options: TranslationAlignmentOptions): Promise<TranslationAlignmentResult> {
+export async function alignTranslation(input: AudioSourceParam, translatedTranscript: string, options: TranslationAlignmentOptions): Promise<TranslationAlignmentResult> {
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -77,7 +77,7 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 		logger.logTitledMessage('Source language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
-	const targetLanguage = await normalizeIdentifierToLangaugeCode(options.targetLanguage!)
+	const targetLanguage = await normalizeIdentifierToLanguageCode(options.targetLanguage!)
 
 	logger.logTitledMessage('Target language', formatLanguageCodeWithName(targetLanguage))
 
@@ -108,7 +108,7 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 				throw new Error('Whisper translation tasks are only possible with a multilingual model')
 			}
 
-			mappedTimeline = await WhisperSTT.alignEnglishTranslation(sourceRawAudio, transcript, modelName, modelDir, shortSourceLanguageCode, whisperAlignmnentOptions)
+			mappedTimeline = await WhisperSTT.alignEnglishTranslation(sourceRawAudio, translatedTranscript, modelName, modelDir, shortSourceLanguageCode, whisperAlignmnentOptions)
 
 			break
 		}
@@ -124,10 +124,10 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 	}
 
 	// Add text offsets
-	addWordTextOffsetsToTimeline(mappedTimeline, transcript)
+	addWordTextOffsetsToTimeline(mappedTimeline, translatedTranscript)
 
 	// Make segment timeline
-	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, transcript, sourceLanguage, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
+	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, translatedTranscript, sourceLanguage, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
 	logger.end()
 	logger.logDuration(`Total translation alignment time`, startTimestamp, chalk.magentaBright)
@@ -136,8 +136,9 @@ export async function alignTranslation(input: AudioSourceParam, transcript: stri
 		timeline: segmentTimeline,
 		wordTimeline: mappedTimeline,
 
-		transcript,
-		language: sourceLanguage,
+		translatedTranscript,
+		sourceLanguage,
+		targetLanguage,
 
 		inputRawAudio,
 		isolatedRawAudio,
@@ -149,8 +150,9 @@ export interface TranslationAlignmentResult {
 	timeline: Timeline
 	wordTimeline: Timeline
 
-	transcript: string
-	language: string
+	translatedTranscript: string
+	sourceLanguage: string
+	targetLanguage: string
 
 	inputRawAudio: RawAudio
 	isolatedRawAudio?: RawAudio
