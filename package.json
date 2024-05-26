@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.4.4",
+	"version": "1.5.0",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -55,8 +55,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.576.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.576.0",
+		"@aws-sdk/client-polly": "^3.583.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.583.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -76,19 +76,19 @@
 		"command-exists": "^1.2.9",
 		"compromise": "^14.13.0",
 		"fs-extra": "^11.2.0",
-		"gaxios": "^6.5.0",
+		"gaxios": "^6.6.0",
 		"graceful-fs": "^4.2.11",
 		"html-escaper": "^3.0.3",
 		"html-to-text": "^9.0.5",
 		"import-meta-resolve": "^4.1.0",
-		"jieba-wasm": "^0.0.2",
+		"jieba-wasm": "^1.0.0",
 		"jsdom": "^24.0.0",
 		"json5": "^2.2.3",
 		"kuromoji": "^0.1.2",
 		"microsoft-cognitiveservices-speech-sdk": "^1.36.0",
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
-		"onnxruntime-node": "^1.17.3",
+		"onnxruntime-node": "^1.18.0",
 		"openai": "^4.47.1",
 		"sam-js": "^0.2.1",
 		"strip-ansi": "^7.1.0",
@@ -124,7 +124,7 @@
 		"@types/recursive-readdir": "^2.2.4",
 		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.5.10",
-		"ts-json-schema-generator": "^2.1.2-next.1",
+		"ts-json-schema-generator": "^2.2.0",
 		"typescript": "^5.4.5"
 	}
 }
