@@ -106,7 +106,8 @@ echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --tar
 
 ## Speech-to-translated-transcript alignment
 
-**Task**: Given an audio file and its translated transcript, try to approximate the timing of the start and end of each translated word.
+### Direct alignment (English target only)
+**Task**: Given a spoken audio file and its English translated transcript, try to approximate the timing of the start and end of each translated word.
 
 This would align the audio file `dutch-speech.mp3` with the translated transcript provided in `english-translation.txt`, and would play the synchronized result in the terminal:
 ```bash
@@ -117,6 +118,55 @@ This would align the audio file `dutch-speech.mp3` with the translated transcrip
 ```bash
 echogarden align-translation dutch-speech.mp3 english-translation.txt result.srt result.json
 ```
+
+### Two-stage alignment (any of 96 source and target languages, combined stages)
+**Task**: Given a spoken audio file, its transcript, and its translated transcript, try to approximate the timing of the start and end of each translated word.
+
+This would align the audio file `dutch-speech.mp3` with the Dutch (native language) transcript provided in `dutch-transcript.txt` and the translated transcript provided in `russian-translation.txt`, and would play the synchronized result in the terminal:
+
+```bash
+echogarden align-transcript-and-translation dutch-speech.mp3 dutch-transcript.txt russian-translation.txt
+```
+
+This would perform the same operation but write the results to disk:
+
+```bash
+echogarden align-transcript-and-translation dutch-speech.mp3 dutch-transcript.txt russian-translation.txt out.json out.srt
+```
+
+The output would include separate files for the native language and the translation language:
+
+```
+out.json
+out.srt
+
+out.translated.json
+out.translated.srt
+```
+
+### Two-stage alignment (any of 96 source and target languages, separate stages)
+
+**Task**: Given an audio file, its transcript, and its translated transcript, try to approximate the timing of the start and end of each translated word. Do this in two, separate stages.
+
+This manual two-step approach allows to reuse the already-aligned transcript in the next stage, possibly for several different translation languages. The method used for alignment is otherwise identical to `align-transcript-and-translation`.
+
+**Stage 1**:
+
+Align the audio with its native language transcript, to produce a timeline in the native language:
+```bash
+echogarden align dutch-speech.mp3 dutch-transcript.txt dutch-timeline.json
+```
+
+**Stage 2**:
+
+Align the resulting timeline with the target translation, and play the synchronized result in the terminal.
+
+```bash
+echogarden align-timeline-translation dutch-timeline.json russian-transcript.txt --audio=dutch-speech.mp3
+```
+
+(`--audio` is only used for previewing the result in the terminal. Otherwise, it is not necessary)
+
 
 ## Language detection
 

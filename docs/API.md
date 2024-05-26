@@ -72,10 +72,13 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 {
 	index: number              // Index of part
 	total: number              // Total number of parts
+
 	audio: RawAudio | Buffer   // Audio for part
+
 	timeline: Timeline         // Timeline for part
 	transcript: string         // Transcript for part
 	language: string           // Language for part
+	
 	peakDecibelsSoFar: number  // Peak decibels measured for all synthesized audio, so far
 }
 ```
@@ -109,9 +112,15 @@ Applies speech recognition to the input.
 ```ts
 {
 	transcript: string
+
 	timeline: Timeline
 	wordTimeline: Timeline
+
 	language: string
+
+	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
 }
 ```
 
@@ -131,8 +140,13 @@ Aligns input audio with the given transcript.
 {
 	timeline: Timeline
 	wordTimeline: Timeline
+
 	transcript: string
 	language: string
+
+	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
 }
 ```
 
@@ -140,7 +154,7 @@ Aligns input audio with the given transcript.
 
 ### `translateSpeech(input, options)`
 
-Translates speech audio directly to English text.
+Translates speech audio directly to a transcript in a different language (only English is currently supported).
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: speech translation options object
@@ -150,9 +164,14 @@ Translates speech audio directly to English text.
 {
 	transcript: string
 	timeline: Timeline
-	wordTimeline: Timeline
+	wordTimeline?: Timeline
+
 	sourceLanguage: string
 	targetLanguage: string
+
+	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
 }
 ```
 
@@ -172,8 +191,67 @@ Aligns input audio with the given translated transcript.
 {
 	timeline: Timeline
 	wordTimeline: Timeline
+
+	translatedTranscript: string
+	sourceLanguage: string
+	targetLanguage: string
+
+	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
+}
+```
+
+### `alignTranscriptAndTranslation(input, transcript, translatedTranscript, options)`
+
+Aligns input audio to both the native language transcript a translated one.
+
+* `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
+* `transcript`: the transcript to align to, in the native speech language
+* `translatedTranscript`: the translated transcript to align to
+* `options`: transcript and translation alignment options object
+
+#### Returns (via promise):
+
+```ts
+{
+	timeline: Timeline
+	wordTimeline: Timeline
+
+	translatedTimeline: Timeline
+	translatedWordTimeline: Timeline
+
 	transcript: string
-	language: string
+	translatedTranscript: string
+
+	sourceLanguage: string
+	targetLanguage: string
+
+	inputRawAudio: RawAudio
+	isolatedRawAudio?: RawAudio
+	backgroundRawAudio?: RawAudio
+}
+```
+
+### `alignTimelineTranslation(inputTimeline, translatedTranscript, options)`
+
+Aligns given timeline with the translated transcript.
+
+* `inputTimeline`: input timeline in the native language
+* `translatedTranscript`: the translated transcript to align to
+* `options`: translation alignment options object
+
+#### Returns (via promise):
+
+```ts
+{
+	timeline: Timeline
+	wordTimeline: Timeline
+
+	sourceLanguage?: string
+	targetLanguage: string
+
+	rawAudio?: RawAudio
 }
 ```
 

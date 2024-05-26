@@ -84,6 +84,25 @@ The goal here is to match (or "align") a given spoken recording in one language,
 
 * `whisper`: given a spoken recording in any of the [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages) supported by Whisper, and an English translation of its transcript, the translated transcript is tokenized and then decoded, in order, using a guided approach, with any multilingual Whisper model, set to its `translate` task mode. In this way, the approximate mapping between the spoken audio and each word of the translation is estimated
 
+## Speech-to-transcript-and-translation alignment
+
+This is a two-stage approach for translation alignment, that can accept any of 100 source and target languages:
+
+1. First, the spoken audio is aligned with the native language transcript
+2. Then, the resulting timeline is aligned with the translation using semantic text-to-text alignment
+
+This approach is potentially faster than the single-stage one, because the first stage can use any alignment approach, including the default synthesis-based DTW, which is much faster than running a speech recognition engine like Whisper.
+
+The second stage uses a multilingual text embedding model to produce a vector representation of both the transcript and the translation text, and then uses DTW to align the tokens to each other. Since this stage works on tokens only (the audio is not involved), it is generally fast.
+
+In terms of accuracy, the two-stage approach can be more accurate than the alignment derived from the Whisper model in the one-stage approach, especially when compared to using the smaller Whisper models, and for source languages that Whisper generally isn't very good at, like Chinese, Japanese, and less common languages.
+
+## Timeline-to-translation alignment
+
+This is used for the second stage of the two-stage approach. It can be use independently as well. For instance, it can be used to reuse the same timeline to align with multiple translations in different languages.
+
+* [`E5`](https://huggingface.co/intfloat/multilingual-e5-base) (`e5`): E5 is a multilingual text embedding model by Microsoft, supporting 100 languages. This model encodes sequences of text tokens to vectors, in such a way that words with similar meanings in different languages are mapped to similar vectors. This cross-language semantic vector encoding is then used for aligning the tokens between the timeline and the translation. Then, the translated words are mapped to the timestamps of the corresponding words in the timeline.
+
 
 ## Language detection
 

@@ -271,7 +271,8 @@ Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 
 **General**:
 * `engine`: alignment algorithm to use, can only be `whisper`. Defaults to `whisper`
-* `language`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
+* `sourceLanguage`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
+* `targetLanguage`: language code for the translated transcript. Can only be `en` for now. Defaults to `en`
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting alignment. Defaults to `false`
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
@@ -283,6 +284,37 @@ Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 * `whisper.endTokenThreshold`: see details in the alignment section above
 * `whisper.encoderProvider`: encoder ONNX execution provider. See details in recognition section above
 * `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
+
+## Speech-to-transcript-and-translation alignment
+
+Applies to CLI operation: `align-transcript-and-translation`, API method: `alignTranscriptAndTranslation`
+
+**General**:
+* `engine`: can only be `two-stage`. Defaults to `two-stage`
+* `sourceLanguage`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
+* `targetLanguage`: language code for the translated transcript. Can only be `en` for now. Defaults to `en`
+* `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
+* `isolate`: apply source separation to isolate voice before starting alignment. Defaults to `false`
+* `alignment`: prefix to provide options for alignment. Options detailed in section for alignment
+* `timelineAlignment`: prefix to provide options for timeline alignment. Options detailed in section for timeline alignment
+* `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
+* `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
+* `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
+
+## Timeline-to-translated-text alignment
+
+Applies to CLI operation: `align-timeline-translation`, API method: `alignTimelineTranslation`
+
+**General**:
+* `engine`: alignment engine to use. Can only be `e5`. Defaults to `e5`
+* `sourceLanguage`: language code for the source timeline. Auto-detected from timeline if not set
+* `targetLanguage`: language code for the translated transcript. Auto-detected if not set
+* `audio`: speech audio to play on CLI preview (not used otherwise). Optional
+* `languageDetection`: prefix to provide options for language detection. Options detailed in section for text language detection
+* `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
+
+**E5**:
+* `e5.model`: E5 model to use. Defaults to `e5-small-fp16`
 
 ## Language detection
 
