@@ -10,7 +10,7 @@ export class KWeightingFilter {
 
 		if (useStandard44100Filters) {
 			// These parameter values are taken from ITU-R BS.1770-2
-			// and designed only for a 44100 Hz sampling rate:
+			// and designed only for a 44100 Hz sample rate:
 			this.highShelfFilter = new BiquadFilter({
 				b0: 1.53512485958697,
 				b1: -2.69169618940638,

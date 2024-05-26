@@ -32,7 +32,7 @@ export class MDXNet {
 		}
 
 		if (rawAudio.sampleRate != 44100) {
-			throw new Error(`Input audio must have a 44100 Hz sampling rate`)
+			throw new Error(`Input audio must have a sample rate of 44100 Hz`)
 		}
 
 		await this.initializeSessionIfNeeded()

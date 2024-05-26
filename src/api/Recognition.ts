@@ -319,8 +319,10 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 export interface RecognitionResult {
 	transcript: string
+
 	timeline: Timeline
 	wordTimeline: Timeline
+	
 	language: string
 
 	inputRawAudio: RawAudio
