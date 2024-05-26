@@ -110,3 +110,18 @@ export async function getDeflateCompressionMetricsForString(str: string) {
 		ratio: originalStringBytes.length / compressedStringBytes.length
 	}
 }
+
+export function computeDeltas(data: Float32Array) {
+	const deltas = new Float32Array(data.length)
+
+	let val = 0
+
+	for (let i = 0; i < data.length; i++) {
+		const delta = Math.floor(data[i] - val)
+		deltas[i] = delta
+
+		val += delta
+	}
+
+	return deltas
+}
