@@ -1,6 +1,6 @@
-import type { LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { detectAll } from 'tinyld'
 import { languageCodeToName } from '../utilities/Locale.js'
+import { LanguageDetectionResults } from '../api/LanguageDetectionCommon.js'
 
 export async function detectLanguage(text: string) {
 	const tinyldResults = detectAll(text)

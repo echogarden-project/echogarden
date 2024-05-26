@@ -3,9 +3,10 @@ import { softmax } from '../math/VectorMath.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
-import { detectSpeechLanguageByParts, type LanguageDetectionResults } from '../api/LanguageDetection.js'
+import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
+import { LanguageDetectionResults } from '../api/LanguageDetectionCommon.js'
 
 export async function detectLanguage(
 	rawAudio: RawAudio,

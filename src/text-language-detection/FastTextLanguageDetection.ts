@@ -1,8 +1,8 @@
 import path from 'path'
-import type { LanguageDetectionResults } from '../api/LanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { resolveModuleMainPath, roundToDigits } from '../utilities/Utilities.js'
+import { LanguageDetectionResults } from '../api/LanguageDetectionCommon.js'
 
 let fastTextLanguageDetectionModel: any
 

@@ -13,12 +13,10 @@ import chalk from 'chalk'
 import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 import { type SileroLanguageDetectionOptions } from '../speech-language-detection/SileroLanguageDetection.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
+import { LanguageDetectionResults } from './LanguageDetectionCommon.js'
 
 const log = logToStderr
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// Speech language detection
-/////////////////////////////////////////////////////////////////////////////////////////////
 export async function detectSpeechLanguage(input: AudioSourceParam, options: SpeechLanguageDetectionOptions): Promise<SpeechLanguageDetectionResult> {
 	const logger = new Logger()
 
@@ -238,107 +236,6 @@ export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptio
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// Text language detection
-/////////////////////////////////////////////////////////////////////////////////////////////
-export async function detectTextLanguage(input: string, options: TextLanguageDetectionOptions): Promise<TextLanguageDetectionResult> {
-	const logger = new Logger()
-
-	options = extendDeep(defaultTextLanguageDetectionOptions, options)
-
-	const defaultLanguage = options.defaultLanguage!
-	const fallbackThresholdProbability = options.fallbackThresholdProbability!
-
-	let detectedLanguageProbabilities: LanguageDetectionResults
-
-	logger.start(`Initialize ${options.engine} module`)
-
-	switch (options.engine) {
-		case 'tinyld': {
-			const { detectLanguage } = await import('../text-language-detection/TinyLDLanguageDetection.js')
-
-			logger.start('Detect text language using tinyld')
-
-			detectedLanguageProbabilities = await detectLanguage(input)
-
-			break
-		}
-
-		case 'fasttext': {
-			const { detectLanguage } = await import('../text-language-detection/FastTextLanguageDetection.js')
-
-			logger.start('Detect text language using FastText')
-
-			detectedLanguageProbabilities = await detectLanguage(input)
-
-			break
-		}
-
-		default: {
-			throw new Error(`Engine '${options.engine}' is not supported`)
-		}
-	}
-
-	let detectedLanguage: string
-
-	if (detectedLanguageProbabilities.length == 0 ||
-		detectedLanguageProbabilities[0].probability < fallbackThresholdProbability) {
-
-		detectedLanguage = defaultLanguage
-	} else {
-		detectedLanguage = detectedLanguageProbabilities[0].language
-	}
-
-	logger.end()
-
-	return {
-		detectedLanguage,
-		detectedLanguageName: languageCodeToName(detectedLanguage),
-		detectedLanguageProbabilities
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-// Types
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-export interface TextLanguageDetectionResult {
-	detectedLanguage: string
-	detectedLanguageName: string
-	detectedLanguageProbabilities: LanguageDetectionResults
-}
-
-export type LanguageDetectionResults = LanguageDetectionResultsEntry[]
-export interface LanguageDetectionResultsEntry {
-	language: string
-	languageName: string
-	probability: number
-}
-
-export type LanguageDetectionGroupResults = LanguageDetectionGroupResultsEntry[]
-export interface LanguageDetectionGroupResultsEntry {
-	languageGroup: string
-	probability: number
-}
-
-export type TextLanguageDetectionEngine = 'tinyld' | 'fasttext'
-
-export interface TextLanguageDetectionOptions {
-	engine?: TextLanguageDetectionEngine
-	defaultLanguage?: string
-	fallbackThresholdProbability?: number
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-// Constants
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-export const defaultTextLanguageDetectionOptions: TextLanguageDetectionOptions = {
-	engine: 'tinyld',
-	defaultLanguage: 'en',
-	fallbackThresholdProbability: 0.05,
-}
-
 export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 	{
 		id: 'silero',
@@ -356,21 +253,6 @@ export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 		id: 'whisper.cpp',
 		name: 'OpenAI Whisper (C++ port)',
 		description: 'Uses the language tokens produced by Whisper.cpp to classify the spoken langauge.',
-		type: 'local'
-	},
-]
-
-export const textLanguageDetectionEngines: API.EngineMetadata[] = [
-	{
-		id: 'tinyld',
-		name: 'TinyLD',
-		description: 'A simple language detection library.',
-		type: 'local'
-	},
-	{
-		id: 'fasttext',
-		name: 'FastText',
-		description: 'A library for word representations and sentence classification by Facebook research.',
 		type: 'local'
 	},
 ]
