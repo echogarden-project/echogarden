@@ -219,17 +219,21 @@ const help = [
 	`${executableName} ${chalk.magentaBright('speak-url')} url [output files...] [options...]`,
 	`    Speak the HTML document on the given URL\n`,
 	`${executableName} ${chalk.magentaBright('speak-wikipedia')} articleName [output files...] [options...]`,
-	`    Speak the given wikipedia article, language edition can be specified by --language=<langCode>\n`,
+	`    Speak the given Wikipedia article. Language edition can be specified by --language=<langCode>\n`,
 	`${executableName} ${chalk.magentaBright('transcribe')} audioFile [output files...] [options...]`,
-	`    Transcribe audio file\n`,
-	`${executableName} ${chalk.magentaBright('align')} audioFile referenceFile [output files...] [options...]`,
-	`    Align audio file to the reference transcript file\n`,
-	`${executableName} ${chalk.magentaBright('translate-speech')} inputFile [output files...] [options...]`,
+	`    Transcribe a spoken audio file\n`,
+	`${executableName} ${chalk.magentaBright('align')} audioFile transcriptFile [output files...] [options...]`,
+	`    Align spoken audio file to its transcript\n`,
+	`${executableName} ${chalk.magentaBright('translate-speech')} audioFile [output files...] [options...]`,
 	`    Transcribe audio file directly to a different language\n`,
-	`${executableName} ${chalk.magentaBright('align-translation')} audioFile referenceFile [output files...] [options...]`,
-	`    Align audio file to the reference translated transcript file\n`,
+	`${executableName} ${chalk.magentaBright('align-translation')} audioFile translatedTranscriptFile [output files...] [options...]`,
+	`    Align spoken audio file to its translated transcript\n`,
+	`${executableName} ${chalk.magentaBright('align-transcript-and-translation')} audioFile transcriptFile translatedTranscriptFile [output files...] [options...]`,
+	`    Align spoken audio file to both its transcript and its translated transcript using a two-stage approach.\n`,
+	`${executableName} ${chalk.magentaBright('align-timeline-translation')} timelineFile translatedFile [output files...] [options...]`,
+	`    Align a given timeline file to its translated text\n`,
 	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [output files...] [options...]`,
-	`    Detect language of audio file\n`,
+	`    Detect language of spoken audio file\n`,
 	`${executableName} ${chalk.magentaBright('detect-text-language')} inputFile [output files...] [options...]`,
 	`    Detect language of textual file\n`,
 	`${executableName} ${chalk.magentaBright('detect-voice-activity')} audioFile [output files...] [options...]`,
@@ -282,6 +286,16 @@ async function startWithArgs(operationData: CLIOperationData) {
 
 		case 'align-translation': {
 			await alignTranslation(operationData)
+			break
+		}
+
+		case 'align-transcript-and-translation': {
+			await alignTranscriptAndTranslation(operationData)
+			break
+		}
+
+		case 'align-timeline-translation': {
+			await alignTimelineTranslation(operationData)
 			break
 		}
 
@@ -352,7 +366,7 @@ async function startWithArgs(operationData: CLIOperationData) {
 	}
 }
 
-async function speak(operationData: CLIOperationData) {
+export async function speak(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operation, operationOptionsLookup, cliOptions } = operationData
@@ -424,7 +438,8 @@ async function speak(operationData: CLIOperationData) {
 			textSegments = splitToParagraphs(textContent, 'single', 'preserve')
 		} else if (sourceFileExtension == 'srt' || sourceFileExtension == 'vtt') {
 			const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
-			textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
+			//textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
+			textSegments = [subtitlesToText(fileContent)]
 		} else if (sourceFileExtension == 'xml' || sourceFileExtension == 'ssml') {
 			options.ssml = true
 			textSegments = [fileContent]
@@ -509,7 +524,7 @@ async function speak(operationData: CLIOperationData) {
 	logger.end()
 }
 
-async function transcribe(operationData: CLIOperationData) {
+export async function transcribe(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -571,7 +586,7 @@ async function transcribe(operationData: CLIOperationData) {
 	}
 }
 
-async function align(operationData: CLIOperationData) {
+export async function align(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -667,7 +682,7 @@ async function align(operationData: CLIOperationData) {
 	}
 }
 
-async function alignTranslation(operationData: CLIOperationData) {
+export async function alignTranslation(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -676,7 +691,7 @@ async function alignTranslation(operationData: CLIOperationData) {
 	const outputFilenames = operationArgs.slice(2)
 
 	if (audioFilename == undefined) {
-		throw new Error(`align-translation requires an argument containing the audio file path.`)
+		throw new Error(`align-translation requires a first argument containing the audio file path.`)
 	}
 
 	if (!existsSync(audioFilename)) {
@@ -705,7 +720,7 @@ async function alignTranslation(operationData: CLIOperationData) {
 	} else if (referenceFileExtension == 'srt' || referenceFileExtension == 'vtt') {
 		text = subtitlesToText(fileContent)
 	} else {
-		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+		throw new Error(`align-translation only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
 	}
 
 	if (cliOptions.play == null) {
@@ -720,8 +735,9 @@ async function alignTranslation(operationData: CLIOperationData) {
 	const {
 		timeline,
 		wordTimeline,
-		transcript,
-		language,
+		translatedTranscript,
+		sourceLanguage,
+		targetLanguage,
 		inputRawAudio,
 		isolatedRawAudio,
 		backgroundRawAudio } = await API.alignTranslation(audioFilename, text, options)
@@ -736,7 +752,7 @@ async function alignTranslation(operationData: CLIOperationData) {
 			const segmentAudio = sliceRawAudioByTime(inputRawAudio, segmentEntry.startTime, segmentEntry.endTime)
 			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
 
-			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, targetLanguage, allowOverwrite)
 		}
 	}
 
@@ -749,7 +765,7 @@ async function alignTranslation(operationData: CLIOperationData) {
 
 		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
 
-		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
+		await fileSaver(inputRawAudio, timeline, translatedTranscript, options.subtitles)
 
 		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
 	}
@@ -767,11 +783,238 @@ async function alignTranslation(operationData: CLIOperationData) {
 
 		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, translatedTranscript)
 	}
 }
 
-async function translateSpeech(operationData: CLIOperationData) {
+export async function alignTranscriptAndTranslation(operationData: CLIOperationData) {
+	const logger = new Logger()
+
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const audioFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(3)
+
+	if (audioFilename == undefined) {
+		throw new Error(`align-transcript-and-translation requires a first argument containing the audio file path.`)
+	}
+
+	if (!existsSync(audioFilename)) {
+		throw new Error(`The given source file '${audioFilename}' was not found.`)
+	}
+
+	const nativeTranscriptFilePath = operationArgs[1]
+
+	if (nativeTranscriptFilePath == undefined) {
+		throw new Error(`align-transcript-and-translation requires a second argument containing the native language transcript file path.`)
+	}
+
+	if (!existsSync(nativeTranscriptFilePath)) {
+		throw new Error(`The given transcript file '${nativeTranscriptFilePath}' was not found.`)
+	}
+
+	const translatedTranscriptFilePath = operationArgs[2]
+
+	if (translatedTranscriptFilePath == undefined) {
+		throw new Error(`align-transcript-and-translation requires a third argument containing the translated language transcript file path.`)
+	}
+
+	if (!existsSync(translatedTranscriptFilePath)) {
+		throw new Error(`The given translated transcript file '${nativeTranscriptFilePath}' was not found.`)
+	}
+
+	let transcript: string
+
+	{
+		const nativeTranscriptFileExtension = getLowercaseFileExtension(nativeTranscriptFilePath)
+		const fileContent = await readFile(nativeTranscriptFilePath, { encoding: 'utf-8' })
+
+
+		if (nativeTranscriptFileExtension == 'txt') {
+			transcript = fileContent
+		} else if (nativeTranscriptFileExtension == 'html' || nativeTranscriptFileExtension == 'htm') {
+			transcript = await convertHtmlToText(fileContent)
+		} else if (nativeTranscriptFileExtension == 'srt' || nativeTranscriptFileExtension == 'vtt') {
+			transcript = subtitlesToText(fileContent)
+		} else {
+			throw new Error(`align-transcript-and-translation only supports transcript files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+		}
+	}
+
+	let translatedTranscript: string
+
+	{
+		const translatedTranscriptFileExtension = getLowercaseFileExtension(translatedTranscriptFilePath)
+		const fileContent = await readFile(translatedTranscriptFilePath, { encoding: 'utf-8' })
+
+		if (translatedTranscriptFileExtension == 'txt') {
+			translatedTranscript = fileContent
+		} else if (translatedTranscriptFileExtension == 'html' || translatedTranscriptFileExtension == 'htm') {
+			translatedTranscript = await convertHtmlToText(fileContent)
+		} else if (translatedTranscriptFileExtension == 'srt' || translatedTranscriptFileExtension == 'vtt') {
+			translatedTranscript = subtitlesToText(fileContent)
+		} else {
+			throw new Error(`align-transcript-and-translation only supports transcript files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+		}
+	}
+
+	if (cliOptions.play == null) {
+		cliOptions.play = outputFilenames.length === 0
+	}
+
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TranscriptAndTranslationAlignmentOptions')
+
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
+	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
+
+	const {
+		timeline,
+		wordTimeline,
+
+		translatedTimeline,
+		translatedWordTimeline,
+
+		sourceLanguage,
+		targetLanguage,
+
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio } = await API.alignTranscriptAndTranslation(audioFilename, transcript, translatedTranscript, options)
+
+	if (outputFilenames.length > 0) {
+		logger.start('\nWrite output files')
+	}
+
+	for (const outputFilename of outputFilenames) {
+		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
+
+		if (partPatternMatch) {
+			continue
+		}
+
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+
+		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
+
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+
+		const fileExtension = getLowercaseFileExtension(outputFilename)
+
+		if (['json', 'txt', 'srt', 'vtt'].includes(fileExtension)) {
+			const pathWithoutExtension = outputFilename.substring(0, outputFilename.lastIndexOf('.'))
+			const translatedOutputPath = `${pathWithoutExtension}.translated.${fileExtension}`
+
+			const translatedFileSaver = getFileSaver(translatedOutputPath, allowOverwrite)
+			await translatedFileSaver(inputRawAudio, translatedTimeline, translatedTranscript, options.subtitles)
+		}
+	}
+
+	logger.end()
+
+	if (cliOptions.play) {
+		let audioToPlay: RawAudio
+
+		if (isolatedRawAudio) {
+			audioToPlay = isolatedRawAudio
+		} else {
+			audioToPlay = inputRawAudio
+		}
+
+		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
+
+		await playAudioWithWordTimeline(normalizedAudioToPlay, translatedWordTimeline, translatedTranscript)
+	}
+}
+
+export async function alignTimelineTranslation(operationData: CLIOperationData) {
+	const logger = new Logger()
+
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const timelineFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(2)
+
+	if (timelineFilename == undefined) {
+		throw new Error(`align-timeline-translation requires a first argument containing the timeline file path.`)
+	}
+
+	if (getLowercaseFileExtension(timelineFilename) != 'json') {
+		throw new Error(`align-timeline-translation only supports timeline files with extension 'json'`)
+	}
+
+	if (!existsSync(timelineFilename)) {
+		throw new Error(`The given timeline file '${timelineFilename}' was not found.`)
+	}
+
+	const timeline = await readAndParseJsonFile(timelineFilename) as Timeline
+
+	const translationFilePath = operationArgs[1]
+
+	if (translationFilePath == undefined) {
+		throw new Error(`align-timeline-translation requires a second argument containing the translated reference file path.`)
+	}
+
+	if (!existsSync(translationFilePath)) {
+		throw new Error(`The given reference file '${translationFilePath}' was not found.`)
+	}
+
+	const translationFileExtension = getLowercaseFileExtension(translationFilePath)
+	const translationFileContent = await readFile(translationFilePath, { encoding: 'utf-8' })
+
+	let translationText: string
+
+	if (translationFileExtension == 'txt') {
+		translationText = translationFileContent
+	} else if (translationFileExtension == 'html' || translationFileExtension == 'htm') {
+		translationText = await convertHtmlToText(translationFileContent)
+	} else if (translationFileExtension == 'srt' || translationFileExtension == 'vtt') {
+		translationText = subtitlesToText(translationFileContent)
+	} else {
+		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+	}
+
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TimelineTranslationAlignmentOptions')
+
+	const {
+		timeline: translationTimeline,
+		wordTimeline: translationWordTimeline,
+		rawAudio
+	} = await API.alignTimelineTranslation(timeline, translationText, options)
+
+	if (outputFilenames.length > 0) {
+		logger.start('\nWrite output files')
+	}
+
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
+
+	for (const outputFilename of outputFilenames) {
+		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
+
+		if (partPatternMatch) {
+			continue
+		}
+
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+
+		await fileSaver(getEmptyRawAudio(1, 16000), translationTimeline, translationText, options.subtitles)
+	}
+
+	logger.end()
+
+	if (cliOptions.play && rawAudio) {
+		const normalizedAudioToPlay = normalizeAudioLevel(rawAudio)
+
+		let transcriptToPlay: string
+		let timelineToPlay: Timeline
+
+		transcriptToPlay = translationText
+		timelineToPlay = translationWordTimeline
+
+		await playAudioWithWordTimeline(normalizedAudioToPlay, timelineToPlay, transcriptToPlay)
+	}
+}
+
+export async function translateSpeech(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -858,7 +1101,7 @@ async function translateSpeech(operationData: CLIOperationData) {
 	}
 }
 
-async function detectLanguage(operationData: CLIOperationData, mode: 'speech' | 'text' | 'auto') {
+export async function detectLanguage(operationData: CLIOperationData, mode: 'speech' | 'text' | 'auto') {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -935,7 +1178,7 @@ async function detectLanguage(operationData: CLIOperationData, mode: 'speech' | 
 	logger.end()
 }
 
-async function detectVoiceActivity(operationData: CLIOperationData) {
+export async function detectVoiceActivity(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -1004,7 +1247,7 @@ async function detectVoiceActivity(operationData: CLIOperationData) {
 	}
 }
 
-async function denoise(operationData: CLIOperationData) {
+export async function denoise(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -1049,7 +1292,7 @@ async function denoise(operationData: CLIOperationData) {
 	}
 }
 
-async function isolate(operationData: CLIOperationData) {
+export async function isolate(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -1092,7 +1335,7 @@ async function isolate(operationData: CLIOperationData) {
 	}
 }
 
-async function listEngines(operationData: CLIOperationData) {
+export async function listEngines(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs } = operationData
@@ -1205,7 +1448,7 @@ async function listEngines(operationData: CLIOperationData) {
 	}
 }
 
-async function listTTSVoices(operationData: CLIOperationData) {
+export async function listTTSVoices(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
@@ -1267,7 +1510,7 @@ async function listTTSVoices(operationData: CLIOperationData) {
 	logger.end()
 }
 
-async function installPackages(operationData: CLIOperationData) {
+export async function installPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs } = operationData
@@ -1298,7 +1541,7 @@ async function installPackages(operationData: CLIOperationData) {
 	}
 }
 
-async function uninstallPackages(operationData: CLIOperationData) {
+export async function uninstallPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const { operationArgs } = operationData
@@ -1325,7 +1568,7 @@ async function uninstallPackages(operationData: CLIOperationData) {
 	}
 }
 
-async function listPackages(operationData: CLIOperationData) {
+export async function listPackages(operationData: CLIOperationData) {
 	const logger = new Logger()
 
 	const packagesDir = await ensureAndGetPackagesDir()
@@ -1357,7 +1600,7 @@ async function listPackages(operationData: CLIOperationData) {
 	logger.log(installedPackageNamesFormatted.join('\n'))
 }
 
-async function serve(operationData: CLIOperationData) {
+export async function serve(operationData: CLIOperationData) {
 	const { operationOptionsLookup } = operationData
 
 	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'ServerOptions')
@@ -1499,7 +1742,7 @@ async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptions
 }
 
 let cachedOptionsSchema: any
-export async function getOptionsSchema() {
+async function getOptionsSchema() {
 	if (!cachedOptionsSchema) {
 		cachedOptionsSchema = await readAndParseJsonFile(resolveToModuleRootDir('data/schemas/options.json'))
 	}
@@ -1507,7 +1750,7 @@ export async function getOptionsSchema() {
 	return cachedOptionsSchema
 }
 
-export async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean) {
+async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutputs: boolean, acceptMetadataOutputs: boolean, acceptSubtitleOutputs: boolean) {
 	const supportedFileExtensions: string[] = []
 
 	if (acceptMediaOutputs) {
@@ -1561,7 +1804,7 @@ export async function checkOutputFilenames(outputFilenames: string[], acceptMedi
 	return { includesPlaceholderPattern }
 }
 
-export async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean) {
+async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean) {
 	const digitCount = Math.max((total + 1).toString().length, 2)
 
 	const segmentWords = (await splitToWords(text, language)).filter(text => wordCharacterPattern.test(text))
