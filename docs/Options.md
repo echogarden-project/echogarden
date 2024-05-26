@@ -309,12 +309,12 @@ Applies to CLI operation: `align-timeline-translation`, API method: `alignTimeli
 * `engine`: alignment engine to use. Can only be `e5`. Defaults to `e5`
 * `sourceLanguage`: language code for the source timeline. Auto-detected from timeline if not set
 * `targetLanguage`: language code for the translated transcript. Auto-detected if not set
-* `audio`: speech audio to play on CLI preview (not used otherwise). Optional
+* `audio`: spoken audio to play when previewing the result in the CLI (not required or used by the alignment itself). Optional
 * `languageDetection`: prefix to provide options for language detection. Options detailed in section for text language detection
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 
 **E5**:
-* `e5.model`: E5 model to use. Defaults to `e5-small-fp16`
+* `e5.model`: E5 model to use. Defaults to `e5-small-fp16` (support for additional models will be added in the future)
 
 ## Language detection
 

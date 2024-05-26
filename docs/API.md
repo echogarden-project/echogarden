@@ -78,7 +78,7 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 	timeline: Timeline         // Timeline for part
 	transcript: string         // Transcript for part
 	language: string           // Language for part
-	
+
 	peakDecibelsSoFar: number  // Peak decibels measured for all synthesized audio, so far
 }
 ```
@@ -235,11 +235,11 @@ Aligns input audio to both the native language transcript a translated one.
 
 ### `alignTimelineTranslation(inputTimeline, translatedTranscript, options)`
 
-Aligns given timeline with the translated transcript.
+Aligns given timeline with its translated transcript.
 
 * `inputTimeline`: input timeline in the native language
 * `translatedTranscript`: the translated transcript to align to
-* `options`: translation alignment options object
+* `options`: timeline translation alignment options object
 
 #### Returns (via promise):
 
