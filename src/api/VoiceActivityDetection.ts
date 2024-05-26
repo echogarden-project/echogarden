@@ -1,6 +1,6 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr, roundToDigits } from '../utilities/Utilities.js'
+import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -220,7 +220,14 @@ export function convertCroppedToUncroppedTimeline(timeline: Timeline, uncropTime
 	}
 }
 
-function mapUsingUncropTimeline(startTimeInCroppedAudio: number, endTimeInCroppedAudio: number, uncropTimeline: Timeline) {
+function mapUsingUncropTimeline(startTimeInCroppedAudio: number, endTimeInCroppedAudio: number, uncropTimeline: Timeline): UncropTimelineMapResult {
+	if (uncropTimeline.length === 0) {
+		return {
+			mappedStartTime: 0,
+			mappedEndTime: 0,
+		}
+	}
+
 	let offsetInCroppedAudio = 0
 
 	if (endTimeInCroppedAudio < startTimeInCroppedAudio) {
@@ -250,13 +257,27 @@ function mapUsingUncropTimeline(startTimeInCroppedAudio: number, endTimeInCroppe
 	}
 
 	if (bestOverlapDuration === -1) {
-		throw new Error(`No match found in uncrop timeline (should not occur)`)
+		if (startTimeInCroppedAudio >= offsetInCroppedAudio) {
+			const maxTimestamp = uncropTimeline[uncropTimeline.length - 1].endTime
+
+			return {
+				mappedStartTime: maxTimestamp,
+				mappedEndTime: maxTimestamp
+			}
+		} else {
+			throw new Error(`Given start time ${startTimeInCroppedAudio} was smaller than audio duration but no match was found in uncrop timeline (should not occur)`)
+		}
 	}
 
 	return {
 		mappedStartTime,
 		mappedEndTime
 	}
+}
+
+interface UncropTimelineMapResult {
+	mappedStartTime: number
+	mappedEndTime: number
 }
 
 export interface VADResult {
