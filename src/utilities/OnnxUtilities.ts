@@ -65,4 +65,4 @@ export interface OnnxSessionOptions {
 	logSeverityLevel?: 0 | 1 | 2 | 3 | 4
 }
 
-export type OnnxExecutionProvider = 'cpu' | 'dml'
+export type OnnxExecutionProvider = 'cpu' | 'dml' | 'cuda'
