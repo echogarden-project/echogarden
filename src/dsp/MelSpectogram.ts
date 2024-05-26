@@ -2,7 +2,7 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import * as FFT from './FFT.js'
 
-export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number) {
+export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number, windowType: FFT.WindowType = 'hann') {
 	const logger = new Logger()
 
 	logger.start('Compute mel filterbank')
@@ -18,15 +18,15 @@ export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number,
 
 	logger.end()
 
-	return computeMelSpectogramUsingFilterbanks(rawAudio, fftOrder, windowSize, hopLength, melFilterbanks)
+	return computeMelSpectogramUsingFilterbanks(rawAudio, fftOrder, windowSize, hopLength, melFilterbanks, windowType)
 }
 
-export async function computeMelSpectogramUsingFilterbanks(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbanks: Filterbank[]) {
+export async function computeMelSpectogramUsingFilterbanks(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbanks: Filterbank[], windowType: FFT.WindowType = 'hann') {
 	const logger = new Logger()
 
 	logger.start('Compute short-time FFTs')
 	const audioSamples = rawAudio.audioChannels[0]
-	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, 'hann')
+	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, windowType)
 
 	logger.start('Convert FFT frames to a mel spectogram')
 	const melSpectogram = fftFramesToMelSpectogram(fftFrames, filterbanks)
@@ -52,17 +52,26 @@ export function powerSpectrumToMelSpectrum(powerSpectrum: Float32Array, filterba
 		const filterbankStartIndex = filterbank.startIndex
 		const filterbankWeights = filterbank.weights
 
-		if (filterbankStartIndex == -1) {
+		if (filterbankStartIndex === -1) {
 			continue
 		}
 
-		let bandValue = 0
+		let melBandValue = 0
 
 		for (let i = 0; i < filterbankWeights.length; i++) {
-			bandValue += filterbankWeights[i] * powerSpectrum[filterbankStartIndex + i]
+			const powerSpectrumIndex = filterbankStartIndex + i
+
+			if (powerSpectrumIndex >= powerSpectrum.length) {
+				break
+			}
+
+			const weight = filterbankWeights[i]
+			const powerSpectrumValue = powerSpectrum[powerSpectrumIndex]
+
+			melBandValue += weight * powerSpectrumValue
 		}
 
-		melSpectrum[melBandIndex] = bandValue
+		melSpectrum[melBandIndex] = melBandValue
 	}
 
 	return melSpectrum
