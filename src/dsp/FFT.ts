@@ -48,7 +48,7 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 		}
 
 		binsBufferRef.clear()
-		
+
 		m._kiss_fftr(statePtr, frameBufferRef.address, binsBufferRef.address)
 
 		const bins = binsBufferRef.view.slice(0, fftOrder + 2)
@@ -229,6 +229,12 @@ export function getWindowWeights(windowType: WindowType, windowSize: number) {
 			//weights[i] = 0.54 - (0.46 * Math.cos(2 * Math.PI * (i / (windowSize - 1))))
 			weights[i] = 0.54 - (0.46 * Math.cos(innerFactor * i))
 		}
+	} else if (windowType == 'povey') {
+		const hannWeights = getWindowWeights('hann', windowSize)
+
+		for (let i = 0; i < windowSize; i++) {
+			weights[i] = hannWeights[i] ** 0.85
+		}
 	} else {
 		throw new Error(`Unsupported window function type: ${windowType}`)
 	}
@@ -255,4 +261,4 @@ export async function testFFT1(rawAudio: RawAudio) {
 	return recoveredRawAudio
 }
 
-export type WindowType = 'hann' | 'hamming'
+export type WindowType = 'hann' | 'hamming' | 'povey'
