@@ -17,7 +17,7 @@ import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } 
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
 import { XorShift32RNG } from '../utilities/RandomGenerator.js'
-import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
+import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
 import { isPunctuation, isWhitespace, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
 import { medianOf5Filter } from '../math/MedianFilter.js'
@@ -35,7 +35,7 @@ export async function recognize(
 	options = extendDeep(defaultWhisperOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000 Hz')
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
@@ -87,7 +87,7 @@ export async function align(
 	options = extendDeep(defaultWhisperAlignmentOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
@@ -128,7 +128,7 @@ export async function alignEnglishTranslation(
 	options = extendDeep(defaultWhisperAlignmentOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
 	sourceLanguage = getShortLanguageCode(sourceLanguage)
@@ -167,7 +167,7 @@ export async function detectLanguage(
 	options = extendDeep(defaultWhisperLanguageDetectionOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
 	if (!isMultilingualModel(modelName)) {
@@ -213,7 +213,7 @@ export async function detectVoiceActivity(
 	options = extendDeep(defaultWhisperVADOptions, options)
 
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
 	if (options.temperature! < 0) {
@@ -1088,6 +1088,10 @@ export class Whisper {
 
 		const maxAudioSamples = sampleRate * 30
 		const maxAudioFrames = 3000
+
+		if (sampleRate != 16000) {
+			throw new Error('Audio must have a sample rate of 16000 Hz')
+		}
 
 		if (audioSamples.length > maxAudioSamples) {
 			throw new Error(`Audio part is longer than 30 seconds`)

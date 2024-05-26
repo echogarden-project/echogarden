@@ -22,7 +22,7 @@ export function formatLanguageCodeWithName(languageCode: string, styleId: 1 | 2 
 	}
 }
 
-export async function normalizeIdentifierToLangaugeCode(langIdentifier: string) {
+export async function normalizeIdentifierToLanguageCode(langIdentifier: string) {
 	const result = await parseLangIdentifier(langIdentifier)
 
 	return result.Name

@@ -4,13 +4,14 @@ import { logToStderr, yieldToEventLoop } from '../utilities/Utilities.js'
 import { AudioSourceParam } from '../audio/AudioUtilities.js'
 import { RecognitionOptions, RecognitionResult, recognize } from '../api/Recognition.js'
 import { AlignmentOptions, AlignmentResult, align } from '../api/Alignment.js'
-import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from '../api/Translation.js'
+import { SpeechTranslationOptions, SpeechTranslationResult, translateSpeech } from '../api/SpeechTranslation.js'
 import { resetActiveLogger } from '../utilities/Logger.js'
 import { writeToStderr } from '../utilities/Utilities.js'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
-import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, TextLanguageDetectionOptions, TextLanguageDetectionResult, detectSpeechLanguage, detectTextLanguage } from '../api/LanguageDetection.js'
+import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, detectSpeechLanguage } from '../api/SpeechLanguageDetection.js'
 import chalk from 'chalk'
 import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
+import { TextLanguageDetectionOptions, TextLanguageDetectionResult, detectTextLanguage } from '../api/TextLanguageDetection.js'
 
 const log = logToStderr
 

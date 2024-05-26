@@ -13,7 +13,7 @@ import { splitToLines } from '../nlp/Segmentation.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
-import { detectSpeechLanguageByParts } from '../api/LanguageDetection.js'
+import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -201,7 +201,7 @@ export async function recognize(
 
 export async function detectLanguage(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelPath: string) {
 	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sampling rate of 16000')
+		throw new Error('Source audio must have a sample rate of 16000')
 	}
 
 	async function detectLanguageForPart(partAudio: RawAudio) {

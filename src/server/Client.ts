@@ -7,9 +7,10 @@ import { OpenPromise } from '../utilities/OpenPromise.js'
 import { AudioSourceParam, RawAudio } from '../audio/AudioUtilities.js'
 import { AlignmentOptions, AlignmentResult } from '../api/Alignment.js'
 import { RecognitionOptions, RecognitionResult } from '../api/Recognition.js'
-import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Translation.js'
+import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/SpeechTranslation.js'
 import { Worker as WorkerThread } from 'node:worker_threads'
-import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, TextLanguageDetectionOptions, TextLanguageDetectionResult } from '../api/LanguageDetection.js'
+import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult } from '../api/SpeechLanguageDetection.js'
+import { TextLanguageDetectionOptions, TextLanguageDetectionResult } from '../api/TextLanguageDetection.js'
 
 const log = logToStderr
 

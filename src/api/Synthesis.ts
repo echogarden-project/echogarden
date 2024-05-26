@@ -15,7 +15,7 @@ import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 import * as API from './API.js'
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from '../utilities/Timeline.js'
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, parseLangIdentifier, normalizeIdentifierToLangaugeCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, parseLangIdentifier, normalizeIdentifierToLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata, appName } from './Common.js'
 import { shouldCancelCurrentTask } from '../server/Worker.js'
@@ -332,7 +332,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	let language: string
 
 	if (options.language) {
-		language = await normalizeIdentifierToLangaugeCode(options.language)
+		language = await normalizeIdentifierToLanguageCode(options.language)
 	} else {
 		language = selectedVoice.languages[0]
 	}
@@ -1556,7 +1556,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 		voiceList = await loadVoiceList()
 	}
 
-	const languageCode = await normalizeIdentifierToLangaugeCode(options.language || '')
+	const languageCode = await normalizeIdentifierToLanguageCode(options.language || '')
 
 	if (languageCode) {
 		let filteredVoiceList = voiceList.filter(voice => voice.languages.includes(languageCode))
@@ -1619,7 +1619,7 @@ export interface RequestVoiceListResult {
 }
 
 export async function selectBestOfflineEngineForLanguage(language: string): Promise<SynthesisEngine> {
-	language = await normalizeIdentifierToLangaugeCode(language)
+	language = await normalizeIdentifierToLanguageCode(language)
 
 	const VitsTTS = await import('../synthesis/VitsTTS.js')
 
