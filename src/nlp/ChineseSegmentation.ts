@@ -1,5 +1,5 @@
 export async function splitChineseTextToWords_Jieba(text: string, fineGrained = false, useHMM = true) {
-	const jieba = await getWasmInstance()
+	const jieba = await getJiebaWasmInstance()
 
 	if (!fineGrained) {
 		return jieba.cut(text, useHMM)
@@ -58,10 +58,12 @@ export async function splitChineseTextToWords_Jieba(text: string, fineGrained = 
 }
 
 let JiebaWasmInstance: typeof import('jieba-wasm')
-async function getWasmInstance() {
+
+async function getJiebaWasmInstance() {
 	if (!JiebaWasmInstance) {
-		const { default: JibeaWasm } = await import('jieba-wasm')
-		JiebaWasmInstance = JibeaWasm
+		const { default: JiebaWasm } = await import('jieba-wasm')
+
+		JiebaWasmInstance = JiebaWasm
 	}
 
 	return JiebaWasmInstance
