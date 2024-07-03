@@ -1,231 +1,356 @@
+import { DynamicUint8Array } from "./DynamicUint8Array.js"
 import { logToStderr } from "./Utilities.js"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Encode unsigned integer
+////////////////////////////////////////////////////////////////////////////////////////////////////
+export function encodeUnsignedInt(value: number | bigint, outEncodedData: DynamicUint8Array) {
+	if (value < 0) {
+		throw new Error(`The negative value ${value} can't be encoded as an unsigned LEB128 integer.`)
+	}
+
+	if (typeof value === 'number') {
+		if (value < (2 ** 31)) {
+			return encodeUnsignedInt31(value, outEncodedData)
+		} else {
+			return encodeUnsignedBigInt(BigInt(value), outEncodedData)
+		}
+	} else {
+		return encodeUnsignedBigInt(value, outEncodedData)
+	}
+}
+
+function encodeUnsignedInt31(value: number, outEncodedData: DynamicUint8Array) {
+	value = value >>> 0
+
+	if (value < (2 ** 7)) {
+		outEncodedData.add(
+			value
+		)
+	} else if (value < (2 ** 14)) {
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			value >>> 7
+		)
+	} else if (value < (2 ** 21)) {
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >>> 7) & 0b01111111) | 0b10000000,
+			value >>> 14
+		)
+	} else if (value < (2 ** 28)) {
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >>> 7) & 0b01111111) | 0b10000000,
+			((value >>> 14) & 0b01111111) | 0b10000000,
+			value >>> 21
+		)
+	} else {
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >>> 7) & 0b01111111) | 0b10000000,
+			((value >>> 14) & 0b01111111) | 0b10000000,
+			((value >>> 21) & 0b01111111) | 0b10000000,
+			value >>> 28
+		)
+	}
+
+	return outEncodedData
+}
+
+function encodeUnsignedBigInt(value: bigint, outEncodedData: DynamicUint8Array) {
+	while (true) {
+		const lowest7Bits = Number(value & 0b01111111n)
+
+		value = value >> 7n
+
+		if (value === 0n) {
+			outEncodedData.add(lowest7Bits)
+
+			return outEncodedData
+		} else {
+			outEncodedData.add(lowest7Bits | 0b10000000)
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////
-// Encode
+// Decode unsigned integer
 ////////////////////////////////////////////////////////////////////////////////////
-export function encodeSignedInt32(value: number, outEncodedData: number[]) {
-	if (value < -2147483648 || value > 2147483647) {
-		throw new Error('Value must be between -2147483648 and 2147483647')
+export function decodeUnsignedInt31Fast(encodedData: ArrayLike<number>, readOffset: number): DecodedValueAndReadOffset {
+	const byte0 = encodedData[readOffset++]
+
+	if ((byte0 & 0b10000000) === 0) {
+		const decodedValue =
+			byte0
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte1 = encodedData[readOffset++]
+
+	if ((byte1 & 0b10000000) === 0) {
+		const decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte2 = encodedData[readOffset++]
+
+	if ((byte2 & 0b10000000) === 0) {
+		const decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte3 = encodedData[readOffset++]
+
+	if ((byte3 & 0b10000000) === 0) {
+		const decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14 |
+			(byte3 & 0b01111111) << 21
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte4 = encodedData[readOffset++]
+
+	if ((byte4 & 0b10000000) === 0) {
+		const decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14 |
+			(byte3 & 0b01111111) << 21 |
+			(byte4 & 0b01111111) << 28
+
+		return { decodedValue, readOffset }
+	}
+
+	if (readOffset >= encodedData.length) {
+		throw new Error(`Invalid LEB128 data. Last encoded byte sequence is truncated.`)
+	} else {
+		throw new Error(`LEB128 sequence can't be decoded. Encoded byte sequence represents a value that extends beyond the range of a unsigned 32 bit integer.`)
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Encode signed integer
+////////////////////////////////////////////////////////////////////////////////////
+export function encodeSignedInt32(value: number, outEncodedData: DynamicUint8Array) {
+	if (value < -(2 ** 31) || value > (2 ** 31)) {
+		throw new Error('Value must be between -(2^31) and 2^31 - 1')
 	}
 
 	while (true) {
-		const lowest7Bits = value & 127
+		const lowest7Bits = value & 0b01111111
 
 		value >>= 7
 
 		if (
-			(value === 0 && (lowest7Bits & 64) === 0) ||
-			(value === -1 && (lowest7Bits & 64) !== 0)) {
-			outEncodedData.push(lowest7Bits)
+			(value === 0 && (lowest7Bits & 0b01000000) === 0) ||
+			(value === -1 && (lowest7Bits & 0b01000000) !== 0)) {
+			outEncodedData.add(lowest7Bits)
 
 			return outEncodedData
 		} else {
-			outEncodedData.push(lowest7Bits | 128)
+			outEncodedData.add(lowest7Bits | 0b10000000)
 		}
 	}
 }
 
-export function encodeSignedInt32sFast(value: number, outEncodedData: number[]) {
-	const absValue = Math.abs(value)
-	//const absMask = value >> 31
-	//const absValue = (value ^ absMask) - absMask
+export function encodeSignedInt32Fast(value: number, outEncodedData: DynamicUint8Array) {
+	const absValue = Math.abs(value | 0)
 
 	if (absValue < (2 ** 6)) {
-		outEncodedData.push(
-			(value & 127)
+		outEncodedData.add(
+			(value & 0b01111111)
 		)
 	} else if (absValue < (2 ** 13)) {
-		outEncodedData.push(
-			(value & 127) | 128,
-			(value >> 7) & 127
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			(value >> 7) & 0b01111111
 		)
 	} else if (absValue < (2 ** 20)) {
-		outEncodedData.push(
-			(value & 127) | 128,
-			((value >> 7) & 127) | 128,
-			(value >> 14) & 127
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >> 7) & 0b01111111) | 0b10000000,
+			(value >> 14) & 0b01111111
 		)
 	} else if (absValue < (2 ** 27)) {
-		outEncodedData.push(
-			(value & 127) | 128,
-			((value >> 7) & 127) | 128,
-			((value >> 14) & 127) | 128,
-			(value >> 21) & 127
-		)
-	} else if (value < (2 ** 31) && value >= -(2 ** 31)) {
-		outEncodedData.push(
-			(value & 127) | 128,
-			((value >> 7) & 127) | 128,
-			((value >> 14) & 127) | 128,
-			((value >> 21) & 127) | 128,
-			(value >> 28) & 127
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >> 7) & 0b01111111) | 0b10000000,
+			((value >> 14) & 0b01111111) | 0b10000000,
+			(value >> 21) & 0b01111111
 		)
 	} else {
-		throw new Error(`Value must be between -2147483648 and 2147483647`)
+		outEncodedData.addMany(
+			(value & 0b01111111) | 0b10000000,
+			((value >> 7) & 0b01111111) | 0b10000000,
+			((value >> 14) & 0b01111111) | 0b10000000,
+			((value >> 21) & 0b01111111) | 0b10000000,
+			(value >> 28) & 0b01111111
+		)
 	}
+
+	return outEncodedData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Decode
+// Decode signed integer
 ////////////////////////////////////////////////////////////////////////////////////
-export function decodeSignedInt32s(encodedData: ArrayLike<number>, outDecodedValues: number[]) {
-	for (let readIndex = 0; readIndex < encodedData.length;) {
-		let currentDecodedValue = 0
-		let shiftAmount = 0
+export function decodeSignedInt32(encodedData: ArrayLike<number>, readOffset: number): DecodedValueAndReadOffset {
+	let decodedValue = 0
+	let shiftAmount = 0
 
-		while (true) {
-			const encodedByte = encodedData[readIndex++]
-			const lowest7Bits = encodedByte & 127
+	while (true) {
+		const encodedByte = encodedData[readOffset++]
+		const lowest7Bits = encodedByte & 0b01111111
 
-			currentDecodedValue |= lowest7Bits << shiftAmount
+		decodedValue |= lowest7Bits << shiftAmount
 
-			// If 8th bit is 0, then this is the last byte in the sequence
-			if ((encodedByte & 128) === 0) {
-				// If 7th bit is 1, then the value is negative
-				if ((encodedByte & 64) !== 0) {
-					// If the value should be negative
-					// Ensure that the value is encoded as a negative number by
-					// setting all higher bits to 1
-					currentDecodedValue |= -1 << Math.min(shiftAmount + 7, 31)
-				}
-
-				break
+		// If 8th bit is 0, then this is the last byte in the sequence
+		if ((encodedByte & 0b10000000) === 0) {
+			// If 7th bit is 1, then the value is negative
+			if ((encodedByte & 0b01000000) !== 0) {
+				// If the value should be negative
+				// Ensure that the value is encoded as a negative number by
+				// setting all higher bits to 1
+				decodedValue |= -1 << Math.min(shiftAmount + 7, 31)
 			}
 
-			if (readIndex === encodedData.length) {
-				throw new Error(`Invalid LEB128 data. Last encoded byte sequence is truncated.`)
-			}
-
-			shiftAmount += 7
-
-			if (shiftAmount > 31) {
-				throw new Error(`LEB128 sequence can't be decoded. Byte sequence extends beyond the range of a signed 32 bit integer.`)
-			}
+			return { decodedValue, readOffset }
 		}
 
-		outDecodedValues.push(currentDecodedValue)
-	}
-
-	return outDecodedValues
-}
-
-export function decodeSignedInt32sFast(encodedData: ArrayLike<number>, outDecodedValues: number[]) {
-	for (let readIndex = 0; readIndex < encodedData.length;) {
-		const byte0 = encodedData[readIndex++]
-
-		if ((byte0 & 128) === 0) {
-			let decodedValue =
-				(byte0 & 127)
-
-			if ((byte0 & 64) !== 0) {
-				decodedValue |= -1 << 7
-			}
-
-			outDecodedValues.push(decodedValue)
-
-			continue
-		}
-
-		const byte1 = encodedData[readIndex++]
-
-		if ((byte1 & 128) === 0) {
-			let decodedValue =
-				(byte0 & 127) |
-				(byte1 & 127) << 7
-
-			if ((byte1 & 64) !== 0) {
-				decodedValue |= -1 << 14
-			}
-
-			outDecodedValues.push(decodedValue)
-
-			continue
-		}
-
-		const byte2 = encodedData[readIndex++]
-
-		if ((byte2 & 128) === 0) {
-			let decodedValue =
-				(byte0 & 127) |
-				(byte1 & 127) << 7 |
-				(byte2 & 127) << 14
-
-			if ((byte2 & 64) !== 0) {
-				decodedValue |= -1 << 21
-			}
-
-			outDecodedValues.push(decodedValue)
-
-			continue
-		}
-
-		const byte3 = encodedData[readIndex++]
-
-		if ((byte3 & 128) === 0) {
-			let decodedValue =
-				(byte0 & 127) |
-				(byte1 & 127) << 7 |
-				(byte2 & 127) << 14 |
-				(byte3 & 127) << 21
-
-			if ((byte3 & 64) !== 0) {
-				decodedValue |= -1 << 28
-			}
-
-			outDecodedValues.push(decodedValue)
-
-			continue
-		}
-
-		const byte4 = encodedData[readIndex++]
-
-		if ((byte4 & 128) === 0) {
-			let decodedValue =
-				(byte0 & 127) |
-				(byte1 & 127) << 7 |
-				(byte2 & 127) << 14 |
-				(byte3 & 127) << 21 |
-				(byte4 & 127) << 28
-
-			if ((byte4 & 64) !== 0) {
-				decodedValue |= -1 << 31
-			}
-
-			outDecodedValues.push(decodedValue)
-
-			continue
-		}
-
-		if (readIndex >= encodedData.length) {
+		if (readOffset === encodedData.length) {
 			throw new Error(`Invalid LEB128 data. Last encoded byte sequence is truncated.`)
-		} else {
-			throw new Error(`LEB128 sequence can't be decoded. Encoded byte sequence represents a value that extends beyond the range of a signed 32 bit integer.`)
+		}
+
+		shiftAmount += 7
+
+		if (shiftAmount > 31) {
+			throw new Error(`LEB128 sequence can't be decoded. Byte sequence extends beyond the range of a signed 32 bit integer.`)
 		}
 	}
+}
 
-	return outDecodedValues
+export function decodeSignedInt32Fast(encodedData: ArrayLike<number>, readOffset: number) {
+	const byte0 = encodedData[readOffset++]
+
+	if ((byte0 & 0b10000000) === 0) {
+		let decodedValue =
+			byte0
+
+		if ((byte0 & 0b01000000) !== 0) {
+			decodedValue |= -1 << 7
+		}
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte1 = encodedData[readOffset++]
+
+	if ((byte1 & 0b10000000) === 0) {
+		let decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7
+
+		if ((byte1 & 0b01000000) !== 0) {
+			decodedValue |= -1 << 14
+		}
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte2 = encodedData[readOffset++]
+
+	if ((byte2 & 0b10000000) === 0) {
+		let decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14
+
+		if ((byte2 & 0b01000000) !== 0) {
+			decodedValue |= -1 << 21
+		}
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte3 = encodedData[readOffset++]
+
+	if ((byte3 & 0b10000000) === 0) {
+		let decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14 |
+			(byte3 & 0b01111111) << 21
+
+		if ((byte3 & 0b01000000) !== 0) {
+			decodedValue |= -1 << 28
+		}
+
+		return { decodedValue, readOffset }
+	}
+
+	const byte4 = encodedData[readOffset++]
+
+	if ((byte4 & 0b10000000) === 0) {
+		let decodedValue =
+			(byte0 & 0b01111111) |
+			(byte1 & 0b01111111) << 7 |
+			(byte2 & 0b01111111) << 14 |
+			(byte3 & 0b01111111) << 21 |
+			(byte4 & 0b01111111) << 28
+
+		if ((byte4 & 0b01000000) !== 0) {
+			decodedValue |= -1 << 31
+		}
+
+		return { decodedValue, readOffset }
+	}
+
+	if (readOffset >= encodedData.length) {
+		throw new Error(`Invalid LEB128 data. Last encoded byte sequence is truncated.`)
+	} else {
+		throw new Error(`LEB128 sequence can't be decoded. Encoded byte sequence represents a value that extends beyond the range of a signed 32 bit integer.`)
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////////////////////////
+
+export interface DecodedValueAndReadOffset {
+	decodedValue: number
+	readOffset: number
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Tests
 ////////////////////////////////////////////////////////////////////////////////////
-export function testLeb128() {
-	const encodedBytes: number[] = []
-	const decodedValues: number[] = []
+export function testLeb128Signed() {
+	const encodedBytes = new DynamicUint8Array()
 
 	function runTest(testValue: number) {
-		encodedBytes.length = 0
-		decodedValues.length = 0
+		encodedBytes.clear()
 
-		encodeSignedInt32sFast(testValue, encodedBytes)
-		decodeSignedInt32sFast(encodedBytes, decodedValues)
+		encodeSignedInt32Fast(testValue, encodedBytes)
+		const { decodedValue } = decodeSignedInt32Fast(encodedBytes.data, 0)
 
-		if (decodedValues[0] !== testValue) {
-			throw new Error(`Expected ${testValue} but got ${decodedValues[0]}`)
+		if (decodedValue !== testValue) {
+			throw new Error(`Expected ${testValue} but got ${decodedValue}`)
 		}
 	}
 
-	for (let i = -(2 ** 22); i < 2 ** 22; i++) {
+	for (let i = -(2 ** 26); i < 2 ** 26; i++) {
 		if (i % 1000000 === 0) {
 			logToStderr(i)
 		}
