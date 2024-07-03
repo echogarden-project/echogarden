@@ -60,7 +60,7 @@ export async function alignTimelineTranslation(inputTimeline: Timeline, translat
 		logger.logTitledMessage('Target language detected', formatLanguageCodeWithName(detectedLanguage))
 	}
 
-	logger.log(`Load ${options.engine} module`)
+	logger.start(`Load ${options.engine} module`)
 
 	let mappedWordTimeline: Timeline
 
