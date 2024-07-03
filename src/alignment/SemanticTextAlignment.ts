@@ -118,7 +118,7 @@ export async function alignTimelineToTextSemantically(timeline: Timeline, text: 
 	return resultTimeline
 }
 
-export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wordsGroups2: string[][], windowTokenCount = 1000 * 1000) {
+export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wordsGroups2: string[][], windowTokenCount = 20000) {
 	const logger = new Logger()
 
 	// Load embedding model
