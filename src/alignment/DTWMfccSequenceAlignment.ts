@@ -1,15 +1,15 @@
-import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclidianDistance, euclidianDistance13Dim, magnitude } from '../math/VectorMath.js'
+import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclideanDistance, euclideanDistance13Dim, magnitude } from '../math/VectorMath.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 
 const log = logToStderr
 
-export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunctionKind: 'euclidian' | 'cosine' = 'euclidian', centerIndexes?: number[]) {
-	if (distanceFunctionKind == 'euclidian') {
-		let distanceFunction = euclidianDistance
+export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunctionKind: 'euclidean' | 'cosine' = 'euclidean', centerIndexes?: number[]) {
+	if (distanceFunctionKind == 'euclidean') {
+		let distanceFunction = euclideanDistance
 
 		if (mfccFrames1.length > 0 && mfccFrames1[0].length === 13) {
-			distanceFunction = euclidianDistance13Dim
+			distanceFunction = euclideanDistance13Dim
 		}
 
 		const { path } = alignDTWWindowed(

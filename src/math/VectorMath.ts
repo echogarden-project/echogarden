@@ -456,11 +456,11 @@ export function meanSquaredError(actual: ArrayLike<number>, expected: ArrayLike<
 	return sum / featureCount
 }
 
-export function euclidianDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
-	return Math.sqrt(squaredEuclidianDistance(vector1, vector2))
+export function euclideanDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	return Math.sqrt(squaredEuclideanDistance(vector1, vector2))
 }
 
-export function squaredEuclidianDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+export function squaredEuclideanDistance(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	if (vector1.length !== vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -480,11 +480,11 @@ export function squaredEuclidianDistance(vector1: ArrayLike<number>, vector2: Ar
 	return sum
 }
 
-export function euclidianDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
-	return Math.sqrt(squaredEuclidianDistance13Dim(vector1, vector2))
+export function euclideanDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	return Math.sqrt(squaredEuclideanDistance13Dim(vector1, vector2))
 }
 
-export function squaredEuclidianDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+export function squaredEuclideanDistance13Dim(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	// Assumes the input has 13 dimensions (optimized for 13-dimensional MFCC vectors)
 
 	const result =
