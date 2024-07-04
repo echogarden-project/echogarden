@@ -9,10 +9,17 @@ export async function fetchDocumentText(url: string) {
 	const progressLogger = new Logger()
 	progressLogger.start(`Fetching ${url}`)
 
+	const parsedUrl = new URL(url)
+	const origin = parsedUrl.origin
+
 	const response = await request<string>({
 		url,
 		responseType: 'text',
-		headers: getChromeOnWindowsHeaders({ origin: `https://google.com` }),
+
+		headers: getChromeOnWindowsHeaders({
+			origin: origin,
+			referrer: `${origin}/`
+		}),
 	})
 
 	progressLogger.start(`Parsing document body`)

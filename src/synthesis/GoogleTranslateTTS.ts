@@ -99,7 +99,10 @@ export async function synthesizeShortText(text: string, languageCode = 'en', tld
 		},
 
 		headers: {
-			...getChromeOnWindowsHeaders({ origin: `https://translate.google.${tld}` }),
+			...getChromeOnWindowsHeaders({
+				origin: 'https://translate.google.${tld}',
+				referrer: `https://translate.google.${tld}/`
+			}),
 			'Content-Type': 'application/x-www-form-urlencoded',
 		},
 
