@@ -1,12 +1,12 @@
 import * as API from '../api/API.js'
 import { parseCLIArguments } from './CLIParser.js'
-import { clip, convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchema.js'
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
 import chalk from 'chalk'
 import { RawAudio, applyGainDecibels, encodeRawAudioToWave, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime } from '../audio/AudioUtilities.js'
-import { SubtitlesConfig, subtitlesToText, subtitlesToTimeline, timelineToSubtitles } from '../subtitles/Subtitles.js'
+import { SubtitlesConfig, subtitlesToText, timelineToSubtitles } from '../subtitles/Subtitles.js'
 import { Logger, resetActiveLogger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/FFMpegTranscoder.js'
@@ -224,18 +224,20 @@ const help = [
 	`    Transcribe a spoken audio file\n`,
 	`${executableName} ${chalk.magentaBright('align')} audioFile transcriptFile [output files...] [options...]`,
 	`    Align spoken audio file to its transcript\n`,
+	`${executableName} ${chalk.magentaBright('translate-text')} inputFile [output files...] [options...]`,
+	`    Translate text to a different language\n`,
 	`${executableName} ${chalk.magentaBright('translate-speech')} audioFile [output files...] [options...]`,
-	`    Transcribe audio file directly to a different language\n`,
+	`    Transcribe spoken audio file directly to a different language\n`,
 	`${executableName} ${chalk.magentaBright('align-translation')} audioFile translatedTranscriptFile [output files...] [options...]`,
 	`    Align spoken audio file to its translated transcript\n`,
 	`${executableName} ${chalk.magentaBright('align-transcript-and-translation')} audioFile transcriptFile translatedTranscriptFile [output files...] [options...]`,
 	`    Align spoken audio file to both its transcript and its translated transcript using a two-stage approach.\n`,
 	`${executableName} ${chalk.magentaBright('align-timeline-translation')} timelineFile translatedFile [output files...] [options...]`,
 	`    Align a given timeline file to its translated text\n`,
-	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [output files...] [options...]`,
-	`    Detect language of spoken audio file\n`,
 	`${executableName} ${chalk.magentaBright('detect-text-language')} inputFile [output files...] [options...]`,
 	`    Detect language of textual file\n`,
+	`${executableName} ${chalk.magentaBright('detect-speech-language')} audioFile [output files...] [options...]`,
+	`    Detect language of spoken audio file\n`,
 	`${executableName} ${chalk.magentaBright('detect-voice-activity')} audioFile [output files...] [options...]`,
 	`    Detect voice activity in audio file\n`,
 	`${executableName} ${chalk.magentaBright('denoise')} audioFile [output files...] [options...]`,
@@ -276,6 +278,11 @@ async function startWithArgs(operationData: CLIOperationData) {
 
 		case 'align': {
 			await align(operationData)
+			break
+		}
+
+		case 'translate-text': {
+			await translateText(operationData)
 			break
 		}
 
@@ -1014,6 +1021,75 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 	}
 }
 
+export async function translateText(operationData: CLIOperationData) {
+	const logger = new Logger()
+
+	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
+
+	const inputFilename = operationArgs[0]
+	const outputFilenames = operationArgs.slice(1)
+
+	if (inputFilename == undefined) {
+		throw new Error(`translate-text requires an argument containing the input file path.`)
+	}
+
+	if (!existsSync(inputFilename)) {
+		throw new Error(`The given input file '${inputFilename}' was not found.`)
+	}
+
+	const inputFileExtension = getLowercaseFileExtension(inputFilename)
+	const inputFileContent = await readFile(inputFilename, { encoding: 'utf-8' })
+
+	let inputText: string
+
+	if (inputFileExtension === 'txt') {
+		inputText = inputFileContent
+	} else if (inputFileExtension === 'html' || inputFileExtension === 'htm') {
+		inputText = await convertHtmlToText(inputFileContent)
+	} else if (inputFileExtension == 'srt' || inputFileExtension == 'vtt') {
+		inputText = subtitlesToText(inputFileContent)
+	} else {
+		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+	}
+
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TextTranslationOptions')
+
+	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
+
+	await checkOutputFilenames(outputFilenames, false, true, true)
+
+	const {
+		text,
+		translatedText,
+
+		translationPairs,
+
+		sourceLanguage,
+		targetLanguage,
+	} = await API.translateText(inputFileContent, options)
+
+	if (outputFilenames.length > 0) {
+		logger.start('\nWrite output files')
+
+		for (const outputFilename of outputFilenames) {
+			const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
+
+			if (partPatternMatch) {
+				continue
+			}
+
+			const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+
+			await fileSaver(getEmptyRawAudio(1, 16000), translationPairs as any as Timeline, translatedText, undefined)
+		}
+
+		logger.end()
+	} else {
+		logger.log(``)
+		logger.log(translatedText)
+	}
+}
+
 export async function translateSpeech(operationData: CLIOperationData) {
 	const logger = new Logger()
 
@@ -1040,7 +1116,19 @@ export async function translateSpeech(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { transcript, timeline, wordTimeline, sourceLanguage, targetLanguage, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.translateSpeech(inputFilename, options)
+	const {
+		transcript,
+
+		timeline,
+		wordTimeline,
+
+		sourceLanguage,
+		targetLanguage,
+
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio
+	} = await API.translateSpeech(inputFilename, options)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -1382,6 +1470,12 @@ export async function listEngines(operationData: CLIOperationData) {
 			break
 		}
 
+		case 'translate-text': {
+			engines = API.textTranslationEngines
+
+			break
+		}
+
 		case 'translate-speech': {
 			engines = API.speechTranslationEngines
 
@@ -1432,7 +1526,7 @@ export async function listEngines(operationData: CLIOperationData) {
 		}
 
 		default: {
-			throw new Error(`Unrecognized operation: '${targetOperation}'`)
+			throw new Error(`Unrecognized operation name: '${targetOperation}'`)
 		}
 	}
 
