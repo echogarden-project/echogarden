@@ -1,6 +1,25 @@
 declare module 'moving-median'
-declare module 'html-to-text'
-declare module 'cldr-segmentation'
+
+declare module 'html-to-text' {
+	export function htmlToText(html: string, options: {
+		wordwrap: boolean | number
+		selectors?: any[]
+	})
+}
+
+declare module 'cldr-segmentation' {
+	export function sentenceSplit(text: string, suppressions: any)
+	export function wordSplit(text: string, suppressions: any)
+	export const suppressions: Record<string, Suppressions>
+
+	export class Suppressions {
+		constructor(forwardTrie: any, backwardTrie: any, list: string)
+
+		merge(other: Suppressions)
+
+		static create(list: string[]): Suppressions
+	}
+}
 
 declare module 'html-escaper' {
 	export function escape(str: string): string
@@ -46,10 +65,12 @@ declare module 'onnxruntime-node' {
 
 	// From backend.d.ts
 	import { Backend, InferenceSession, SessionHandler, OnnxValue } from 'onnxruntime-common'
+
 	class OnnxruntimeBackend implements Backend {
 		init(): Promise<void>
 		createSessionHandler(pathOrBuffer: string | Uint8Array, options?: InferenceSession.SessionOptions): Promise<SessionHandler>
 	}
+
 	export const onnxruntimeBackend: OnnxruntimeBackend
 
 	// From binding.d.ts
@@ -76,8 +97,10 @@ declare module 'onnxruntime-node' {
 		interface InferenceSession {
 			loadModel(modelPath: string, options: SessionOptions): void
 			loadModel(buffer: ArrayBuffer, byteOffset: number, byteLength: number, options: SessionOptions): void
+
 			readonly inputNames: string[]
 			readonly outputNames: string[]
+
 			run(feeds: FeedsType, fetches: FetchesType, options: RunOptions): ReturnType
 		}
 		interface InferenceSessionConstructor {
