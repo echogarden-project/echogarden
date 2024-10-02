@@ -54,7 +54,7 @@ export async function recognize(
 				}
 			} else {
 				if (options.enableGPU) {
-					buildKind = 'cublas-11.8.0'
+					buildKind = 'cublas-12.4.0'
 				} else {
 					buildKind = 'cpu'
 				}
@@ -240,6 +240,8 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 
 	let currentCorrectionTimeOffset = 0
 
+	let lastTokenEndOffset = 0
+
 	for (let segmentIndex = 0; segmentIndex < resultObject.transcription.length; segmentIndex++) {
 		const segmentObject = resultObject.transcription[segmentIndex]
 
@@ -247,6 +249,17 @@ async function parseResultObject(resultObject: WhisperCppVerboseResult, modelNam
 
 		for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
 			const tokenObject = tokens[tokenIndex]
+
+			// Workaround whisper.cpp issue with missing offsets by falling back to last known end offset
+			// when they are not included
+			if (!tokenObject.offsets) {
+				tokenObject.offsets = {
+					from: lastTokenEndOffset,
+					to: lastTokenEndOffset,
+				}
+			} else {
+				lastTokenEndOffset = tokenObject.offsets.to
+			}
 
 			if (tokenIndex === 0 && tokenObject.text === '[_BEG_]' && tokenObject.offsets.from === 0) {
 				currentCorrectionTimeOffset = segmentObject.offsets.from / 1000
@@ -370,7 +383,7 @@ export async function loadModelPackage(modelId: WhisperCppModelId | undefined, l
 	return { modelName, modelPath }
 }
 
-export type WhisperCppBuild = 'cpu' | 'cublas-11.8.0' | 'cublas-12.4.0' | 'custom'
+export type WhisperCppBuild = 'cpu' | 'cublas-12.4.0' | 'custom'
 
 export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 	if (buildKind === 'custom') {
@@ -384,20 +397,20 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 
 	if (buildKind.startsWith('cublas-')) {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-latest-patched`
+			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-1.6.2`
 		} else {
-			throw new Error(`GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64. Please specify a custom path to the binary in the 'executablePath' option.`)
+			throw new Error(`whisper.cpp GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
 	} else if (buildKind === 'cpu') {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-cpu-latest-patched`
+			packageName = `whisper.cpp-binaries-windows-x64-cpu-1.6.2`
 		} else if (platform === 'linux' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-linux-x64-cpu-latest-patched`
+			packageName = `whisper.cpp-binaries-linux-x64-cpu-1.6.2`
 		} else {
-			throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to the binary in the 'executablePath' option.`)
+			throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
 	} else {
-		throw new Error(`Unknown build kind '${buildKind}'`)
+		throw new Error(`Unsupported build kind '${buildKind}'`)
 	}
 
 	const packagePath = await loadPackage(packageName)
