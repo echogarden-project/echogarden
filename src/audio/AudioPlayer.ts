@@ -274,6 +274,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 	})
 }
 
+/*
 export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, microFadeInOut = true) {
 	return new Promise<void>(async (resolve, reject) => {
 		if (microFadeInOut) {
@@ -354,6 +355,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 		}
 	})
 }
+*/
 
 export const charactersToWriteAhead = [
 	',', '.', '，', '、', '：', '；',
