@@ -253,6 +253,12 @@ export const voiceList: SynthesisVoice[] = [
 	},
 
 	{
+		name: 'cy_GB-gwryw_gogleddol-medium',
+		languages: ['cy-GB', 'cy'],
+		gender: 'male',
+	},
+
+	{
 		name: 'da_DK-nst_talesyntese-medium',
 		languages: ['da-DK', 'da'],
 		gender: 'male',
@@ -375,7 +381,11 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ['en-GB', 'en'],
 		gender: 'female',
 	},
-
+	{
+		name: 'en_GB-cori-medium',
+		languages: ['en-GB', 'en'],
+		gender: 'female',
+	},
 
 	{
 		name: 'en_US-amy-low',
@@ -481,6 +491,21 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ['en-US', 'en'],
 		gender: 'female',
 	},
+	{
+		name: 'en_US-norman-medium',
+		languages: ['en-US', 'en'],
+		gender: 'male',
+	},
+	{
+		name: 'en_US-john-medium',
+		languages: ['en-US', 'en'],
+		gender: 'male',
+	},
+	{
+		name: 'en_US-bryce-medium',
+		languages: ['en-US', 'en'],
+		gender: 'male',
+	},
 
 	{
 		name: 'es_ES-carlfm-x_low',
@@ -530,7 +555,6 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ['fa_IR', 'fa'],
 		gender: 'male',
 	},
-
 
 	{
 		name: 'fi_FI-harri-low',
@@ -618,6 +642,11 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ['it-IT', 'it'],
 		gender: 'male',
 	},
+	{
+		name: 'it_IT-paola-medium',
+		languages: ['it-IT', 'it'],
+		gender: 'female',
+	},
 
 	{
 		name: 'ka_GE-natia-medium',
@@ -698,7 +727,6 @@ export const voiceList: SynthesisVoice[] = [
 		languages: ['nl-BE', 'nl'],
 		gender: 'male',
 	},
-
 
 	{
 		name: 'no_NO-talesyntese-medium',
