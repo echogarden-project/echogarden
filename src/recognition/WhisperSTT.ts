@@ -16,13 +16,14 @@ import type { LanguageDetectionResults } from '../api/API.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
-import { XorShift32RNG } from '../utilities/RandomGenerator.js'
+import { XorShift32PRNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
 import { isPunctuation, isWhitespace, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
 import { medianOf5Filter } from '../math/MedianFilter.js'
 import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
 import { getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
+import { murmurHash3_int32Input } from '../utilities/Hashing.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -52,17 +53,13 @@ export async function recognize(
 		throw new Error(`Temperature can't be negative`)
 	}
 
-	let seed = options.seed
-
-	if (seed) {
-		seed = Math.max(Math.floor(seed), 1) | 0
-	}
-
 	const encoderProviders: OnnxExecutionProvider[] =
 		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
 
 	const decoderProviders: OnnxExecutionProvider[] =
 		options.decoderProvider ? [options.decoderProvider] : []
+
+	const seed = options.seed
 
 	const whisper = new Whisper(
 		modelName,
@@ -287,14 +284,14 @@ export class Whisper {
 		timestampTokensEnd: number
 	}
 
-	randomGen: XorShift32RNG
+	randomGen: XorShift32PRNG
 
 	constructor(
 		public readonly modelName: WhisperModelName,
 		public readonly modelDir: string,
 		public readonly encoderExecutionProviders: OnnxExecutionProvider[],
 		public readonly decoderExecutionProviders: OnnxExecutionProvider[],
-		rngSeed = 461845907) {
+		prngSeed = 1234) {
 
 		this.isMultiligualModel = isMultilingualModel(this.modelName)
 
@@ -334,7 +331,7 @@ export class Whisper {
 			}
 		}
 
-		this.randomGen = new XorShift32RNG(rngSeed)
+		this.randomGen = new XorShift32PRNG(murmurHash3_int32Input(prngSeed))
 	}
 
 	async recognize(
@@ -443,7 +440,9 @@ export class Whisper {
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
 			// Find alignment path
-			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount) //, alignmentHeadsIndexes[this.modelName])
+			const alignmentHeads = this.isLargeModel ? this.alignmentHeadIndexes : undefined
+			//const alignmentHeads = this.alignmentHeadIndexes
+			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount, alignmentHeads)
 
 			// Generate timeline from alignment path
 			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, partTokensConfidence)
@@ -808,17 +807,17 @@ export class Whisper {
 				}
 
 				// Derive token probabilities
-				const probabilities = softmax(allTokenLogits as any, 1.0)
-				const logProbabilities = logOfVector(probabilities)
+				const allTokenProbabilities = softmax(allTokenLogits as any, 1.0)
+				const allTokenLogProbabilities = logOfVector(allTokenProbabilities)
 
-				const nonTimestampTokenLogProbs = logProbabilities.slice(0, timestampTokensStart)
+				const nonTimestampTokenLogProbs = allTokenLogProbabilities.slice(0, timestampTokensStart)
 
 				// Find highest non-timestamp token
 				const indexOfMaxNonTimestampLogProb = indexOfMax(nonTimestampTokenLogProbs)
 				const valueOfMaxNonTimestampLogProb = nonTimestampTokenLogProbs[indexOfMaxNonTimestampLogProb]
 
 				// Find highest timestamp token
-				const timestampTokenLogProbs = logProbabilities.slice(timestampTokensStart)
+				const timestampTokenLogProbs = allTokenLogProbabilities.slice(timestampTokensStart)
 				const indexOfMaxTimestampLogProb = indexOfMax(timestampTokenLogProbs)
 
 				// Compute the log of the sum of exponentials of the log probabilities
@@ -846,7 +845,7 @@ export class Whisper {
 				} else {
 					// Otherwise decode the highest probability timestamp
 					const timestampToken = timestampTokensStart + indexOfMaxTimestampLogProb
-					const confidence = probabilities[timestampToken]
+					const confidence = allTokenProbabilities[timestampToken]
 
 					addToken(timestampToken, timestampTokenLogits, confidence, crossAttentionQKsForToken)
 				}
@@ -1084,7 +1083,9 @@ export class Whisper {
 
 		const fftOrder = 400
 		const hopLength = 160
-		const filterbankCount = 80
+
+		const filterbankCount = this.filterbankCount
+		const filterbanks = this.filterbanks
 
 		const maxAudioSamples = sampleRate * 30
 		const maxAudioFrames = 3000
@@ -1547,7 +1548,7 @@ export class Whisper {
 			return [24, groupCount, length, 768]
 		} else if (modelName == 'medium' || modelName == 'medium.en') {
 			return [48, groupCount, length, 1024]
-		} else if (modelName == 'large' || modelName == 'large-v1' || modelName == 'large-v2' || modelName == 'large-v3') {
+		} else if (modelName == 'large-v1' || modelName == 'large-v2' || modelName == 'large-v3' || modelName == 'large-v3-turbo') {
 			return [64, groupCount, length, 1280]
 		} else {
 			throw new Error(`Unsupported model: ${modelName}`)
@@ -1669,7 +1670,19 @@ export class Whisper {
 		return this.isMultiligualModel === false
 	}
 
-	getAlignmentHeadIndexes() {
+	get isLargeModel() {
+		return this.modelName.startsWith('large')
+	}
+
+	get filterbankCount() {
+		return this.isLargeModel ? 128 : 80
+	}
+
+	get filterbanks() {
+		return this.isLargeModel ? filterbanks_128 : filterbanks_80
+	}
+
+	get alignmentHeadIndexes() {
 		return alignmentHeadsIndexes[this.modelName]
 	}
 
@@ -1773,8 +1786,8 @@ export async function loadPackagesAndGetPaths(modelName: WhisperModelName | unde
 		}
 	}
 
-	if (modelName.startsWith('large')) {
-		throw new Error(`Large models are not currently supported by the integrated Whisper engine due to model size restrictions of onnxruntime-node. To use large models, you can select the whisper.cpp engine instead.`)
+	if (modelName.startsWith('large') && modelName !== 'large-v3-turbo') {
+		throw new Error(`Models 'large-v1', 'large-v2', 'large-v3' are not currently supported by the integrated Whisper engine due to model size restrictions of onnxruntime-node. To use large models, you can either select large-v3-turbo use the whisper.cpp engine instead.`)
 	}
 
 	const packageName = modelNameToPackageName[modelName]
@@ -1811,7 +1824,7 @@ export type WhisperTokenData = {
 
 export type WhisperLogitFilter = (logits: number[], decodedTokens: number[], isFirstPart: boolean, isFinalPart: boolean) => number[]
 
-export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large' | 'large-v1' | 'large-v2' | 'large-v3'
+export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large-v1' | 'large-v2' | 'large-v3' | 'large-v3-turbo'
 export type WhisperTask = 'transcribe' | 'translate' | 'detect-language'
 
 export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
@@ -1823,10 +1836,10 @@ export const modelNameToPackageName: { [modelName in WhisperModelName]: string }
 	'small.en': 'whisper-small.en',
 	'medium': 'whisper-medium',
 	'medium.en': 'whisper-medium.en',
-	'large': 'whisper-large-v3',
 	'large-v1': 'whisper-large-v1',
 	'large-v2': 'whisper-large-v2',
-	'large-v3': 'whisper-large-v3'
+	'large-v3': 'whisper-large-v3',
+	'large-v3-turbo': 'whisper-large-v3-turbo-fp16',
 }
 
 export const tokenizerPackageName = 'whisper-tokenizer'
@@ -1934,21 +1947,21 @@ const languageIdLookup: { [s: string]: number } = {
 }
 
 const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
-	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22],
-	'tiny': [14, 18, 20, 21, 22, 23],
-	'base.en': [27, 39, 41, 45, 47],
-	'base': [25, 34, 35, 39, 41, 42, 44, 46],
-	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136],
-	'small': [63, 69, 96, 100, 103, 104, 108, 115, 117, 125],
-	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348],
-	'medium': [223, 244, 255, 257, 320, 372],
-	'large-v1': [199, 222, 224, 237, 447, 451, 457, 462, 475],
-	'large-v2': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
-	'large-v3': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555], // Temporary (may not be correct)
-	'large': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555],
+	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22,],
+	'tiny': [14, 18, 20, 21, 22, 23,],
+	'base.en': [27, 39, 41, 45, 47,],
+	'base': [25, 34, 35, 39, 41, 42, 44, 46,],
+	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136,],
+	'small': [63, 69, 96, 100, 103, 104, 108, 115, 117, 125,],
+	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348,],
+	'medium': [223, 244, 255, 257, 320, 372,],
+	'large-v1': [199, 222, 224, 237, 447, 451, 457, 462, 475,],
+	'large-v2': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555,],
+	'large-v3': [140, 217, 258, 272, 321, 354, 391, 424, 481, 506,],
+	'large-v3-turbo': [44, 51, 63, 66, 71, 74,],
 }
 
-const filterbanks: Filterbank[] = [
+const filterbanks_80: Filterbank[] = [
 /* 0 */ { startIndex: 1, weights: [0.02486259490251541,] },
 
 /* 1 */ { startIndex: 1, weights: [0.001990821911022067, 0.022871771827340126,] },
@@ -2108,6 +2121,264 @@ const filterbanks: Filterbank[] = [
 /* 78 */ { startIndex: 179, weights: [0.0003849811910185963, 0.0008885387214832008, 0.001392096164636314, 0.0018956535495817661, 0.00239921105094254, 0.002902768552303314, 0.0034063260536640882, 0.003132763085886836, 0.0026481777895241976, 0.0021635922603309155, 0.0016790067311376333, 0.0011944210855290294, 0.0007098356145434082, 0.00022525011445395648,] },
 
 /* 79 */ { startIndex: 186, weights: [0.000366741674952209, 0.0008330700220540166, 0.0012993983691558242, 0.0017657268326729536, 0.0022320549469441175, 0.002698383294045925, 0.0031647118739783764, 0.003141313325613737, 0.002692554146051407, 0.0022437951993197203, 0.00179503601975739, 0.0013462770730257034, 0.000897518009878695, 0.0004487590049393475,] },
+]
+
+const filterbanks_128: Filterbank[] = [
+/* 0 */ { startIndex: 1, weights: [0.012373986653983593,] },
+
+/* 1 */ { startIndex: 1, weights: [0.030392564833164215,] },
+
+/* 2 */ { startIndex: 2, weights: [0.024747973307967186,] },
+
+/* 3 */ { startIndex: 2, weights: [0.018018579110503197,] },
+
+/* 4 */ { startIndex: 3, weights: [0.037121959030628204,] },
+
+/* 5 */ { startIndex: 3, weights: [0.005644591990858316, 0.006729394197463989,] },
+
+/* 6 */ { startIndex: 4, weights: [0.03603715822100639,] },
+
+/* 7 */ { startIndex: 5, weights: [0.019103379920125008,] },
+
+/* 8 */ { startIndex: 5, weights: [0.023663168773055077,] },
+
+/* 9 */ { startIndex: 6, weights: [0.031477365642786026,] },
+
+/* 10 */ { startIndex: 6, weights: [0.011289183981716633, 0.0010848019737750292,] },
+
+/* 11 */ { startIndex: 7, weights: [0.04168175160884857,] },
+
+/* 12 */ { startIndex: 8, weights: [0.013458788394927979,] },
+
+/* 13 */ { startIndex: 8, weights: [0.029307762160897255,] },
+
+/* 14 */ { startIndex: 9, weights: [0.025832774117588997,] },
+
+/* 15 */ { startIndex: 9, weights: [0.016933776438236237,] },
+
+/* 16 */ { startIndex: 10, weights: [0.038206759840250015,] },
+
+/* 17 */ { startIndex: 10, weights: [0.004559790249913931, 0.007814195938408375,] },
+
+/* 18 */ { startIndex: 11, weights: [0.03495235741138458,] },
+
+/* 19 */ { startIndex: 12, weights: [0.020188182592391968,] },
+
+/* 20 */ { startIndex: 12, weights: [0.022578367963433266,] },
+
+/* 21 */ { startIndex: 13, weights: [0.032562170177698135,] },
+
+/* 22 */ { startIndex: 13, weights: [0.010204383172094822, 0.0021696039475500584,] },
+
+/* 23 */ { startIndex: 14, weights: [0.04059694707393646,] },
+
+/* 24 */ { startIndex: 15, weights: [0.01454358920454979,] },
+
+/* 25 */ { startIndex: 15, weights: [0.028222959488630295,] },
+
+/* 26 */ { startIndex: 16, weights: [0.026917576789855957,] },
+
+/* 27 */ { startIndex: 16, weights: [0.015848975628614426,] },
+
+/* 28 */ { startIndex: 17, weights: [0.039291560649871826,] },
+
+/* 29 */ { startIndex: 17, weights: [0.0034749882761389017, 0.008898998610675335,] },
+
+/* 30 */ { startIndex: 18, weights: [0.03386755287647247,] },
+
+/* 31 */ { startIndex: 19, weights: [0.021272985264658928,] },
+
+/* 32 */ { startIndex: 19, weights: [0.021493567153811455,] },
+
+/* 33 */ { startIndex: 20, weights: [0.033646970987319946,] },
+
+/* 34 */ { startIndex: 20, weights: [0.009119580499827862, 0.003254405688494444,] },
+
+/* 35 */ { startIndex: 21, weights: [0.03951214626431465,] },
+
+/* 36 */ { startIndex: 22, weights: [0.01562839187681675,] },
+
+/* 37 */ { startIndex: 22, weights: [0.027138158679008484,] },
+
+/* 38 */ { startIndex: 23, weights: [0.028002377599477768,] },
+
+/* 39 */ { startIndex: 23, weights: [0.014764172956347466,] },
+
+/* 40 */ { startIndex: 24, weights: [0.040376365184783936,] },
+
+/* 41 */ { startIndex: 24, weights: [0.0023806870449334383, 0.010202637873589993,] },
+
+/* 42 */ { startIndex: 25, weights: [0.03161146119236946,] },
+
+/* 43 */ { startIndex: 26, weights: [0.024547001346945763,] },
+
+/* 44 */ { startIndex: 26, weights: [0.015329193323850632, 0.001665837480686605,] },
+
+/* 45 */ { startIndex: 27, weights: [0.036729052662849426,] },
+
+/* 46 */ { startIndex: 28, weights: [0.020097099244594574,] },
+
+/* 47 */ { startIndex: 28, weights: [0.016931025311350822, 0.0029026553966104984,] },
+
+/* 48 */ { startIndex: 29, weights: [0.032844990491867065,] },
+
+/* 49 */ { startIndex: 30, weights: [0.023520048707723618,] },
+
+/* 50 */ { startIndex: 30, weights: [0.011038944125175476, 0.010725829750299454,] },
+
+/* 51 */ { startIndex: 31, weights: [0.022718291729688644,] },
+
+/* 52 */ { startIndex: 32, weights: [0.03227872774004936,] },
+
+/* 53 */ { startIndex: 32, weights: [0.00011626833293121308, 0.022853482514619827,] },
+
+/* 54 */ { startIndex: 33, weights: [0.008563440293073654, 0.014979788102209568,] },
+
+/* 55 */ { startIndex: 34, weights: [0.015513983555138111, 0.008514906279742718,] },
+
+/* 56 */ { startIndex: 35, weights: [0.02110680378973484, 0.003326520323753357,] },
+
+/* 57 */ { startIndex: 36, weights: [0.02547064796090126,] },
+
+/* 58 */ { startIndex: 37, weights: [0.02735907956957817,] },
+
+/* 59 */ { startIndex: 37, weights: [0.0006585361552424729, 0.02383812516927719,] },
+
+/* 60 */ { startIndex: 38, weights: [0.0034435924608260393, 0.021224552765488625,] },
+
+/* 61 */ { startIndex: 39, weights: [0.0053584217093884945, 0.019425557926297188,] },
+
+/* 62 */ { startIndex: 40, weights: [0.006493247114121914, 0.018355421721935272,] },
+
+/* 63 */ { startIndex: 41, weights: [0.006931380834430456, 0.017935046926140785,] },
+
+/* 64 */ { startIndex: 42, weights: [0.0067496825940907, 0.018091518431901932,] },
+
+/* 65 */ { startIndex: 43, weights: [0.006018991116434336, 0.018757672980427742,] },
+
+/* 66 */ { startIndex: 44, weights: [0.004804528318345547, 0.019871728494763374,] },
+
+/* 67 */ { startIndex: 45, weights: [0.0031662785913795233, 0.02137690968811512, 0.001253173453733325,] },
+
+/* 68 */ { startIndex: 46, weights: [0.0011593446834012866, 0.02080361731350422, 0.004044868052005768,] },
+
+/* 69 */ { startIndex: 48, weights: [0.017553631216287613, 0.007083200383931398,] },
+
+/* 70 */ { startIndex: 49, weights: [0.014075386337935925, 0.010326550342142582,] },
+
+/* 71 */ { startIndex: 50, weights: [0.010409214533865452, 0.013736963272094727,] },
+
+/* 72 */ { startIndex: 51, weights: [0.006591876968741417, 0.017279881983995438, 0.0014680421445518732,] },
+
+/* 73 */ { startIndex: 52, weights: [0.0026568188332021236, 0.01809193193912506, 0.005856557283550501,] },
+
+/* 74 */ { startIndex: 54, weights: [0.013342779129743576, 0.010282675735652447,] },
+
+/* 75 */ { startIndex: 55, weights: [0.00856800377368927, 0.01472230814397335, 0.001040398608893156,] },
+
+/* 76 */ { startIndex: 56, weights: [0.003790855873376131, 0.01714678481221199, 0.006116092670708895,] },
+
+/* 77 */ { startIndex: 58, weights: [0.011759290471673012, 0.011133937165141106,] },
+
+/* 78 */ { startIndex: 59, weights: [0.006438578478991985, 0.01607806235551834, 0.004239172209054232,] },
+
+/* 79 */ { startIndex: 60, weights: [0.0011998937698081136, 0.012756715528666973, 0.00965298991650343,] },
+
+/* 80 */ { startIndex: 62, weights: [0.007069352548569441, 0.014940546825528145, 0.004190248437225819,] },
+
+/* 81 */ { startIndex: 63, weights: [0.0015148338861763477, 0.012008999474346638, 0.009848233312368393,] },
+
+/* 82 */ { startIndex: 65, weights: [0.006102240178734064, 0.01533857174217701, 0.005576768424361944,] },
+
+/* 83 */ { startIndex: 66, weights: [0.00036827256553806365, 0.00989749375730753, 0.011353404261171818, 0.0020512230694293976,] },
+
+/* 84 */ { startIndex: 68, weights: [0.003892971435561776, 0.012973522767424583, 0.00806631613522768,] },
+
+/* 85 */ { startIndex: 70, weights: [0.006744932383298874, 0.013858746737241745, 0.005411905236542225,] },
+
+/* 86 */ { startIndex: 71, weights: [0.0007422015769407153, 0.008987790904939175, 0.011378713883459568, 0.003329580882564187,] },
+
+/* 87 */ { startIndex: 73, weights: [0.0028231353498995304, 0.010680492967367172, 0.00943340640515089, 0.0017632555682212114,] },
+
+/* 88 */ { startIndex: 75, weights: [0.0043901861645281315, 0.011877589859068394, 0.007970058359205723, 0.0006610470009036362,] },
+
+/* 89 */ { startIndex: 77, weights: [0.005494666751474142, 0.012629535980522633, 0.00693987961858511,] },
+
+/* 90 */ { startIndex: 79, weights: [0.006184019148349762, 0.0129347313195467, 0.00629778765141964,] },
+
+/* 91 */ { startIndex: 80, weights: [2.3252101527759805e-05, 0.006502066273242235, 0.0123266177251935, 0.006002165377140045,] },
+
+/* 92 */ { startIndex: 82, weights: [0.00031548753031529486, 0.006489255465567112, 0.012041302397847176, 0.006014628801494837,] },
+
+/* 93 */ { startIndex: 84, weights: [0.00029979555984027684, 0.006182880140841007, 0.012042728252708912, 0.006299811881035566, 0.0005568959750235081,] },
+
+/* 94 */ { startIndex: 86, weights: [1.1204706424905453e-05, 0.005617291666567326, 0.011223378591239452, 0.0068251630291342735, 0.0013526449911296368,] },
+
+/* 95 */ { startIndex: 89, weights: [0.004824100062251091, 0.010166232474148273, 0.007560755126178265, 0.002345903078094125,] },
+
+/* 96 */ { startIndex: 91, weights: [0.003832357469946146, 0.008922962471842766, 0.00847910437732935, 0.003509786445647478,] },
+
+/* 97 */ { startIndex: 93, weights: [0.0026687318459153175, 0.007519651670008898, 0.009555005468428135, 0.004819661378860474, 8.431751484749839e-05,] },
+
+/* 98 */ { startIndex: 95, weights: [0.001357673667371273, 0.005980195011943579, 0.01060271542519331, 0.0062529849819839, 0.0017405991675332189,] },
+
+/* 99 */ { startIndex: 98, weights: [0.004326442256569862, 0.008731318637728691, 0.007789165247231722, 0.003489238675683737,] },
+
+/* 100 */ { startIndex: 100, weights: [0.0025783509481698275, 0.006775828544050455, 0.00940941646695137, 0.005311945918947458, 0.0012144759530201554,] },
+
+/* 101 */ { startIndex: 102, weights: [0.0007541119121015072, 0.004753957036882639, 0.008753802627325058, 0.007192090153694153, 0.003287544008344412,] },
+
+/* 102 */ { startIndex: 105, weights: [0.0026817969046533108, 0.0064933146350085735, 0.009114579297602177, 0.005393873900175095, 0.0016731682699173689,] },
+
+/* 103 */ { startIndex: 107, weights: [0.0005739429616369307, 0.0042060003615915775, 0.007838058285415173, 0.007520230021327734, 0.003974708262830973, 0.00042918731924146414,] },
+
+/* 104 */ { startIndex: 110, weights: [0.0019046447705477476, 0.005365691613405943, 0.008826738223433495, 0.0062760948203504086, 0.0028975096065551043,] },
+
+/* 105 */ { startIndex: 113, weights: [0.0028988525737076998, 0.006196940783411264, 0.008566990494728088, 0.005347481928765774, 0.002127972897142172,] },
+
+/* 106 */ { startIndex: 115, weights: [0.0004475022724363953, 0.0035903039388358593, 0.006733105983585119, 0.007770236115902662, 0.004702313803136349, 0.0016343912575393915,] },
+
+/* 107 */ { startIndex: 118, weights: [0.0010153602343052626, 0.004010187461972237, 0.007005014456808567, 0.007234429940581322, 0.0043109566904604435, 0.0013874832075089216,] },
+
+/* 108 */ { startIndex: 121, weights: [0.0013334885006770492, 0.004187308251857758, 0.007041127886623144, 0.0069318837486207485, 0.004146058112382889, 0.0013602323597297072,] },
+
+/* 109 */ { startIndex: 124, weights: [0.0014287971425801516, 0.004148248583078384, 0.006867699790745974, 0.006837052758783102, 0.004182394593954086, 0.0015277357306331396,] },
+
+/* 110 */ { startIndex: 127, weights: [0.0013261043932288885, 0.003917513880878687, 0.006508923601359129, 0.006926396861672401, 0.0043967291712760925, 0.0018670617137104273,] },
+
+/* 111 */ { startIndex: 130, weights: [0.0010482777142897248, 0.0035176740493625402, 0.0059870705008506775, 0.007178240455687046, 0.004767679143697023, 0.002357117598876357,] },
+
+/* 112 */ { startIndex: 133, weights: [0.0006163640646263957, 0.0029694922268390656, 0.005322620272636414, 0.007572650909423828, 0.005275587551295757, 0.0029785241931676865, 0.0006814609514549375,] },
+
+/* 113 */ { startIndex: 136, weights: [4.9713995394995436e-05, 0.0022920481860637665, 0.004534382373094559, 0.006776716560125351, 0.0059024072252213955, 0.00371349835768342, 0.0015245892573148012,] },
+
+/* 114 */ { startIndex: 140, weights: [0.0015028533525764942, 0.0036396104842424393, 0.005776367150247097, 0.0066315908916294575, 0.004545743577182293, 0.002459896495565772, 0.00037404923932626843,] },
+
+/* 115 */ { startIndex: 143, weights: [0.0006179586052894592, 0.00265410915017128, 0.004690259229391813, 0.006726410239934921, 0.005460347048938274, 0.0034727093297988176, 0.0014850713778287172,] },
+
+/* 116 */ { startIndex: 147, weights: [0.001592335756868124, 0.0035326166544109583, 0.005472897551953793, 0.0064436825923621655, 0.004549629986286163, 0.002655577613040805, 0.0007615251233801246,] },
+
+/* 117 */ { startIndex: 150, weights: [0.00046749351895414293, 0.0023164190351963043, 0.004165344405919313, 0.0060142697766423225, 0.005678446963429451, 0.0038735736161470413, 0.002068700036033988, 0.0002638266596477479,] },
+
+/* 118 */ { startIndex: 154, weights: [0.0010534910252317786, 0.002815362298861146, 0.0045772334560751915, 0.006339104846119881, 0.0051281568594276905, 0.0034082632046192884, 0.0016883700154721737,] },
+
+/* 119 */ { startIndex: 158, weights: [0.0014335009036585689, 0.0031124167144298553, 0.00479133240878582, 0.00640943692997098, 0.004770522005856037, 0.0031316077802330256, 0.0014926930889487267,] },
+
+/* 120 */ { startIndex: 161, weights: [2.9323589842533693e-05, 0.001629189937375486, 0.003229056019335985, 0.00482892245054245, 0.006146714556962252, 0.004584966227412224, 0.0030232176650315523, 0.0014614691026508808,] },
+
+/* 121 */ { startIndex: 165, weights: [0.00013601698447018862, 0.001660555717535317, 0.003185094567015767, 0.004709633067250252, 0.006040723994374275, 0.0045525087043643, 0.003064292948693037, 0.001576077425852418, 8.786193211562932e-05,] },
+
+/* 122 */ { startIndex: 169, weights: [9.328097075922415e-05, 0.001546038780361414, 0.002998796757310629, 0.004451554734259844, 0.0059043122455477715, 0.0046556610614061356, 0.003237516153603792, 0.0018193712458014488, 0.00040122633799910545,] },
+
+/* 123 */ { startIndex: 174, weights: [0.0013026263331994414, 0.002686982974410057, 0.004071339499205351, 0.005455696024000645, 0.004878324922174215, 0.0035269514191895723, 0.0021755779162049294, 0.0008242045878432691,] },
+
+/* 124 */ { startIndex: 178, weights: [0.0009459502762183547, 0.002265126211568713, 0.0035843022633343935, 0.0049034785479307175, 0.005205697845667601, 0.0039179520681500435, 0.00263020652346313, 0.001342460629530251, 5.471494296216406e-05,] },
+
+/* 125 */ { startIndex: 182, weights: [0.0004903789376839995, 0.0017474433407187462, 0.003004507627338171, 0.004261571913957596, 0.005518636200577021, 0.004397072363644838, 0.0031699584797024727, 0.001942844595760107, 0.0007157306536100805,] },
+
+/* 126 */ { startIndex: 187, weights: [0.0011469805613160133, 0.002344857668504119, 0.0035427347756922245, 0.004740611650049686, 0.0049519846215844154, 0.003782647429034114, 0.002613310469314456, 0.0014439737424254417, 0.0002746368118096143,] },
+
+/* 127 */ { startIndex: 191, weights: [0.0004756950947921723, 0.0016171716852113605, 0.002758648479357362, 0.0039001251570880413, 0.005041601601988077, 0.004457120783627033, 0.003342840587720275, 0.0022285603918135166, 0.0011142801959067583,] },
 ]
 
 // Recognition options
