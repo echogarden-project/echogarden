@@ -1,4 +1,4 @@
-import { convert as convertHtmlToText } from 'html-to-text'
+import { htmlToText } from 'html-to-text'
 
 import { formatHMS, formatMS, secondsToHMS, secondsToMS, startsWithAnyOf } from '../utilities/Utilities.js'
 import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
@@ -68,7 +68,7 @@ export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
 
 		plainText = plainText.replaceAll(/<[^>]*>/g, '')
 
-		plainText = convertHtmlToText(plainText, { wordwrap: false })
+		plainText = htmlToText(plainText, { wordwrap: false })
 
 		plainText = plainText.replaceAll(/\s+/g, ' ').trim()
 
