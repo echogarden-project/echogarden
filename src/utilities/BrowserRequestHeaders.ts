@@ -1,4 +1,4 @@
-export function getChromeOnWindowsHeaders(options: BorwserRequestHeadersOptions) {
+export function getChromeOnWindowsHeaders(options: BrowserRequestHeadersOptions) {
 	const headers: Record<string, string> = {
 		'Sec-Ch-Ua': `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`,
 		'X-Same-Domain': '1',
@@ -25,7 +25,7 @@ export function getChromeOnWindowsHeaders(options: BorwserRequestHeadersOptions)
 	return headers
 }
 
-export function getChromeOnAndroidHeaders(options: BorwserRequestHeadersOptions) {
+export function getChromeOnAndroidHeaders(options: BrowserRequestHeadersOptions) {
 	const headers: Record<string, string> = {
 		'Sec-Ch-Ua': `"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"`,
 		'Sec-Ch-Ua-Mobile': '?1',
@@ -53,7 +53,7 @@ export function getChromeOnAndroidHeaders(options: BorwserRequestHeadersOptions)
 	return headers
 }
 
-export interface BorwserRequestHeadersOptions {
+export interface BrowserRequestHeadersOptions {
 	origin: string
 	referrer: string
 }
