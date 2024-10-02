@@ -5,14 +5,14 @@ import * as API from '../api/API.js'
 import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from '../dsp/MFCC.js'
 import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from './DTWMfccSequenceAlignment.js'
 import { Logger } from '../utilities/Logger.js'
-import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
-import { downmixToMonoAndNormalize, getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from '../audio/AudioUtilities.js'
+import { addTimeOffsetToTimeline, Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { concatAudioSegments, downmixToMonoAndNormalize, getEmptyRawAudio, getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from '../audio/AudioUtilities.js'
 import chalk from 'chalk'
 import { synthesize } from '../api/API.js'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
 import { cosineDistance, euclideanDistance, zeroIfNaN } from '../math/VectorMath.js'
-import { EspeakOptions } from '../synthesis/EspeakTTS.js'
+import { EspeakEvent, EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import path from 'path'
@@ -278,7 +278,7 @@ export async function alignUsingDtwWithRecognition(
 	return result
 }
 
-// This is experimental code. It does't work well enough to be usable for anything.
+// This is experimental code. It doesn't work well enough to be usable for anything.
 // Just testing some alternative approaches.
 export async function alignUsingDtwWithEmbeddings(
 	sourceRawAudio: RawAudio,
@@ -580,7 +580,38 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 
 	progressLogger.start("Synthesize alignment reference with eSpeak")
 
-	const result = await Espeak.synthesizeFragments(fragments, espeakOptions)
+	const result = {
+		rawAudio: getEmptyRawAudio(1, await Espeak.getSampleRate()) as RawAudio,
+		timeline: [] as Timeline,
+		events: [] as EspeakEvent[],
+	}
+
+	// Split fragments to chunks and process each chunk individually,
+	// and incrementally merge the chunks to the final result.
+	{
+		const maxFragmentsInChunk = 1000
+
+		let timeOffset = 0
+
+		for (let startOffset = 0; startOffset < fragments.length; startOffset += maxFragmentsInChunk) {
+			const chunk = fragments.slice(startOffset, startOffset + maxFragmentsInChunk)
+
+			const chunkResult = await Espeak.synthesizeFragments(chunk, espeakOptions)
+
+			result.rawAudio = {
+				sampleRate: result.rawAudio.sampleRate,
+				audioChannels: concatAudioSegments([result.rawAudio.audioChannels, chunkResult.rawAudio.audioChannels])
+			}
+
+			const chunkTimeline = addTimeOffsetToTimeline(chunkResult.timeline, timeOffset)
+
+			result.timeline = [...result.timeline, ...chunkTimeline]
+
+			result.events = [...result.events, ...chunkResult.events]
+
+			timeOffset += getRawAudioDuration(chunkResult.rawAudio)
+		}
+	}
 
 	result.timeline = result.timeline.flatMap(clause => clause.timeline!)
 
