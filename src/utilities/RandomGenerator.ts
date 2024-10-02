@@ -1,5 +1,4 @@
 import { sumVector } from '../math/VectorMath.js'
-import { logToStderr } from './Utilities.js'
 
 export abstract class RandomGenerator {
 	getIntInRange(min: number, max: number) {
@@ -30,8 +29,8 @@ export abstract class RandomGenerator {
 		return result
 	}
 
-	getNormallyDistributedVector(featureCount: number, meanVector: number[], standardDeviationVector: number[]) {
-		const features = this.getNormallyDistributedValues(featureCount)
+	getNormallyDistributedVector(elementCount: number, meanVector: number[], standardDeviationVector: number[]) {
+		const features = this.getNormallyDistributedValues(elementCount)
 
 		for (let i = 0; i < features.length; i++) {
 			features[i] = meanVector[i] + (features[i] * standardDeviationVector[i])
@@ -104,134 +103,34 @@ export abstract class RandomGenerator {
 	abstract nextInt32(): number
 }
 
-export class MurmurRNG extends RandomGenerator {
+export abstract class Int32RandomGenerator extends RandomGenerator {
+	nextUint32() {
+		return this.nextInt32() >>> 0
+	}
+
+	nextFloat() {
+		return this.nextUint32() * (1 / 4294967296)
+	}
+}
+
+export class XorShift32PRNG extends Int32RandomGenerator {
 	state: number
 
 	constructor(seed: number) {
 		super()
 
-		this.state = seed
-	}
-
-	nextFloat() {
-		return this.nextUint32() / 4294967296
-	}
-
-	nextUint32() {
-		return this.nextInt32() >>> 0
+		this.state = (3077908504 + seed) | 0
 	}
 
 	nextInt32() {
-		const multiplier = 3332679571
+		let state = this.state | 0
 
-		let s = this.state
+		state ^= state << 13
+		state ^= state >>> 17
+		state ^= state << 5
 
-		s = Math.imul(s, multiplier)
-		s ^= s >>> 16
+		this.state = state
 
-		s = Math.imul(s, multiplier)
-		s ^= s >>> 10
-
-		s = Math.imul(s, multiplier)
-		s ^= s >>> 17
-
-		this.state = s
-
-		return s
-	}
-
-	static hashInt32(val: number, seed = 234928357) {
-		const rng = new MurmurRNG(seed ^ val)
-		return rng.nextUint32()
-	}
-}
-
-export class XorShift32RNG extends RandomGenerator {
-	state: number
-
-	constructor(seed: number) {
-		super()
-
-		this.state = seed
-	}
-
-	nextFloat() {
-		return this.nextUint32() / 4294967296
-	}
-
-	nextUint32() {
-		return this.nextInt32() >>> 0
-	}
-
-	nextInt32() {
-		let s = this.state
-
-		s ^= s << 13
-		s ^= s >>> 17
-		s ^= s << 5
-
-		this.state = s
-
-		return s
-	}
-}
-
-export class LehmerRNG extends RandomGenerator {
-	state: number
-
-	constructor(seed: number) {
-		super()
-
-		this.state = seed
-	}
-
-	nextFloat() {
-		return this.nextUint32() / 4294967296
-	}
-
-	nextUint32() {
-		return this.nextInt32() >>> 0
-	}
-
-	nextInt32() {
-		let s = this.state
-
-		s = s * 48271 % 0x7fffffff
-
-		this.state = s
-
-		return s
-	}
-}
-
-const log = logToStderr
-
-export function testRngCycleLength() {
-	const seed = 1
-
-	const rng = new XorShift32RNG(seed)
-
-	const bucketCount = 1000000
-	const seen: number[][] = []
-
-	for (let i = 0; i < bucketCount; i++) {
-		seen[i] = []
-	}
-
-	for (let i = 0; i < 4294967296; i++) {
-		if (i % 1000000 == 0) {
-			log(`${i} iterations`)
-		}
-
-		const r = rng.nextUint32()
-
-		const bucket = seen[r % bucketCount]
-
-		if (bucket.includes(r)) {
-			log(`Cycles at iteration ${i}`)
-			return
-		}
-
-		bucket.push(r)
+		return state
 	}
 }
