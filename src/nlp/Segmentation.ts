@@ -11,8 +11,7 @@ const log = logToStderr
 export const wordCharacterPattern = /[\p{Letter}\p{Number}]/u
 export const punctuationPattern = /[\p{Punctuation}]/u
 
-export const phraseSeparators = [',', ';', ':']
-export const sentenceSeparators = ['.', '?', '!']
+export const phraseSeparators = [',', ';', ':', '，', '、']
 export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '=', '¼', '½', '¾']
 
 export function isWordOrSymbolWord(str: string) {
@@ -226,27 +225,33 @@ export async function splitToWords(text: string, langCode: string): Promise<stri
 	}
 }
 
-export function splitToParagraphs(text: string, paragraphBreaks: ParagraphBreakType, whitespace: WhitespaceProcessing) {
+export function splitToParagraphs(text: string, paragraphBreaks: ParagraphBreakType, whitespaceProcessingMethod: WhitespaceProcessing) {
 	let paragraphs: string[] = []
 
-	if (paragraphBreaks == 'single') {
+	if (paragraphBreaks === 'single') {
 		paragraphs = text.split(/(\r?\n)+/g)
-	} else if (paragraphBreaks == 'double') {
+	} else if (paragraphBreaks === 'double') {
 		paragraphs = text.split(/(\r?\n)(\r?\n)+/g)
 	} else {
-		throw new Error(`Invalid paragraph break type: ${paragraphBreaks}`)
+		throw new Error(`Invalid paragraph break type: '${paragraphBreaks}'`)
 	}
 
-	if (whitespace == 'removeLineBreaks') {
-		paragraphs = paragraphs.map(p => p.replaceAll(/(\r?\n)+/g, ' '))
-	} else if (whitespace == 'collapse') {
-		paragraphs = paragraphs.map(p => p.replaceAll(/\s+/g, ' '))
-	}
-
-	paragraphs = paragraphs.map(p => p.trim())
+	paragraphs = paragraphs.map(p => applyWhitespaceProcessing(p.trim(), whitespaceProcessingMethod))
 	paragraphs = paragraphs.filter(p => p.length > 0)
 
 	return paragraphs
+}
+
+export function applyWhitespaceProcessing(text: string, whitespaceProcessingMethod: WhitespaceProcessing) {
+	if (whitespaceProcessingMethod === 'removeLineBreaks') {
+		return text.replaceAll(/(\r?\n)+/g, ' ')
+	} else if (whitespaceProcessingMethod === 'collapse') {
+		return text.replaceAll(/\s+/g, ' ')
+	} else if (whitespaceProcessingMethod === 'preserve') {
+		return text
+	} else {
+		throw new Error(`Invalid whitespace processing method: '${whitespaceProcessingMethod}'`)
+	}
 }
 
 export function splitToLines(text: string) {

@@ -404,10 +404,10 @@ export async function commandExists(command: string) {
 }
 
 export async function convertHtmlToText(html: string) {
-	const { convert } = await import('html-to-text')
+	const { htmlToText } = await import('html-to-text')
 
-	const text = convert(html, {
-		wordwrap: null,
+	const text = htmlToText(html, {
+		wordwrap: false,
 
 		selectors: [
 			{ selector: 'a', options: { ignoreHref: true } },
@@ -618,4 +618,41 @@ export function containsInvalidCodepoint(str: string) {
 	}
 
 	return false
+}
+
+export function splitAndPreserveSeparators(text: string, separatorRegex: RegExp): string[] {
+	if (!separatorRegex.flags.includes('g')) {
+		throw new Error('RegExp must be global')
+	}
+
+	// Use the match method to find all matches for the separators
+	const matches = text.match(separatorRegex)
+
+	// If no matches are found, return the original text as a single element array
+	if (!matches) {
+		return [text]
+	}
+
+	// Initialize the result array
+	const result: string[] = []
+
+	// Initialize the start position
+	let lastIndex = 0
+
+	// Iterate through the matches
+	matches.forEach(match => {
+		// Get the index of the current match
+		const matchIndex = text.indexOf(match, lastIndex)
+
+		// Add the substring before the match to the result, joined with the match itself
+		result.push(text.substring(lastIndex, matchIndex) + match)
+
+		// Update the last index to the end of the current match
+		lastIndex = matchIndex + match.length
+	})
+
+	// Add the remaining substring after the last match to the result
+	result.push(text.substring(lastIndex))
+
+	return result
 }

@@ -1,7 +1,7 @@
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
-import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
+import { applyWhitespaceProcessing, isWord, isWordOrSymbolWord, splitToParagraphs, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
 import { deepClone } from './ObjectUtilities.js'
-import { getUTF32Chars, roundToDigits } from './Utilities.js'
+import { getUTF32Chars, roundToDigits, splitAndPreserveSeparators } from './Utilities.js'
 
 export function addTimeOffsetToTimeline(targetTimeline: Timeline, timeOffset: number) {
 	if (!targetTimeline) {
@@ -62,13 +62,57 @@ export function roundTimelineProperties(targetTimeline: Timeline, decimalDigits 
 }
 
 export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeline, transcript: string, language: string, paragraphBreaks: ParagraphBreakType = 'double', whitespace: WhitespaceProcessing = 'collapse') {
-	const paragraphs = splitToParagraphs(transcript, paragraphBreaks, whitespace)
+	let segments: string[][] = []
 
-	const segments = paragraphs
-		.map(segment =>
-			splitToSentences(segment, language).map(sentence =>
-				sentence.trim()))
+	{
+		// Ensure word entries with words that include potential sentence ending characters,
+		// like '.', '?' or '!', aren't causing the sentence segmentation
+		// to identify them as sentence breaks.
+		const maskedTranscript = replaceSentenceEndersWithinWordsWithMaskingCharacter(transcript, wordTimeline, '_')
 
+		// Split to segments and sentences, based on the masked transcript,
+		// don't apply any whitespace processing yet.
+		let paragraphs: string[]
+
+		if (paragraphBreaks === 'single') {
+			paragraphs = splitAndPreserveSeparators(maskedTranscript, /(\r?\n)+/g)
+		} else if (paragraphBreaks === 'double') {
+			paragraphs = splitAndPreserveSeparators(maskedTranscript, /(\r?\n)(\r?\n)+/g)
+		} else {
+			throw new Error(`Invalid paragraph break type: '${paragraphBreaks}'`)
+		}
+
+		const maskedSegments = paragraphs.map(paragraph => splitToSentences(paragraph, language))
+
+		// Restore the sentence text the original text, using the original transcript,
+		// and apply whitespace processing to each sentence.
+		let offset = 0
+
+		for (const segment of maskedSegments) {
+			const newSegment: string[] = []
+
+			for (let sentenceIndex = 0; sentenceIndex < segment.length; sentenceIndex++) {
+				const sentence = segment[sentenceIndex]
+				const sentenceLength = sentence.length
+
+				const restoredSentence = transcript.substring(offset, offset + sentenceLength)
+				const restoredAndProcessedSentence = applyWhitespaceProcessing(restoredSentence, whitespace).trim()
+
+				if (restoredAndProcessedSentence.length > 0) {
+					newSegment.push(restoredAndProcessedSentence)
+				}
+
+				offset += sentenceLength
+			}
+
+			segments.push(newSegment)
+		}
+
+		segments = segments.filter(segment => segment.length > 0)
+	}
+
+	// Create a new text based on the processed sentences, new segment and sentence timeline,
+	// and store mapping between character indexes and the corresponding sentence they belong to.
 	let text = ''
 	const charIndexToSentenceEntryMapping: TimelineEntry[] = []
 
@@ -105,28 +149,33 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		segmentTimeline.push(segmentEntry)
 	}
 
-	let wordSearchStartOffset = 0
+	// Add the word entries to their corresponding sentence timelines
+	{
+		let wordSearchStartOffset = 0
 
-	for (let wordIndex = 0; wordIndex < wordTimeline.length; wordIndex++) {
-		const wordEntry = wordTimeline[wordIndex]
-		const wordText = wordEntry.text
+		for (let wordIndex = 0; wordIndex < wordTimeline.length; wordIndex++) {
+			const wordEntry = wordTimeline[wordIndex]
+			const wordText = wordEntry.text
 
-		if (!isWordOrSymbolWord(wordText)) {
-			continue
+			if (!isWordOrSymbolWord(wordText)) {
+				continue
+			}
+
+			const indexOfWordInText = text.indexOf(wordText, wordSearchStartOffset)
+
+			if (indexOfWordInText == -1) {
+				throw new Error(`Couldn't find the word '${wordText}' in the text at start position ${wordSearchStartOffset}`)
+			}
+
+			const targetSentenceEntry = charIndexToSentenceEntryMapping[indexOfWordInText]
+			targetSentenceEntry.timeline!.push(deepClone(wordEntry))
+
+			wordSearchStartOffset = indexOfWordInText + wordText.length
 		}
-
-		const indexOfWordInText = text.indexOf(wordText, wordSearchStartOffset)
-
-		if (indexOfWordInText == -1) {
-			throw new Error(`Couldn't find the word '${wordText}' in the text at start position ${wordSearchStartOffset}`)
-		}
-
-		const targetSentenceEntry = charIndexToSentenceEntryMapping[indexOfWordInText]
-		targetSentenceEntry.timeline!.push(deepClone(wordEntry))
-
-		wordSearchStartOffset = indexOfWordInText + wordText.length
 	}
 
+	// Produce a new segment/sentence timeline with rewritten entries,
+	// that match the assigned words.
 	const newSegmentTimeline: Timeline = []
 
 	for (const segmentEntry of segmentTimeline) {
@@ -137,7 +186,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 		for (const sentenceEntry of oldSentenceTimeline) {
 			const wordTimeline = sentenceEntry.timeline
 
-			if (!wordTimeline || wordTimeline.length == 0) {
+			if (!wordTimeline || wordTimeline.length === 0) {
 				continue
 			}
 
@@ -147,7 +196,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimeline: Timeli
 			newSentenceTimeline.push(sentenceEntry)
 		}
 
-		if (newSentenceTimeline.length == 0) {
+		if (newSentenceTimeline.length === 0) {
 			continue
 		}
 
@@ -207,6 +256,55 @@ export function addWordTextOffsetsToTimeline(timeline: Timeline, text: string, c
 	return currentOffset
 }
 
+function replaceSentenceEndersWithinWordsWithMaskingCharacter(transcript: string, wordTimeline: Timeline, maskingCharacter: string) {
+	if (maskingCharacter.length !== 1) {
+		throw new Error(`Masking character must be of length 1`)
+	}
+
+	let modifiedTranscript = transcript
+
+	const sentenceEnders = ['.', '。', '?', '？', '!', '！', '|']
+
+	for (const wordEntry of wordTimeline) {
+		const wordText = wordEntry.text
+
+		if (!isWord(wordText)) {
+			continue
+		}
+
+		let newWordText = ''
+		let charIndex = 0
+
+		for (const char of wordText) {
+			const isFirstChar = charIndex === 0
+			const isLastChar = charIndex + char.length === wordText.length
+			const isFirstOrLastChar = isFirstChar || isLastChar
+
+			if (!isLastChar && sentenceEnders.includes(char)) {
+				for (let i = 0; i < char.length; i++) {
+					newWordText += maskingCharacter
+				}
+			} else {
+				newWordText += char
+			}
+
+			charIndex += char.length
+		}
+
+		if (newWordText !== wordText) {
+			const wordStartOffset = wordEntry.startOffsetUtf16!
+			const wordEndOffset = wordEntry.endOffsetUtf16!
+
+			modifiedTranscript =
+				transcript.substring(0, wordStartOffset) +
+				newWordText +
+				transcript.substring(wordEndOffset)
+		}
+	}
+
+	return modifiedTranscript
+}
+
 export function extractEntries(timeline: Timeline, predicate: (entry: TimelineEntry) => boolean): TimelineEntry[] {
 	const timelineWordEntries: TimelineEntry[] = []
 
@@ -245,3 +343,30 @@ export type TimelineEntry = {
 }
 
 export type Timeline = TimelineEntry[]
+
+////
+
+export async function testTimelineFix() {
+	let transcript = 'Hello world how are you? Do you want to play chess?'
+	const words = (await splitToWords(transcript, 'en')).filter(word => word.trim() !== '')
+
+	let wordTimeline: Timeline = words.map(wordText => ({
+		type: 'word',
+
+		text: wordText,
+
+		startTime: 0,
+		endTime: 0,
+	}))
+
+	addWordTextOffsetsToTimeline(wordTimeline, transcript)
+
+	wordTimeline[1].text = 'wor.d'
+	wordTimeline[8].text = 'wa.t'
+
+	transcript = transcript.replace('world', 'wor.d').replace('want', 'wa.t')
+
+	const result = await wordTimelineToSegmentSentenceTimeline(wordTimeline, transcript, 'en')
+
+	const x = 1
+}
