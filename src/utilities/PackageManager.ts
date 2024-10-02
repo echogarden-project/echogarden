@@ -192,4 +192,18 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 
 	'w2v-bert-2.0-int8': '20240517',
 	'w2v-bert-2.0-uint8': '20240517',
+
+	'whisper.cpp-binaries-linux-x64-cpu-1.6.2': '20241001',
+	'whisper.cpp-binaries-windows-x64-cpu-1.6.2': '20241001',
+
+	'vits-it_IT-paola-medium': '20241001',
+	'vits-en_US-norman-medium': '20241001',
+	'vits-en_US-john-medium': '20241001',
+	'vits-en_US-bryce-medium': '20241001',
+	'vits-en_GB-cori-medium': '20241001',
+	'vits-cy_GB-gwryw_gogleddol-medium': '20241001',
+
+	'whisper.cpp-binaries-windows-x64-cublas-12.4.0-1.6.2': '20241002',
+
+	'whisper-large-v3-turbo-fp16': '20241002',
 }
