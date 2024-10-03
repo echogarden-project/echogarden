@@ -53,11 +53,46 @@ export async function recognize(
 		throw new Error(`Temperature can't be negative`)
 	}
 
-	const encoderProviders: OnnxExecutionProvider[] =
-		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+	// Workaround issue with large-v3-turbo that produces invalid results when prompted.
+	// Always disable autoprompting for that model.
+	if (options.autoPromptParts && modelName == 'large-v3-turbo') {
+		options.autoPromptParts = false
+	}
 
-	const decoderProviders: OnnxExecutionProvider[] =
-		options.decoderProvider ? [options.decoderProvider] : []
+	// Select encoder ONNX provider
+	let encoderProviders: OnnxExecutionProvider[]
+
+	if (options.encoderProvider) {
+		encoderProviders = [options.encoderProvider]
+	} else {
+		if (process.platform === 'win32') {
+			encoderProviders = ['dml', 'cpu']
+		} else {
+			encoderProviders = []
+		}
+	}
+
+	// Select decoder ONNX provider
+	let decoderProviders: OnnxExecutionProvider[]
+
+	if (options.decoderProvider) {
+		decoderProviders = [options.decoderProvider]
+	} else {
+		if (modelName.startsWith('small') || modelName.startsWith('medium') || modelName.startsWith('large')) {
+			// On latest onnxruntime-node,
+			// the larger models: small, medium and large, do benefit from GPU-based
+			// decoder providers like dml and cuda
+
+			if (process.platform === 'win32') {
+				decoderProviders = ['dml', 'cpu']
+				//decoderProviders = []
+			} else {
+				decoderProviders = []
+			}
+		} else {
+			decoderProviders = []
+		}
+	}
 
 	const seed = options.seed
 
@@ -440,8 +475,12 @@ export class Whisper {
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
 			// Find alignment path
-			const alignmentHeads = this.isLargeModel ? this.alignmentHeadIndexes : undefined
-			//const alignmentHeads = this.alignmentHeadIndexes
+			let alignmentHeads: number[] | undefined = undefined
+
+			if (this.modelDir.startsWith('small') || this.modelDir.startsWith('medium') || this.modelDir.startsWith('large')) {
+				alignmentHeads = this.alignmentHeadIndexes
+			}
+
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount, alignmentHeads)
 
 			// Generate timeline from alignment path
