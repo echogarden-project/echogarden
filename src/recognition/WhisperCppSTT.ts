@@ -397,15 +397,15 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 
 	if (buildKind.startsWith('cublas-')) {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-1.6.2`
+			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-latest`
 		} else {
 			throw new Error(`whisper.cpp GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
 	} else if (buildKind === 'cpu') {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-cpu-1.6.2`
+			packageName = `whisper.cpp-binaries-windows-x64-cpu-latest`
 		} else if (platform === 'linux' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-linux-x64-cpu-1.6.2`
+			packageName = `whisper.cpp-binaries-linux-x64-cpu-latest`
 		} else {
 			throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
@@ -566,4 +566,6 @@ export type WhisperCppModelId =
 	'large-v2' |
 	'large-v2-q5_0' |
 	'large-v3' |
-	'large-v3-q5_0'
+	'large-v3-q5_0' |
+	`large-v3-turbo` |
+	`large-v3-turbo-q5_0`
