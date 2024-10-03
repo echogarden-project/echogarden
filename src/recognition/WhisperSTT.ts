@@ -53,46 +53,19 @@ export async function recognize(
 		throw new Error(`Temperature can't be negative`)
 	}
 
-	// Workaround issue with large-v3-turbo that produces invalid results when prompted.
+	// Workaround issue with large-v3-turbo that produces invalid results when a prompt is passed to it.
 	// Always disable autoprompting for that model.
 	if (options.autoPromptParts && modelName == 'large-v3-turbo') {
 		options.autoPromptParts = false
 	}
 
 	// Select encoder ONNX provider
-	let encoderProviders: OnnxExecutionProvider[]
-
-	if (options.encoderProvider) {
-		encoderProviders = [options.encoderProvider]
-	} else {
-		if (process.platform === 'win32') {
-			encoderProviders = ['dml', 'cpu']
-		} else {
-			encoderProviders = []
-		}
-	}
+	const encoderProviders: OnnxExecutionProvider[] =
+		options.encoderProvider ? [options.encoderProvider] : getDefaultEncoderProvidersForModel(modelName)
 
 	// Select decoder ONNX provider
-	let decoderProviders: OnnxExecutionProvider[]
-
-	if (options.decoderProvider) {
-		decoderProviders = [options.decoderProvider]
-	} else {
-		if (modelName.startsWith('small') || modelName.startsWith('medium') || modelName.startsWith('large')) {
-			// On latest onnxruntime-node,
-			// the larger models: small, medium and large, do benefit from GPU-based
-			// decoder providers like dml and cuda
-
-			if (process.platform === 'win32') {
-				decoderProviders = ['dml', 'cpu']
-				//decoderProviders = []
-			} else {
-				decoderProviders = []
-			}
-		} else {
-			decoderProviders = []
-		}
-	}
+	const decoderProviders: OnnxExecutionProvider[] =
+		options.decoderProvider ? [options.decoderProvider] : getDefaultDecoderProvidersForModel(modelName)
 
 	const seed = options.seed
 
@@ -132,11 +105,13 @@ export async function align(
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
+	// Select encoder ONNX provider
 	const encoderProviders: OnnxExecutionProvider[] =
-		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+		options.encoderProvider ? [options.encoderProvider] : getDefaultEncoderProvidersForModel(modelName)
 
+	// Select decoder ONNX provider
 	const decoderProviders: OnnxExecutionProvider[] =
-		options.decoderProvider ? [options.decoderProvider] : []
+		options.decoderProvider ? [options.decoderProvider] : getDefaultDecoderProvidersForModel(modelName)
 
 	const whisper = new Whisper(
 		modelName,
@@ -173,11 +148,13 @@ export async function alignEnglishTranslation(
 		throw new Error(`Translation alignment can only be done with multilingual models.`)
 	}
 
+	// Select encoder ONNX provider
 	const encoderProviders: OnnxExecutionProvider[] =
-		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+		options.encoderProvider ? [options.encoderProvider] : getDefaultEncoderProvidersForModel(modelName)
 
+	// Select decoder ONNX provider
 	const decoderProviders: OnnxExecutionProvider[] =
-		options.decoderProvider ? [options.decoderProvider] : []
+		options.decoderProvider ? [options.decoderProvider] : getDefaultDecoderProvidersForModel(modelName)
 
 	const whisper = new Whisper(
 		modelName,
@@ -210,9 +187,11 @@ export async function detectLanguage(
 		throw new Error(`Temperature cannot be negative`)
 	}
 
+	// Select encoder ONNX provider
 	const encoderProviders: OnnxExecutionProvider[] =
-		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+		options.encoderProvider ? [options.encoderProvider] : getDefaultEncoderProvidersForModel(modelName)
 
+	// Select decoder ONNX provider
 	const decoderProviders: OnnxExecutionProvider[] =
 		options.decoderProvider ? [options.decoderProvider] : []
 
@@ -257,9 +236,11 @@ export async function detectVoiceActivity(
 	const partDuration = 5
 	const maxSamplesCountForPart = sourceRawAudio.sampleRate * partDuration
 
+	// Select encoder ONNX provider
 	const encoderProviders: OnnxExecutionProvider[] =
-		options.encoderProvider ? [options.encoderProvider] : ['dml', 'cpu']
+		options.encoderProvider ? [options.encoderProvider] : getDefaultEncoderProvidersForModel(modelName)
 
+	// Select decoder ONNX provider
 	const decoderProviders: OnnxExecutionProvider[] =
 		options.decoderProvider ? [options.decoderProvider] : []
 
@@ -477,7 +458,7 @@ export class Whisper {
 			// Find alignment path
 			let alignmentHeads: number[] | undefined = undefined
 
-			if (this.modelDir.startsWith('small') || this.modelDir.startsWith('medium') || this.modelDir.startsWith('large')) {
+			if (this.modelName.startsWith('small') || this.modelName.startsWith('medium') || this.modelName.startsWith('large')) {
 				alignmentHeads = this.alignmentHeadIndexes
 			}
 
@@ -1854,6 +1835,26 @@ export function isMultilingualModel(modelName: WhisperModelName) {
 
 export function isEnglishOnlyModel(modelName: WhisperModelName) {
 	return modelName.endsWith('.en')
+}
+
+function getDefaultEncoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
+	if (process.platform === 'win32') {
+		return ['dml', 'cpu']
+	} else {
+		return []
+	}
+}
+
+function getDefaultDecoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
+	if (modelName.startsWith('small') || modelName.startsWith('medium') || modelName.startsWith('large')) {
+		if (process.platform === 'win32') {
+			return ['dml', 'cpu']
+		} else {
+			return []
+		}
+	} else {
+		return []
+	}
 }
 
 export type WhisperTokenData = {
