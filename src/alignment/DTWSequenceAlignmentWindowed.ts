@@ -4,9 +4,7 @@ import { AlignmentPath } from './SpeechAlignment.js'
 const log = logToStderr
 
 export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: number[]) {
-	if (windowMaxLength < 2) {
-		throw new Error('Window length must be greater or equal to 2')
-	}
+	windowMaxLength = Math.max(windowMaxLength, 2)
 
 	if (sequence1.length == 0 || sequence2.length == 0) {
 		return {
