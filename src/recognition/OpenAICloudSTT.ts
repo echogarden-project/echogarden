@@ -1,8 +1,10 @@
-import { RawAudio } from '../audio/AudioUtilities.js';
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
-import { Logger } from '../utilities/Logger.js';
-import { extendDeep } from '../utilities/ObjectUtilities.js';
-import { Timeline, TimelineEntry } from '../utilities/Timeline.js';
+import { RawAudio } from '../audio/AudioUtilities.js'
+import { createVirtualFileReadStreamForBuffer } from '../utilities/VirtualFileReadStream.js'
+import { Logger } from '../utilities/Logger.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { alignSegments } from '../api/Alignment.js'
 
 export async function recognize(rawAudio: RawAudio, languageCode: string, options: OpenAICloudSTTOptions, task: Task = 'transcribe') {
 	const logger = new Logger()
@@ -11,41 +13,56 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 
 	options = extendDeep(defaultOpenAICloudSTTOptions, options)
 
+	if (options.requestWordTimestamps === undefined) {
+		options.requestWordTimestamps = options.baseURL === undefined
+	}
+
+	if (options.model === undefined) {
+		if (options.baseURL === undefined) {
+			options.model = 'whisper-1'
+		} else {
+			throw new Error(`A custom provider for the OpenAI Cloud API requires specifying a model name`)
+		}
+	}
+
 	const { default: OpenAI } = await import('openai')
 	const openai = new OpenAI(options)
 
 	logger.start('Encode audio to send')
 	const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('mp3')
 	const encodedAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions)
-	const audioAsWaveBlob = new FileLikeBlob([encodedAudio], 'audio', Date.now(), { type: 'audio/mpeg' })
+	const virtualFileStream = createVirtualFileReadStreamForBuffer(encodedAudio, 'audio.mp3')
 
-	logger.start('Request recognition from OpenAI Cloud API')
+	logger.start(options.baseURL ? `Send request to ${options.baseURL}` : 'Send request to OpenAI Cloud API')
 
 	let response: VerboseResponse
 
-	if (task =='transcribe') {
+	if (task == 'transcribe') {
+		const timestamp_granularities: ('word' | 'segment')[] | undefined =
+			options.requestWordTimestamps ? ['word', 'segment'] : undefined
+
 		response = await openai.audio.transcriptions.create({
-			file: audioAsWaveBlob,
-			model: options.model!,
+			file: virtualFileStream,
+			model: options.model,
 			language: languageCode,
 			prompt: options.prompt,
 			response_format: 'verbose_json',
 			temperature: options.temperature,
-			timestamp_granularities: ['word', 'segment']
-		}) as VerboseResponse
+			timestamp_granularities,
+		}) as any as VerboseResponse
 	} else if (task == 'translate') {
 		response = await openai.audio.translations.create({
-			file: audioAsWaveBlob,
-			model: options.model!,
+			file: virtualFileStream,
+			model: options.model,
 			prompt: options.prompt,
 			response_format: 'verbose_json',
 			temperature: options.temperature,
-		}) as VerboseResponse
+		}) as any as VerboseResponse
 	} else {
 		throw new Error(`Invalid task`)
 	}
 
-	const transcript = response.text
+	const transcript = response.text.trim()
 
 	let timeline: Timeline
 
@@ -57,28 +74,25 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			endTime: entry.end
 		}))
 	} else {
-		timeline = response.segments.map<TimelineEntry>(entry => ({
+		const segmentTimeline = response.segments.map<TimelineEntry>(entry => ({
 			type: 'segment',
 			text: entry.text,
 			startTime: entry.start,
 			endTime: entry.end
 		}))
+
+		if (task === 'transcribe') {
+			logger.start('Align segments')
+
+			timeline = await alignSegments(rawAudio, segmentTimeline, { language: languageCode })
+		} else {
+			timeline = segmentTimeline
+		}
 	}
 
 	logger.end()
 
 	return { transcript, timeline }
-}
-
-class FileLikeBlob extends Blob {
-	constructor(
-		public readonly parts: BlobPart[],
-		public readonly name: string,
-		public readonly lastModified: number,
-		options: BlobPropertyBag,
-	) {
-		super(parts, options)
-	}
 }
 
 interface VerboseResponse {
@@ -115,7 +129,7 @@ interface VerboseResponse {
 type Task = 'transcribe' | 'translate'
 
 export interface OpenAICloudSTTOptions {
-	model?: 'whisper-1'
+	model?: 'whisper-1' | string
 
 	apiKey?: string
 	organization?: string
@@ -126,6 +140,8 @@ export interface OpenAICloudSTTOptions {
 
 	timeout?: number
 	maxRetries?: number
+
+	requestWordTimestamps?: boolean
 }
 
 export const defaultOpenAICloudSTTOptions: OpenAICloudSTTOptions = {
@@ -133,10 +149,12 @@ export const defaultOpenAICloudSTTOptions: OpenAICloudSTTOptions = {
 	organization: undefined,
 	baseURL: undefined,
 
-	model: 'whisper-1',
+	model: undefined,
 	temperature: 0,
 	prompt: undefined,
 
 	timeout: undefined,
 	maxRetries: 10,
+
+	requestWordTimestamps: undefined,
 }
