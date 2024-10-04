@@ -648,10 +648,10 @@
         "small.en",
         "medium",
         "medium.en",
-        "large",
         "large-v1",
         "large-v2",
-        "large-v3"
+        "large-v3",
+        "large-v3-turbo"
       ]
     },
     "AdaptiveGateVADOptions": {
@@ -1002,7 +1002,6 @@
       "type": "string",
       "enum": [
         "cpu",
-        "cublas-11.8.0",
         "cublas-12.4.0",
         "custom"
       ]
@@ -1032,7 +1031,9 @@
         "large-v2",
         "large-v2-q5_0",
         "large-v3",
-        "large-v3-q5_0"
+        "large-v3-q5_0",
+        "large-v3-turbo",
+        "large-v3-turbo-q5_0"
       ]
     },
     "SourceSeparationOptions": {
@@ -1127,8 +1128,7 @@
       "type": "object",
       "properties": {
         "model": {
-          "type": "string",
-          "const": "whisper-1"
+          "type": "string"
         },
         "apiKey": {
           "type": "string"
@@ -1150,6 +1150,9 @@
         },
         "maxRetries": {
           "type": "number"
+        },
+        "requestWordTimestamps": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -1939,7 +1942,41 @@
     },
     "TextTranslationOptions": {
       "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "#/definitions/TextTranslationEngine"
+        },
+        "sourceLanguage": {
+          "type": "string"
+        },
+        "targetLanguage": {
+          "type": "string"
+        },
+        "languageDetection": {
+          "$ref": "#/definitions/TextLanguageDetectionOptions"
+        },
+        "nllb": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "googleTranslate": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "deepl": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
       "additionalProperties": false
+    },
+    "TextTranslationEngine": {
+      "type": "string",
+      "enum": [
+        "nllb",
+        "google-translate",
+        "deepl"
+      ]
     },
     "DenoisingOptions": {
       "type": "object",
