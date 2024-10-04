@@ -3,7 +3,7 @@ import { Logger } from "../utilities/Logger.js"
 import { Fragment, splitToFragments, splitToLines, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
 import { TranslationPair } from "../api/TextTranslation.js"
 import { getChromeOnWindowsHeaders, getChromeOnAndroidHeaders } from "../utilities/BrowserRequestHeaders.js"
-import { logToStderr } from "../utilities/Utilities.js"
+import { logToStderr, splitAndPreserveSeparators } from "../utilities/Utilities.js"
 import { getShortLanguageCode } from "../utilities/Locale.js"
 
 const log = logToStderr
@@ -13,6 +13,7 @@ export async function translateText(text: string, sourceLanguage: string, target
 
 	const maxTextLengthPerRequest = 2000
 
+	//const paragraphs = splitAndPreserveSeparators(text, /(\r?\n)(\r?\n)/g)
 	const paragraphs = splitToParagraphs(text, 'double', 'preserve')
 
 	const fragmentsForParagraph: Fragment[][] = []
@@ -92,7 +93,9 @@ export async function translateText(text: string, sourceLanguage: string, target
 		})
 	}
 
-	return translationPairs
+	const translatedText = translationPairs.map(pair => pair.translatedText).join('\n\n')
+
+	return { translationPairs, translatedText }
 }
 
 export async function translateText_MobileWeb(text: string, sourceLanguage: string, targetLanguage: string, tld = 'com') {
