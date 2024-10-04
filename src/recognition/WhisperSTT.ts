@@ -1524,13 +1524,15 @@ export class Whisper {
 
 		const logger = new Logger()
 
-		await logger.startAsync(`Create encoder inference session for model '${this.modelName}'`)
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.encoderExecutionProviders })
+
+		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${ onnxSessionOptions.executionProviders!.join(', ') }` : `default`
+
+		await logger.startAsync(`Create encoder inference session for model '${this.modelName}' (ONNX providers: ${onnxProvidersString})`)
 
 		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
 
 		const Onnx = await import('onnxruntime-node')
-
-		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.encoderExecutionProviders })
 
 		this.audioEncoder = await Onnx.InferenceSession.create(encoderFilePath, onnxSessionOptions)
 
@@ -1544,13 +1546,15 @@ export class Whisper {
 
 		const logger = new Logger()
 
-		await logger.startAsync(`Create decoder inference session for model '${this.modelName}'`)
+		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.decoderExecutionProviders })
+
+		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${onnxSessionOptions.executionProviders!.join(', ')}` : `default`
+
+		await logger.startAsync(`Create decoder inference session for model '${this.modelName}' (ONNX providers: ${onnxProvidersString})`)
 
 		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
 
 		const Onnx = await import('onnxruntime-node')
-
-		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.decoderExecutionProviders })
 
 		this.textDecoder = await Onnx.InferenceSession.create(decoderFilePath, onnxSessionOptions)
 
