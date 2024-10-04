@@ -175,6 +175,30 @@ Translates speech audio directly to a transcript in a different language (only E
 }
 ```
 
+## Text-to-text translation
+
+### `translateText(input, options)`
+
+Translates text to text.
+
+* `input`: string
+* `options`: text translation options object
+
+#### Returns (via promise):
+```ts
+{
+	text: string
+	translatedText: string
+
+	translationPairs: TranslationPair[]
+
+	sourceLanguage: string
+	targetLanguage: string
+}
+```
+
+`translationPairs` is an array of objects corresponding to individual segments of the text and their translations.
+
 ## Speech-to-translated-transcript alignment
 
 ### `alignTranslation(input, translatedTranscript, options)`

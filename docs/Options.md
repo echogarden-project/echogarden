@@ -141,24 +141,24 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
-* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3` (**Note**: large models aren't yet supported by `onnxruntime-node` due to their size). Defaults to `tiny` or `tiny.en`
+* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en` or `large-v3-turbo`. Defaults to `tiny` or `tiny.en`
 * `whisper.temperature`: temperature setting for the text decoder. Impacts the amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (`0.25` or lower) for best results. Defaults to `0.1`
 * `whisper.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
 * `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
-* `whisper.punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation symbols. Defaults to `0.2`
-* `whisper.autoPromptParts`: use previous part's recognized text as the prompt for the next part. Disabling this may help to prevent repetition carrying over between parts, in some cases. Defaults to `true`
+* `whisper.punctuationThreshold`: the minimal probability for a punctuation token, included in the top candidates, to be chosen unconditionally. A lower threshold encourages the model to output more punctuation characters. Defaults to `0.2`
+* `whisper.autoPromptParts`: use previous part's recognized text as the prompt for the next part. Disabling this may help to prevent repetition carrying over between parts, in some cases. Defaults to `true` (**Note**: currently always disabled for `large-v3-turbo` model due to an apparent issue with corrupt output when prompted)
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode for each audio part. Defaults to `250`
 * `whisper.suppressRepetition`: attempt to suppress decoding of repeating token patterns. Defaults to `true`
 * `whisper.repetitionThreshold`: minimal repetition / compressibility score to cause a part not to be auto-prompted to the next part. Defaults to `2.4`
 * `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens. Setting to `false` can reduce the occurrence of hallucinations and token repetition loops, possibly due to the overall reduction in the number of tokens decoded. This has no impact on the accuracy of timestamps, since they are derived independently using cross-attention weights. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
-* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu` or `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
-* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu` or `dml` (Windows only). Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`
+* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only) or `cuda` (Linux only). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
+* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu`, `dml` (Windows only) or `cuda` (Linux only). Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`, and on Windows, `dml` if available for larger models (`small`, `medium`, `large`)
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
 **Whisper.cpp**:
-* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`. Defaults to `base` or `base.en`
-* `whisperCpp.executablePath`: custom `whisper.cpp` executable path (currently required for macOS)
-* `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set `cpu`, `cublas-11.8.0`, `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-11.8.0`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
+* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`, `large-v3-turbo`, `large-v3-turbo-q5_0`. Defaults to `base` or `base.en`
+* `whisperCpp.executablePath`: a path to a custom `whisper.cpp` `main` executable (currently required for macOS)
+* `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set to `cpu` or `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
 * `whisperCpp.threadCount`: number of threads to use, defaults to `4`
 * `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the `whisper.cpp` CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
 * `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`
@@ -166,7 +166,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
 * `whisperCpp.repetitionThreshold`: minimal repetition / compressibility score to cause a decoded segment to be discarded. Defaults to `2.4`
 * `whisperCpp.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
-* `whisperCpp.enableDTW`: enable experimental `whisper.cpp` internal DTW-based token alignment to be used to derive timestamps. Defaults to `false` (recommended for now)
+* `whisperCpp.enableDTW`: enable `whisper.cpp`'s own experimental DTW-based token alignment to be used to derive timestamps. Defaults to `false` (highly recommended)
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
 
 **Vosk**:
@@ -194,9 +194,9 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **OpenAI Cloud**:
 * `openAICloud.apiKey`: API key (required)
-* `openAICloud.model`: model to use. Can only be `whisper-1`
+* `openAICloud.model`: model to use. When using the default provider (OpenAI), can only be `whisper-1`. For a custom provider, like Groq, see its documentation
 * `openAICloud.organization`: organization identifier. Optional
-* `openAICloud.baseURL`: override the default base URL used by the API. Optional
+* `openAICloud.baseURL`: override the default base URL used by the API. For example, set `https://api.groq.com/openai/v1` to use Groq's OpenAI compatible Whisper API instead. Optional
 * `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0`
 * `openAICloud.prompt`: initial prompt for the model. Optional
 * `openAICloud.timeout`: request timeout. Optional
@@ -264,6 +264,15 @@ Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 **OpenAI Cloud**:
 
 * `openAICloud`: prefix to provide options for OpenAI cloud. Same options as detailed in the recognition section above
+
+## Text-to-text translation
+
+Applies to CLI operation: `translate-text`, API method: `translateText`
+
+* `engine`: only `google-translate` supported
+* `sourceLanguage`: the source language code for the input text. Auto-detected if not set
+* `targetLanguage`: the target language code for the output text. Required
+* `languageDetection`: language detection options. Optional
 
 ## Speech-to-translated-transcript alignment
 

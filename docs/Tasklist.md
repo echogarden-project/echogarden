@@ -2,11 +2,6 @@
 
 ## Bugs
 
-### Alignment / DTW-RA
-
-* In DTW-RA, a recognized transcript including something like "Question 2.What does Juan", where "2.What" has a point in the middle, is breaking playback of the timeline
-
-### Synthesis
 
 ### eSpeak
 
@@ -24,6 +19,7 @@
 * `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
 * `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
 * `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
+* `espeak-ng`: Broken markers on the Korean voice
 * `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
 * `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
 * `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
@@ -255,15 +251,7 @@
 * Allow `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps (especially useful for Chinese and Japanese)
 
-### Translation
-* Add text-to-text translation with cloud translation APIs like Google Translate or DeepL, or offline models like OpenNMT or  NLLB-200
 
-### Translation alignment
-* Perform word-level alignment of text-to-text translations from and to any language (not just English) using methods like multilingual embeddings, or specialized models, and then use the text-based alignment to align speech in any recognized language, to its translated transcript in any language supported by the text-to-text alignment approach
-
-### Speech-to-text translation
-
-* Hybrid approach: recognize speech in its native language using any recognition model, then translate the resulting transcript using a text-to-text translation engine, and then align the translated transcript to the original one using text-to-text alignment, and map back to the original speech using the recognition timestamps, to get word-level alignment for the translated transcript
 
 ## Possible new engines or platforms
 

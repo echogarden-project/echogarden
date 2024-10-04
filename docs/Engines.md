@@ -5,7 +5,7 @@
 
 **Offline**:
 
-* [VITS](https://github.com/jaywalnut310/vits) (`vits`): end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently, there are 117 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxembourgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/)
+* [VITS](https://github.com/jaywalnut310/vits) (`vits`): end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently, there are 123 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxembourgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/)
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a legacy diphone-based synthesis engine. Supports English (US, UK), Spanish, Italian, French, and German
 * [Flite](https://github.com/festvox/flite) (`flite`): a legacy diphone-based synthesis engine. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi
 * [eSpeak-NG](https://github.com/espeak-ng/espeak-ng/) (`espeak`): a lightweight "robot" sounding formant-based synthesizer. Supports 100+ languages. Used internally for speech alignment, phonemization, and other internal tasks
@@ -58,7 +58,7 @@ These are commercial services that require a subscription and an API key to use:
 * [Google Cloud](https://cloud.google.com/speech-to-text) (`google-cloud`)
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/ai-services/speech-to-text/) (`microsoft-azure`)
 * [Amazon Transcribe](https://aws.amazon.com/transcribe/) (`amazon-transcribe`)
-* [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`): runs the `large-v2` Whisper model on the cloud
+* [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`): runs the `large-v2` Whisper model on the cloud. Allows setting a custom provider, like [Groq](https://console.groq.com/docs/api-reference#audio), to request from any OpenAI-compatible provider
 
 ## Speech-to-transcript alignment
 
@@ -68,7 +68,6 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 * Dynamic Time Warping with Recognition Assist (`dtw-ra`): recognition is applied to the audio (any recognition engine can be used), then both the ground-truth transcript and the recognized transcript are synthesized using eSpeak. Then, the best mapping is found between the two synthesized waveforms, using the DTW algorithm, and the result is remapped back to the original audio using the timing information produced by the recognizer
 * Whisper-based alignment (`whisper`): transcript is first tokenized, then, its tokens are decoded, in order, with a guided approach, using the Whisper model. The resulting token timestamps are then used to derive the timing for each word
 
-
 ## Speech-to-text translation
 
 **Offline**:
@@ -77,6 +76,12 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 
 **Cloud services**:
 * [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`): runs the `large-v2` Whisper model on the cloud. Only supports English as target
+
+## Text-to-text translation
+
+**Cloud services (unofficial)**:
+
+* Google Translate (`google-translate`): uses the [Google Translate mobile web UI](https://translate.google.com/m) to translate text from and to any one of its supported languages.
 
 ## Speech-to-translated-transcript alignment
 
