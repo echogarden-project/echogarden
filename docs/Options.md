@@ -196,12 +196,12 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `openAICloud.apiKey`: API key (required)
 * `openAICloud.model`: model to use. When using the default provider (OpenAI), can only be `whisper-1`. For a custom provider, like Groq, see its documentation
 * `openAICloud.organization`: organization identifier. Optional
-* `openAICloud.baseURL`: override the default base URL used by the API. For example, set `https://api.groq.com/openai/v1` to use Groq's OpenAI compatible Whisper API instead. Optional
+* `openAICloud.baseURL`: override the default endpoint used by the API. For example, set `https://api.groq.com/openai/v1` to use Groq's OpenAI-compatible API instead of the default one. Optional
 * `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0`
 * `openAICloud.prompt`: initial prompt for the model. Optional
 * `openAICloud.timeout`: request timeout. Optional
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
-
+* `openAICloud.requestWordTimestamps`: request word timestamps from the server. Defaults to `true` for the default OpenAI endpoint, and `false` if a custom one is set using `baseURL`
 
 ## Speech-to-transcript alignment
 
