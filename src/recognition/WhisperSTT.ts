@@ -1528,7 +1528,7 @@ export class Whisper {
 
 		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${ onnxSessionOptions.executionProviders!.join(', ') }` : `default`
 
-		await logger.startAsync(`Create encoder inference session for model '${this.modelName}' (ONNX providers: ${onnxProvidersString})`)
+		await logger.startAsync(`Create encoder inference session for model '${this.modelName}' (ONNX provider: ${onnxProvidersString})`)
 
 		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
 
@@ -1550,7 +1550,7 @@ export class Whisper {
 
 		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${onnxSessionOptions.executionProviders!.join(', ')}` : `default`
 
-		await logger.startAsync(`Create decoder inference session for model '${this.modelName}' (ONNX providers: ${onnxProvidersString})`)
+		await logger.startAsync(`Create decoder inference session for model '${this.modelName}' (ONNX provider: ${onnxProvidersString})`)
 
 		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
 
