@@ -586,30 +586,44 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 		events: [] as EspeakEvent[],
 	}
 
-	// Split fragments to chunks and process each chunk individually,
-	// and incrementally merge the chunks to the final result.
 	{
-		const maxFragmentsInChunk = 1000
+		// Split fragments to chunks, process each chunk individually,
+		// and incrementally merge the chunks to the final result.
+		
+		const maxCharactersInChunk = 1000
 
 		let timeOffset = 0
 
-		for (let startOffset = 0; startOffset < fragments.length; startOffset += maxFragmentsInChunk) {
-			const chunk = fragments.slice(startOffset, startOffset + maxFragmentsInChunk)
+		let currentChunk: string[] = []
+		let currentChunkCharacterCount = 0
 
-			const chunkResult = await Espeak.synthesizeFragments(chunk, espeakOptions)
+		for (let fragmentIndex = 0; fragmentIndex < fragments.length; fragmentIndex++) {
+			const fragment = fragments[fragmentIndex]
 
-			result.rawAudio = {
-				sampleRate: result.rawAudio.sampleRate,
-				audioChannels: concatAudioSegments([result.rawAudio.audioChannels, chunkResult.rawAudio.audioChannels])
+			currentChunk.push(fragment)
+			currentChunkCharacterCount += fragment.length
+
+			if (currentChunkCharacterCount >= maxCharactersInChunk || fragmentIndex === fragments.length - 1) {
+				// Process current chunk
+
+				const chunkResult = await Espeak.synthesizeFragments(currentChunk, espeakOptions)
+
+				result.rawAudio = {
+					sampleRate: result.rawAudio.sampleRate,
+					audioChannels: concatAudioSegments([result.rawAudio.audioChannels, chunkResult.rawAudio.audioChannels])
+				}
+
+				const chunkTimeline = addTimeOffsetToTimeline(chunkResult.timeline, timeOffset)
+
+				result.timeline = [...result.timeline, ...chunkTimeline]
+
+				result.events = [...result.events, ...chunkResult.events]
+
+				timeOffset += getRawAudioDuration(chunkResult.rawAudio)
+
+				currentChunk = []
+				currentChunkCharacterCount = 0
 			}
-
-			const chunkTimeline = addTimeOffsetToTimeline(chunkResult.timeline, timeOffset)
-
-			result.timeline = [...result.timeline, ...chunkTimeline]
-
-			result.events = [...result.events, ...chunkResult.events]
-
-			timeOffset += getRawAudioDuration(chunkResult.rawAudio)
 		}
 	}
 
