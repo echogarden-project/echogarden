@@ -4,7 +4,7 @@ import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { clip, convertHtmlToText, sha256AsHex, simplifyPunctuationCharacters, stringifyAndFormatJson, logToStderr, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
+import { clip, sha256AsHex, stringifyAndFormatJson, logToStderr, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
 import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -25,6 +25,8 @@ import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { type OpenAICloudTTSOptions  } from '../synthesis/OpenAICloudTTS.js'
 import { type ElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
+import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
+import { convertHtmlToText } from '../utilities/StringUtilities.js'
 
 const log = logToStderr
 

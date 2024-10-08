@@ -1,10 +1,10 @@
-import { concatFloat32Arrays, logToStderr, objToString, simplifyPunctuationCharacters } from '../utilities/Utilities.js'
+import { concatFloat32Arrays, logToStderr, formatObjectToString } from '../utilities/Utilities.js'
 import { int16PcmToFloat32 } from '../audio/AudioBufferConversion.js'
 import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { playAudioWithTimelinePhones } from '../audio/AudioPlayer.js'
-import { getNormalizedFragmentsForSpeech } from '../nlp/TextNormalizer.js'
+import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
 import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
@@ -276,11 +276,11 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
-					throw new Error(`Word start marker for index ${wordIndex} is not consistent with word index. The words were: ${objToString(fragments)}`)
+					throw new Error(`Word start marker for index ${wordIndex} is not consistent with word index. The words were: ${formatObjectToString(fragments)}`)
 				}
 
 				if (currentPhoneTimeline.length > 0) {
-					throw new Error(`Word entry ${wordIndex} already has phones before its start marker was seen. The words were: ${objToString(fragments)}`)
+					throw new Error(`Word entry ${wordIndex} already has phones before its start marker was seen. The words were: ${formatObjectToString(fragments)}`)
 				}
 
 				currentWordEntry.startTime = eventTime
@@ -289,7 +289,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 				const markerIndex = parseInt(markerName.substring(2))
 
 				if (markerIndex != wordIndex) {
-					throw new Error(`Word end marker for index ${wordIndex} is not consistent with word index. The words were: ${objToString(fragments)}`)
+					throw new Error(`Word end marker for index ${wordIndex} is not consistent with word index. The words were: ${formatObjectToString(fragments)}`)
 				}
 
 				currentWordEntry.startTime = currentTokenTimeline[0].startTime

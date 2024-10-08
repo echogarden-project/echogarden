@@ -1,10 +1,11 @@
 import * as CldrSegmentation from 'cldr-segmentation'
 import { splitChineseTextToWords_Jieba } from './ChineseSegmentation.js'
 
-import { sumArray, includesAnyOf, indexOfAnyOf, logToStderr } from '../utilities/Utilities.js'
+import { sumArray, logToStderr } from '../utilities/Utilities.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
+import { includesAnyOf, indexOfAnyOf } from '../utilities/StringUtilities.js'
 
 const log = logToStderr
 

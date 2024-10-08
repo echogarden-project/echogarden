@@ -1,11 +1,11 @@
 import * as readline from 'node:readline'
 import { IncomingMessage } from 'node:http'
-import { inspect } from 'node:util'
 
 import { RandomGenerator } from './RandomGenerator.js'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
-import { ChildProcessWithoutNullStreams, exec } from 'node:child_process'
+import { ChildProcessWithoutNullStreams } from 'node:child_process'
+import { inspect } from 'node:util'
 
 const log = logToStderr
 
@@ -50,31 +50,6 @@ export function shuffleArrayInPlace<T>(array: T[], randomGen: RandomGenerator) {
 	return array
 }
 
-export function simplifyPunctuationCharacters(text: string) {
-	return text
-		.replaceAll(`“`, `"`)
-		.replaceAll(`”`, `"`)
-		.replaceAll(`„`, `"`)
-		.replaceAll(`ߵ`, `"`)
-		.replaceAll(`ߴ`, `"`)
-		.replaceAll(`«`, `"`)
-		.replaceAll(`»`, `"`)
-
-		.replaceAll(`’`, `'`)
-		.replaceAll(`ʼ`, `'`)
-		.replaceAll(`ʼ`, `'`)
-		.replaceAll(`＇`, `'`)
-		.replaceAll(`，`, `,`)
-		.replaceAll(`、`, `,`)
-		.replaceAll(`：`, `:`)
-		.replaceAll(`；`, `;`)
-		.replaceAll(`。`, `.`)
-
-		.replaceAll(`？`, `?`)
-		.replaceAll(`！`, `!`)
-		.replaceAll(`؟`, `?`)
-}
-
 export function writeToStderr(message: any) {
 	process.stderr.write(message)
 }
@@ -83,7 +58,7 @@ export function printToStderr(message: any) {
 	if (typeof message == 'string') {
 		writeToStderr(message)
 	} else {
-		writeToStderr(objToString(message))
+		writeToStderr(formatObjectToString(message))
 	}
 }
 
@@ -92,7 +67,7 @@ export function logToStderr(message: any) {
 	writeToStderr('\n')
 }
 
-export function objToString(obj: any) {
+export function formatObjectToString(obj: any) {
 	const formattedString = inspect(obj, {
 		showHidden: false,
 		depth: null,
@@ -137,32 +112,6 @@ export function sumArray<T>(arr: Array<T>, valueGetter: (item: T) => number) {
 	}
 
 	return sum
-}
-
-export function includesAnyOf(str: string, substrings: string[]) {
-	return indexOfAnyOf(str, substrings) >= 0
-}
-
-export function indexOfAnyOf(str: string, substrings: string[]) {
-	for (const substring of substrings) {
-		const index = str.indexOf(substring)
-
-		if (index >= 0) {
-			return index
-		}
-	}
-
-	return -1
-}
-
-export function startsWithAnyOf(str: string, prefixes: string[]) {
-	for (const prefix of prefixes) {
-		if (str.startsWith(prefix)) {
-			return true
-		}
-	}
-
-	return false
 }
 
 export function roundToDigits(val: number, digits = 3) {
@@ -217,26 +166,6 @@ export function secondsToMS(totalSeconds: number) {
 	return { minutes: (hours * 60) + minutes, seconds, milliseconds }
 }
 
-export function formatHMS(timeHMS: { hours: number, minutes: number, seconds: number, milliseconds: number }, decimalSeparator = '.') {
-	return `${formatIntegerWithLeadingZeros(timeHMS.hours, 2)}:${formatIntegerWithLeadingZeros(timeHMS.minutes, 2)}:${formatIntegerWithLeadingZeros(timeHMS.seconds, 2)}${decimalSeparator}${formatIntegerWithLeadingZeros(timeHMS.milliseconds, 3)}`
-}
-
-export function formatMS(timeMS: { minutes: number, seconds: number, milliseconds: number }, decimalSeparator = '.') {
-	return `${formatIntegerWithLeadingZeros(timeMS.minutes, 2)}:${formatIntegerWithLeadingZeros(timeMS.seconds, 2)}${decimalSeparator}${formatIntegerWithLeadingZeros(timeMS.milliseconds, 3)}`
-}
-
-export function formatIntegerWithLeadingZeros(num: number, minDigitCount: number) {
-	num = Math.floor(num)
-
-	let numAsString = `${num}`
-
-	while (numAsString.length < minDigitCount) {
-		numAsString = `0${numAsString}`
-	}
-
-	return numAsString
-}
-
 export function intsInRange(start: number, end: number) {
 	const result: number[] = []
 
@@ -245,34 +174,6 @@ export function intsInRange(start: number, end: number) {
 	}
 
 	return result
-}
-
-export function randomIntsInRange(count: number, min: number, max: number) {
-	const randomArray: number[] = []
-
-	for (let i = 0; i < count; i++) {
-		randomArray.push(randomIntInRange(min, max))
-	}
-
-	return randomArray
-}
-
-export function randomIntInRange(min: number, max: number) {
-	return Math.floor(randomFloatInRange(min, max))
-}
-
-export function randomFloatsInRange(count: number, min = 0.0, max = 1.0) {
-	const randomVector: number[] = []
-
-	for (let i = 0; i < count; i++) {
-		randomVector.push(randomFloatInRange(min, max))
-	}
-
-	return randomVector
-}
-
-export function randomFloatInRange(min: number, max: number) {
-	return min + Math.random() * (max - min)
 }
 
 export function serializeMapToObject<V>(map: Map<string, V>) {
@@ -403,30 +304,6 @@ export async function commandExists(command: string) {
 	}
 }
 
-export async function convertHtmlToText(html: string) {
-	const { htmlToText } = await import('html-to-text')
-
-	const text = htmlToText(html, {
-		wordwrap: false,
-
-		selectors: [
-			{ selector: 'a', options: { ignoreHref: true } },
-			{ selector: 'img', format: 'skip' },
-			{ selector: 'h1', options: { uppercase: false } },
-			{ selector: 'h2', options: { uppercase: false } },
-			{ selector: 'h3', options: { uppercase: false } },
-			{ selector: 'h4', options: { uppercase: false } },
-			{ selector: 'table', options: { uppercaseHeaderCells: false } }
-		]
-	})
-
-	return text || ''
-}
-
-export function formatListWithQuotedElements(strings: string[], quoteSymbol = `'`) {
-	return strings.map(str => `${quoteSymbol}${str}${quoteSymbol}`).join(', ')
-}
-
 export async function resolveModuleMainPath(moduleName: string) {
 	const { resolve } = await import('import-meta-resolve')
 	const { fileURLToPath } = await import('url')
@@ -461,70 +338,6 @@ export function splitFilenameOnExtendedExtension(filenameWithExtension: string) 
 	const ext = filenameWithExtension.slice(splitPoint + 1)
 
 	return [name, ext]
-}
-
-export function getUTF32Chars(str: string) {
-	const utf32chars: string[] = []
-	const mapping: number[] = []
-
-	let utf32Index = 0
-
-	for (const utf32char of str) {
-		utf32chars.push(utf32char)
-
-		for (let i = 0; i < utf32char.length; i++) {
-			mapping.push(utf32Index)
-		}
-
-		utf32Index += 1
-	}
-
-	mapping.push(utf32Index)
-
-	return { utf32chars, mapping }
-}
-
-export function getTokenRepetitionScore(tokens: string[] | number[]) {
-	const maxCycleLength = Math.floor(tokens.length / 2)
-
-	const matchLengthForCycleLength: number[] = [0]
-
-	for (let cycleLength = 1; cycleLength <= maxCycleLength; cycleLength++) {
-		let matchCount = 0
-
-		for (let leftIndex = cycleLength; leftIndex < tokens.length; leftIndex++) {
-			const referenceIndex = leftIndex - cycleLength
-
-			if (tokens[leftIndex] !== tokens[referenceIndex]) {
-				break
-			}
-
-			matchCount += 1
-		}
-
-		const score = matchCount
-
-		matchLengthForCycleLength.push(score)
-	}
-
-	let longestMatch = -Infinity
-	let longestCycleRepetition = -Infinity
-
-	for (let i = 1; i <= matchLengthForCycleLength.length; i++) {
-		const matchLength = matchLengthForCycleLength[i]
-
-		if (matchLength > longestMatch) {
-			longestMatch = matchLength
-		}
-
-		const cycleCount = (matchLength / i) + 1
-
-		if (cycleCount > longestCycleRepetition) {
-			longestCycleRepetition = cycleCount
-		}
-	}
-
-	return { longestMatch, longestCycleRepetition }
 }
 
 export async function resolveModuleScriptPath(moduleName: string) {
@@ -610,49 +423,3 @@ export function getIntegerRange(start: number, end: number): number[] {
 	return result
 }
 
-export function containsInvalidCodepoint(str: string) {
-	for (const char of str) {
-		if (char.codePointAt(0) === 65533) {
-			return true
-		}
-	}
-
-	return false
-}
-
-export function splitAndPreserveSeparators(text: string, separatorRegex: RegExp): string[] {
-	if (!separatorRegex.flags.includes('g')) {
-		throw new Error('RegExp must be global')
-	}
-
-	// Use the match method to find all matches for the separators
-	const matches = text.match(separatorRegex)
-
-	// If no matches are found, return the original text as a single element array
-	if (!matches) {
-		return [text]
-	}
-
-	// Initialize the result array
-	const result: string[] = []
-
-	// Initialize the start position
-	let lastIndex = 0
-
-	// Iterate through the matches
-	matches.forEach(match => {
-		// Get the index of the current match
-		const matchIndex = text.indexOf(match, lastIndex)
-
-		// Add the substring before the match to the result, joined with the match itself
-		result.push(text.substring(lastIndex, matchIndex) + match)
-
-		// Update the last index to the end of the current match
-		lastIndex = matchIndex + match.length
-	})
-
-	// Add the remaining substring after the last match to the result
-	result.push(text.substring(lastIndex))
-
-	return result
-}

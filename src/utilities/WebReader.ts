@@ -2,8 +2,8 @@ import { Readability } from '@mozilla/readability'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { request } from 'gaxios'
 import { Logger } from './Logger.js'
-import { convertHtmlToText } from './Utilities.js'
 import { getChromeOnWindowsHeaders } from './BrowserRequestHeaders.js'
+import { convertHtmlToText } from './StringUtilities.js'
 
 export async function fetchDocumentText(url: string) {
 	const progressLogger = new Logger()

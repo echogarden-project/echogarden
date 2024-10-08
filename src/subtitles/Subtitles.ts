@@ -1,11 +1,12 @@
 import { htmlToText } from 'html-to-text'
 
-import { formatHMS, formatMS, secondsToHMS, secondsToMS, startsWithAnyOf } from '../utilities/Utilities.js'
+import { secondsToHMS, secondsToMS } from '../utilities/Utilities.js'
 import { isWord, isWordOrSymbolWord } from '../nlp/Segmentation.js'
 import { charactersToWriteAhead } from '../audio/AudioPlayer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { readFile } from '../utilities/FileSystem.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
+import { formatHMS, formatMS, startsWithAnyOf } from '../utilities/StringUtilities.js'
 
 export async function subtitlesFileToText(filename: string) {
 	return subtitlesToText(await readFile(filename, 'utf8'))

@@ -1,7 +1,8 @@
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
 import { applyWhitespaceProcessing, isWord, isWordOrSymbolWord, splitToParagraphs, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
 import { deepClone } from './ObjectUtilities.js'
-import { getUTF32Chars, roundToDigits, splitAndPreserveSeparators } from './Utilities.js'
+import { getUTF32Chars, splitAndPreserveSeparators } from './StringUtilities.js'
+import { roundToDigits } from './Utilities.js'
 
 export function addTimeOffsetToTimeline(targetTimeline: Timeline, timeOffset: number) {
 	if (!targetTimeline) {

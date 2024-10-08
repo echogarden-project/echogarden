@@ -1,4 +1,5 @@
 import { getShortLanguageCode } from '../utilities/Locale.js'
+import { substituteCharactersUsingLookup } from '../utilities/StringUtilities.js'
 
 export function getNormalizedFragmentsForSpeech(words: string[], language: string) {
 	language = getShortLanguageCode(language)
@@ -157,4 +158,63 @@ export function normalizeFourDigitDecadeString(decadeString: string) {
 	}
 
 	return normalizedString
+}
+
+export function simplifyPunctuationCharacters(text: string) {
+	return substituteCharactersUsingLookup(text, punctuationSubstitutionLookup)
+}
+
+export const punctuationSubstitutionLookup: Record<string, string> = {
+	'“': `"`,
+	'”': `"`,
+	'‟': `"`,
+	'ˮ': `"`,
+	'„': `"`,
+	'‹': `"`,
+	'›': `"`,
+	'❮': `"`,
+	'❯': '"',
+	'«': `"`,
+	'»': `"`,
+	'״': `"`,
+	'❝': `"`,
+	'❞': `"`,
+	'🙶': `"`,
+	'🙷': `"`,
+	'⹂': `"`,
+	'〝': `"`,
+	'〞': `"`,
+	'〟': `"`,
+	'＂': `"`,
+	'❠': `"`,
+	'🙸': `"`,
+
+	'ߵ': `'`,
+	'ߴ': `'`,
+	'’': `'`,
+	'‘': `'`,
+	'ʹ': `'`,
+	'ʼ': `'`,
+	'＇': `'`,
+	'ʻ': `'`,
+	'՚': `'`,
+	'՛': `'`,
+	'❛': `'`,
+	'❜': `'`,
+	'❟': `'`,
+
+	'，': `,`,
+	'、': `,`,
+
+	'：': `:`,
+
+	'；': `;`,
+
+	'。': `.`,
+
+	'？': `?`,
+	'؟': `?`,
+
+	'！': `!`,
+	'¡': `!`,
 }

@@ -4,7 +4,7 @@ import { Logger } from './Logger.js'
 export async function parseWikipediaArticle(articleName: string, language: string) {
 	const logger = new Logger()
 
-	logger.startAsync('Fetching Wikipedia article')
+	await logger.startAsync('Fetching Wikipedia article')
 
 	const { default: wtf } = await import('wtf_wikipedia')
 
