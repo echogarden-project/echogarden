@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { parseCLIArguments } from './CLIParser.js'
-import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements, getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
+import { getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchema.js'
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
@@ -26,6 +26,7 @@ import { OpenPromise } from '../utilities/OpenPromise.js'
 import JSON5 from 'json5'
 import { getLowercaseFileExtension, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
+import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements } from '../utilities/StringUtilities.js'
 
 //const log = logToStderr
 
@@ -1049,7 +1050,7 @@ export async function translateText(operationData: CLIOperationData) {
 	} else if (inputFileExtension == 'srt' || inputFileExtension == 'vtt') {
 		inputText = subtitlesToText(inputFileContent)
 	} else {
-		throw new Error(`align only supports reference files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
+		throw new Error(`translate-text only supports input files with extensions 'txt', 'html', 'htm', 'srt' or 'vtt'`)
 	}
 
 	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TextTranslationOptions')
@@ -1066,7 +1067,7 @@ export async function translateText(operationData: CLIOperationData) {
 
 		sourceLanguage,
 		targetLanguage,
-	} = await API.translateText(inputFileContent, options)
+	} = await API.translateText(inputText, options)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')

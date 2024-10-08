@@ -1,35 +1,55 @@
 import { request } from "gaxios"
 import { Logger } from "../utilities/Logger.js"
-import { Fragment, splitToFragments, splitToLines, splitToParagraphs, splitToSentences } from "../nlp/Segmentation.js"
+import { Fragment, splitToFragments, splitToLines } from "../nlp/Segmentation.js"
 import { TranslationPair } from "../api/TextTranslation.js"
 import { getChromeOnWindowsHeaders, getChromeOnAndroidHeaders } from "../utilities/BrowserRequestHeaders.js"
-import { logToStderr, splitAndPreserveSeparators } from "../utilities/Utilities.js"
+import { logToStderr } from "../utilities/Utilities.js"
 import { getShortLanguageCode } from "../utilities/Locale.js"
+import { PlainTextOptions } from "../api/Common.js"
+import { extendDeep } from "../utilities/ObjectUtilities.js"
+import { splitAndPreserveSeparators } from "../utilities/StringUtilities.js"
 
 const log = logToStderr
 
-export async function translateText(text: string, sourceLanguage: string, targetLanguage: string, tld = 'com') {
+export async function translateText(
+	text: string,
+	sourceLanguage: string,
+	targetLanguage: string,
+	plainTextOptions: PlainTextOptions,
+	options: GoogleTranslateTextTranslationOptions) {
+
 	const logger = new Logger()
 
-	const maxTextLengthPerRequest = 2000
+	if (!supportsLanguage(sourceLanguage)) {
+		throw new Error(`Language code ${sourceLanguage} is not supported by the Google Translate engine. Supported language codes are ${supportedLanguageCodes.join(', ')}`)
+	}
 
-	//const paragraphs = splitAndPreserveSeparators(text, /(\r?\n)(\r?\n)/g)
-	const paragraphs = splitToParagraphs(text, 'double', 'preserve')
+	if (!supportsLanguage(targetLanguage)) {
+		throw new Error(`Language code ${sourceLanguage} is not supported by the Google Translate engine. Supported language codes are ${supportedLanguageCodes.join(', ')}`)
+	}
+
+	options = extendDeep(defaultGoogleTranslateTextTranslationOptions, options)
+
+	const maxCharactersPerPart = options.maxCharactersPerPart!
+
+	const paragraphSeperatorPattern = plainTextOptions.paragraphBreaks === 'double' ? /(\r?\n)(\r?\n)+/g : /(\r?\n)+/g
+
+	const paragraphs = splitAndPreserveSeparators(text, paragraphSeperatorPattern)
 
 	const fragmentsForParagraph: Fragment[][] = []
 
 	for (const paragraph of paragraphs) {
-		const fragments = await splitToFragments(paragraph, maxTextLengthPerRequest, getShortLanguageCode(sourceLanguage))
+		const fragments = await splitToFragments(paragraph, maxCharactersPerPart, getShortLanguageCode(sourceLanguage))
 
 		fragmentsForParagraph.push(fragments)
 	}
 
-	const fragmentBundles: Fragment[][] = [[]]
+	const parts: Fragment[][] = [[]]
 
-	function totalLengthOfLastBundle() {
+	function totalLengthOfLastPart() {
 		let total = 0
 
-		for (const fragment of fragmentBundles[fragmentBundles.length - 1]) {
+		for (const fragment of parts[parts.length - 1]) {
 			total += fragment.length
 		}
 
@@ -42,14 +62,14 @@ export async function translateText(text: string, sourceLanguage: string, target
 		const fragments = fragmentsForParagraph[paragraphIndex]
 
 		for (const fragment of fragments) {
-			let lastBundle = fragmentBundles[fragmentBundles.length - 1]
+			let lastPart = parts[parts.length - 1]
 
-			if (totalLengthOfLastBundle() + fragment.length > maxTextLengthPerRequest) {
-				lastBundle = []
-				fragmentBundles.push(lastBundle)
+			if (totalLengthOfLastPart() + fragment.length > maxCharactersPerPart) {
+				lastPart = []
+				parts.push(lastPart)
 			}
 
-			lastBundle.push(fragment)
+			lastPart.push(fragment)
 
 			fragmentToParagraphIndex.set(fragment, paragraphIndex)
 		}
@@ -57,25 +77,25 @@ export async function translateText(text: string, sourceLanguage: string, target
 
 	const translatedFragmentsForParagraphs = paragraphs.map(_ => [] as string[])
 
-	for (let fragmentBundleIndex = 0; fragmentBundleIndex < fragmentBundles.length; fragmentBundleIndex++) {
-		const bundle = fragmentBundles[fragmentBundleIndex]
+	for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+		const part = parts[partIndex]
 
-		const joinedBundle = bundle.map(x => x.text.replaceAll('|', ' ')).join(` | `)
+		const joinedFragmentsInPart = part.map(x => x.text.replaceAll('|', ' ')).join(`\n|\n`)
 
-		logger.logTitledMessage(`\nTranslate part ${fragmentBundleIndex + 1} of ${fragmentBundles.length}`, joinedBundle)
+		logger.logTitledMessage(`\nTranslate part ${partIndex + 1} of ${parts.length}`, joinedFragmentsInPart.replaceAll('\n|\n', ''))
 
 		logger.start(`Request translation from Google Translate`)
-		const fragmentTranslationPair = await translateText_MobileWeb(joinedBundle, sourceLanguage, targetLanguage)
+		const fragmentTranslationPair = await translateText_MobileWeb(joinedFragmentsInPart, sourceLanguage, targetLanguage, options)
 		logger.end()
 
-		const translatedTextForBundle = fragmentTranslationPair[0].translatedText
+		const translatedTextForPart = fragmentTranslationPair[0].translatedText
 
-		logger.logTitledMessage(`Translated part`, `"${translatedTextForBundle}"`)
+		logger.logTitledMessage(`Translated part`, `"${translatedTextForPart.replaceAll(' | ', '\n') }"`)
 
-		const splitTranslation = translatedTextForBundle.split(`|`)
+		const splitTranslation = translatedTextForPart.split(`|`)
 
-		for (let fragmentIndex = 0; fragmentIndex < bundle.length; fragmentIndex++) {
-			const fragment = bundle[fragmentIndex]
+		for (let fragmentIndex = 0; fragmentIndex < part.length; fragmentIndex++) {
+			const fragment = part[fragmentIndex]
 			const translatedFragment = splitTranslation[fragmentIndex].trim()
 
 			const paragraphIndex = fragmentToParagraphIndex.get(fragment)!
@@ -87,18 +107,46 @@ export async function translateText(text: string, sourceLanguage: string, target
 	const translationPairs: TranslationPair[] = []
 
 	for (let paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex++) {
+		const sourceParagraph = paragraphs[paragraphIndex]
+		const translatedParagraph = translatedFragmentsForParagraphs[paragraphIndex].join(' ')
+
+		let translatedParagraphWithWhitespace = ''
+
+		const sourceParagraphLeadingWhitespaceMatches = sourceParagraph.match(/^\s+/)
+
+		if (sourceParagraphLeadingWhitespaceMatches) {
+			translatedParagraphWithWhitespace += sourceParagraphLeadingWhitespaceMatches[0]
+		}
+
+		translatedParagraphWithWhitespace += translatedParagraph
+
+		const sourceParagraphTrailingWhitespaceMatches = sourceParagraph.match(/\s+$/)
+
+		if (sourceParagraphTrailingWhitespaceMatches) {
+			translatedParagraphWithWhitespace += sourceParagraphTrailingWhitespaceMatches[0]
+		}
+
 		translationPairs.push({
 			sourceText: paragraphs[paragraphIndex],
-			translatedText: translatedFragmentsForParagraphs[paragraphIndex].join(' ')
+			translatedText: translatedParagraphWithWhitespace,
 		})
 	}
 
-	const translatedText = translationPairs.map(pair => pair.translatedText).join('\n\n')
+	const translatedParagraphs = translationPairs.map(pair => pair.translatedText)
+
+	const translatedText = translatedParagraphs.join('')
 
 	return { translationPairs, translatedText }
 }
 
-export async function translateText_MobileWeb(text: string, sourceLanguage: string, targetLanguage: string, tld = 'com') {
+export async function translateText_MobileWeb(
+	text: string,
+	sourceLanguage: string,
+	targetLanguage: string,
+	options: GoogleTranslateTextTranslationOptions) {
+
+	const tld = options.tld
+
 	const logger = new Logger()
 
 	logger.start(`Request translation from Google Translate`)
@@ -419,11 +467,11 @@ function normalizeLanguageCodeForGoogleTranslate(languageCode: string) {
 }
 
 export function supportsLanguage(langCode: string) {
-	return supportedLanguages.includes(normalizeLanguageCodeForGoogleTranslate(langCode))
+	return supportedLanguageCodes.includes(normalizeLanguageCodeForGoogleTranslate(langCode))
 }
 
 // 243 Languages supported
-export const supportedLanguages = [
+export const supportedLanguageCodes = [
 	'ab', // Abkhaz
 	'ace', // Acehnese
 	'ach', // Acholi
@@ -464,6 +512,7 @@ export const supportedLanguages = [
 	'ch', // Chamorro
 	'ce', // Chechen
 	'ny', // Chichewa
+	'zh', // Chinese (same as zh-CN)
 	'zh-CN', // Chinese (Simplified)
 	'zh-TW', // Chinese (Traditional)
 	'chk', // Chuukese
@@ -505,6 +554,7 @@ export const supportedLanguages = [
 	'cnh', // Hakha Chin
 	'ha', // Hausa
 	'haw', // Hawaiian
+	'he', // Hebrew
 	'iw', // Hebrew
 	'hil', // Hiligaynon
 	'hi', // Hindi
@@ -520,6 +570,7 @@ export const supportedLanguages = [
 	'it', // Italian
 	'jam', // Jamaican Patois
 	'ja', // Japanese
+	'jv', // Javanese
 	'jw', // Javanese
 	'kac', // Jingpo
 	'kl', // Kalaallisut
@@ -668,3 +719,13 @@ export const supportedLanguages = [
 	'zap', // Zapotec
 	'zu', // Zulu
 ]
+
+export interface GoogleTranslateTextTranslationOptions {
+	tld?: string
+	maxCharactersPerPart?: number
+}
+
+export const defaultGoogleTranslateTextTranslationOptions: GoogleTranslateTextTranslationOptions = {
+	tld: 'com',
+	maxCharactersPerPart: 2000,
+}

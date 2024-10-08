@@ -3,6 +3,7 @@ import { formatLanguageCodeWithName, normalizeIdentifierToLanguageCode, parseLan
 import { Logger } from '../utilities/Logger.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import * as API from './API.js'
+import { defaultGoogleTranslateTextTranslationOptions, type GoogleTranslateTextTranslationOptions } from '../text-translation/GoogleTranslateTextTranslation.js'
 
 export async function translateText(inputText: string, options: TextTranslationOptions): Promise<TextTranslationResult> {
 	const logger = new Logger()
@@ -43,7 +44,7 @@ export async function translateText(inputText: string, options: TextTranslationO
 
 			logger.end()
 
-			logger.logTitledMessage(`Warning`, `The nllb engine is currently an early prototype implementation and doesn't work correctly.`, chalk.yellow, 'warning')
+			logger.logTitledMessage(`Warning`, `The nllb text translation engine is currently a work-in-progress and doesn't work correctly.`, chalk.yellow, 'warning')
 
 			translationPairs = await NLLBTextTranslation.translateText(inputText, options.sourceLanguage, options.targetLanguage)
 
@@ -63,9 +64,11 @@ export async function translateText(inputText: string, options: TextTranslationO
 		case 'google-translate': {
 			const GoogleTranslateTextTranslation = await import('../text-translation/GoogleTranslateTextTranslation.js')
 
+			const googleTranslateOptions = options.googleTranslate!
+
 			logger.end();
 
-			({ translationPairs, translatedText } = await GoogleTranslateTextTranslation.translateText(inputText, options.sourceLanguage, options.targetLanguage))
+			({ translationPairs, translatedText } = await GoogleTranslateTextTranslation.translateText(inputText, options.sourceLanguage, options.targetLanguage, options.plainText!, googleTranslateOptions))
 
 			break
 		}
@@ -75,7 +78,7 @@ export async function translateText(inputText: string, options: TextTranslationO
 
 			logger.end()
 
-			logger.logTitledMessage(`Warning`, `The deepl engine is currently an early prototype implementation and doesn't work correctly.`, chalk.yellow, 'warning')
+			logger.logTitledMessage(`Warning`, `The deepl text translation engine is currently a work-in-progress and doesn't work correctly.`, chalk.yellow, 'warning')
 
 			translationPairs = await DeepLTextTranslation.translateText(inputText, options.sourceLanguage, options.targetLanguage)
 			translatedText = ''
@@ -113,11 +116,12 @@ export interface TextTranslationOptions {
 
 	languageDetection?: API.TextLanguageDetectionOptions
 
+	plainText?: API.PlainTextOptions
+
 	nllb?: {
 	},
 
-	googleTranslate?: {
-	},
+	googleTranslate?: GoogleTranslateTextTranslationOptions,
 
 	deepl?: {
 	},
@@ -148,11 +152,15 @@ export const defaultTextTranslationOptions: TextTranslationOptions = {
 
 	languageDetection: undefined,
 
+	plainText: {
+		paragraphBreaks: 'double',
+		whitespace: 'preserve'
+	},
+
 	nllb: {
 	},
 
-	googleTranslate: {
-	},
+	googleTranslate: defaultGoogleTranslateTextTranslationOptions,
 
 	deepl: {
 	},
@@ -162,7 +170,7 @@ export const textTranslationEngines: API.EngineMetadata[] = [
 	{
 		id: 'nllb',
 		name: 'NLLB',
-		description: 'No Language Left Behind (NLLB) is a deep learning machine translation model by Facebook Research (early prototype implementation).',
+		description: 'No Language Left Behind (NLLB) is a deep learning machine translation model by Facebook Research (work-in-progress, do not use).',
 		type: 'local'
 	},
 	{
@@ -174,7 +182,7 @@ export const textTranslationEngines: API.EngineMetadata[] = [
 	{
 		id: 'deepl',
 		name: 'DeepL',
-		description: 'Unoffical text translation API used by the DeepL web interface (early prototype implementation).',
+		description: 'Unoffical text translation API used by the DeepL web interface (work-in-progress, do not use).',
 		type: 'cloud'
 	},
 ]
