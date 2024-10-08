@@ -1,17 +1,9 @@
 import type * as Onnx from 'onnxruntime-node'
 
 export function getOnnxSessionOptions(options: OnnxSessionOptions) {
-
 	const onnxOptions: Onnx.InferenceSession.SessionOptions = {
 		executionProviders: ['cpu'],
 		logSeverityLevel: 3,
-	}
-
-	function dmlProviderAvailable() {
-		const platform = process.platform
-		const arch = process.arch
-
-		return platform === 'win32' && arch === 'x64'
 	}
 
 	if (options) {
@@ -52,6 +44,13 @@ export function makeOnnxLikeFloat32Tensor(onnxTensor: Onnx.Tensor): OnnxLikeFloa
 		data: (onnxTensor.data as Float32Array).slice(),
 		dims: onnxTensor.dims.slice()
 	}
+}
+
+export function dmlProviderAvailable() {
+	const platform = process.platform
+	const arch = process.arch
+
+	return platform === 'win32' && arch === 'x64'
 }
 
 export interface OnnxLikeFloat32Tensor {

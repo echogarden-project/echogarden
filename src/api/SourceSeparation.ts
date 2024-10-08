@@ -7,12 +7,13 @@ import chalk from 'chalk';
 import { readdir } from '../utilities/FileSystem.js';
 import path from 'node:path';
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js';
+import { getProfileForMDXNetModelName, MDXNetModelName } from '../source-separation/MDXNetSourceSeparation.js';
 
 export async function isolate(input: AudioSourceParam, options: SourceSeparationOptions): Promise<SourceSeparationResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
 
-	logger.start('Prepare for source separation')
+	await logger.startAsync('Prepare for source separation')
 
 	const inputRawAudio = await ensureRawAudio(input)
 
@@ -27,7 +28,8 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 			const mdxNetOptions = options.mdxNet!
 
-			const executionProviders: OnnxExecutionProvider[] = mdxNetOptions.executionProvider ? [mdxNetOptions.executionProvider] : []
+			const executionProviders: OnnxExecutionProvider[] =
+				mdxNetOptions.provider ? [mdxNetOptions.provider] : MDXNetSourceSeparation.getDefaultMDXNetProviders()
 
 			const packageDir = await loadPackage(`mdxnet-${mdxNetOptions.model!}`)
 			const modelFilename = (await readdir(packageDir)).filter(name => name.endsWith('onnx'))[0]
@@ -38,16 +40,20 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 			const modelPath = path.join(packageDir, modelFilename)
 
-			logger.end()
+			await logger.startAsync(`Convert audio to 44.1 kHz stereo`)
 
-			const audioStereo44100 = await ensureRawAudio(inputRawAudio, 44100, 2)
-
-			isolatedRawAudio = await MDXNetSourceSeparation.isolate(audioStereo44100, modelPath, executionProviders)
+			const inputRawAudio44100Stereo = await ensureRawAudio(inputRawAudio, 44100, 2)
 
 			logger.end()
 
-			logger.start(`Subtract from original waveform to extract background audio`)
-			backgroundRawAudio = subtractAudio(audioStereo44100, isolatedRawAudio)
+			const modelProfile = getProfileForMDXNetModelName(mdxNetOptions.model!)
+
+			isolatedRawAudio = await MDXNetSourceSeparation.isolate(inputRawAudio44100Stereo, modelPath, modelProfile, executionProviders)
+
+			logger.end()
+
+			await logger.startAsync(`Subtract from original waveform to extract background audio`)
+			backgroundRawAudio = subtractAudio(inputRawAudio44100Stereo, isolatedRawAudio)
 
 			break
 		}
@@ -58,7 +64,6 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 	}
 
 	logger.end()
-	logger.log('')
 	logger.logDuration(`Total source separation time`, startTimestamp, chalk.magentaBright)
 
 	return {
@@ -74,8 +79,8 @@ export interface SourceSeparationOptions {
 	engine?: SourceSeparationEngine
 
 	mdxNet?: {
-		model?: string
-		executionProvider?: OnnxExecutionProvider
+		model?: MDXNetModelName
+		provider?: OnnxExecutionProvider
 	}
 }
 
@@ -84,7 +89,7 @@ export const defaultSourceSeparationOptions: SourceSeparationOptions = {
 
 	mdxNet: {
 		model: 'UVR_MDXNET_1_9703',
-		executionProvider: undefined,
+		provider: undefined,
 	}
 }
 

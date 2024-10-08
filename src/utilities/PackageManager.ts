@@ -157,6 +157,9 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'mdxnet-UVR_MDXNET_2_9682': '20240330',
 	'mdxnet-UVR_MDXNET_3_9662': '20240330',
 	'mdxnet-UVR_MDXNET_KARA': '20240330',
+	'mdxnet-UVR_MDXNET_Main': '20241008',
+	'mdxnet-Kim_Vocal_1': '20241008',
+	'mdxnet-Kim_Vocal_2': '20241008',
 
 	// whisper.cpp models
 	'whisper.cpp-tiny': '20240405',
