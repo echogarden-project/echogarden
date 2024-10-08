@@ -2,7 +2,7 @@ import type * as Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
-import { clip, containsInvalidCodepoint, getIntegerRange, getTokenRepetitionScore, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { clip, getIntegerRange, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
@@ -22,8 +22,9 @@ import { type Tiktoken } from 'tiktoken/lite'
 import { isPunctuation, isWhitespace, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
 import { medianOf5Filter } from '../math/MedianFilter.js'
 import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
-import { getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
+import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
 import { murmurHash3_int32Input } from '../utilities/Hashing.js'
+import { containsInvalidCodepoint, getTokenRepetitionScore } from '../utilities/StringUtilities.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -1841,17 +1842,17 @@ export function isEnglishOnlyModel(modelName: WhisperModelName) {
 	return modelName.endsWith('.en')
 }
 
-function getDefaultEncoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
-	if (process.platform === 'win32') {
+export function getDefaultEncoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
+	if (dmlProviderAvailable()) {
 		return ['dml', 'cpu']
 	} else {
 		return []
 	}
 }
 
-function getDefaultDecoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
+export function getDefaultDecoderProvidersForModel(modelName: WhisperModelName): OnnxExecutionProvider[] {
 	if (modelName.startsWith('small') || modelName.startsWith('medium') || modelName.startsWith('large')) {
-		if (process.platform === 'win32') {
+		if (dmlProviderAvailable()) {
 			return ['dml', 'cpu']
 		} else {
 			return []
