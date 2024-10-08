@@ -1,28 +1,11 @@
 import path from 'path'
 import { createTarball } from './Compression.js'
-import { ensureDir, existsSync, move, readdir, stat } from './FileSystem.js'
-import { ensureAndGetPackagesDir } from './PackageManager.js'
+import { ensureDir, move, readdir, stat } from './FileSystem.js'
 import { appName } from '../api/Common.js'
 import { getRandomHexString } from './Utilities.js'
 import { getAppTempDir } from './PathUtilities.js'
 
-const tarballDir = '../resources/tarballs'
-
-export async function makeTarballsForInstalledPackages(skipIfExists = false) {
-	const packagesDir = await ensureAndGetPackagesDir()
-	const packageList = await readdir(packagesDir)
-
-	for (const packageName of packageList) {
-		if (skipIfExists && existsSync(path.join(tarballDir, `${packageName}.tar.gz`))) {
-			continue
-		}
-
-		const packagePath = path.join(packagesDir, packageName)
-		await createNamedTarball(packagePath, packageName)
-	}
-}
-
-export async function createNamedTarball(inputPath: string, name: string) {
+export async function createNamedTarball(inputPath: string, name: string, tarballDir: string) {
 	const tempDir = getAppTempDir(appName)
 	await ensureDir(tempDir)
 	const tempFilename = path.join(tempDir, getRandomHexString(16))
@@ -34,7 +17,7 @@ export async function createNamedTarball(inputPath: string, name: string) {
 	await move(tempFilename, targetFilname)
 }
 
-export async function createTarballForEachDirIn(baseDir: string, namePrefix: String) {
+export async function createTarballForEachDirIn(baseDir: string, namePrefix: string, tarballDir: string) {
 	for (const dirName of await readdir(baseDir)) {
 		const dirPath = path.join(baseDir, dirName)
 
@@ -46,11 +29,11 @@ export async function createTarballForEachDirIn(baseDir: string, namePrefix: Str
 
 		const archiveName = `${namePrefix}-${dirName}`
 
-		await createNamedTarball(dirPath, archiveName)
+		await createNamedTarball(dirPath, archiveName, tarballDir)
 	}
 }
 
-export async function createTarballForEachFileIn(baseDir: string, namePrefix: String) {
+export async function createTarballForEachFileIn(baseDir: string, namePrefix: string, tarballDir: string) {
 	for (const filename of await readdir(baseDir)) {
 		const filenameWithoutExtension = path.parse(filename).name
 
@@ -64,6 +47,6 @@ export async function createTarballForEachFileIn(baseDir: string, namePrefix: St
 
 		const archiveName = `${namePrefix}-${filenameWithoutExtension}`
 
-		await createNamedTarball(filePath, archiveName)
+		await createNamedTarball(filePath, archiveName, tarballDir)
 	}
 }
