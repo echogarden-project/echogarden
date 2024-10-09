@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.6.2",
+	"version": "1.7.0",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -46,17 +46,16 @@
 		"LICENSE.md"
 	],
 	"scripts": {
-		"cli": "node --experimental-wasi-unstable-preview1 --no-warnings ./dist/cli/CLIStarter.js",
-		"server": "node --experimental-wasi-unstable-preview1 --no-warnings  ./dist/server/ServerStarter.js",
 		"test": "node --experimental-wasi-unstable-preview1 --no-warnings --trace-uncaught ./dist/tests/Test.js",
-		"generate-options-schema": "npx ts-json-schema-generator --path ./src/api/APIOptions.ts --unstable --type APIOptions --tsconfig ./tsconfig.json --out ./data/schemas/options.json"
+		"generate-options-schema": "npx ts-json-schema-generator --path ./src/api/APIOptions.ts --unstable --type APIOptions --tsconfig ./tsconfig.json --out ./data/schemas/options.json",
+		"make-tarballs": "node --no-warnings ./dist/build-tools/MakeTarballsForInstalledPackages.js"
 	},
 	"bin": {
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.665.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.665.0",
+		"@aws-sdk/client-polly": "^3.667.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.667.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
@@ -89,7 +88,7 @@
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
 		"onnxruntime-node": "^1.19.2",
-		"openai": "^4.67.1",
+		"openai": "^4.67.3",
 		"sam-js": "^0.3.1",
 		"strip-ansi": "^7.1.0",
 		"tar": "^7.4.3",
@@ -116,11 +115,11 @@
 		"@types/graceful-fs": "^4.1.9",
 		"@types/jsdom": "^21.1.7",
 		"@types/msgpack-lite": "^0.1.11",
-		"@types/node": "^22.7.4",
+		"@types/node": "^22.7.5",
 		"@types/recursive-readdir": "^2.2.4",
 		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.5.12",
 		"ts-json-schema-generator": "^2.3.0",
-		"typescript": "^5.6.2"
+		"typescript": "^5.6.3"
 	}
 }
