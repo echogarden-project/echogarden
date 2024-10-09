@@ -81,7 +81,7 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 
 **Cloud services (unofficial)**:
 
-* Google Translate (`google-translate`): uses the [Google Translate mobile web UI](https://translate.google.com/m) to translate text from and to any one of its supported languages.
+* Google Translate (`google-translate`): uses the [Google Translate mobile web UI](https://translate.google.com/m) to translate text from and to any one of its 243 supported languages.
 
 ## Speech-to-translated-transcript alignment
 

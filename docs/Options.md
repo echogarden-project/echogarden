@@ -269,10 +269,16 @@ Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 Applies to CLI operation: `translate-text`, API method: `translateText`
 
+**General**:
 * `engine`: only `google-translate` supported
 * `sourceLanguage`: the source language code for the input text. Auto-detected if not set
 * `targetLanguage`: the target language code for the output text. Required
 * `languageDetection`: language detection options. Optional
+* `plainText`: plain text processing options. Optional
+
+**Google Translate**:
+* `googleTranslate.tld`: top-level domain to request from. Defaults to `com`
+* `googleTranslate.maxCharactersPerPart`: maximum number of characters in each part requested from the server. Defaults to 2000
 
 ## Speech-to-translated-transcript alignment
 
@@ -395,8 +401,8 @@ Applies to CLI operation: `isolate`, API method: `isolate`
 
 **MDX-NET**:
 
-* `mdxNet.model`: model to use. Currently available models are `UVR_MDXNET_1_9703`, `UVR_MDXNET_2_9682`, `UVR_MDXNET_3_9662`, `UVR_MDXNET_KARA`. Defaults to `UVR_MDXNET_1_9703`
-* `mdxNet.provider`: ONNX execution provider to use. Can be `cpu` or `dml` ([DirectML](https://microsoft.github.io/DirectML/), Windows only). **Note**: `dml` provider seems to be unstable with MDX-NET models at the moment. Defaults to `cpu`
+* `mdxNet.model`: model to use. Currently available models are `UVR_MDXNET_1_9703`, `UVR_MDXNET_2_9682`, `UVR_MDXNET_3_9662`, `UVR_MDXNET_KARA`, and higher quality models `UVR_MDXNET_Main` and `Kim_Vocal_2`. Defaults to `UVR_MDXNET_1_9703`
+* `mdxNet.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/) GPU acceleration, Windows only) or `cuda` (Linux only). Defaults to `dml` if available (on Windows x64) or `cpu` (other platforms)
 
 # Common options
 
