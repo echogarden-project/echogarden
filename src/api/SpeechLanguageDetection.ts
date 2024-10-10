@@ -1,6 +1,6 @@
 import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevelInPlace, sliceRawAudioByTime, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
@@ -28,7 +28,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 	logger.start(`Resample audio to 16kHz mono`)
 	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
-	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	normalizeAudioLevelInPlace(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	if (options.crop) {

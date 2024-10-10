@@ -1,4 +1,4 @@
-import { AudioSourceParam, RawAudio, attenuateIfClipping, ensureRawAudio, subtractAudio } from '../audio/AudioUtilities.js';
+import { AudioSourceParam, RawAudio, attenuateIfClippingInPlace, ensureRawAudio, subtractAudio } from '../audio/AudioUtilities.js';
 import { Logger } from '../utilities/Logger.js';
 import { extendDeep } from '../utilities/ObjectUtilities.js';
 import { loadPackage } from '../utilities/PackageManager.js';
@@ -61,8 +61,8 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 	await logger.startAsync(`Postprocess audio`)
 
-	isolatedRawAudio = attenuateIfClipping(isolatedRawAudio)
-	backgroundRawAudio = attenuateIfClipping(backgroundRawAudio)
+	attenuateIfClippingInPlace(isolatedRawAudio)
+	attenuateIfClippingInPlace(backgroundRawAudio)
 
 	logger.end()
 

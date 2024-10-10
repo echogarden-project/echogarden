@@ -1,7 +1,7 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
-import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
@@ -59,7 +59,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 	logger.start('Normalize and trim audio')
 
-	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	normalizeAudioLevelInPlace(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	const engine = options.engine!
@@ -322,7 +322,7 @@ export interface RecognitionResult {
 
 	timeline: Timeline
 	wordTimeline: Timeline
-	
+
 	language: string
 
 	inputRawAudio: RawAudio

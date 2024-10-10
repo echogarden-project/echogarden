@@ -1,7 +1,7 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
-import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd } from '../audio/AudioUtilities.js'
+import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
@@ -56,7 +56,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 
 	logger.start('Normalize and trim audio')
 
-	sourceRawAudio = normalizeAudioLevel(sourceRawAudio)
+	normalizeAudioLevelInPlace(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	logger.end()

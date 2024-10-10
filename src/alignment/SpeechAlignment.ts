@@ -589,7 +589,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 	{
 		// Split fragments to chunks, process each chunk individually,
 		// and incrementally merge the chunks to the final result.
-		
+
 		const maxCharactersInChunk = 1000
 
 		let timeOffset = 0

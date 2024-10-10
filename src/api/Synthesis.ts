@@ -5,7 +5,7 @@ import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
 import { clip, sha256AsHex, stringifyAndFormatJson, logToStderr, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
-import { RawAudio, attenuateIfClipping, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, trimAudioEnd, trimAudioStart } from '../audio/AudioUtilities.js'
+import { RawAudio, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, trimAudioEnd, trimAudioStart, attenuateIfClippingInPlace, normalizeAudioLevelInPlace } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
@@ -250,9 +250,9 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 		resultRawAudio = { audioChannels: joinedAudioBuffers, sampleRate: segmentsRawAudio[0].sampleRate }
 
 		if (options.postProcessing!.normalizeAudio) {
-			resultRawAudio = normalizeAudioLevel(resultRawAudio, options.postProcessing!.targetPeak, options.postProcessing!.maxGainIncrease)
+			normalizeAudioLevelInPlace(resultRawAudio, options.postProcessing!.targetPeak, options.postProcessing!.maxGainIncrease)
 		} else {
-			resultRawAudio = attenuateIfClipping(resultRawAudio)
+			attenuateIfClippingInPlace(resultRawAudio)
 		}
 	} else {
 		resultRawAudio = getEmptyRawAudio(1, 24000)
@@ -866,9 +866,9 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	synthesizedAudio = downmixToMono(synthesizedAudio)
 
 	if (options.postProcessing!.normalizeAudio) {
-		synthesizedAudio = normalizeAudioLevel(synthesizedAudio, options.postProcessing!.targetPeak!, options.postProcessing!.maxGainIncrease!)
+		normalizeAudioLevelInPlace(synthesizedAudio, options.postProcessing!.targetPeak!, options.postProcessing!.maxGainIncrease!)
 	} else {
-		synthesizedAudio = attenuateIfClipping(synthesizedAudio)
+		attenuateIfClippingInPlace(synthesizedAudio)
 	}
 
 	const preTrimSampleCount = synthesizedAudio.audioChannels[0].length
