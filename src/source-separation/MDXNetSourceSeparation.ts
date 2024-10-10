@@ -6,6 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import { OnnxExecutionProvider, dmlProviderAvailable, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 import chalk from 'chalk'
 import { WindowedList } from '../utilities/WindowedList.js'
+import { logLevelGreaterOrEqualTo } from '../api/API.js'
 
 const log = logToStderr
 
@@ -13,9 +14,9 @@ export async function isolate(
 	rawAudio: RawAudio,
 	modelFilePath: string,
 	modelProfile: MDXNetModelProfile,
-	executionProviders: OnnxExecutionProvider[]) {
+	options: MDXNetOptions) {
 
-	const model = new MDXNet(modelFilePath, modelProfile, executionProviders)
+	const model = new MDXNet(modelFilePath, modelProfile, options)
 
 	return model.processAudio(rawAudio)
 }
@@ -27,11 +28,11 @@ export class MDXNet {
 	constructor(
 		public readonly modelFilePath: string,
 		public readonly modelProfile: MDXNetModelProfile,
-		public readonly executionProviders: OnnxExecutionProvider[]) {
+		public readonly options: MDXNetOptions) {
 	}
 
 	async processAudio(rawAudio: RawAudio) {
-		if (rawAudio.audioChannels.length != 2) {
+		if (rawAudio.audioChannels.length !== 2) {
 			throw new Error(`Input audio must be stereo`)
 		}
 
@@ -43,11 +44,17 @@ export class MDXNet {
 			return getEmptyRawAudio(rawAudio.audioChannels.length, rawAudio.sampleRate)
 		}
 
+		const enableTraceLogging = logLevelGreaterOrEqualTo('trace')
+
 		const logger = new Logger()
 
-		await logger.startAsync(`Initialize MDXNet model`)
+		await logger.startAsync(`Initialize session for MDX-NET model '${this.options.model!}'`)
 
 		await this.initializeSessionIfNeeded()
+
+		logger.end()
+
+		logger.logTitledMessage(`Using ONNX execution provider`, `${this.onnxSessionOptions!.executionProviders!.join(', ')}`)
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -81,7 +88,11 @@ export class MDXNet {
 
 			const timePosition = segmentStartFrameOffset * (fftHopSize / sampleRate)
 
-			await logger.startAsync(`Compute STFT of segment at time position ${timePosition.toFixed(2)}`, undefined, chalk.magentaBright)
+			if (enableTraceLogging) {
+				await logger.startAsync(`Compute STFT of segment at time position ${timePosition.toFixed(2)}`, undefined, chalk.magentaBright)
+			} else {
+				await logger.startAsync(`Process segment at time position ${timePosition.toFixed(2)}`)
+			}
 
 			while (fftFramesLeftWindowedList.endOffset < segmentEndFrameOffset) {
 				const nextLeftFrameResult = await fftFramesLeftGenerator.next()
@@ -109,7 +120,9 @@ export class MDXNet {
 
 			const isLastSegment = segmentLength < segmentSize
 
-			await logger.startAsync(`Reshape STFT frames`)
+			if (enableTraceLogging) {
+				await logger.startAsync(`Reshape STFT frames`)
+			}
 
 			const flattenedInputTensor = new Float32Array(1 * 4 * binCount * segmentSize)
 
@@ -142,13 +155,17 @@ export class MDXNet {
 				}
 			}
 
-			await logger.startAsync(`Process with MDXNet model (ONNX provider: ${this.onnxSessionOptions!.executionProviders!.join(', ')})`)
+			if (enableTraceLogging) {
+				await logger.startAsync(`Process segment with MDXNet model`)
+			}
 
 			const inputTensor = new Onnx.Tensor('float32', flattenedInputTensor, [1, 4, binCount, segmentSize])
 
 			const { output: outputTensor } = await this.session!.run({ input: inputTensor })
 
-			await logger.startAsync('Reshape processed frames')
+			if (enableTraceLogging) {
+				await logger.startAsync('Reshape processed frames')
+			}
 
 			const flattenedOutputTensor = outputTensor.data as Float32Array
 
@@ -191,7 +208,9 @@ export class MDXNet {
 
 			const outputAudioChannels: Float32Array[] = []
 
-			await logger.startAsync(`Compute inverse STFT of model output for segment`)
+			if (enableTraceLogging) {
+				await logger.startAsync(`Compute inverse STFT of model output for segment`)
+			}
 
 			for (let channelIndex = 0; channelIndex < 2; channelIndex++) {
 				const samples = await stiftr(
@@ -268,13 +287,16 @@ export class MDXNet {
 
 		const Onnx = await import('onnxruntime-node')
 
-		this.onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.executionProviders })
+		const executionProviders: OnnxExecutionProvider[] =
+			this.options.provider ? [this.options.provider] : getDefaultMDXNetProviders()
+
+		this.onnxSessionOptions = getOnnxSessionOptions({ executionProviders })
 
 		this.session = await Onnx.InferenceSession.create(this.modelFilePath, this.onnxSessionOptions)
 	}
 }
 
-export function getDefaultMDXNetProviders() : OnnxExecutionProvider[] {
+export function getDefaultMDXNetProviders(): OnnxExecutionProvider[] {
 	if (dmlProviderAvailable()) {
 		return ['dml', 'cpu']
 	} else {
@@ -344,3 +366,13 @@ export type MDXNetModelName =
 	'UVR_MDXNET_Main' |
 	'Kim_Vocal_1' |
 	'Kim_Vocal_2'
+
+export interface MDXNetOptions {
+	model?: MDXNetModelName
+	provider?: OnnxExecutionProvider
+}
+
+export const defaultMDXNetOptions: MDXNetOptions = {
+	model: 'UVR_MDXNET_1_9703',
+	provider: undefined,
+}
