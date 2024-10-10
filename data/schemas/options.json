@@ -1043,16 +1043,7 @@
           "$ref": "#/definitions/SourceSeparationEngine"
         },
         "mdxNet": {
-          "type": "object",
-          "properties": {
-            "model": {
-              "$ref": "#/definitions/MDXNetModelName"
-            },
-            "provider": {
-              "$ref": "#/definitions/OnnxExecutionProvider"
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/MDXNetOptions"
         }
       },
       "additionalProperties": false
@@ -1060,6 +1051,18 @@
     "SourceSeparationEngine": {
       "type": "string",
       "const": "mdx-net"
+    },
+    "MDXNetOptions": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/MDXNetModelName"
+        },
+        "provider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        }
+      },
+      "additionalProperties": false
     },
     "MDXNetModelName": {
       "type": "string",
@@ -1110,6 +1113,9 @@
           "type": "number"
         },
         "includeEndTokenInCandidates": {
+          "type": "boolean"
+        },
+        "useOptimizedAlignmentHeads": {
           "type": "boolean"
         },
         "encoderProvider": {
@@ -1177,6 +1183,12 @@
         },
         "endTokenThreshold": {
           "type": "number"
+        },
+        "maxTokensPerPart": {
+          "type": "number"
+        },
+        "useOptimizedAlignmentHeads": {
+          "type": "boolean"
         },
         "encoderProvider": {
           "$ref": "#/definitions/OnnxExecutionProvider"
