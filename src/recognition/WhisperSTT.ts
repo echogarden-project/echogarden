@@ -459,7 +459,7 @@ export class Whisper {
 			// Find alignment path
 			let alignmentHeads: number[] | undefined = undefined
 
-			if (this.modelName.startsWith('small') || this.modelName.startsWith('medium') || this.modelName.startsWith('large')) {
+			if (!this.modelName.startsWith('tiny')) {
 				alignmentHeads = this.alignmentHeadIndexes
 			}
 
@@ -1103,7 +1103,8 @@ export class Whisper {
 		const sampleRate = rawAudio.sampleRate
 
 		const fftOrder = 400
-		const hopLength = 160
+		const fftWindowSize = 400
+		const fftHopLength = 160
 
 		const filterbankCount = this.filterbankCount
 		const filterbanks = this.filterbanks
@@ -1128,7 +1129,7 @@ export class Whisper {
 
 		const rawAudioPart: RawAudio = { audioChannels: [paddedAudioSamples], sampleRate }
 
-		const { melSpectogram } = await computeMelSpectogramUsingFilterbanks(rawAudioPart, fftOrder, fftOrder, hopLength, filterbanks)
+		const { melSpectogram } = await computeMelSpectogramUsingFilterbanks(rawAudioPart, fftOrder, fftWindowSize, fftHopLength, filterbanks)
 
 		await logger.startAsync('Normalize mel spectogram')
 
