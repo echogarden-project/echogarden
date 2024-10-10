@@ -497,7 +497,7 @@ export class Whisper {
 
 		logger.end()
 
-		return { transcript, timeline }
+		return { transcript, timeline, allDecodedTokens }
 	}
 
 	async align(rawAudio: RawAudio, transcript: string, sourceLanguage: string, task: 'transcribe' | 'translate', whisperAlignmentOptions: WhisperAlignmentOptions) {
@@ -523,8 +523,10 @@ export class Whisper {
 			}
 		} else {
 			let words = await splitToWords(transcript, targetLanguage)
+
 			words = words.map(word => word.trim())
 			words = words.filter(word => isWord(word))
+
 			simplifiedTranscript = words.join(' ')
 		}
 
@@ -579,7 +581,51 @@ export class Whisper {
 		}
 
 		// Recognize
-		const { timeline } = await this.recognize(rawAudio, task, sourceLanguage, options, logitFilter)
+		const { timeline, allDecodedTokens } = await this.recognize(rawAudio, task, sourceLanguage, options, logitFilter)
+
+		{
+			// If not all tokens were decoded, add the remaining ones to the timeline
+			const lastKnownWordStartTime = timeline.length > 0 ? timeline[timeline.length - 1].startTime : 0
+
+			const allDecodedTextTokens = allDecodedTokens.filter(token => this.isTextToken(token))
+
+			while (allDecodedTextTokens.length < simplifiedTranscriptTokens.length) {
+				const token = simplifiedTranscriptTokens[allDecodedTextTokens.length]
+				const tokenText = this.tokenToText(token)
+
+				allDecodedTextTokens.push(token)
+
+				const newTokenEntry: TimelineEntry = {
+					type: 'token',
+					text: tokenText,
+
+					startTime: lastKnownWordStartTime,
+					endTime: lastKnownWordStartTime,
+
+					id: token,
+					confidence: 0,
+				}
+
+				if (tokenText.startsWith(' ') || timeline.length === 0) {
+					timeline.push({
+						type: 'word',
+						text: tokenText.trim(),
+
+						startTime: lastKnownWordStartTime,
+						endTime: lastKnownWordStartTime,
+
+						timeline: [newTokenEntry],
+
+						confidence: 0,
+					})
+				} else {
+					const lastWordEntry = timeline[timeline.length - 1]
+
+					lastWordEntry.timeline!.push(newTokenEntry)
+					lastWordEntry.text += tokenText
+				}
+			}
+		}
 
 		return timeline
 	}
