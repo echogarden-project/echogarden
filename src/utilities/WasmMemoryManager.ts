@@ -1,10 +1,35 @@
 export class WasmMemoryManager {
 	wasmModule: any
 
+	private wasmAlloc: WasmAllocMethod
+	private wasmFree: WasmFreeMethod
+
 	private allocatedReferences = new Set<WasmRef>()
 
-	constructor(wasmModule: any) {
+	constructor(wasmModule: any, options?: WasmMemoryManagerOptions) {
+		options = options ?? {}
+
 		this.wasmModule = wasmModule
+
+		if (options.wasmAlloc) {
+			this.wasmAlloc = options.wasmAlloc
+		} else {
+			if (!wasmModule._malloc) {
+				throw new Error(`Couldn't find a '_malloc' function in the module and no custom 'wasmAlloc' was provided in the options`)
+			}
+
+			this.wasmAlloc = wasmModule._malloc
+		}
+
+		if (options.wasmFree) {
+			this.wasmFree = options.wasmFree
+		} else {
+			if (!wasmModule._free) {
+				throw new Error(`Couldn't find a '_malloc' function in the module and no custom 'wasmFree' was provided in the options`)
+			}
+
+			this.wasmFree = wasmModule._free
+		}
 	}
 
 	allocInt8() {
@@ -209,8 +234,9 @@ export class WasmMemoryManager {
 	}
 
 	private alloc(size: number) {
-		const ptr = this.wasmModule._malloc(size)
-		return ptr as number
+		const ptr = this.wasmAlloc(size)
+
+		return ptr
 	}
 
 	free(wasmReference: WasmRef) {
@@ -218,7 +244,7 @@ export class WasmMemoryManager {
 			return
 		}
 
-		this.wasmModule._free(wasmReference.address)
+		this.wasmFree(wasmReference.address)
 
 		this.allocatedReferences.delete(wasmReference)
 		wasmReference.clearAddress()
@@ -514,3 +540,11 @@ export class Float64ArrayRef extends TypedArrayRef<Float64Array> {
 
 export type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
 export type WasmRef = ValueRef<number> | ValueRef<string> | TypedArrayRef<TypedArray>
+
+export interface WasmMemoryManagerOptions {
+	wasmAlloc?: WasmAllocMethod
+	wasmFree?: WasmFreeMethod
+}
+
+export type WasmAllocMethod = (size: number) => number
+export type WasmFreeMethod = (address: number) => void
