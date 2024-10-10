@@ -57,6 +57,7 @@ declare module '@echogarden/fvad-wasm'
 declare module '@echogarden/sonic-wasm'
 declare module '@echogarden/kissfft-wasm'
 declare module '@echogarden/pffft-wasm'
+declare module '@echogarden/pffft-wasm/simd'
 declare module '@echogarden/speex-resampler-wasm'
 declare module '@echogarden/vosk'
 

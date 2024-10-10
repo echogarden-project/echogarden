@@ -2,8 +2,6 @@ import { ComplexNumber } from '../math/VectorMath.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
-let pffftInstance: any
-
 // Compute short-term Fourier transform (real-valued)
 export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
 	const frames: Float32Array[] = []
@@ -36,9 +34,7 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 	const windowWeights = getWindowWeights(windowType, windowSize)
 
-	const enableSimd = fftOrder % 32 === 0
-
-	const m = await getPFFFTInstance(enableSimd)
+	const m = await getPFFFTInstance(isPffftSimdSupportedForFFTOrder(fftOrder))
 	const wasmMemory = new WasmMemoryManager(m, {
 		wasmAlloc: m._pffft_aligned_malloc,
 		wasmFree: m._pffft_aligned_free
@@ -103,9 +99,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	const outSamples = new Float32Array(outSampleCount)
 
-	const enableSimd = fftOrder % 32 === 0
-
-	const m = await getPFFFTInstance(enableSimd)
+	const m = await getPFFFTInstance(isPffftSimdSupportedForFFTOrder(fftOrder))
 
 	const wasmMemory = new WasmMemoryManager(m, {
 		wasmAlloc: m._pffft_aligned_malloc,
@@ -261,17 +255,33 @@ export function getWindowWeights(windowType: WindowType, windowSize: number) {
 	return weights
 }
 
-// Get PFFFT instance (initialize new if not exists)
-export async function getPFFFTInstance(enableSimd = false) {
-	if (!pffftInstance) {
-		const importString = enableSimd ? '@echogarden/pffft-wasm/simd' : '@echogarden/pffft-wasm'
+export function isPffftSimdSupportedForFFTOrder(fftOrder: number) {
+	return fftOrder % 32 === 0
+}
 
-		const { default: initializer } = await import(importString)
+let pffftNonSimdInstance: any
+let pffftSimdInstance: any
 
-		pffftInstance = await initializer()
-	}
+export async function getPFFFTInstance(enableSimd: boolean) {
+	return enableSimd ? getSimdPFFFTInstance() : getNonSimdPFFFTInstance()
+}
 
-	return pffftInstance
+// Get non-SIMD PFFFT instance (initialize new if not exists)
+async function getNonSimdPFFFTInstance() {
+	const { default: initializer } = await import('@echogarden/pffft-wasm')
+
+	pffftNonSimdInstance = await initializer()
+
+	return pffftNonSimdInstance
+}
+
+// Get SIMD PFFFT instance (initialize new if not exists)
+async function getSimdPFFFTInstance() {
+	const { default: initializer } = await import('@echogarden/pffft-wasm/simd')
+
+	pffftSimdInstance = await initializer()
+
+	return pffftSimdInstance
 }
 
 export type WindowType = 'hann' | 'hamming' | 'povey'
