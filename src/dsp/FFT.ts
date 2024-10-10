@@ -2,7 +2,7 @@ import { ComplexNumber } from '../math/VectorMath.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
-let kissFFTInstance: any
+let pffftInstance: any
 
 // Compute short-term Fourier transform (real-valued)
 export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
@@ -36,15 +36,20 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 	const windowWeights = getWindowWeights(windowType, windowSize)
 
-	const m = await getKissFFTInstance()
-	const wasmMemory = new WasmMemoryManager(m)
+	const enableSimd = fftOrder % 32 === 0
 
-	const statePtr = m._kiss_fftr_alloc(fftOrder, 0, 0, 0)
-	wasmMemory.wrapPointer(statePtr)
+	const m = await getPFFFTInstance(enableSimd)
+	const wasmMemory = new WasmMemoryManager(m, {
+		wasmAlloc: m._pffft_aligned_malloc,
+		wasmFree: m._pffft_aligned_free
+	})
+
+	const statePtr = m._pffft_new_setup(fftOrder, 0)
 
 	const sampleCount = samples.length
 	const frameBufferRef = wasmMemory.allocFloat32Array(fftOrder)
 	const binsBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
+	const workBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
 
 	for (let offset = 0; offset < sampleCount; offset += hopSize) {
 		const windowSamples = samples.subarray(offset, offset + windowSize)
@@ -58,12 +63,14 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 		binsBufferRef.clear()
 
-		m._kiss_fftr(statePtr, frameBufferRef.address, binsBufferRef.address)
+		m._pffft_transform_ordered(statePtr, frameBufferRef.address, binsBufferRef.address, workBufferRef.address, 0)
 
 		const bins = binsBufferRef.view.slice(0, fftOrder + 2)
 
 		yield bins
 	}
+
+	m._pffft_destroy_setup(statePtr)
 
 	wasmMemory.freeAll()
 }
@@ -96,14 +103,20 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	const outSamples = new Float32Array(outSampleCount)
 
-	const m = await getKissFFTInstance()
-	const wasmMemory = new WasmMemoryManager(m)
+	const enableSimd = fftOrder % 32 === 0
 
-	const statePtr = m._kiss_fftr_alloc(fftOrder, 1, 0, 0)
-	wasmMemory.wrapPointer(statePtr)
+	const m = await getPFFFTInstance(enableSimd)
+
+	const wasmMemory = new WasmMemoryManager(m, {
+		wasmAlloc: m._pffft_aligned_malloc,
+		wasmFree: m._pffft_aligned_free
+	})
+
+	const statePtr = m._pffft_new_setup(fftOrder, 0)
 
 	const frameBufferRef = wasmMemory.allocFloat32Array(fftOrder)
 	const binsRef = wasmMemory.allocFloat32Array(fftOrder * 2)
+	const workBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
 
 	const sumOfSquaredWeightsForSample = new Float32Array(outSampleCount)
 
@@ -114,7 +127,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 		frameBufferRef.clear()
 
-		m._kiss_fftri(statePtr, binsRef.address, frameBufferRef.address)
+		m._pffft_transform_ordered(statePtr, binsRef.address, frameBufferRef.address, workBufferRef.address, 1)
 
 		const frameSamples = frameBufferRef.view
 
@@ -132,6 +145,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 		}
 	}
 
+	m._pffft_destroy_setup(statePtr)
 	wasmMemory.freeAll()
 
 	// Divide each output sample by the sum of squared weights
@@ -247,15 +261,17 @@ export function getWindowWeights(windowType: WindowType, windowSize: number) {
 	return weights
 }
 
-// Get KISS FFT instance (initialize new if not exists)
-export async function getKissFFTInstance() {
-	if (!kissFFTInstance) {
-		const { default: initializer } = await import('@echogarden/kissfft-wasm')
+// Get PFFFT instance (initialize new if not exists)
+export async function getPFFFTInstance(enableSimd = false) {
+	if (!pffftInstance) {
+		const importString = enableSimd ? '@echogarden/pffft-wasm/simd' : '@echogarden/pffft-wasm'
 
-		kissFFTInstance = await initializer()
+		const { default: initializer } = await import(importString)
+
+		pffftInstance = await initializer()
 	}
 
-	return kissFFTInstance
+	return pffftInstance
 }
 
 export type WindowType = 'hann' | 'hamming' | 'povey'
