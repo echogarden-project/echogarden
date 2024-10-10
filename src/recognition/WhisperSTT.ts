@@ -459,7 +459,7 @@ export class Whisper {
 			// Find alignment path
 			let alignmentHeads: number[] | undefined = undefined
 
-			if (!this.modelName.startsWith('tiny')) {
+			if (options.useOptimizedAlignmentHeads) {
 				alignmentHeads = this.alignmentHeadIndexes
 			}
 
@@ -566,12 +566,15 @@ export class Whisper {
 			topCandidateCount: 1,
 			punctuationThreshold: Infinity,
 			autoPromptParts: false,
-			maxTokensPerPart: whisperAlignmentOptions.maxTokensPerPart,
+			maxTokensPerPart: whisperAlignmentOptions.maxTokensPerPart!,
 			suppressRepetition: false,
 			repetitionThreshold: Infinity,
 			decodeTimestampTokens: true,
-			endTokenThreshold: whisperAlignmentOptions!.endTokenThreshold!,
+			endTokenThreshold: whisperAlignmentOptions.endTokenThreshold!,
 			includeEndTokenInCandidates: false,
+			useOptimizedAlignmentHeads: whisperAlignmentOptions.useOptimizedAlignmentHeads!,
+			encoderProvider: whisperAlignmentOptions.encoderProvider!,
+			decoderProvider: whisperAlignmentOptions.decoderProvider!,
 			seed: undefined,
 		}
 
@@ -2441,6 +2444,7 @@ export interface WhisperOptions {
 	decodeTimestampTokens?: boolean
 	endTokenThreshold?: number
 	includeEndTokenInCandidates?: boolean
+	useOptimizedAlignmentHeads?: boolean,
 	encoderProvider?: OnnxExecutionProvider
 	decoderProvider?: OnnxExecutionProvider
 	seed?: number
@@ -2459,6 +2463,7 @@ export const defaultWhisperOptions: WhisperOptions = {
 	decodeTimestampTokens: true,
 	endTokenThreshold: 0.9,
 	includeEndTokenInCandidates: true,
+	useOptimizedAlignmentHeads: true,
 	encoderProvider: undefined,
 	decoderProvider: undefined,
 	seed: undefined,
@@ -2469,6 +2474,7 @@ export interface WhisperAlignmentOptions {
 	model?: WhisperModelName
 	endTokenThreshold?: number
 	maxTokensPerPart?: number
+	useOptimizedAlignmentHeads?: boolean
 
 	encoderProvider?: OnnxExecutionProvider
 	decoderProvider?: OnnxExecutionProvider
@@ -2478,6 +2484,7 @@ export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
 	maxTokensPerPart: 250,
+	useOptimizedAlignmentHeads: true,
 
 	encoderProvider: undefined,
 	decoderProvider: undefined,
