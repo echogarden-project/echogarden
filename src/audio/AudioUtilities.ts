@@ -85,8 +85,8 @@ export function downmixToMonoAndNormalize(rawAudio: RawAudio, targetPeakDecibels
 	return normalizeAudioLevel(downmixToMono(rawAudio), targetPeakDecibels)
 }
 
-export function attenuateIfClipping(rawAudio: RawAudio) {
-	return normalizeAudioLevel(rawAudio, -0.1, 0)
+export function attenuateIfClipping(rawAudio: RawAudio, clippingThreshold = -0.1) {
+	return normalizeAudioLevel(rawAudio, clippingThreshold, 0)
 }
 
 export function normalizeAudioLevel(rawAudio: RawAudio, targetPeakDecibels = -3, maxGainIncreaseDecibels = 30): RawAudio {
@@ -133,6 +133,10 @@ export function applyGainDecibels(rawAudio: RawAudio, gainDecibels: number): Raw
 }
 
 export function applyGainFactor(rawAudio: RawAudio, gainFactor: number): RawAudio {
+	if (gainFactor === 1.0) {
+		return cloneRawAudio(rawAudio)
+	}
+
 	const outputAudioChannels: Float32Array[] = []
 
 	for (const channelSamples of rawAudio.audioChannels) {
