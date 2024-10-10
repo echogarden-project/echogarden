@@ -566,7 +566,7 @@ export class Whisper {
 			topCandidateCount: 1,
 			punctuationThreshold: Infinity,
 			autoPromptParts: false,
-			maxTokensPerPart: Infinity,
+			maxTokensPerPart: whisperAlignmentOptions.maxTokensPerPart,
 			suppressRepetition: false,
 			repetitionThreshold: Infinity,
 			decodeTimestampTokens: true,
@@ -2468,6 +2468,8 @@ export const defaultWhisperOptions: WhisperOptions = {
 export interface WhisperAlignmentOptions {
 	model?: WhisperModelName
 	endTokenThreshold?: number
+	maxTokensPerPart?: number
+
 	encoderProvider?: OnnxExecutionProvider
 	decoderProvider?: OnnxExecutionProvider
 }
@@ -2475,8 +2477,10 @@ export interface WhisperAlignmentOptions {
 export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
+	maxTokensPerPart: 250,
+
 	encoderProvider: undefined,
-	decoderProvider: undefined
+	decoderProvider: undefined,
 }
 
 // Language detection options
