@@ -157,13 +157,13 @@
 ### Alignment / DTW
 * Accept percentages like `20%` in the `windowDuration` option
 * For the `granularity` option, add more granularities like `xxx-low` and `xxxx-low` (should the naming be changed? Maybe transition to a new naming scheme?)
+* Add and test official support for more than 6 hours of audio
 
 ### Alignment / DTW-RA
 
 ### Alignment / Whisper
 
 ### Source separation / MDX-NET
-* Since MDX-NET requires FFT with large window sizes, the FFT computation overhead currently acts as a bottleneck, especially when GPU is used for inference. Currently, it uses a WASM port of KissFFT, running on a single thread, which is still relatively fast. To get higher performance, try to (optionally) use native, SIMD optimized FFT like FFTW3 via a NAPI addon, with multi-threading enabled
 * Option to customize overlap
 * Add more models
 
@@ -251,8 +251,6 @@
 * Allow `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps (especially useful for Chinese and Japanese)
 
-
-
 ## Possible new engines or platforms
 
 * [PlayHT](https://play.ht/) speech synthesis cloud service
@@ -267,7 +265,7 @@
 
 ## Maybe?
 
-* Using a machine translation model to provide speech translation to languages other than English? How would the timing be determined?
+* Using a machine translation model to provide speech translation to languages other than English
 * Is it possible to get sentence boundaries without punctuation using NLP techniques like part-of-speech tagging?
 
 ## May or may not be good ideas

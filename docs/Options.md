@@ -151,6 +151,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.suppressRepetition`: attempt to suppress decoding of repeating token patterns. Defaults to `true`
 * `whisper.repetitionThreshold`: minimal repetition / compressibility score to cause a part not to be auto-prompted to the next part. Defaults to `2.4`
 * `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens. Setting to `false` can reduce the occurrence of hallucinations and token repetition loops, possibly due to the overall reduction in the number of tokens decoded. This has no impact on the accuracy of timestamps, since they are derived independently using cross-attention weights. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
+* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `medium`
 * `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
 * `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`, and on Windows, `dml` if available for larger models (`small`, `medium`, `large`)
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
@@ -166,7 +167,8 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
 * `whisperCpp.repetitionThreshold`: minimal repetition / compressibility score to cause a decoded segment to be discarded. Defaults to `2.4`
 * `whisperCpp.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
-* `whisperCpp.enableDTW`: enable `whisper.cpp`'s own experimental DTW-based token alignment to be used to derive timestamps. Defaults to `false` (highly recommended)
+* `whisperCpp.enableDTW`: enable `whisper.cpp`'s own experimental DTW-based token alignment to be used to derive timestamps. Defaults to `false`
+* `whisperCpp.enableFlashAttention`: enable flash attention. Defaults to `false`
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
 
 **Vosk**:
@@ -236,6 +238,7 @@ Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, u
 * `whisper.model`: Whisper model to use. Defaults to `tiny` or `tiny.en`
 * `whisper.endTokenThreshold`: minimal probability to accept an end token for a recognized part. The probability is measured via the softmax between the end token's logit and the second highest logit. You can try to adjust this threshold in cases the model is ending a part with too few, or many tokens decoded. Defaults to `0.9`. On the last audio part, it is always effectively set to `Infinity`, to ensure the remaining transcript tokens are decoded in full
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode per part. Should help avoid edge cases where the model never reaches an end token for the part, which otherwise may cause the model to decode too many tokens and eventually crash. Defaults to 250
+* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `medium`
 * `whisper.encoderProvider`: encoder ONNX provider. See details in recognition section above
 * `whisper.decoderProvider`: decoder ONNX provider. See details in recognition section above
 
