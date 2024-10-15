@@ -50,6 +50,10 @@ export async function recognize(
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
+	if (modelName === 'large-v3-turbo' && task === 'translate') {
+		throw new Error(`The 'large-v3-turbo' model doesn't support translation tasks.`)
+	}
+
 	if (options.temperature && options.temperature < 0) {
 		throw new Error(`Temperature can't be negative`)
 	}
@@ -143,6 +147,10 @@ export async function alignEnglishTranslation(
 
 	if (!(sourceLanguage in languageIdLookup)) {
 		throw new Error(`The source language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
+	}
+
+	if (modelName === 'large-v3-turbo') {
+		throw new Error(`The 'large-v3-turbo' model doesn't support translation tasks, so cannot be used for translation alignment.`)
 	}
 
 	if (isEnglishOnlyModel(modelName)) {
@@ -445,7 +453,7 @@ export class Whisper {
 			const segmentEndTime = audioEndOffset / sampleRate
 			const segmentFrameCount = this.secondsRangeToFrameCount(segmentStartTime, segmentEndTime)
 
-			await logger.startAsync(`Extract timeline for part`)
+			await logger.startAsync(`Extract timeline for part (timestamp accuracy: ${options.timestampAccuracy!})`)
 
 			if (partTokens.length != partCrossAttentionQKs.length) {
 				throw new Error('Unexpected: partTokens.length != partCrossAttentionQKs.length')
@@ -457,10 +465,14 @@ export class Whisper {
 			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
 
 			// Find alignment path
-			let alignmentHeads: number[] | undefined = undefined
+			let alignmentHeads: number[] | undefined
 
-			if (options.useOptimizedAlignmentHeads) {
+			if (options.timestampAccuracy === 'medium') {
 				alignmentHeads = this.alignmentHeadIndexes
+			} else if (options.timestampAccuracy === 'high') {
+				alignmentHeads = undefined
+			} else {
+				throw new Error(`Unsupported timestamp accuracy '${options.timestampAccuracy}', can only be 'medium' or 'high'.`)
 			}
 
 			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount, alignmentHeads)
@@ -574,7 +586,7 @@ export class Whisper {
 			decodeTimestampTokens: true,
 			endTokenThreshold: whisperAlignmentOptions.endTokenThreshold!,
 			includeEndTokenInCandidates: false,
-			useOptimizedAlignmentHeads: whisperAlignmentOptions.useOptimizedAlignmentHeads!,
+			timestampAccuracy: whisperAlignmentOptions.timestampAccuracy!,
 			encoderProvider: whisperAlignmentOptions.encoderProvider!,
 			decoderProvider: whisperAlignmentOptions.decoderProvider!,
 			seed: undefined,
@@ -2490,7 +2502,7 @@ export interface WhisperOptions {
 	decodeTimestampTokens?: boolean
 	endTokenThreshold?: number
 	includeEndTokenInCandidates?: boolean
-	useOptimizedAlignmentHeads?: boolean,
+	timestampAccuracy?: WhisperTimestampAccuracy,
 	encoderProvider?: OnnxExecutionProvider
 	decoderProvider?: OnnxExecutionProvider
 	seed?: number
@@ -2509,7 +2521,7 @@ export const defaultWhisperOptions: WhisperOptions = {
 	decodeTimestampTokens: true,
 	endTokenThreshold: 0.9,
 	includeEndTokenInCandidates: true,
-	useOptimizedAlignmentHeads: true,
+	timestampAccuracy: 'medium',
 	encoderProvider: undefined,
 	decoderProvider: undefined,
 	seed: undefined,
@@ -2520,7 +2532,7 @@ export interface WhisperAlignmentOptions {
 	model?: WhisperModelName
 	endTokenThreshold?: number
 	maxTokensPerPart?: number
-	useOptimizedAlignmentHeads?: boolean
+	timestampAccuracy?: WhisperTimestampAccuracy,
 
 	encoderProvider?: OnnxExecutionProvider
 	decoderProvider?: OnnxExecutionProvider
@@ -2530,7 +2542,7 @@ export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
 	maxTokensPerPart: 250,
-	useOptimizedAlignmentHeads: true,
+	timestampAccuracy: 'high',
 
 	encoderProvider: undefined,
 	decoderProvider: undefined,
@@ -2565,3 +2577,5 @@ export const defaultWhisperVADOptions: WhisperVADOptions = {
 	encoderProvider: undefined,
 	decoderProvider: undefined,
 }
+
+type WhisperTimestampAccuracy = 'medium' | 'high'
