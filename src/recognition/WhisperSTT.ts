@@ -2542,7 +2542,7 @@ export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
 	maxTokensPerPart: 250,
-	timestampAccuracy: 'high',
+	timestampAccuracy: 'medium',
 
 	encoderProvider: undefined,
 	decoderProvider: undefined,
