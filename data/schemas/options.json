@@ -986,10 +986,19 @@
         "repetitionThreshold": {
           "type": "number"
         },
+        "temperature": {
+          "type": "number"
+        },
+        "temperatureIncrement": {
+          "type": "number"
+        },
         "prompt": {
           "type": "string"
         },
         "enableDTW": {
+          "type": "boolean"
+        },
+        "enableFlashAttention": {
           "type": "boolean"
         },
         "verbose": {
@@ -1115,8 +1124,12 @@
         "includeEndTokenInCandidates": {
           "type": "boolean"
         },
-        "useOptimizedAlignmentHeads": {
-          "type": "boolean"
+        "timestampAccuracy": {
+          "type": "string",
+          "enum": [
+            "medium",
+            "high"
+          ]
         },
         "encoderProvider": {
           "$ref": "#/definitions/OnnxExecutionProvider"
@@ -1187,8 +1200,12 @@
         "maxTokensPerPart": {
           "type": "number"
         },
-        "useOptimizedAlignmentHeads": {
-          "type": "boolean"
+        "timestampAccuracy": {
+          "type": "string",
+          "enum": [
+            "medium",
+            "high"
+          ]
         },
         "encoderProvider": {
           "$ref": "#/definitions/OnnxExecutionProvider"
