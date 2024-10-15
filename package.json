@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.8.1",
+	"version": "1.8.2",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -54,8 +54,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.669.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.669.0",
+		"@aws-sdk/client-polly": "^3.670.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.672.0",
 		"@echogarden/espeak-ng-emscripten": "^0.1.2",
 		"@echogarden/fasttext-wasm": "^0.1.0",
 		"@echogarden/flite-wasi": "^0.1.1",
