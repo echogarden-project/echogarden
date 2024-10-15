@@ -63,6 +63,13 @@ export async function recognize(
 			executablePath = await loadExecutablePackage(buildKind)
 		}
 
+		if (options.enableFlashAttention && options.enableDTW) {
+			options.enableDTW = false
+		}
+
+		if (task === 'translate' && options.model!.startsWith('large-v3-turbo')) {
+			throw new Error(`The 'large-v3-turbo' model doesn't support translation tasks.`)
+		}
 
 		logger.start(`Recognize with command-line whisper.cpp (model: ${options.model || modelName}, build: ${buildKind})`)
 		logger.log('')
@@ -99,7 +106,13 @@ export async function recognize(
 			`${options.beamCount!}`,
 
 			'--entropy-thold',
-			`${options.repetitionThreshold!}`
+			`${options.repetitionThreshold!}`,
+
+			'--temperature',
+			`${options.temperature!}`,
+
+			'--temperature-inc',
+			`${options.temperatureIncrement!}`,
 		]
 
 		if (options.prompt) {
@@ -127,6 +140,12 @@ export async function recognize(
 			args.push(
 				'--max-len',
 				'0',
+			)
+		}
+
+		if (options.enableFlashAttention) {
+			args.push(
+				'--flash-attn'
 			)
 		}
 
@@ -425,11 +444,23 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 }
 
 function getModelNameFromModelId(modelId: WhisperCppModelId): WhisperModelName {
-	let lastDashIndex = modelId.lastIndexOf('-')
-
-	if (modelId.startsWith('large-v') && lastDashIndex === 5) {
-		lastDashIndex = -1
+	if (modelId.startsWith('large-v1')) {
+		return 'large-v1'
 	}
+
+	if (modelId.startsWith('large-v2')) {
+		return 'large-v2'
+	}
+
+	if (modelId.startsWith('large-v3-turbo')) {
+		return 'large-v3-turbo'
+	}
+
+	if (modelId.startsWith('large-v3')) {
+		return 'large-v3'
+	}
+
+	const lastDashIndex = modelId.lastIndexOf('-')
 
 	let modelName: string
 
@@ -514,10 +545,13 @@ export interface WhisperCppOptions {
 	topCandidateCount?: number
 	beamCount?: number
 	repetitionThreshold?: number
+	temperature?: number
+	temperatureIncrement?: number
 
 	prompt?: string
 
 	enableDTW?: boolean
+	enableFlashAttention?: boolean
 
 	verbose?: boolean
 }
@@ -536,9 +570,13 @@ export const defaultWhisperCppOptions: WhisperCppOptions = {
 	beamCount: 5,
 	repetitionThreshold: 2.4,
 
+	temperature: 0,
+	temperatureIncrement: 0.2,
+
 	prompt: undefined,
 
 	enableDTW: false,
+	enableFlashAttention: false,
 
 	verbose: false,
 }
