@@ -3,7 +3,7 @@ import { AlignmentPath } from './SpeechAlignment.js'
 
 const log = logToStderr
 
-export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: number[]) {
+export function alignDTWWindowed<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: ArrayLike<number>) {
 	windowMaxLength = Math.max(windowMaxLength, 2)
 
 	if (sequence1.length == 0 || sequence2.length == 0) {
@@ -29,7 +29,7 @@ export function alignDTWWindowed<T, U>(sequence1: T[], sequence2: U[], costFunct
 	return { path, pathCost }
 }
 
-function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: number[]) {
+function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number, windowMaxLength: number, centerIndexes?: ArrayLike<number>) {
 	const halfWindowMaxLength = Math.floor(windowMaxLength / 2)
 
 	const columnCount = sequence1.length
@@ -139,7 +139,7 @@ function computeAccumulatedCostMatrixTransposed<T, U>(sequence1: T[], sequence2:
 	}
 }
 
-function computeBestPathTransposed(accumulatedCostMatrixTransposed: Float32Array[], windowStartOffsets: Int32Array) {
+function computeBestPathTransposed(accumulatedCostMatrixTransposed: ArrayLike<number>[], windowStartOffsets: ArrayLike<number>) {
 	const columnCount = accumulatedCostMatrixTransposed.length
 	const rowCount = accumulatedCostMatrixTransposed[0].length
 

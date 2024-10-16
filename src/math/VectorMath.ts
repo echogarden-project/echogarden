@@ -1,6 +1,6 @@
 import { clip } from "../utilities/Utilities.js"
 
-export function covarianceMatrixOfSamples(samples: number[][], weights?: number[], biased = false) {
+export function covarianceMatrixOfSamples(samples: ArrayLike<number>[], weights?: ArrayLike<number>, biased = false) {
 	if (samples.length == 0) {
 		throw new Error('No vectors given')
 	}
@@ -18,7 +18,7 @@ export function covarianceMatrixOfSamples(samples: number[][], weights?: number[
 	return { covarianceMatrix, mean }
 }
 
-export function covarianceMatrixOfCenteredSamples(centeredSamples: number[][], biased = false, diagonalRegularizationAmount = 1e-6) {
+export function covarianceMatrixOfCenteredSamples(centeredSamples: ArrayLike<number>[], biased = false, diagonalRegularizationAmount = 1e-6) {
 	const sampleCount = centeredSamples.length
 
 	if (sampleCount == 0) {
@@ -60,7 +60,7 @@ export function covarianceMatrixOfCenteredSamples(centeredSamples: number[][], b
 	return covarianceMatrix
 }
 
-export function weightedCovarianceMatrixOfCenteredSamples(centeredSamples: number[][], weights: number[], diagonalRegularizationAmount = 1e-6) {
+export function weightedCovarianceMatrixOfCenteredSamples(centeredSamples: ArrayLike<number>[], weights: ArrayLike<number>, diagonalRegularizationAmount = 1e-6) {
 	const sampleCount = centeredSamples.length
 
 	if (sampleCount == 0) {
@@ -102,33 +102,36 @@ export function weightedCovarianceMatrixOfCenteredSamples(centeredSamples: numbe
 	return covarianceMatrix
 }
 
-export function centerVectors(vectors: number[][], weights?: number[]) {
+export function centerVectors(vectors: ArrayLike<number>[], weights?: ArrayLike<number>) {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
 		return { centeredVectors: [], mean: [] }
 	}
 
-	let mean: number[]
+	let mean: Float32Array
+
 	if (weights) {
 		mean = weightedMeanOfVectors(vectors, weights)
 	} else {
 		mean = meanOfVectors(vectors)
 	}
 
-	const centeredVectors: number[][] = new Array(vectorCount)
+	const centeredVectors: Float32Array[] = []
 
 	for (let i = 0; i < vectorCount; i++) {
-		centeredVectors[i] = subtractVectors(vectors[i], mean)
+		const centeredVector = subtractVectors(vectors[i], mean)
+
+		centeredVectors.push(centeredVector)
 	}
 
 	return { centeredVectors, mean }
 }
 
-export function centerVector(vector: number[]) {
+export function centerVector(vector: ArrayLike<number>) {
 	const mean = meanOfVector(vector)
 
-	const centeredVector: number[] = new Array(vector.length)
+	const centeredVector = new Float32Array(vector.length)
 
 	for (let i = 0; i < vector.length; i++) {
 		centeredVector[i] = vector[i] - mean
@@ -137,7 +140,7 @@ export function centerVector(vector: number[]) {
 	return centeredVector
 }
 
-export function scaleToSumTo1(vector: number[]) {
+export function scaleToSumTo1(vector: ArrayLike<number>) {
 	if (vector.length == 0) {
 		return []
 	}
@@ -148,7 +151,7 @@ export function scaleToSumTo1(vector: number[]) {
 
 	const minValue = vector[indexOfMin(vector)]
 
-	const scaledVector = vector.slice()
+	const scaledVector = Float32Array.from(vector)
 
 	if (minValue < 0) {
 		const addedOffset = -minValue * 2
@@ -196,11 +199,11 @@ export function normalizeVector(vector: ArrayLike<number>, kind: 'population' | 
 	return { normalizedVector, mean, stdDeviation }
 }
 
-export function normalizeVectors(vectors: number[][], kind: 'population' | 'sample' = 'population') {
+export function normalizeVectors(vectors: ArrayLike<number>[], kind: 'population' | 'sample' = 'population') {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
-		return { normalizedVectors: [], mean: [], stdDeviation: [] }
+		return { normalizedVectors: [] as Float32Array[], mean: new Float32Array(0), stdDeviation: new Float32Array(0) }
 	}
 
 	const featureCount = vectors[0].length
@@ -208,7 +211,7 @@ export function normalizeVectors(vectors: number[][], kind: 'population' | 'samp
 	const mean = meanOfVectors(vectors)
 	const stdDeviation = stdDeviationOfVectors(vectors, kind, mean)
 
-	const normalizedVectors: number[][] = []
+	const normalizedVectors: Float32Array[] = []
 
 	for (const vector of vectors) {
 		const normalizedVector = createVector(featureCount)
@@ -225,7 +228,7 @@ export function normalizeVectors(vectors: number[][], kind: 'population' | 'samp
 	return { normalizedVectors, mean, stdDeviation }
 }
 
-export function deNormalizeVectors(normalizedVectors: number[][], originalMean: number[], originalStdDeviation: number[]) {
+export function deNormalizeVectors(normalizedVectors: ArrayLike<number>[], originalMean: ArrayLike<number>, originalStdDeviation: ArrayLike<number>) {
 	const vectorCount = normalizeVectors.length
 
 	if (vectorCount == 0) {
@@ -234,7 +237,7 @@ export function deNormalizeVectors(normalizedVectors: number[][], originalMean: 
 
 	const featureCount = normalizedVectors[0].length
 
-	const deNormalizedVectors: number[][] = []
+	const deNormalizedVectors: Float32Array[] = []
 
 	for (const normalizedVector of normalizedVectors) {
 		const deNormalizedVector = createVector(featureCount)
@@ -249,11 +252,11 @@ export function deNormalizeVectors(normalizedVectors: number[][], originalMean: 
 	return deNormalizedVectors
 }
 
-export function meanOfVectors(vectors: number[][]) {
+export function meanOfVectors(vectors: ArrayLike<number>[]) {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
-		return []
+		return new Float32Array(0)
 	}
 
 	const featureCount = vectors[0].length
@@ -273,11 +276,11 @@ export function meanOfVectors(vectors: number[][]) {
 	return result
 }
 
-export function weightedMeanOfVectors(vectors: number[][], weights: number[]) {
+export function weightedMeanOfVectors(vectors: ArrayLike<number>[], weights: ArrayLike<number>) {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
-		return []
+		return new Float32Array(0)
 	}
 
 	const featureCount = vectors[0].length
@@ -296,15 +299,15 @@ export function weightedMeanOfVectors(vectors: number[][], weights: number[]) {
 	return result
 }
 
-export function stdDeviationOfVectors(vectors: number[][], kind: 'population' | 'sample' = 'population', mean?: number[]) {
+export function stdDeviationOfVectors(vectors: ArrayLike<number>[], kind: 'population' | 'sample' = 'population', mean?: ArrayLike<number>) {
 	return varianceOfVectors(vectors, kind, mean).map(v => Math.sqrt(v))
 }
 
-export function varianceOfVectors(vectors: number[][], kind: 'population' | 'sample' = 'population', mean?: number[]) {
+export function varianceOfVectors(vectors: ArrayLike<number>[], kind: 'population' | 'sample' = 'population', mean?: ArrayLike<number>) {
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
-		return []
+		return new Float32Array(0)
 	}
 
 	const sampleSizeMetric = kind == 'population' || vectorCount == 1 ? vectorCount : vectorCount - 1
@@ -369,15 +372,31 @@ export function varianceOfVector(vector: ArrayLike<number>, kind: 'population' |
 	return result / sampleSizeMetric
 }
 
-export function logOfVector(vector: number[], minVal = 1e-40) {
-	return vector.map(value => Math.log(value + minVal))
+export function logOfVector(vector: ArrayLike<number>, minVal = 1e-40) {
+	const result = new Float32Array(vector.length)
+
+	for (let i = 0; i < vector.length; i++) {
+		const value = vector[i]
+
+		result[i] = Math.log(value + minVal)
+	}
+
+	return result
 }
 
-export function expOfVector(vector: number[]) {
-	return vector.map(value => Math.exp(value))
+export function expOfVector(vector: ArrayLike<number>) {
+	const result = new Float32Array(vector.length)
+
+	for (let i = 0; i < vector.length; i++) {
+		const value = vector[i]
+
+		result[i] = Math.exp(value)
+	}
+
+	return result
 }
 
-export function transpose(matrix: number[][]) {
+export function transpose(matrix: ArrayLike<number>[]) {
 	const vectorCount = matrix.length
 	const featureCount = matrix[0].length
 
@@ -392,31 +411,31 @@ export function transpose(matrix: number[][]) {
 	return transposedMatrix
 }
 
-export function movingAverageOfWindow3(vector: number[]) {
+export function movingAverageOfWindow3(vector: ArrayLike<number>) {
 	const elementCount = vector.length
 
 	if (elementCount == 0) {
-		return []
+		return new Float32Array(0)
 	}
 
 	if (elementCount == 1) {
-		return vector.slice()
+		return Float32Array.from(vector)
 	}
 
-	const result: number[] = []
+	const result = new Float32Array(elementCount)
 
-	result.push((vector[0] + vector[0] + vector[1]) / 3)
+	result[0] = (vector[0] + vector[0] + vector[1]) / 3
 
 	for (let i = 1; i < elementCount - 1; i++) {
-		result.push((vector[i - 1] + vector[i] + vector[i + 1]) / 3)
+		result[i] = (vector[i - 1] + vector[i] + vector[i + 1]) / 3
 	}
 
-	result.push((vector[elementCount - 2] + vector[elementCount - 1] + vector[elementCount - 1]) / 3)
+	result[elementCount - 1] = (vector[elementCount - 2] + vector[elementCount - 1] + vector[elementCount - 1]) / 3
 
 	return result
 }
 
-export function averageMeanSquaredError(actual: number[][], expected: number[][]) {
+export function averageMeanSquaredError(actual: ArrayLike<number>[], expected: ArrayLike<number>[]) {
 	if (actual.length != expected.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -592,7 +611,7 @@ export function minkowskiDistance(vector1: ArrayLike<number>, vector2: ArrayLike
 	return sum ** (1 / power)
 }
 
-export function subtractVectors(vector1: number[], vector2: number[]) {
+export function subtractVectors(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
 	if (vector1.length != vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
@@ -690,40 +709,46 @@ export function sigmoid(x: number) {
 	return zeroIfNaN(result)
 }
 
-export function softmax(logits: number[], temperature = 1.0) {
-	if (logits.length === 0) {
-		return []
+export function softmax(logits: ArrayLike<number>, temperature = 1.0) {
+	const logitCount = logits.length
+
+	if (logitCount === 0) {
+		return new Float32Array(0)
 	}
 
 	let maxValue = -Infinity
 
-	for (const val of logits) {
-		if (val > maxValue) {
-			maxValue = val
+	for (let i = 0; i < logitCount; i++) {
+		const value = logits[i]
+
+		if (value > maxValue) {
+			maxValue = value
 		}
 	}
 
 	const temperatureReciprocal = 1 / (temperature + 1e-40)
 
-	const result: number[] = []
+	const results = new Float32Array(logitCount)
 
 	let sumOfExponentiatedValues = 0.0
 
-	for (const value of logits) {
+	for (let i = 0; i < logitCount; i++) {
+		const value = logits[i]
+
 		const eToValue = Math.exp((value - maxValue) * temperatureReciprocal)
 
 		sumOfExponentiatedValues += eToValue
 
-		result.push(eToValue)
+		results[i] = eToValue
 	}
 
 	const sumOfExponentiatedValuesReciprocal = 1 / (sumOfExponentiatedValues + 1e-40)
 
-	for (let i = 0; i < result.length; i++) {
-		result[i] *= sumOfExponentiatedValuesReciprocal
+	for (let i = 0; i < logitCount; i++) {
+		results[i] *= sumOfExponentiatedValuesReciprocal
 	}
 
-	return result
+	return results
 }
 
 export function hammingDistance(value1: number, value2: number, bitLength = 32) {
@@ -740,7 +765,7 @@ export function hammingDistance(value1: number, value2: number, bitLength = 32) 
 }
 
 export function createVectorArray(vectorCount: number, featureCount: number, initialValue = 0.0) {
-	const result: number[][] = new Array(vectorCount)
+	const result: Float32Array[] = new Array(vectorCount)
 
 	for (let i = 0; i < vectorCount; i++) {
 		result[i] = createVector(featureCount, initialValue)
@@ -750,20 +775,20 @@ export function createVectorArray(vectorCount: number, featureCount: number, ini
 }
 
 export function createVector(elementCount: number, initialValue = 0.0) {
-	const result: number[] = new Array(elementCount)
+	const result = new Float32Array(elementCount)
 
-	for (let i = 0; i < elementCount; i++) {
-		result[i] = initialValue
+	if (initialValue !== 0) {
+		result.fill(initialValue)
 	}
 
 	return result
 }
 
 export function createVectorForIntegerRange(start: number, end: number) {
-	const newVector: number[] = []
+	const newVector = new Float32Array(end - start)
 
 	for (let i = start; i < end; i++) {
-		newVector.push(i)
+		newVector[i - start] = i
 	}
 
 	return newVector
@@ -777,21 +802,23 @@ export function zeroIfNaN(val: number) {
 	}
 }
 
-export function logSumExp(values: number[], minVal = 1e-40) {
+export function logSumExp(values: ArrayLike<number>, minVal = 1e-40) {
 	return Math.log(minVal + sumExp(values))
 }
 
-export function sumExp(values: number[]) {
+export function sumExp(values: ArrayLike<number>) {
 	let sumOfExp = 0
 
-	for (const value of values) {
+	for (let i = 0; i < values.length; i++) {
+		const value = values[i]
+
 		sumOfExp += Math.exp(value)
 	}
 
 	return sumOfExp
 }
 
-export function logSoftmax(values: number[], minVal = 1e-40) {
+export function logSoftmax(values: ArrayLike<number>, minVal = 1e-40) {
 	const softMaxOfValues = softmax(values)
 
 	return logOfVector(softMaxOfValues, minVal)
@@ -814,7 +841,7 @@ export class IncrementalMean {
 	// 3.81
 }
 
-export type DistanceFunction = (a: number[], b: number[]) => number
+export type DistanceFunction = (a: ArrayLike<number>, b: ArrayLike<number>) => number
 
 export interface ComplexNumber {
 	real: number

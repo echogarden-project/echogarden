@@ -36,8 +36,6 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	logger.start(`Resample audio to analysis sample rate (${analysisSampleRate}Hz)`)
 	const resampledAudio = await resampleAudioSpeex(monoAudio, analysisSampleRate)
 
-	let mfccs: number[][]
-
 	if (emphasisFactor > 0) {
 		logger.start('Apply emphasis')
 		resampledAudio.audioChannels[0] = applyEmphasis(resampledAudio.audioChannels[0], emphasisFactor)
@@ -47,20 +45,19 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	const { melSpectogram } = await computeMelSpectogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
 
 	logger.start('Extract MFCCs from Mel spectogram')
-	const mfccsFloat32 = melSpectogramToMFCCs(melSpectogram, featureCount)
-
-	mfccs = mfccsFloat32.map(mfcc => Array.from(mfcc))
+	let mfccs = melSpectogramToMFCCs(melSpectogram, featureCount)
 
 	if (options.normalize!) {
 		logger.start('Normalize MFCCs')
 
 		const { normalizedVectors, mean, stdDeviation } = normalizeVectors(mfccs)
+
 		mfccs = normalizedVectors
-		//mfccs = mfccs.map(mfcc => subtractVectors(mfcc, mean))
 	}
 
 	if (lifteringFactor > 0) {
 		logger.start('Apply liftering to MFCCs')
+
 		mfccs = applyLiftering(mfccs, lifteringFactor)
 	}
 
@@ -75,7 +72,7 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	return mfccs
 }
 
-export function melSpectogramToMFCCs(melSpectogram: Float32Array[], mfccFeatureCount: number) {
+export function melSpectogramToMFCCs(melSpectogram: ArrayLike<number>[], mfccFeatureCount: number) {
 	const melBandCount = melSpectogram[0].length
 	const dctMatrix = createDCTType2CoefficientMatrix(mfccFeatureCount, melBandCount)
 
@@ -84,7 +81,7 @@ export function melSpectogramToMFCCs(melSpectogram: Float32Array[], mfccFeatureC
 	return mfccs
 }
 
-export function melSpectrumToMFCC(melSpectrum: Float32Array, mfccFeatureCount: number, dctMatrix: Float32Array[], normalization: 'none' | 'orthonormal' = 'orthonormal') {
+export function melSpectrumToMFCC(melSpectrum: ArrayLike<number>, mfccFeatureCount: number, dctMatrix: ArrayLike<number>[], normalization: 'none' | 'orthonormal' = 'orthonormal') {
 	const melBandCount = melSpectrum.length
 
 	let firstFeatureNormalizationFactor: number
@@ -108,7 +105,6 @@ export function melSpectrumToMFCC(melSpectrum: Float32Array, mfccFeatureCount: n
 		for (let j = 0; j < melBandCount; j++) {
 			const dctCoefficient = dctMatrixRow[j]
 			const logMel = powerToDecibels(melSpectrum[j])
-			//const logMel = Math.log(1e-40 + melSpectrum[j])
 
 			sum += dctCoefficient * logMel
 		}
@@ -123,7 +119,7 @@ export function melSpectrumToMFCC(melSpectrum: Float32Array, mfccFeatureCount: n
 }
 
 export function createDCTType2CoefficientMatrix(mfccFeatureCount: number, melBandCount: number) {
-	const dctMatrix = new Array<Float32Array>(mfccFeatureCount)
+	const dctMatrix: Float32Array[] = []
 
 	for (let mfccFeatureIndex = 0; mfccFeatureIndex < mfccFeatureCount; mfccFeatureIndex++) {
 		const row = new Float32Array(melBandCount)
@@ -134,29 +130,13 @@ export function createDCTType2CoefficientMatrix(mfccFeatureCount: number, melBan
 			row[melBandIndex] = Math.cos(innerMultiplier * (melBandIndex + 0.5))
 		}
 
-		dctMatrix[mfccFeatureIndex] = row
+		dctMatrix.push(row)
 	}
 
 	return dctMatrix
 }
 
-export function mfccBufferToVectors(mfccBuffer: Float64Array, mfccFeatureCount: number) {
-	if (mfccBuffer.length % mfccFeatureCount != 0) {
-		throw new Error(`MFCC buffer length is not a multiple of the expected feature count (${mfccFeatureCount})`)
-	}
-
-	const mfccVectors: number[][] = []
-
-	for (let offset = 0; offset < mfccBuffer.length; offset += mfccFeatureCount) {
-		const mfccVector = Array.from(mfccBuffer.subarray(offset, offset + mfccFeatureCount))
-
-		mfccVectors.push(mfccVector)
-	}
-
-	return mfccVectors
-}
-
-export function applyEmphasis(samples: Float32Array, emphasisFactor = 0.97, initialState = 0) {
+export function applyEmphasis(samples: ArrayLike<number>, emphasisFactor = 0.97, initialState = 0) {
 	const processedSamples = new Float32Array(samples.length)
 
 	processedSamples[0] = samples[0] - (emphasisFactor * initialState)
@@ -168,7 +148,7 @@ export function applyEmphasis(samples: Float32Array, emphasisFactor = 0.97, init
 	return processedSamples
 }
 
-export function applyLiftering(mfccs: number[][], lifteringFactor: number) {
+export function applyLiftering(mfccs: ArrayLike<number>[], lifteringFactor: number) {
 	const featureCount = mfccs[0].length
 
 	const lifterMultipliers = new Float32Array(featureCount)
@@ -177,10 +157,10 @@ export function applyLiftering(mfccs: number[][], lifteringFactor: number) {
 		lifterMultipliers[i] = 1 + (lifteringFactor / 2) * Math.sin(Math.PI * (i + 1) / lifteringFactor)
 	}
 
-	const lifteredMfccs: number[][] = []
+	const lifteredMfccs: Float32Array[] = []
 
 	for (const mfcc of mfccs) {
-		const lifteredMfcc = new Array(featureCount)
+		const lifteredMfcc = new Float32Array(featureCount)
 
 		for (let i = 0; i < featureCount; i++) {
 			lifteredMfcc[i] = mfcc[i] * lifterMultipliers[i]

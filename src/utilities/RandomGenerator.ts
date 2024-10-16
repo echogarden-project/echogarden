@@ -29,7 +29,7 @@ export abstract class RandomGenerator {
 		return result
 	}
 
-	getNormallyDistributedVector(elementCount: number, meanVector: number[], standardDeviationVector: number[]) {
+	getNormallyDistributedVector(elementCount: number, meanVector: ArrayLike<number>, standardDeviationVector: ArrayLike<number>) {
 		const features = this.getNormallyDistributedValues(elementCount)
 
 		for (let i = 0; i < features.length; i++) {
@@ -78,7 +78,7 @@ export abstract class RandomGenerator {
 		return [n1, n2]
 	}
 
-	selectRandomIndexFromDistribution(distribution: number[]) {
+	selectRandomIndexFromDistribution(distribution: ArrayLike<number>) {
 		const sum = sumVector(distribution)
 
 		const randomTarget = this.getFloatInRange(0, sum)

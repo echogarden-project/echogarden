@@ -716,7 +716,7 @@ function getMappedFrameIndexForPath(referenceFrameIndex: number, compactedPath: 
 	return mappedFrameIndex
 }
 
-function getMfccOptionsForGranularity(granularity: DtwGranularity) {
+export function getMfccOptionsForGranularity(granularity: DtwGranularity) {
 	let mfccOptions: MfccOptions
 
 	if (granularity == 'xx-low') {

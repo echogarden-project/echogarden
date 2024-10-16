@@ -3,7 +3,7 @@ import { AlignmentPath } from './SpeechAlignment.js'
 
 const log = logToStderr
 
-export function alignDTW<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, deletionEnabled = true) {
+export function alignDTW<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number, deletionEnabled = true) {
 	if (sequence1.length == 0 || sequence2.length == 0) {
 		return { path: [] as AlignmentPath, pathCost: 0 }
 	}
@@ -23,7 +23,7 @@ export function alignDTW<T, U>(sequence1: T[], sequence2: U[], costFunction: (a:
 	return { path, pathCost }
 }
 
-function computeAccumulatedCostMatrix<T, U>(sequence1: T[], sequence2: U[], costFunction: (a: T, b: U) => number, deletionEnabled = true) {
+function computeAccumulatedCostMatrix<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number, deletionEnabled = true) {
 	const rowCount = sequence2.length
 	const columnCount = sequence1.length
 

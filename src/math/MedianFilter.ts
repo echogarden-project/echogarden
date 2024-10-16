@@ -1,6 +1,6 @@
 import { createVector } from "./VectorMath.js"
 
-export function medianOf5Filter(points: number[]) {
+export function medianOf5Filter(points: ArrayLike<number>): Float32Array {
 	// This function computes the moving median with a window of 5 elements.
 
 	// I initialized the window such that at the edges of the range no median would be computed.
@@ -10,10 +10,10 @@ export function medianOf5Filter(points: number[]) {
 	const pointCount = points.length
 
 	if (pointCount < 5) {
-		return points
+		return Float32Array.from(points)
 	}
 
-	const medians = createVector(pointCount)
+	const medians = new Float32Array(pointCount)
 
 	medians[0] = points[0]
 	medians[1] = points[1]
@@ -38,7 +38,7 @@ export function medianOf3Filter(points: ArrayLike<number>) {
 		return points
 	}
 
-	const medians: number[] = createVector(pointCount)
+	const medians = new Float32Array(pointCount)
 
 	medians[0] = points[0]
 	medians[pointCount - 1] = points[pointCount - 1]
@@ -110,7 +110,7 @@ export function medianOf3(a: number, b: number, c: number) {
 }
 
 // Slower, variable-width median filter using the `moving-median` package
-export async function medianFilter(points: number[], width: number) {
+export async function medianFilter(points: ArrayLike<number>, width: number) {
 	const { default: createMedianFilter } = await import('moving-median')
 
 	const filter = createMedianFilter(width)

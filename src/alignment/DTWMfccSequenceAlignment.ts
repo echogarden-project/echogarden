@@ -4,7 +4,7 @@ import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 
 const log = logToStderr
 
-export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number[][], windowLength: number, distanceFunctionKind: 'euclidean' | 'cosine' = 'euclidean', centerIndexes?: number[]) {
+export async function alignMFCC_DTW(mfccFrames1: ArrayLike<number>[], mfccFrames2: ArrayLike<number>[], windowLength: number, distanceFunctionKind: 'euclidean' | 'cosine' = 'euclidean', centerIndexes?: number[]) {
 	if (distanceFunctionKind == 'euclidean') {
 		let distanceFunction = euclideanDistance
 
@@ -28,10 +28,13 @@ export async function alignMFCC_DTW(mfccFrames1: number[][], mfccFrames2: number
 		const magnitudes1 = mfccFrames1.map(magnitude)
 		const magnitudes2 = mfccFrames2.map(magnitude)
 
+		const distanceFunction = (i: number, j: number) =>
+			cosineDistancePrecomputedMagnitudes(mfccFrames1[i], mfccFrames2[j], magnitudes1[i], magnitudes2[j])
+
 		const { path } = alignDTWWindowed(
 			indexes1,
 			indexes2,
-			(i, j) => cosineDistancePrecomputedMagnitudes(mfccFrames1[i], mfccFrames2[j], magnitudes1[i], magnitudes2[j]),
+			distanceFunction,
 			windowLength,
 			centerIndexes
 		)
