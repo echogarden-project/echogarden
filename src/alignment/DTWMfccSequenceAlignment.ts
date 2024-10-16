@@ -1,5 +1,5 @@
-import { cosineDistancePrecomputedMagnitudes, createVectorForIntegerRange, euclideanDistance, euclideanDistance13Dim, magnitude } from '../math/VectorMath.js'
-import { logToStderr } from '../utilities/Utilities.js'
+import { cosineDistancePrecomputedMagnitudes, euclideanDistance, euclideanDistance13Dim, magnitude } from '../math/VectorMath.js'
+import { getIntegerRange, logToStderr } from '../utilities/Utilities.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 
 const log = logToStderr
@@ -22,8 +22,8 @@ export async function alignMFCC_DTW(mfccFrames1: ArrayLike<number>[], mfccFrames
 
 		return path
 	} else if (distanceFunctionKind == 'cosine') {
-		const indexes1 = createVectorForIntegerRange(0, mfccFrames1.length)
-		const indexes2 = createVectorForIntegerRange(0, mfccFrames2.length)
+		const indexes1 = getIntegerRange(0, mfccFrames1.length)
+		const indexes2 = getIntegerRange(0, mfccFrames2.length)
 
 		const magnitudes1 = mfccFrames1.map(magnitude)
 		const magnitudes2 = mfccFrames2.map(magnitude)

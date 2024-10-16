@@ -413,8 +413,8 @@ export function writeToStdinInChunks(process: ChildProcessWithoutNullStreams, bu
 	writeChunk(0)
 }
 
-export function getIntegerRange(start: number, end: number): number[] {
-	const result = []
+export function getIntegerRange(start: number, end: number) {
+	const result: number[] = []
 
 	for (let i = start; i < end; i++) {
 		result.push(i)
