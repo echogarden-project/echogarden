@@ -255,7 +255,15 @@ export function setupProgramTerminationListeners(cleanupFunc?: () => void) {
 }
 
 export function clip(num: number, min: number, max: number) {
-	return Math.max(min, Math.min(max, num))
+	if (num < min) {
+		return min
+	}
+
+	if (num > max) {
+		return max
+	}
+
+	return num
 }
 
 export function readBinaryIncomingMessage(incomingMessage: IncomingMessage) {
