@@ -157,18 +157,20 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
 **Whisper.cpp**:
-* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`. These quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`, `large-v3-turbo`, `large-v3-turbo-q5_0`. Defaults to `base` or `base.en`
+* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`, `large-v3-turbo`. The following quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`, `large-v3-turbo-q5_0`. Defaults to `base` or `base.en`
 * `whisperCpp.executablePath`: a path to a custom `whisper.cpp` `main` executable (currently required for macOS)
-* `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set to `cpu` or `cublas-12.4.0`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath`
+* `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set to `cpu`, `cublas-12.4.0` or `custom`. By default, builds are auto-selected and downloaded for Windows x64 (`cpu`, `cublas-12.4.0`) and Linux x64 (`cpu`). Using other builds requires providing a custom `executablePath` (which will automatically set this option to `custom`)
 * `whisperCpp.threadCount`: number of threads to use, defaults to `4`
 * `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the `whisper.cpp` CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
-* `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`
+* `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`. If a custom build is used, it will enable or disable GPU for that build
 * `whisperCpp.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
+* `whisperCpp.temperature`: set temperature. Defaults to `0.0`
+* `whisperCpp.temperatureIncrement`: set temperature increment. Defaults to `0.2`
 * `whisperCpp.repetitionThreshold`: minimal repetition / compressibility score to cause a decoded segment to be discarded. Defaults to `2.4`
 * `whisperCpp.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
 * `whisperCpp.enableDTW`: enable `whisper.cpp`'s own experimental DTW-based token alignment to be used to derive timestamps. Defaults to `false`
-* `whisperCpp.enableFlashAttention`: enable flash attention. Defaults to `false`
+* `whisperCpp.enableFlashAttention`: enable flash attention. Can significantly increase performance for some configurations (**Note**: setting this to `true` will cause `enableDTW` to always be set to `false` since it's not compatible with flash attention). Defaults to `false`
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
 
 **Vosk**:
@@ -238,7 +240,7 @@ Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, u
 * `whisper.model`: Whisper model to use. Defaults to `tiny` or `tiny.en`
 * `whisper.endTokenThreshold`: minimal probability to accept an end token for a recognized part. The probability is measured via the softmax between the end token's logit and the second highest logit. You can try to adjust this threshold in cases the model is ending a part with too few, or many tokens decoded. Defaults to `0.9`. On the last audio part, it is always effectively set to `Infinity`, to ensure the remaining transcript tokens are decoded in full
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode per part. Should help avoid edge cases where the model never reaches an end token for the part, which otherwise may cause the model to decode too many tokens and eventually crash. Defaults to 250
-* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `medium`
+* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high`
 * `whisper.encoderProvider`: encoder ONNX provider. See details in recognition section above
 * `whisper.decoderProvider`: decoder ONNX provider. See details in recognition section above
 
