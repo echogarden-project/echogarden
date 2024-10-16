@@ -373,6 +373,10 @@ export class Whisper {
 		options = extendDeep(defaultWhisperOptions, options)
 		options.model = this.modelName
 
+		if (!options.timestampAccuracy) {
+			options.timestampAccuracy = this.defaultTimestampAccuracy
+		}
+
 		const audioSamples = rawAudio.audioChannels[0]
 		const sampleRate = rawAudio.sampleRate
 		const prompt = options.prompt
@@ -516,6 +520,10 @@ export class Whisper {
 		await this.initializeTokenizerIfNeeded()
 
 		whisperAlignmentOptions = extendDeep(defaultWhisperAlignmentOptions, whisperAlignmentOptions)
+
+		if (!whisperAlignmentOptions.timestampAccuracy) {
+			whisperAlignmentOptions.timestampAccuracy = this.defaultTimestampAccuracy
+		}
 
 		const targetLanguage = task === 'transcribe' ? sourceLanguage : 'en'
 
@@ -1775,6 +1783,14 @@ export class Whisper {
 		return alignmentHeadsIndexes[this.modelName]
 	}
 
+	get defaultTimestampAccuracy() {
+		if (this.modelName.startsWith('tiny') || this.modelName.startsWith('base')) {
+			return 'high'
+		} else {
+			return 'medium'
+		}
+	}
+
 	getSuppressedTokens() {
 		return [
 			...this.getSuppressedTextTokens(),
@@ -2523,7 +2539,7 @@ export const defaultWhisperOptions: WhisperOptions = {
 	decodeTimestampTokens: true,
 	endTokenThreshold: 0.9,
 	includeEndTokenInCandidates: true,
-	timestampAccuracy: 'medium',
+	timestampAccuracy: undefined,
 	encoderProvider: undefined,
 	decoderProvider: undefined,
 	seed: undefined,
@@ -2544,7 +2560,7 @@ export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
 	maxTokensPerPart: 250,
-	timestampAccuracy: 'high',
+	timestampAccuracy: undefined,
 
 	encoderProvider: undefined,
 	decoderProvider: undefined,
