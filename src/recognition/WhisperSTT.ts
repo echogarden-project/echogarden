@@ -1509,7 +1509,7 @@ export class Whisper {
 			}
 		}
 
-		// Perform DTW
+		// Perform DTW to align tokens indexes to frame indexes
 		const tokenIndexes = getIntegerRange(0, tokenCount)
 		const frameIndexes = getIntegerRange(0, segmentFrameCount)
 
