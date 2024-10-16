@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "1.8.2",
+	"version": "1.8.3",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -85,7 +85,7 @@
 		"jsdom": "^25.0.1",
 		"json5": "^2.2.3",
 		"kuromoji": "^0.1.2",
-		"microsoft-cognitiveservices-speech-sdk": "^1.40.0",
+		"microsoft-cognitiveservices-speech-sdk": "^1.41.0",
 		"moving-median": "^1.0.0",
 		"msgpack-lite": "^0.1.26",
 		"onnxruntime-node": "^1.19.2",
