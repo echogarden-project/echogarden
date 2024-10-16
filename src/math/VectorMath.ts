@@ -106,7 +106,7 @@ export function centerVectors(vectors: ArrayLike<number>[], weights?: ArrayLike<
 	const vectorCount = vectors.length
 
 	if (vectorCount == 0) {
-		return { centeredVectors: [], mean: [] }
+		return { centeredVectors: [] as Float32Array[], mean: new Float32Array(0) }
 	}
 
 	let mean: Float32Array
@@ -142,11 +142,11 @@ export function centerVector(vector: ArrayLike<number>) {
 
 export function scaleToSumTo1(vector: ArrayLike<number>) {
 	if (vector.length == 0) {
-		return []
+		return new Float32Array(0)
 	}
 
 	if (vector.length == 1) {
-		return [1]
+		return Float32Array.from([1])
 	}
 
 	const minValue = vector[indexOfMin(vector)]
@@ -232,7 +232,7 @@ export function deNormalizeVectors(normalizedVectors: ArrayLike<number>[], origi
 	const vectorCount = normalizeVectors.length
 
 	if (vectorCount == 0) {
-		return []
+		return [] as Float32Array[]
 	}
 
 	const featureCount = normalizedVectors[0].length
@@ -612,13 +612,15 @@ export function minkowskiDistance(vector1: ArrayLike<number>, vector2: ArrayLike
 }
 
 export function subtractVectors(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {
+	const elementCount = vector1.length
+
 	if (vector1.length != vector2.length) {
 		throw new Error('Vectors are not the same length')
 	}
 
 	const result = createVector(vector1.length)
 
-	for (let i = 0; i < vector1.length; i++) {
+	for (let i = 0; i < elementCount; i++) {
 		result[i] = vector1[i] - vector2[i]
 	}
 
@@ -626,10 +628,24 @@ export function subtractVectors(vector1: ArrayLike<number>, vector2: ArrayLike<n
 }
 
 export function sumVector(vector: ArrayLike<number>) {
+	const elementCount = vector.length
+
 	let result = 0.0
 
-	for (let i = 0; i < vector.length; i++) {
+	for (let i = 0; i < elementCount; i++) {
 		result += vector[i]
+	}
+
+	return result
+}
+
+export function sumOfSquaresForVector(vector: ArrayLike<number>) {
+	const elementCount = vector.length
+
+	let result = 0.0
+
+	for (let i = 0; i < elementCount; i++) {
+		result += vector[i] ** 2
 	}
 
 	return result
@@ -690,10 +706,11 @@ export function minValue(vector: ArrayLike<number>) {
 }
 
 export function indexOfMin(vector: ArrayLike<number>) {
+	const elementCount = vector.length
 	let minValue = Infinity
 	let result = -1
 
-	for (let i = 0; i < vector.length; i++) {
+	for (let i = 0; i < elementCount; i++) {
 		if (vector[i] < minValue) {
 			minValue = vector[i]
 			result = i
@@ -782,16 +799,6 @@ export function createVector(elementCount: number, initialValue = 0.0) {
 	}
 
 	return result
-}
-
-export function createVectorForIntegerRange(start: number, end: number) {
-	const newVector = new Float32Array(end - start)
-
-	for (let i = start; i < end; i++) {
-		newVector[i - start] = i
-	}
-
-	return newVector
 }
 
 export function zeroIfNaN(val: number) {
