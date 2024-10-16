@@ -467,7 +467,7 @@ export class Whisper {
 			// Find alignment path
 			let alignmentHeads: number[] | undefined
 
-			if (options.timestampAccuracy === 'medium') {
+			if (options.timestampAccuracy === 'medium' || options.model == 'large-v3-turbo') {
 				alignmentHeads = this.alignmentHeadIndexes
 			} else if (options.timestampAccuracy === 'high') {
 				alignmentHeads = undefined
