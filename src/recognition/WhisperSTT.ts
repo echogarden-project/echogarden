@@ -3,7 +3,7 @@ import type * as Onnx from 'onnxruntime-node'
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
 import { clip, concatFloat32Arrays, getIntegerRange, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, stdDeviationOfVector } from '../math/VectorMath.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, stdDeviationOfVector, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -1389,11 +1389,7 @@ export class Whisper {
 		const frameCount = qksTensors[0].dims[4]
 
 		if (!headIndexes) {
-			headIndexes = []
-
-			for (let i = 0; i < layerCount * headCount; i++) {
-				headIndexes.push(i)
-			}
+			headIndexes = getIntegerRange(0, layerCount * headCount)
 		}
 
 		// Load attention head weights from tensors
@@ -1434,10 +1430,19 @@ export class Whisper {
 		// Normalize all weights in each individual head, if enabled
 		if (normalize) {
 			for (const head of attentionHeads) {
-				const allWeightsForHead = concatFloat32Arrays(head)
+				let sumOfAllWeightsForHead = 0
+				let sumOfAllSquaredWeightsForHead = 0
+				let countOfAllWeightsForHead = 0
 
-				const meanOfAllWeightsForHead = meanOfVector(allWeightsForHead)
-				const stdDeviationOfAllWeightsForHead = stdDeviationOfVector(allWeightsForHead, 'population', meanOfAllWeightsForHead) + 1e-10
+				for (const tokenFrames of head) {
+					sumOfAllWeightsForHead += sumVector(tokenFrames)
+					sumOfAllSquaredWeightsForHead += sumOfSquaresForVector(tokenFrames)
+					countOfAllWeightsForHead += tokenFrames.length
+				}
+
+				const meanOfAllWeightsForHead = sumOfAllWeightsForHead / countOfAllWeightsForHead
+				const varianceOfAllWeightsForHead = sumOfAllSquaredWeightsForHead / countOfAllWeightsForHead
+				const stdDeviationOfAllWeightsForHead = Math.sqrt(varianceOfAllWeightsForHead)
 
 				const stdDeviationReciprocal = 1.0 / (stdDeviationOfAllWeightsForHead + 1e-10)
 
@@ -1461,11 +1466,9 @@ export class Whisper {
 		// Compute the mean of the selected attention heads for all layers
 		const frameMeansForToken: Float32Array[] = []
 
-		for (let i = 0; i < tokenCount; i++) {
-			frameMeansForToken.push(new Float32Array(segmentFrameCount))
-		}
-
 		for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
+			const meansForFrames = new Float32Array(segmentFrameCount)
+
 			for (let frameIndex = 0; frameIndex < segmentFrameCount; frameIndex++) {
 				let sum = 0
 
@@ -1475,8 +1478,10 @@ export class Whisper {
 
 				const frameMean = sum / attentionHeads.length
 
-				frameMeansForToken[tokenIndex][frameIndex] = frameMean
+				meansForFrames[frameIndex] = frameMean
 			}
+
+			frameMeansForToken.push(meansForFrames)
 		}
 
 		// Anchor timestamp tokens timestamps to their original values, if enabled
