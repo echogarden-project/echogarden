@@ -7,7 +7,7 @@ import { convertHtmlToText } from './StringUtilities.js'
 
 export async function fetchDocumentText(url: string) {
 	const progressLogger = new Logger()
-	progressLogger.start(`Fetching ${url}`)
+	progressLogger.start(`Fetch ${url}`)
 
 	const parsedUrl = new URL(url)
 	const origin = parsedUrl.origin
@@ -22,7 +22,7 @@ export async function fetchDocumentText(url: string) {
 		}),
 	})
 
-	progressLogger.start(`Parsing document body`)
+	progressLogger.start(`Parse document body`)
 
 	const doc = new JSDOM(response.data, {
 		url,
