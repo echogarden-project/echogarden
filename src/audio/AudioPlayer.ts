@@ -11,7 +11,7 @@ import { getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Uti
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
-import { outputFile, readAndParseJsonFile, readFile, remove } from '../utilities/FileSystem.js'
+import { readAndParseJsonFile, readFile, remove, writeFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
@@ -201,7 +201,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 		} else {
 			tempFilePath = path.join(getAppTempDir(appName), `${getRandomHexString(16)}.wav`)
 			const waveFileBuffer = encodeRawAudioToWave(rawAudio)
-			await outputFile(tempFilePath, waveFileBuffer)
+			await writeFile(tempFilePath, waveFileBuffer)
 
 			playerProcess = spawn(
 				soxPath,

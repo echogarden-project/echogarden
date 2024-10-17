@@ -8,9 +8,11 @@ import { OpenPromise } from './OpenPromise.js'
 import { getRandomHexString } from './Utilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir } from './PathUtilities.js'
+import { writeFile as nodeFsWriteFile } from 'node:fs/promises'
 
 export const readFile = promisify(gracefulFS.readFile)
-//export const writeFile = promisify(gracefulFS.writeFile)
+//export const gracefulFsWriteFile = promisify(gracefulFS.writeFile)
+
 export const readdir = promisify(gracefulFS.readdir)
 export const stat = promisify(gracefulFS.stat)
 export const open = promisify(gracefulFS.open)
@@ -25,7 +27,7 @@ export const existsSync = gracefulFS.existsSync
 
 export const remove = fsExtra.remove
 export const copy = fsExtra.copy
-export const outputFile = fsExtra.outputFile
+// const outputFile = fsExtra.outputFile
 
 export async function readDirRecursive(dir: string, fileFilter?: (filePath: string) => boolean) {
 	if (!(await stat(dir)).isDirectory()) {
@@ -98,7 +100,11 @@ export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = fals
 }
 
 export async function writeFile(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {
-	return outputFile(filePath, data, options)
+	const fileDir = path.dirname(filePath)
+
+	await ensureDir(fileDir)
+
+	return nodeFsWriteFile(filePath, data, options)
 }
 
 export async function writeFileSafe(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {
