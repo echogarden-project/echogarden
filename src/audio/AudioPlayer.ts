@@ -315,7 +315,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 			mpg123AudioBufferSize = bytesPerSecond * mpg123AudioBufferDuration
 		}
 
-		audioData = Buffer.concat([audioData, Buffer.alloc(mpg123AudioBufferSize)])
+		audioData = concatBuffers([audioData, Buffer.alloc(mpg123AudioBufferSize)])
 
 		const maxChunkSize = mpg123AudioBufferSize
 

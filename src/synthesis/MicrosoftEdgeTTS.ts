@@ -9,7 +9,7 @@ import * as AzureCognitiveServicesTTS from './AzureCognitiveServicesTTS.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
+import { concatBuffers, getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 
@@ -147,7 +147,7 @@ async function requestSynthesis(
 				receivedEventMessages.push(content['Metadata'][0])
 			}
 			else if (header['Path'] == 'turn.end') {
-				const result: SynthesisRequestResult = { audioData: Buffer.concat(audioChunks), events: receivedEventMessages }
+				const result: SynthesisRequestResult = { audioData: concatBuffers(audioChunks), events: receivedEventMessages }
 
 				removeWebSocketHandlers()
 

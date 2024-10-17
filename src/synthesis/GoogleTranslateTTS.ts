@@ -1,6 +1,6 @@
 import { request } from 'gaxios'
 import { Phrase, splitToFragments } from '../nlp/Segmentation.js'
-import { concatFloat32Arrays, logToStderr } from '../utilities/Utilities.js'
+import { concatBuffers, concatFloat32Arrays, logToStderr } from '../utilities/Utilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
@@ -124,7 +124,7 @@ export async function synthesizeShortText(text: string, languageCode = 'en', tld
 		}
 	}
 
-	const resultMp3Stream = Buffer.concat(audioChunks)
+	const resultMp3Stream = concatBuffers(audioChunks)
 
 	return resultMp3Stream
 }

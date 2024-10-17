@@ -1,6 +1,6 @@
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { logToStderr } from '../utilities/Utilities.js'
+import { concatBuffers, logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
@@ -28,7 +28,7 @@ export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFo
 	riffChunkHeaderBuffer.writeUint32LE(riffChunkLength, 4)
 	riffChunkHeaderBuffer.write('WAVE', 8, 'ascii')
 
-	return Buffer.concat([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
+	return concatBuffers([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
 }
 
 export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
@@ -125,7 +125,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 	const bitDepth = waveFormat.bitDepth
 	const speakerPositionMask = waveFormat.speakerPositionMask
 
-	const concatenatedDataBuffers = Buffer.concat(dataBuffers)
+	const concatenatedDataBuffers = concatBuffers(dataBuffers)
 	dataBuffers.length = 0 // Allow the garbage collector to free up memory held by the data buffers
 
 	const audioChannels = AudioBufferConversion.decodeToChannels(concatenatedDataBuffers, channelCount, bitDepth, sampleFormat)

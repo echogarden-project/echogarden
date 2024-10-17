@@ -275,7 +275,7 @@ export function readBinaryIncomingMessage(incomingMessage: IncomingMessage) {
 		})
 
 		incomingMessage.on('end', () => {
-			resolve(Buffer.concat(chunks))
+			resolve(concatBuffers(chunks))
 		})
 
 		incomingMessage.on('error', (e) => {
@@ -431,3 +431,26 @@ export function getIntegerRange(start: number, end: number) {
 	return result
 }
 
+export function concatBuffers(buffers: Buffer[]) {
+	let totalLength = 0
+
+	for (const buffer of buffers) {
+		totalLength += buffer.length
+	}
+
+	const resultBuffer = Buffer.alloc(totalLength)
+
+	if (totalLength === 0) {
+		return resultBuffer
+	}
+
+	let writeOffset = 0
+
+	for (const buffer of buffers) {
+		resultBuffer.set(buffer, writeOffset)
+
+		writeOffset += buffer.length
+	}
+
+	return resultBuffer
+}

@@ -1,7 +1,7 @@
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
 import { Logger } from '../utilities/Logger.js'
-import { logToStderr } from '../utilities/Utilities.js'
+import { concatBuffers, logToStderr } from '../utilities/Utilities.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 
@@ -37,7 +37,7 @@ export async function recognize(rawAudio: RawAudio, modelPath: string, verbose =
 
 	const pcmAudio = AudioBufferConversion.encodeToAudioBuffer(audioChannels, 16)
 	const trailingSilence = Buffer.alloc(sampleRate * 4)
-	const pcmAudioWithTrailingSilence = Buffer.concat([pcmAudio, trailingSilence])
+	const pcmAudioWithTrailingSilence = concatBuffers([pcmAudio, trailingSilence])
 	const pcmAudioByteCount = pcmAudioWithTrailingSilence.length
 
 	const maxChunkSize = sampleRate * 2.0

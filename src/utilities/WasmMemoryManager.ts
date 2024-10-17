@@ -1,3 +1,5 @@
+import { concatBuffers } from "./Utilities.js"
+
 export class WasmMemoryManager {
 	wasmModule: any
 
@@ -221,7 +223,7 @@ export class WasmMemoryManager {
 	}
 
 	allocNullTerminatedUtf8String(str: string) {
-		const strBuffer = Buffer.concat([Buffer.from(str, 'utf8'), Buffer.alloc(1)])
+		const strBuffer = concatBuffers([Buffer.from(str, 'utf8'), Buffer.alloc(1)])
 		const ref = this.allocUint8Array(strBuffer.length)
 		ref.view.set(strBuffer)
 		return ref

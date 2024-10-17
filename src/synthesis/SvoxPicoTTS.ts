@@ -6,6 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { readFile } from '../utilities/FileSystem.js'
+import { concatBuffers } from '../utilities/Utilities.js'
 
 let svoxPicoInstance: any
 
@@ -123,7 +124,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 		textByteOffset += bytesWritten
 	}
 
-	const audioData = Buffer.concat(audioParts)
+	const audioData = concatBuffers(audioParts)
 
 	function readAudioDataFromEngine() {
 		const outBuffers: Buffer[] = []
@@ -151,7 +152,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 			}
 		}
 
-		return Buffer.concat(outBuffers)
+		return concatBuffers(outBuffers)
 	}
 
 	dispose()

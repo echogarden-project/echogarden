@@ -63,7 +63,7 @@ export async function synthesize(
 				buffers.push(buffer.subarray(0, amountRead))
 			}
 
-			const encodedAudio = Buffer.concat(buffers)
+			const encodedAudio = concatBuffers(buffers)
 			*/
 
 			const encodedAudio = Buffer.from(result.audioData)

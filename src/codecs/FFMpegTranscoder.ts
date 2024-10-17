@@ -3,7 +3,7 @@ import { spawn } from 'child_process'
 import { encodeRawAudioToWave, decodeWaveToRawAudio, RawAudio } from '../audio/AudioUtilities.js'
 
 import { Logger } from '../utilities/Logger.js'
-import { commandExists, logToStderr } from '../utilities/Utilities.js'
+import { commandExists, concatBuffers, logToStderr } from '../utilities/Utilities.js'
 import path from 'node:path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
@@ -94,7 +94,7 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 
 		process.on('close', (exitCode) => {
 			if (exitCode == 0) {
-				const concatenatedChunks = Buffer.concat(stdoutChunks)
+				const concatenatedChunks = concatBuffers(stdoutChunks)
 
 				resolve(concatenatedChunks)
 			} else {
