@@ -55,8 +55,8 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	words = wordsWithMerges
 
-	// Remove words containing only whitespace
-	words = words.filter(word => word.trim() != '')
+	// Trim words and remove words containing only whitespace
+	words = words.map(word => word.trim()).filter(word => word !== '')
 
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
 
