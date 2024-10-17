@@ -481,6 +481,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 
 export async function textToIPA(text: string, voice: string) {
 	await setVoice(voice)
+
 	const { instance } = await getEspeakInstance()
 	const ipa: string = (instance.synthesize_ipa(text).ipa as string).trim()
 
@@ -489,6 +490,7 @@ export async function textToIPA(text: string, voice: string) {
 
 export async function textToPhonemes(text: string, voice: string, useIPA = true) {
 	await setVoice(voice)
+
 	const { instance, module } = await getEspeakInstance()
 	const textPtr = instance.convert_to_phonemes(text, useIPA)
 
@@ -502,10 +504,15 @@ export async function textToPhonemes(text: string, voice: string, useIPA = true)
 	return result
 }
 
+let lastVoiceId: string | undefined
 export async function setVoice(voiceId: string) {
 	const { instance } = await getEspeakInstance()
 
-	instance.set_voice(voiceId)
+	if (voiceId !== lastVoiceId) {
+		instance.set_voice(voiceId)
+
+		lastVoiceId = voiceId
+	}
 }
 
 export async function setVolume(volume: number) {
