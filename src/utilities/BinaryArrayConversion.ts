@@ -32,12 +32,19 @@ export function int24ToBufferLE(int24s: Int32Array) {
 		readOffset < int24s.length;
 		readOffset++, writeOffset += 3) {
 
-		const val = int24s[readOffset]
-		const encodedVal = val < 0 ? val + (2 ** 24) : val
+		const signedValue = int24s[readOffset]
 
-		buffer[writeOffset + 0] = (encodedVal) & 0xff
-		buffer[writeOffset + 1] = (encodedVal >> 8) & 0xff
-		buffer[writeOffset + 2] = (encodedVal >> 16) & 0xff
+		let unsignedValue: number
+
+		if (signedValue >= 0) {
+			unsignedValue = signedValue
+		} else {
+			unsignedValue = signedValue + (2 ** 24)
+		}
+
+		buffer[writeOffset + 0] = (unsignedValue) & 0xff
+		buffer[writeOffset + 1] = (unsignedValue >> 8) & 0xff
+		buffer[writeOffset + 2] = (unsignedValue >> 16) & 0xff
 	}
 
 	return buffer
@@ -55,9 +62,17 @@ export function bufferLEToInt24(buffer: Uint8Array) {
 		const b1 = buffer[readOffset + 1]
 		const b2 = buffer[readOffset + 2]
 
-		const encodedVal = (b0) | (b1 << 8) | (b2 << 16)
+		const unsignedValue = (b0) | (b1 << 8) | (b2 << 16)
 
-		result[writeOffset] = encodedVal >= (2 ** 23) ? encodedVal - (2 ** 24) : encodedVal
+		let signedValue: number
+
+		if (unsignedValue < 2 ** 23) {
+			signedValue = unsignedValue
+		} else {
+			signedValue = unsignedValue - (2 ** 24)
+		}
+
+		result[writeOffset] = signedValue
 	}
 
 	return result
