@@ -1,6 +1,6 @@
 // Typed arrays to Uint8Array buffers (little endian) conversions
 //
-// The conversion methods (other than the methods for int8) would only work correctly
+// The conversion methods (other than the methods for int8 and int24) would only work correctly
 // on little-endian architectures, since they assume the byte order of the underlying architecture.
 //
 // Since Echogarden only supports little-endian architectures, this shouldn't matter.

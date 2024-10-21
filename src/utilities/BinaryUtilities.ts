@@ -1,11 +1,11 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Unsigned operations
 /////////////////////////////////////////////////////////////////////////////////////
-export function readUint8LE(buffer: Uint8Array, offset: number) {
+export function readUint8(buffer: Uint8Array, offset: number) {
 	return buffer[offset]
 }
 
-export function writeUint8LE(buffer: Uint8Array, value: number, offset: number) {
+export function writeUint8(buffer: Uint8Array, value: number, offset: number) {
 	if (value < 0 || value > 255) {
 		throw new Error(`Value ${value} is outside the range of an 8-bit unsigned integer`)
 	}
@@ -19,7 +19,7 @@ export function readUint16LE(buffer: Uint8Array, offset: number) {
 
 export function writeUint16LE(buffer: Uint8Array, value: number, offset: number) {
 	if (value < 0 || value > 65535) {
-		throw new Error(`Value ${value} is outside the range of an 16-bit unsigned integer`)
+		throw new Error(`Value ${value} is outside the range of a 16-bit unsigned integer`)
 	}
 
 	buffer[offset] = value & 0xff
@@ -32,7 +32,7 @@ export function readUint32LE(buffer: Uint8Array, offset: number) {
 
 export function writeUint32LE(buffer: Uint8Array, value: number, offset: number) {
 	if (value < 0 || value > 4294967295) {
-		throw new Error(`Value ${value} is outside the range of an 32-bit unsigned integer`)
+		throw new Error(`Value ${value} is outside the range of a 32-bit unsigned integer`)
 	}
 
 	buffer[offset] = value & 0xff
@@ -47,7 +47,7 @@ export function writeUint32LE(buffer: Uint8Array, value: number, offset: number)
 export function readInt8(buffer: Uint8Array, offset: number) {
 	const unsignedValue = buffer[offset]
 
-	if (unsignedValue <= 127) {
+	if (unsignedValue < 128) {
 		return unsignedValue
 	} else {
 		return unsignedValue - 256
@@ -59,10 +59,12 @@ export function writeInt8(buffer: Uint8Array, value: number, offset: number) {
 		throw new Error(`Value ${value} is outside the range of an 8-bit signed integer`)
 	}
 
-	let unsignedValue = value
+	let unsignedValue: number
 
-	if (unsignedValue < 0) {
-		unsignedValue += 256
+	if (value >= 0) {
+		unsignedValue = value
+	} else {
+		unsignedValue = value + 256
 	}
 
 	buffer[offset] = unsignedValue
@@ -71,7 +73,7 @@ export function writeInt8(buffer: Uint8Array, value: number, offset: number) {
 export function readInt16LE(buffer: Uint8Array, offset: number) {
 	const unsignedValue = readUint16LE(buffer, offset)
 
-	if (unsignedValue <= 32767) {
+	if (unsignedValue < 32768) {
 		return unsignedValue
 	} else {
 		return unsignedValue - 65536
@@ -83,10 +85,13 @@ export function writeInt16LE(buffer: Uint8Array, value: number, offset: number) 
 		throw new Error(`Value ${value} is outside the range of a 16-bit signed integer`)
 	}
 
-	let unsignedValue = value
 
-	if (unsignedValue < 0) {
-		unsignedValue += 65536
+	let unsignedValue: number
+
+	if (value >= 0) {
+		unsignedValue = value
+	} else {
+		unsignedValue = value + 65536
 	}
 
 	writeUint16LE(buffer, unsignedValue, offset)
