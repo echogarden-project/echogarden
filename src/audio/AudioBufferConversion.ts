@@ -97,6 +97,7 @@ export function int8PcmToFloat32(input: Int8Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = input[i]
+
 		output[i] = sample < 0 ? sample / 128 : sample / 127
 	}
 
@@ -108,6 +109,7 @@ export function float32ToInt8Pcm(input: Float32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = clampFloatSample(input[i])
+
 		output[i] = (sample < 0 ? sample * 128 : sample * 127) | 0
 	}
 
@@ -120,6 +122,7 @@ export function int16PcmToFloat32(input: Int16Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = input[i]
+
 		output[i] = sample < 0 ? sample / 32768 : sample / 32767
 	}
 
@@ -131,6 +134,7 @@ export function float32ToInt16Pcm(input: Float32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = clampFloatSample(input[i])
+
 		output[i] = (sample < 0 ? sample * 32768 : sample * 32767) | 0
 	}
 
@@ -143,6 +147,7 @@ export function int24PcmToFloat32(input: Int32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = input[i]
+
 		output[i] = sample < 0 ? sample / 8388608 : sample / 8388607
 	}
 
@@ -154,6 +159,7 @@ export function float32ToInt24Pcm(input: Float32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = clampFloatSample(input[i])
+
 		output[i] = (sample < 0 ? sample * 8388608 : sample * 8388607) | 0
 	}
 
@@ -166,6 +172,7 @@ export function int32PcmToFloat32(input: Int32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = input[i]
+
 		output[i] = sample < 0 ? sample / 2147483648 : sample / 2147483647
 	}
 
@@ -177,6 +184,7 @@ export function float32ToInt32Pcm(input: Float32Array) {
 
 	for (let i = 0; i < input.length; i++) {
 		const sample = clampFloatSample(input[i])
+
 		output[i] = (sample < 0 ? sample * 2147483648 : sample * 2147483647) | 0
 	}
 
@@ -202,10 +210,9 @@ export function interleaveChannels(channels: Float32Array[]) {
 
 	let writeIndex = 0
 
-	for (let i = 0; i < sampleCount; i++) {
-		for (let c = 0; c < channelCount; c++) {
-			result[writeIndex] = channels[c][i]
-			writeIndex += 1
+	for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+		for (let channelIndex = 0; channelIndex < channelCount; channelIndex++) {
+			result[writeIndex++] = channels[channelIndex][sampleIndex]
 		}
 	}
 
@@ -226,6 +233,7 @@ export function deInterleaveChannels(interleavedChannels: Float32Array, channelC
 	}
 
 	const sampleCount = interleavedChannels.length / channelCount
+	
 	const channels: Float32Array[] = []
 
 	for (let i = 0; i < channelCount; i++) {
