@@ -234,10 +234,9 @@ export function deInterleaveChannels(interleavedChannels: Float32Array, channelC
 
 	let readIndex = 0
 
-	for (let i = 0; i < sampleCount; i++) {
-		for (let c = 0; c < channelCount; c++) {
-			channels[c][i] = interleavedChannels[readIndex]
-			readIndex += 1
+	for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+		for (let channelIndex = 0; channelIndex < channelCount; channelIndex++) {
+			channels[channelIndex][sampleIndex] = interleavedChannels[readIndex++]
 		}
 	}
 
