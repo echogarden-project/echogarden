@@ -5,7 +5,7 @@ export function encodeAscii(asciiString: string) {
 		const charCode = asciiString.charCodeAt(i)
 
 		if (charCode >= 256) {
-			throw new Error(`Char '${asciiString[i]}' (code: ${charCode}) can't be encoded as ASCII`)
+			throw new Error(`Character '${asciiString[i]}' (code: ${charCode}) can't be encoded as ASCII`)
 		}
 
 		buffer[i] = charCode
