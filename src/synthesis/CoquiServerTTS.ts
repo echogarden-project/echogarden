@@ -8,7 +8,7 @@ export async function synthesize(text: string, speakerId: string | null, serverU
 	const logger = new Logger()
 	logger.start('Request synthesis from Coqui Server')
 
-	const response = await request<Buffer>({
+	const response = await request<Uint8Array>({
 		url: `${serverURL}/api/tts`,
 
 		params: {
@@ -19,7 +19,7 @@ export async function synthesize(text: string, speakerId: string | null, serverU
 		responseType: 'arraybuffer'
 	})
 
-	const waveData = Buffer.from(response.data)
+	const waveData = new Uint8Array(response.data)
 
 	const { rawAudio } = decodeWaveToRawAudio(waveData)
 

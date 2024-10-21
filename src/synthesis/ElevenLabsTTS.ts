@@ -57,7 +57,7 @@ export async function synthesize(text: string, voiceId: string, modelId: string,
 	}
 
 	logger.start('Decode synthesized audio')
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(Buffer.from(response.data))
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(new Uint8Array(response.data))
 
 	logger.end()
 

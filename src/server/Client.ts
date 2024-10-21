@@ -11,6 +11,7 @@ import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Speech
 import { Worker as WorkerThread } from 'node:worker_threads'
 import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult } from '../api/SpeechLanguageDetection.js'
 import { TextLanguageDetectionOptions, TextLanguageDetectionResult } from '../api/TextLanguageDetection.js'
+import { decodeUtf8 } from '../encodings/Utf8.js'
 
 const log = logToStderr
 
@@ -23,14 +24,14 @@ export class Client {
 		if (sourceChannel instanceof WebSocket) {
 			sourceChannel.on('message', (messageData, isBinary) => {
 				if (!isBinary) {
-					log(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString('utf-8')}'`)
+					log(`Received an unexpected string WebSocket message: '${decodeUtf8(messageData as Uint8Array)}'`)
 					return
 				}
 
 				let incomingMessage: any
 
 				try {
-					incomingMessage = decodeMsgPack(messageData as Buffer)
+					incomingMessage = decodeMsgPack(messageData as Uint8Array)
 				} catch (e) {
 					log(`Failed to decode incoming message. Reason: ${e}`)
 					return
@@ -176,7 +177,7 @@ export class Client {
 		return requestOpenPromise.promise
 	}
 
-	async translateSpeech(input: string | Buffer | Uint8Array |RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
+	async translateSpeech(input: string | Uint8Array | RawAudio, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
 		const requestOpenPromise = new OpenPromise<SpeechTranslationResult>()
 
 		const requestMessage: SpeechTranslationRequestMessage = {

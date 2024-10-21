@@ -92,7 +92,7 @@ export async function synthesizeFragment(text: string, voice: string) {
 	const audioUrl = responseObject.speak_url
 	const audioUrlResponse = await request<ArrayBuffer>({ url: audioUrl, responseType: 'arraybuffer' })
 
-	return Buffer.from(audioUrlResponse.data)
+	return new Uint8Array(audioUrlResponse.data)
 }
 
 export const voiceList: SynthesisVoice[] = [

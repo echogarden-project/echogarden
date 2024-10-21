@@ -2,7 +2,7 @@ import { Readable } from 'stream'
 import { EventEmitter } from 'events'
 import { ReadStream as FsReadStream } from 'fs'
 
-export function createVirtualFileReadStreamForBuffer(buffer: Buffer, path?: string | Buffer) {
+export function createVirtualFileReadStreamForBuffer(buffer: Uint8Array, path?: string) {
 	const bufferReadStream = new VirtualFileReadStream(buffer, path)
 
 	const proxyStream = new Proxy<FsReadStream>(bufferReadStream, {
@@ -23,19 +23,19 @@ export function createVirtualFileReadStreamForBuffer(buffer: Buffer, path?: stri
 }
 
 export class VirtualFileReadStream extends Readable {
-	private readonly buffer: Buffer
+	private readonly buffer: Uint8Array
 
 	position: number
 	bytesRead: number
-	readonly path: string | Buffer
+	readonly path: string
 	pending: boolean
 	readonly emitter: EventEmitter
 
-	constructor(buffer: Buffer, virtualPath?: string | Buffer) {
+	constructor(buffer: Uint8Array, virtualPath?: string) {
 		super({ autoDestroy: false })
 
 		this.buffer = buffer
-		
+
 		this.position = 0
 		this.bytesRead = 0
 		this.path = virtualPath || ''

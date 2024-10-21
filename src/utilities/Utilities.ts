@@ -6,30 +6,36 @@ import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
 import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
+import { TypedArray } from './WasmMemoryManager.js'
 
 const log = logToStderr
+
+export function concatUint8Arrays(arrays: Uint8Array[]) {
+	return concatTypedArrays<Uint8Array>(Uint8Array, arrays)
+}
 
 export function concatFloat32Arrays(arrays: Float32Array[]) {
 	return concatTypedArrays<Float32Array>(Float32Array, arrays)
 }
 
-function concatTypedArrays<R>(ArrayConstructor: any, arrays: any[]) {
+function concatTypedArrays<R>(ArrayConstructor: any, arrays: TypedArray[]) {
 	let totalLength = 0
 
-	for (const arr of arrays) {
-		totalLength += arr.length
+	for (const array of arrays) {
+		totalLength += array.length
 	}
 
 	const result = new ArrayConstructor(totalLength)
 
-	let offset = 0
+	let writeOffset = 0
 
-	for (const arr of arrays) {
-		result.set(arr, offset)
-		offset += arr.length
+	for (const array of arrays) {
+		result.set(array, writeOffset)
+
+		writeOffset += array.length
 	}
 
-	return <R>result
+	return result as R
 }
 
 export function shuffleArray<T>(array: T[], randomGen: RandomGenerator) {
@@ -267,15 +273,15 @@ export function clip(num: number, min: number, max: number) {
 }
 
 export function readBinaryIncomingMessage(incomingMessage: IncomingMessage) {
-	return new Promise<Buffer>((resolve, reject) => {
-		const chunks: Buffer[] = []
+	return new Promise<Uint8Array>((resolve, reject) => {
+		const chunks: Uint8Array[] = []
 
 		incomingMessage.on('data', (chunk) => {
-			chunks.push(Buffer.from(chunk))
+			chunks.push(Uint8Array.from(chunk))
 		})
 
 		incomingMessage.on('end', () => {
-			resolve(concatBuffers(chunks))
+			resolve(concatUint8Arrays(chunks))
 		})
 
 		incomingMessage.on('error', (e) => {
@@ -398,7 +404,7 @@ export async function runOperationWithRetries<R>(
 	throw new Error(`${operationName} failed after ${maxRetries} retry attempts`)
 }
 
-export function writeToStdinInChunks(process: ChildProcessWithoutNullStreams, buffer: Buffer, chunkSize: number) {
+export function writeToStdinInChunks(process: ChildProcessWithoutNullStreams, buffer: Uint8Array, chunkSize: number) {
 	const writeChunk = (chunkOffset: number) => {
 		if (chunkOffset >= buffer.length) {
 			process.stdin.end() // End the stream after writing all chunks
@@ -431,26 +437,6 @@ export function getIntegerRange(start: number, end: number) {
 	return result
 }
 
-export function concatBuffers(buffers: Buffer[]) {
-	let totalLength = 0
-
-	for (const buffer of buffers) {
-		totalLength += buffer.length
-	}
-
-	const resultBuffer = Buffer.alloc(totalLength)
-
-	if (totalLength === 0) {
-		return resultBuffer
-	}
-
-	let writeOffset = 0
-
-	for (const buffer of buffers) {
-		resultBuffer.set(buffer, writeOffset)
-
-		writeOffset += buffer.length
-	}
-
-	return resultBuffer
+export function isUint8Array(value: any): value is Uint8Array {
+	return value instanceof Uint8Array
 }

@@ -4,6 +4,7 @@ import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
+import { encodeBase64 } from '../encodings/Base64.js'
 
 export type AudioEncoding = 'LINEAR16' | 'FLAC' | 'MULAW' | 'AMR' | 'AMR' | 'AMR_WB' | 'OGG_OPUS' | 'SPEEX_WITH_HEADER_BYTE' | 'MP3' | 'WEBM_OPUS'
 
@@ -30,7 +31,7 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 		},
 
 		audio: {
-			content: flac16Khz16bitMonoAudio.toString('base64')
+			content: encodeBase64(flac16Khz16bitMonoAudio)
 		}
 	}
 

@@ -1,5 +1,5 @@
-import { DynamicUint8Array } from "./DynamicUint8Array.js"
-import { logToStderr } from "./Utilities.js"
+import { DynamicUint8Array } from "../utilities/DynamicUint8Array.js"
+import { logToStderr } from "../utilities/Utilities.js"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Encode unsigned integer

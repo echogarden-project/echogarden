@@ -9,6 +9,7 @@ import { Worker } from 'node:worker_threads'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import chalk from 'chalk'
 import { Logger } from '../utilities/Logger.js'
+import { decodeUtf8 } from '../encodings/Utf8.js'
 
 const log = logToStderr
 
@@ -107,14 +108,14 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 
 		ws.on('message', (messageData, isBinary) => {
 			if (!isBinary) {
-				log(chalk.gray(`Received an unexpected string WebSocket message: '${(messageData as Buffer).toString('utf-8')}'`))
+				log(chalk.gray(`Received an unexpected string WebSocket message: '${decodeUtf8(messageData as Uint8Array)}'`))
 				return
 			}
 
 			let incomingMessage: any
 
 			try {
-				incomingMessage = decodeMsgPack(messageData as Buffer)
+				incomingMessage = decodeMsgPack(messageData as Uint8Array)
 			} catch (e) {
 				log(chalk.gray(`Failed to decode binary WebSocket message. Reason: ${e}`))
 				return

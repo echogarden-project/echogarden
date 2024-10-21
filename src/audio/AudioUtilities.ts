@@ -11,7 +11,7 @@ export function encodeRawAudioToWave(rawAudio: RawAudio, bitDepth: BitDepth = 16
 	return encodeWave(rawAudio, bitDepth, sampleFormat, speakerPositionMask)
 }
 
-export function decodeWaveToRawAudio(waveFileBuffer: Buffer, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
+export function decodeWaveToRawAudio(waveFileBuffer: Uint8Array, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
 	return decodeWave(waveFileBuffer, ignoreTruncatedChunks, ignoreOverflowingDataChunks)
 }
 
@@ -421,13 +421,9 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 			inputAsRawAudio = await resampleAudioSpeex(inputAsRawAudio, outSampleRate)
 		}
 	} else if (typeof input == 'string' || input instanceof Uint8Array) {
-		if (input instanceof Uint8Array && !Buffer.isBuffer(input)) {
-			input = Buffer.from(input)
-		}
+		const inputAsStringOrUint8Array = input as string | Uint8Array
 
-		const inputAsStringOrBuffer = input as string | Buffer
-
-		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(inputAsStringOrBuffer, outSampleRate, outChannelCount)
+		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(inputAsStringOrUint8Array, outSampleRate, outChannelCount)
 	} else {
 		throw new Error('Received an invalid input audio data type.')
 	}
@@ -492,4 +488,4 @@ export type AudioEncoding = {
 	bitrate?: number
 }
 
-export type AudioSourceParam = string | Buffer | Uint8Array | RawAudio
+export type AudioSourceParam = string | Uint8Array | RawAudio

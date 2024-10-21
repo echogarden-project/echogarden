@@ -3,15 +3,14 @@ import WebSocket from 'ws'
 
 import { escape } from 'html-escaper'
 
-import splitBuffer from 'buffer-split'
-
 import * as AzureCognitiveServicesTTS from './AzureCognitiveServicesTTS.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { concatBuffers, getRandomHexString, logToStderr } from '../utilities/Utilities.js'
+import { concatUint8Arrays, getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Timer } from '../utilities/Timer.js'
+import { decodeUtf8, encodeUtf8 } from '../encodings/Utf8.js'
 
 const traceEnabled = false
 
@@ -50,7 +49,7 @@ export async function synthesize(
 	return { rawAudio, timeline }
 }
 
-type SynthesisRequestResult = { audioData: Buffer, events: any[] }
+type SynthesisRequestResult = { audioData: Uint8Array, events: any[] }
 
 async function requestSynthesis(
 	text: string,
@@ -104,11 +103,11 @@ async function requestSynthesis(
 		throw e
 	}
 
-	const receivedBinaryMessages: Buffer[] = []
+	const receivedBinaryMessages: Uint8Array[] = []
 	const receivedEventMessages: any[] = []
-	const audioChunks: Buffer[] = []
+	const audioChunks: Uint8Array[] = []
 
-	const onMessage = (messageData: Buffer, isBinary: boolean) => {
+	const onMessage = (messageData: Uint8Array, isBinary: boolean) => {
 		lastReceievedMessageTime = Timer.currentTime
 
 		if (isBinary) {
@@ -124,11 +123,11 @@ async function requestSynthesis(
 			log(header)
 
 			receivedBinaryMessages.push(messageData)
-			receivedBinaryMessages.push(Buffer.from('\n\n'))
+			receivedBinaryMessages.push(encodeUtf8('\n\n'))
 
 			audioChunks.push(audioChunk)
 		} else {
-			const message = messageData.toString('utf8')
+			const message = decodeUtf8(messageData)
 			const [header, content] = parseTextMessage(message)
 
 			if (header['X-RequestId'] != requestId) {
@@ -147,7 +146,7 @@ async function requestSynthesis(
 				receivedEventMessages.push(content['Metadata'][0])
 			}
 			else if (header['Path'] == 'turn.end') {
-				const result: SynthesisRequestResult = { audioData: concatBuffers(audioChunks), events: receivedEventMessages }
+				const result: SynthesisRequestResult = { audioData: concatUint8Arrays(audioChunks), events: receivedEventMessages }
 
 				removeWebSocketHandlers()
 
@@ -167,7 +166,7 @@ async function requestSynthesis(
 		}
 	}
 
-	const onClose = async (code: number, reason: Buffer) => {
+	const onClose = async (code: number, reason: Uint8Array) => {
 		log('WebSocket closed.')
 		log(code)
 		log(reason.toString())
@@ -282,7 +281,7 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		requestOpenPromise.resolve(webSocket)
 	}
 
-	const onClose = (code: number, reason: Buffer) => {
+	const onClose = (code: number, reason: Uint8Array) => {
 		log('WebSocket closed.')
 		log(code)
 		log(reason.toString())
@@ -352,11 +351,44 @@ function parseTextMessage(message: string) {
 	return [parseHeaderString(headerString), JSON.parse(content)]
 }
 
-function parseBinaryMessage(message: Buffer) {
-	const audioChunk = splitBuffer(message, Buffer.from('Path:audio\r\n'))[1]
+function parseBinaryMessage(message: Uint8Array) {
+	const patternAsBytes = encodeUtf8('Path:audio\r\n')
+	const indexOfPattern = indexOfByteSubsequence(message, patternAsBytes)
+
+	if (indexOfPattern === -1) {
+		throw new Error(`Couldn't find separator pattern in Edge TTS binary message`)
+	}
+
+	const audioChunk = message.slice(indexOfPattern + patternAsBytes.length)
+
 	const headerBuffer = message.subarray(2, message.length - audioChunk.length)
-	const headerString = headerBuffer.toString('utf8').trim()
+	const headerString = decodeUtf8(headerBuffer).trim()
 
 	return [parseHeaderString(headerString), audioChunk]
 }
 
+function indexOfByteSubsequence(sequence: Uint8Array, subsequence: Uint8Array) {
+	function tryMatchAtOffset(offset: number) {
+		if (offset + subsequence.length > sequence.length) {
+			return false
+		}
+
+		for (let i = 0; i < subsequence.length; i++) {
+			if (sequence[offset + i] !== subsequence[i]) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	for (let offset = 0; offset < sequence.length; offset++) {
+		const matched = tryMatchAtOffset(offset)
+
+		if (matched) {
+			return offset
+		}
+	}
+
+	return -1
+}

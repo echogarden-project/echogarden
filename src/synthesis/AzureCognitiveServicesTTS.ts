@@ -7,6 +7,7 @@ import { escape } from 'html-escaper'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
+import { concatUint8Arrays } from '../utilities/Utilities.js'
 
 export async function synthesize(
 	text: string,
@@ -46,27 +47,29 @@ export async function synthesize(
 				return
 			}
 
-			/*
-			const bufferSize = 2 ** 16
-			const buffers: Buffer[] = []
+			let encodedAudio: Uint8Array
 
-			while (true) {
+			if (false) {
+				const bufferSize = 2 ** 16
+				const buffers: Uint8Array[] = []
 
-				const buffer = Buffer.alloc(bufferSize)
-				const amountRead = await audioOutputStream.read(buffer)
+				while (true) {
 
-				if (amountRead == 0) {
-					audioOutputStream.close()
-					break
+					const buffer = new Uint8Array(bufferSize)
+					const amountRead = await audioOutputStream.read(buffer)
+
+					if (amountRead == 0) {
+						audioOutputStream.close()
+						break
+					}
+
+					buffers.push(buffer.subarray(0, amountRead))
 				}
 
-				buffers.push(buffer.subarray(0, amountRead))
+				encodedAudio = concatUint8Arrays(buffers)
+			} else {
+				encodedAudio = new Uint8Array(result.audioData)
 			}
-
-			const encodedAudio = concatBuffers(buffers)
-			*/
-
-			const encodedAudio = Buffer.from(result.audioData)
 
 			logger.end()
 

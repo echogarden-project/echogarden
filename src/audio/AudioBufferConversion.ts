@@ -5,7 +5,7 @@ import { BitDepth, SampleFormat } from '../codecs/WaveCodec.js'
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Low level audio sample conversions
 /////////////////////////////////////////////////////////////////////////////////////////////
-export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDepth: BitDepth = 16, targetSampleFormat: SampleFormat = SampleFormat.PCM) {
+export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDepth: BitDepth = 16, targetSampleFormat: SampleFormat = SampleFormat.PCM): Uint8Array {
 	const interleavedChannels = interleaveChannels(audioChannels)
 
 	audioChannels = [] // Zero the array references to allow the GC to free up memory, if possible
@@ -32,13 +32,13 @@ export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDept
 		}
 	} else if (targetSampleFormat === SampleFormat.Alaw) {
 		if (targetBitDepth === 8) {
-			return Buffer.from(AlawMulaw.alaw.encode(float32ToInt16Pcm(interleavedChannels)))
+			return AlawMulaw.alaw.encode(float32ToInt16Pcm(interleavedChannels))
 		} else {
 			throw new Error(`Unsupported alaw bit depth: ${targetBitDepth}`)
 		}
 	} else if (targetSampleFormat === SampleFormat.Mulaw) {
 		if (targetBitDepth === 8) {
-			return Buffer.from(AlawMulaw.mulaw.encode(float32ToInt16Pcm(interleavedChannels)))
+			return AlawMulaw.mulaw.encode(float32ToInt16Pcm(interleavedChannels))
 		} else {
 			throw new Error(`Unsupported mulaw bit depth: ${targetBitDepth}`)
 		}
@@ -47,7 +47,7 @@ export function encodeToAudioBuffer(audioChannels: Float32Array[], targetBitDept
 	}
 }
 
-export function decodeToChannels(audioBuffer: Buffer, channelCount: number, sourceBitDepth: number, sourceSampleFormat: SampleFormat) {
+export function decodeToChannels(audioBuffer: Uint8Array, channelCount: number, sourceBitDepth: number, sourceSampleFormat: SampleFormat) {
 	let interleavedChannels: Float32Array
 
 	if (sourceSampleFormat === SampleFormat.PCM) {
@@ -86,7 +86,7 @@ export function decodeToChannels(audioBuffer: Buffer, channelCount: number, sour
 		throw new Error(`Unsupported audio format: ${sourceSampleFormat}`)
 	}
 
-	audioBuffer = Buffer.from([]) // Zero the buffer reference to allow the GC to free up memory, if possible
+	audioBuffer = new Uint8Array(0) // Zero the buffer reference to allow the GC to free up memory, if possible
 
 	return deInterleaveChannels(interleavedChannels, channelCount)
 }

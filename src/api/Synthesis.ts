@@ -261,7 +261,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	async function convertToTargetCodecIfNeeded(rawAudio: RawAudio) {
 		const targetCodec = options.outputAudioFormat?.codec
 
-		let output: RawAudio | Buffer
+		let output: RawAudio | Uint8Array
 
 		if (targetCodec) {
 			logger.start(`Convert to ${targetCodec} codec`)
@@ -292,7 +292,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 }
 
 export interface SynthesisResult {
-	audio: RawAudio | Buffer
+	audio: RawAudio | Uint8Array
 	timeline: Timeline
 	language: string
 	voice: string
@@ -1671,7 +1671,7 @@ export const defaultVoiceListRequestOptions: VoiceListRequestOptions = {
 export interface SynthesisSegmentEventData {
 	index: number
 	total: number
-	audio: RawAudio | Buffer
+	audio: RawAudio | Uint8Array
 	timeline: Timeline
 	transcript: string
 	language: string

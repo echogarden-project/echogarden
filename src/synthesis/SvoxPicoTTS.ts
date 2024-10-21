@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { readFile } from '../utilities/FileSystem.js'
-import { concatBuffers } from '../utilities/Utilities.js'
+import { concatUint8Arrays } from '../utilities/Utilities.js'
 
 let svoxPicoInstance: any
 
@@ -109,7 +109,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 
 	const bytesWrittenRef = wasmMemory.allocInt32()
 
-	const audioParts: Buffer[] = []
+	const audioParts: Uint8Array[] = []
 
 	for (let textByteOffset = 0; textByteOffset < textRef.length;) {
 		bytesWrittenRef.value = 0
@@ -124,10 +124,10 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 		textByteOffset += bytesWritten
 	}
 
-	const audioData = concatBuffers(audioParts)
+	const audioData = concatUint8Arrays(audioParts)
 
 	function readAudioDataFromEngine() {
-		const outBuffers: Buffer[] = []
+		const outBuffers: Uint8Array[] = []
 
 		const outBufferLength = 16384
 		const outBufferRef = wasmMemory.allocUint8Array(outBufferLength)
@@ -148,11 +148,11 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 			}
 
 			if (outByteCount > 0) {
-				outBuffers.push(Buffer.from(outBufferRef.slice(0, outByteCount)))
+				outBuffers.push(outBufferRef.slice(0, outByteCount) as Uint8Array)
 			}
 		}
 
-		return concatBuffers(outBuffers)
+		return concatUint8Arrays(outBuffers)
 	}
 
 	dispose()

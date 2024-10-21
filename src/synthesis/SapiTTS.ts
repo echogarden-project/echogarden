@@ -107,7 +107,7 @@ export function synthesize(text: string, voiceName: string, rate = 0, useSpeechP
 			EndStream: (streamId: number, streamPos: number) => {
 				clearInterval(dispatchMessagesInterval)
 
-				const audioData = Buffer.from(sapiOutputStream.GetData())
+				const audioData = new Uint8Array(sapiOutputStream.GetData())
 				const audioChannels = decodeToChannels(audioData, 1, 16, SampleFormat.PCM)
 
 				WinAX.release(sapiOutputStream)

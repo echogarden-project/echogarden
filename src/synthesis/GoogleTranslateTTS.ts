@@ -1,12 +1,13 @@
 import { request } from 'gaxios'
 import { Phrase, splitToFragments } from '../nlp/Segmentation.js'
-import { concatBuffers, concatFloat32Arrays, logToStderr } from '../utilities/Utilities.js'
+import { concatFloat32Arrays, concatUint8Arrays, logToStderr } from '../utilities/Utilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { getChromeOnWindowsHeaders } from '../utilities/BrowserRequestHeaders.js'
+import { decodeBase64 } from '../encodings/Base64.js'
 
 const log = logToStderr
 
@@ -113,18 +114,18 @@ export async function synthesizeShortText(text: string, languageCode = 'en', tld
 
 	//log(response.data)
 
-	const audioChunks: Buffer[] = []
+	const audioChunks: Uint8Array[] = []
 
 	for (const line of response.data.split(/\r?\n/)) {
 		const match = line.match(/"jQ1olc","\[\\"(.*)\\"]/)
 
 		if (match != null) {
 			const base64AudioChunk = match[1]
-			audioChunks.push(Buffer.from(base64AudioChunk, 'base64'))
+			audioChunks.push(decodeBase64(base64AudioChunk))
 		}
 	}
 
-	const resultMp3Stream = concatBuffers(audioChunks)
+	const resultMp3Stream = concatUint8Arrays(audioChunks)
 
 	return resultMp3Stream
 }

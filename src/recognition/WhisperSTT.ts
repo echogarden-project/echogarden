@@ -25,6 +25,7 @@ import { getDeflateCompressionMetricsForString } from '../utilities/Compression.
 import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
 import { murmurHash3_int32Input } from '../utilities/Hashing.js'
 import { containsInvalidCodepoint, getTokenRepetitionScore } from '../utilities/StringUtilities.js'
+import { decodeUtf8 } from '../encodings/Utf8.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -1689,7 +1690,7 @@ export class Whisper {
 		}
 
 		try {
-			return Buffer.from(this.tiktoken!.decode(new Uint32Array(tokens))).toString('utf8')
+			return decodeUtf8(this.tiktoken!.decode(new Uint32Array(tokens)))
 		} catch {
 			return '[TOKENIZER_FAILED]'
 		}

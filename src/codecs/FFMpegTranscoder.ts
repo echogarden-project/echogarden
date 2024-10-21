@@ -3,7 +3,7 @@ import { spawn } from 'child_process'
 import { encodeRawAudioToWave, decodeWaveToRawAudio, RawAudio } from '../audio/AudioUtilities.js'
 
 import { Logger } from '../utilities/Logger.js'
-import { commandExists, concatBuffers, logToStderr } from '../utilities/Utilities.js'
+import { commandExists, concatUint8Arrays, isUint8Array, logToStderr } from '../utilities/Utilities.js'
 import path from 'node:path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
@@ -27,7 +27,7 @@ export async function encodeFromChannels(rawAudio: RawAudio, outputOptions: FFMp
 	return transcode(encodeRawAudioToWave(rawAudio), outputOptions)
 }
 
-export async function decodeToChannels(input: string | Buffer, outSampleRate?: number, outChannelCount?: number) {
+export async function decodeToChannels(input: string | Uint8Array, outSampleRate?: number, outChannelCount?: number) {
 	const outputOptions: FFMpegOutputOptions = {
 		codec: 'pcm_f32le',
 		format: 'wav',
@@ -47,7 +47,7 @@ export async function decodeToChannels(input: string | Buffer, outSampleRate?: n
 	return rawAudio
 }
 
-export async function transcode(input: string | Buffer, outputOptions: FFMpegOutputOptions) {
+export async function transcode(input: string | Uint8Array, outputOptions: FFMpegOutputOptions) {
 	const executablePath = await getFFMpegExecutablePath()
 
 	if (!executablePath) {
@@ -57,16 +57,16 @@ export async function transcode(input: string | Buffer, outputOptions: FFMpegOut
 	return transcode_CLI(executablePath, input, outputOptions)
 }
 
-async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outputOptions: FFMpegOutputOptions) {
-	return new Promise<Buffer>((resolve, reject) => {
+async function transcode_CLI(ffmpegCommand: string, input: string | Uint8Array, outputOptions: FFMpegOutputOptions) {
+	return new Promise<Uint8Array>((resolve, reject) => {
 		const logger = new Logger()
 		logger.start('Transcode with command-line ffmpeg')
 
-		const args = buildCommandLineArguments(Buffer.isBuffer(input) ? '-' : input, outputOptions)
+		const args = buildCommandLineArguments(isUint8Array(input) ? '-' : input, outputOptions)
 
 		const process = spawn(ffmpegCommand, args)
 
-		if (Buffer.isBuffer(input)) {
+		if (isUint8Array(input)) {
 			process.stdin.end(input)
 		} else if (typeof input === 'string') {
 			if (!existsSync(input)) {
@@ -75,7 +75,7 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 			}
 		}
 
-		const stdoutChunks: Buffer[] = []
+		const stdoutChunks: Uint8Array[] = []
 		let stderrOutput = ''
 
 		process.stdout.on('data', (data) => {
@@ -94,7 +94,7 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Buffer, outp
 
 		process.on('close', (exitCode) => {
 			if (exitCode == 0) {
-				const concatenatedChunks = concatBuffers(stdoutChunks)
+				const concatenatedChunks = concatUint8Arrays(stdoutChunks)
 
 				resolve(concatenatedChunks)
 			} else {

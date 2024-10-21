@@ -1,4 +1,5 @@
-import { concatBuffers } from "./Utilities.js"
+import { decodeUtf8, encodeUtf8 } from "../encodings/Utf8.js"
+import { concatUint8Arrays } from "./Utilities.js"
 
 export class WasmMemoryManager {
 	wasmModule: any
@@ -223,7 +224,7 @@ export class WasmMemoryManager {
 	}
 
 	allocNullTerminatedUtf8String(str: string) {
-		const strBuffer = concatBuffers([Buffer.from(str, 'utf8'), Buffer.alloc(1)])
+		const strBuffer = concatUint8Arrays([encodeUtf8(str), new Uint8Array(1)])
 		const ref = this.allocUint8Array(strBuffer.length)
 		ref.view.set(strBuffer)
 		return ref
@@ -409,7 +410,7 @@ export class NullTerminatedUtf8StringRef extends ValueRef<string> {
 
 		const strBytes = heapU8.subarray(ptr, ptr + endByteOffset)
 
-		const str = Buffer.from(strBytes).toString('utf8')
+		const str = decodeUtf8(strBytes)
 
 		return str
 	}
@@ -492,7 +493,7 @@ export class Uint8ArrayRef extends TypedArrayRef<Uint8Array> {
 			strBytes = strBytes.subarray(0, indexOfFirstZero)
 		}
 
-		const str = Buffer.from(strBytes).toString('utf8')
+		const str = decodeUtf8(strBytes)
 
 		return str
 	}

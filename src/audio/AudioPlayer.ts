@@ -180,7 +180,7 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 		}
 
 		let tempFilePath: string | undefined
-		let audioBuffer: Buffer | undefined
+		let audioBuffer: Uint8Array | undefined
 
 		async function cleanup() {
 			if (tempFilePath) {
@@ -315,7 +315,7 @@ export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (t
 			mpg123AudioBufferSize = bytesPerSecond * mpg123AudioBufferDuration
 		}
 
-		audioData = concatBuffers([audioData, Buffer.alloc(mpg123AudioBufferSize)])
+		audioData = concatBuffers([audioData, new Uint8Array(mpg123AudioBufferSize)])
 
 		const maxChunkSize = mpg123AudioBufferSize
 

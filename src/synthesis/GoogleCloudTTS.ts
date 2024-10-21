@@ -1,6 +1,7 @@
 import { request } from 'gaxios'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
+import { decodeBase64 } from '../encodings/Base64.js'
 
 const log = logToStderr
 
@@ -15,7 +16,7 @@ export async function synthesize(
 	ssml = false,
 	audioEncoding: AudioEncoding = 'MP3_64_KBPS',
 	sampleRate = 24000) {
-		
+
 	const logger = new Logger()
 	logger.start('Request synthesis from Google Cloud')
 
@@ -75,7 +76,7 @@ export async function synthesize(
 }
 
 function parseResponseBody(responseBody: any) {
-	const audioData = Buffer.from(responseBody.audioContent, 'base64')
+	const audioData = decodeBase64(responseBody.audioContent)
 	const timepoints: timePoint[] = responseBody.timepoints
 
 	return { audioData, timepoints }

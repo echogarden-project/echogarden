@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { Logger } from './Logger.js'
 import { readdir, stat } from './FileSystem.js'
+import { encodeUtf8 } from '../encodings/Utf8.js'
 
 export async function createTarball(filePath: string, outputFile: string, prefixPath = '') {
 	const pathStat = await stat(filePath)
@@ -98,7 +99,7 @@ export async function getDeflateCompressionMetricsForString(str: string) {
 	const zlib = await import('node:zlib')
 	const { promisify } = await import('node:util')
 
-	const originalStringBytes = Buffer.from(str, 'utf-8')
+	const originalStringBytes = encodeUtf8(str)
 
 	const deflateRaw = promisify(zlib.deflateRaw)
 
