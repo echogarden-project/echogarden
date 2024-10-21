@@ -1,4 +1,3 @@
-
 const textEncoder = new TextEncoder()
 export function encodeUtf8(utf8Text: string) {
 	return textEncoder.encode(utf8Text)

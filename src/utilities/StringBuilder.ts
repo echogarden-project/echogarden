@@ -1,9 +1,9 @@
 export class StringBuilder {
 	private outputBuffer: Uint16Array
 	private outputPosition = 0
-	private outputString = ""
+	private outputString = ''
 
-	constructor(private outputBufferCapacity = 256) {
+	constructor(private outputBufferCapacity = 1024) {
 		this.outputBuffer = new Uint16Array(this.outputBufferCapacity)
 	}
 

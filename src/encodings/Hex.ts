@@ -6,11 +6,11 @@ export function encodeHex(buffer: Uint8Array) {
 	for (let i = 0; i < buffer.length; i++) {
 		const value = buffer[i]
 
-		const valueLow = value & 0xf
-		const valueHigh = (value >>> 4) & 0xf
+		const valueHigh4Bits = (value >>> 4) & 0xf
+		const valueLow4Bits = value & 0xf
 
-		stringBuilder.appendCharCode(hexCharCodeLookup[valueHigh])
-		stringBuilder.appendCharCode(hexCharCodeLookup[valueLow])
+		stringBuilder.appendCharCode(hexCharCodeLookup[valueHigh4Bits])
+		stringBuilder.appendCharCode(hexCharCodeLookup[valueLow4Bits])
 	}
 
 	return stringBuilder.getOutputString()
@@ -30,10 +30,10 @@ export function decodeHex(hexString: string) {
 		writeOffset < bufferLength;
 		writeOffset++, readOffset += 2) {
 
-		const valueHigh = hexCharCodeToValue(hexString.charCodeAt(readOffset))
-		const valueLow = hexCharCodeToValue(hexString.charCodeAt(readOffset + 1))
+		const valueHigh4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset))
+		const valueLow4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset + 1))
 
-		const value = (valueHigh << 4) | valueLow
+		const value = (valueHigh4Bits << 4) | valueLow4Bits
 
 		buffer[writeOffset] = value
 	}
@@ -47,7 +47,7 @@ function hexCharCodeToValue(hexCharCode: number) {
 	} else if (hexCharCode >= 97 && hexCharCode <= 102) {
 		return 10 + hexCharCode - 97
 	} else {
-		throw new Error(`Can't decode character '${String.fromCharCode(hexCharCode)}' as hexadecimal`)
+		throw new Error(`Can't decode character '${String.fromCharCode(hexCharCode)}' (code: ${hexCharCode}) as hexadecimal`)
 	}
 }
 
