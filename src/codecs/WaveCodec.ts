@@ -1,6 +1,9 @@
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { concatBuffers, logToStderr } from '../utilities/Utilities.js'
+import { readUint16LE, readUint32LE, writeAscii, writeUint16LE, writeUint32LE } from '../utilities/BinaryUtilities.js'
+import { encodeHex, decodeHex } from '../encodings/Hex.js'
+import { concatUint8Arrays, logToStderr } from '../utilities/Utilities.js'
+import { decodeAscii } from '../encodings/Ascii.js'
 
 const log = logToStderr
 
@@ -16,25 +19,25 @@ export function encodeWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFo
 	const formatSubChunk = new WaveFormat(audioChannels.length, sampleRate, bitDepth, sampleFormat, speakerPositionMask)
 	const formatSubChunkBuffer = formatSubChunk.serialize(shouldUseExtensibleFormat)
 
-	const dataSubChunkBuffer = Buffer.alloc(4 + 4 + audioDataLength)
-	dataSubChunkBuffer.write('data', 0, 'ascii')
+	const dataSubChunkBuffer = new Uint8Array(4 + 4 + audioDataLength)
+	writeAscii(dataSubChunkBuffer, 'data', 0)
 	const dataChunkLength = Math.min(audioDataLength, 4294967295) // Ensure large data chunk length is clipped to max
-	dataSubChunkBuffer.writeUint32LE(dataChunkLength, 4)
+	writeUint32LE(dataSubChunkBuffer, dataChunkLength, 4)
 	dataSubChunkBuffer.set(audioBuffer, 8)
 
-	const riffChunkHeaderBuffer = Buffer.alloc(12)
-	riffChunkHeaderBuffer.write('RIFF', 0, 'ascii')
+	const riffChunkHeaderBuffer = new Uint8Array(12)
+	writeAscii(riffChunkHeaderBuffer, 'RIFF', 0)
 	const riffChunkLength = Math.min(4 + formatSubChunkBuffer.length + dataSubChunkBuffer.length, 4294967295) // Ensure large RIFF chunk length is clipped to max
-	riffChunkHeaderBuffer.writeUint32LE(riffChunkLength, 4)
-	riffChunkHeaderBuffer.write('WAVE', 8, 'ascii')
+	writeUint32LE(riffChunkHeaderBuffer, riffChunkLength, 4)
+	writeAscii(riffChunkHeaderBuffer, 'WAVE', 8)
 
-	return concatBuffers([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
+	return concatUint8Arrays([riffChunkHeaderBuffer, formatSubChunkBuffer, dataSubChunkBuffer])
 }
 
-export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
+export function decodeWave(waveData: Uint8Array, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
 	let readOffset = 0
 
-	const riffId = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
+	const riffId = decodeAscii(waveData.subarray(readOffset, readOffset + 4))
 
 	if (riffId != 'RIFF') {
 		throw new Error('Not a valid wave file. No RIFF id found at offset 0.')
@@ -42,11 +45,11 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 
 	readOffset += 4
 
-	let riffChunkSize = waveData.readUInt32LE(readOffset)
+	let riffChunkSize = readUint32LE(waveData, readOffset)
 
 	readOffset += 4
 
-	const waveId = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
+	const waveId = decodeAscii(waveData.subarray(readOffset, readOffset + 4))
 
 	if (waveId != 'WAVE') {
 		throw new Error('Not a valid wave file. No WAVE id found at offset 8.')
@@ -66,14 +69,14 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 
 	readOffset += 4
 
-	let formatSubChunkBodyBuffer: Buffer | undefined
-	const dataBuffers: Buffer[] = []
+	let formatSubChunkBodyBuffer: Uint8Array | undefined
+	const dataBuffers: Uint8Array[] = []
 
 	while (true) {
-		const subChunkIdentifier = waveData.subarray(readOffset, readOffset + 4).toString('ascii')
+		const subChunkIdentifier = decodeAscii(waveData.subarray(readOffset, readOffset + 4))
 		readOffset += 4
 
-		let subChunkSize = waveData.readUInt32LE(readOffset)
+		let subChunkSize = readUint32LE(waveData, readOffset)
 		readOffset += 4
 
 		if (!ignoreTruncatedChunks && subChunkSize > waveData.length - readOffset) {
@@ -125,7 +128,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 	const bitDepth = waveFormat.bitDepth
 	const speakerPositionMask = waveFormat.speakerPositionMask
 
-	const concatenatedDataBuffers = concatBuffers(dataBuffers)
+	const concatenatedDataBuffers = concatUint8Arrays(dataBuffers)
 	dataBuffers.length = 0 // Allow the garbage collector to free up memory held by the data buffers
 
 	const audioChannels = AudioBufferConversion.decodeToChannels(concatenatedDataBuffers, channelCount, bitDepth, sampleFormat)
@@ -139,7 +142,7 @@ export function decodeWave(waveData: Buffer, ignoreTruncatedChunks = true, ignor
 	}
 }
 
-export function repairWave(waveData: Buffer) {
+export function repairWave(waveData: Uint8Array) {
 	const { rawAudio, sourceSampleFormat, sourceBitDepth } = decodeWave(waveData)
 
 	return encodeWave(rawAudio, sourceBitDepth, sourceSampleFormat)
@@ -177,25 +180,25 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 
 		const serializedSize = sampleFormatToSerializedSize[sampleFormatId]
 
-		const result = Buffer.alloc(serializedSize)
+		const result = new Uint8Array(serializedSize)
 
-		result.write('fmt ', 0, 'ascii') // + 4
-		result.writeUint32LE(serializedSize - 8, 4) // + 4
+		writeAscii(result, 'fmt ', 0) // + 4
+		writeUint32LE(result, serializedSize - 8, 4) // + 4
 
-		result.writeUint16LE(sampleFormatId, 8) // + 2
-		result.writeUint16LE(this.channelCount, 10) // + 2
-		result.writeUint32LE(this.sampleRate, 12) // + 4
-		result.writeUint32LE(this.byteRate, 16) // + 4
-		result.writeUint16LE(this.blockAlign, 20) // + 2
-		result.writeUint16LE(this.bitDepth, 22) // + 2
+		writeUint16LE(result, sampleFormatId, 8) // + 2
+		writeUint16LE(result, this.channelCount, 10) // + 2
+		writeUint32LE(result, this.sampleRate, 12) // + 4
+		writeUint32LE(result, this.byteRate, 16) // + 4
+		writeUint16LE(result, this.blockAlign, 20) // + 2
+		writeUint16LE(result, this.bitDepth, 22) // + 2
 
 		if (useExtensibleFormat) {
-			result.writeUint16LE(serializedSize - 26, 24) // + 2 (extension size)
-			result.writeUint16LE(this.bitDepth, 26) // + 2 (valid bits per sample)
-			result.writeUint32LE(this.speakerPositionMask, 28) // + 2 (speaker position mask)
+			writeUint16LE(result, serializedSize - 26, 24) // + 2 (extension size)
+			writeUint16LE(result, this.bitDepth, 26) // + 2 (valid bits per sample)
+			writeUint32LE(result, this.speakerPositionMask, 28) // + 2 (speaker position mask)
 
 			if (this.sampleFormat == SampleFormat.PCM || this.sampleFormat == SampleFormat.Float) {
-				result.set(Buffer.from(this.guid, 'hex'), 32)
+				result.set(decodeHex(this.guid), 32)
 			} else {
 				throw new Error(`Extensible format is not supported for sample format ${this.sampleFormat}`)
 			}
@@ -204,11 +207,11 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 		return result
 	}
 
-	static deserializeFrom(formatChunkBody: Buffer) { // chunkBody should not include the first 8 bytes
-		let sampleFormat = formatChunkBody.readUint16LE(0) // + 2
-		const channelCount = formatChunkBody.readUint16LE(2) // + 2
-		const sampleRate = formatChunkBody.readUint32LE(4) // + 4
-		const bitDepth = formatChunkBody.readUint16LE(14)
+	static deserializeFrom(formatChunkBody: Uint8Array) { // chunkBody should not include the first 8 bytes
+		let sampleFormat = readUint16LE(formatChunkBody, 0) // + 2
+		const channelCount = readUint16LE(formatChunkBody, 2) // + 2
+		const sampleRate = readUint32LE(formatChunkBody, 4) // + 4
+		const bitDepth = readUint16LE(formatChunkBody, 14)
 		let speakerPositionMask = 0
 
 		if (sampleFormat == 65534) {
@@ -216,9 +219,9 @@ class WaveFormat { // 24 bytes total for PCM, 26 for float
 				throw new Error(`Format subchunk specifies a format id of 65534 (extensible) but its body size is ${formatChunkBody.length} bytes, which is smaller than the minimum expected of 40 bytes`)
 			}
 
-			speakerPositionMask = formatChunkBody.readUint16LE(20)
+			speakerPositionMask = readUint16LE(formatChunkBody, 20)
 
-			const guid = formatChunkBody.subarray(24, 40).toString('hex')
+			const guid = encodeHex(formatChunkBody.subarray(24, 40))
 
 			if (guid == sampleFormatToGuid[SampleFormat.PCM]) {
 				sampleFormat = SampleFormat.PCM
