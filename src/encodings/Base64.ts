@@ -7,22 +7,17 @@ export function encodeBase64(inputBytes: Uint8Array, addPadding = true): string 
 
 	const stringBuilder = new StringBuilder()
 
-	let uint24: number
-
 	for (let readOffset = 0; readOffset < inputBytes.length; readOffset += 3) {
 		if (readOffset <= length - 3) {
-			uint24 = inputBytes[readOffset] << 16 | inputBytes[readOffset + 1] << 8 | inputBytes[readOffset + 2]
+			const uint24 = inputBytes[readOffset] << 16 | inputBytes[readOffset + 1] << 8 | inputBytes[readOffset + 2]
 
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 6) & 63])
 			stringBuilder.appendCharCode(charCodeMap[(uint24) & 63])
-
-			uint24 = 0
 		} else if (readOffset === length - 2) {
 			// If two bytes are left, output 3 encoded characters and one padding character
-
-			uint24 = inputBytes[readOffset] << 16 | inputBytes[readOffset + 1] << 8
+			const uint24 = inputBytes[readOffset] << 16 | inputBytes[readOffset + 1] << 8
 
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
@@ -33,8 +28,7 @@ export function encodeBase64(inputBytes: Uint8Array, addPadding = true): string 
 			}
 		} else if (readOffset === length - 1) {
 			// Arrived at last byte at a position that did not complete a full 3 byte set
-
-			uint24 = inputBytes[readOffset] << 16
+			const uint24 = inputBytes[readOffset] << 16
 
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
 			stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
