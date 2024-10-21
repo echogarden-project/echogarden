@@ -33,7 +33,7 @@ export function int24ToBufferLE(int24s: Int32Array) {
 		readOffset++, writeOffset += 3) {
 
 		const val = int24s[readOffset]
-		const encodedVal = val < 0 ? val + 0x1000000 : val
+		const encodedVal = val < 0 ? val + (2 ** 24) : val
 
 		buffer[writeOffset + 0] = (encodedVal) & 0xff
 		buffer[writeOffset + 1] = (encodedVal >> 8) & 0xff
@@ -57,7 +57,7 @@ export function bufferLEToInt24(buffer: Uint8Array) {
 
 		const encodedVal = (b0) | (b1 << 8) | (b2 << 16)
 
-		result[writeOffset] = encodedVal > 0x800000 ? encodedVal - 0x1000000 : encodedVal
+		result[writeOffset] = encodedVal >= (2 ** 23) ? encodedVal - (2 ** 24) : encodedVal
 	}
 
 	return result
