@@ -3,7 +3,7 @@ import { AlignmentPath } from './SpeechAlignment.js'
 
 const log = logToStderr
 
-export function alignDTW<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number, deletionEnabled = true) {
+export function alignDTW<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>, costFunction: (a: T, b: U) => number) {
 	if (sequence1.length == 0 || sequence2.length == 0) {
 		return { path: [] as AlignmentPath, pathCost: 0 }
 	}
@@ -12,10 +12,10 @@ export function alignDTW<T, U>(sequence1: ArrayLike<T>, sequence2: ArrayLike<U>,
 	const columnCount = sequence1.length
 
 	// Compute accumulated cost matrix
-	const accumulatedCostMatrix = computeAccumulatedCostMatrix(sequence1, sequence2, costFunction, deletionEnabled)
+	const accumulatedCostMatrix = computeAccumulatedCostMatrix(sequence1, sequence2, costFunction)
 
 	// Find best path for the computed matrix
-	const path = computeBestPath(accumulatedCostMatrix, deletionEnabled)
+	const path = computeBestPath(accumulatedCostMatrix)
 
 	// Best path cost is the bottom right element of the matrix
 	const pathCost = accumulatedCostMatrix[rowCount - 1][columnCount - 1]
@@ -61,7 +61,7 @@ function computeAccumulatedCostMatrix<T, U>(sequence1: ArrayLike<T>, sequence2: 
 	return accumulatedCostMatrix
 }
 
-function computeBestPath(costMatrix: Float32Array[], deletionEnabled = true) {
+function computeBestPath(costMatrix: Float32Array[]) {
 	const rowCount = costMatrix.length
 	const columnCount = costMatrix[0].length
 
@@ -80,7 +80,7 @@ function computeBestPath(costMatrix: Float32Array[], deletionEnabled = true) {
 		const left = costMatrix[rowIndex][columnIndex - 1]
 		const upAndLeft = costMatrix[rowIndex - 1][columnIndex - 1]
 
-		const smallestCostDirection = argIndexOfMinimumOf3(up, deletionEnabled ? left : Infinity, upAndLeft)
+		const smallestCostDirection = argIndexOfMinimumOf3(up, left, upAndLeft)
 
 		if (smallestCostDirection == 1) {
 			rowIndex -= 1
