@@ -9,7 +9,6 @@ import { getRandomHexString } from './Utilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir } from './PathUtilities.js'
 
-import { writeFile as nodeFsWriteFile } from 'node:fs/promises'
 import { createDynamicUint8Array } from '../data-structures/DynamicTypedArray.js'
 import { ChunkedUtf8Decoder } from '../encodings/Utf8.js'
 
@@ -110,7 +109,7 @@ export async function readFileAsBinary(filePath: string) {
 		result.addArray(chunk)
 	}
 
-	await processFileInChunks(filePath, chunkSize, processChunk)
+	await readFileInChunks(filePath, chunkSize, processChunk)
 
 	return result.toTypedArray()
 }
@@ -124,44 +123,150 @@ export async function readFileAsUtf8(filePath: string) {
 		result.writeChunk(chunk)
 	}
 
-	await processFileInChunks(filePath, chunkSize, processChunk)
+	await readFileInChunks(filePath, chunkSize, processChunk)
 
 	return result.toString()
 }
 
-export async function processFileInChunks(filePath: string, chunkSize: number, processChunk: (chunk: Uint8Array) => void) {
+export async function readFileInChunks(filePath: string, chunkSize: number, processChunk: (chunk: Uint8Array) => void) {
 	const openPromise = new OpenPromise<void>()
 
-	const stream = createReadStream(filePath, { highWaterMark: chunkSize });
+	const readStream = createReadStream(filePath, { highWaterMark: chunkSize });
 
-	stream.on('data', (chunk: Uint8Array) => {
+	readStream.on('data', (chunk: Uint8Array) => {
 		processChunk(chunk)
 	})
 
-	stream.on('end', () => {
+	readStream.on('end', () => {
 		openPromise.resolve()
 	})
 
-	stream.on('error', (err: Error) => {
+	readStream.on('error', (err: Error) => {
 		openPromise.reject(err)
 	})
 
 	return openPromise.promise
 }
 
-export async function writeFile(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {
+export async function writeFile(filePath: string, content: Uint8Array | string) {
+	if (typeof content === 'string') {
+		return writeUtf8File(filePath, content)
+	} else if (content instanceof Uint8Array) {
+		return writeBinaryFile(filePath, content)
+	} else {
+		throw new Error(`Content can only be a Uint8Array or string`)
+	}
+}
+
+export async function writeBinaryFile(filePath: string, content: Uint8Array) {
+	const chunkSize = 2 ** 20
+
 	const fileDir = path.dirname(filePath)
 
 	await ensureDir(fileDir)
 
-	return nodeFsWriteFile(filePath, data, options)
+	let offset = 0
+
+	async function getChunk() {
+		const chunk = content.subarray(offset, offset + chunkSize)
+
+		if (chunk.length === 0) {
+			return undefined
+		}
+
+		offset += chunkSize
+
+		return chunk
+	}
+
+	return writeFileInChunks(filePath, getChunk)
 }
 
-export async function writeFileSafe(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {
+export async function writeUtf8File(filePath: string, content: string) {
+	const chunkSize = 2 ** 20
+
+	const fileDir = path.dirname(filePath)
+
+	await ensureDir(fileDir)
+
+	let offset = 0
+
+	const textEncoder = new TextEncoder()
+
+	async function getChunk() {
+		const stringChunk = content.substring(offset, offset + chunkSize)
+
+		if (stringChunk.length === 0) {
+			return undefined
+		}
+
+		const chunk = textEncoder.encode(stringChunk)
+
+		offset += chunkSize
+
+		return chunk
+	}
+
+	return writeFileInChunks(filePath, getChunk)
+}
+
+export async function writeFileInChunks(filePath: string, getChunk: () => Promise<Uint8Array | undefined>) {
+	const openPromise = new OpenPromise<void>()
+
+	const fileDir = path.dirname(filePath)
+
+	try {
+		await ensureDir(fileDir)
+	} catch (e) {
+		openPromise.reject(e)
+
+		return
+	}
+
+	const writeStream = createWriteStream(filePath)
+
+	writeStream.on('error', (err) => {
+		openPromise.reject(err)
+	})
+
+	writeStream.on('finish', () => {
+		openPromise.resolve()
+	})
+
+	async function writeNextChunk() {
+		let chunkToWrite: Uint8Array | undefined
+
+		try {
+			chunkToWrite = await getChunk()
+		} catch (e) {
+			openPromise.reject(e)
+
+			return
+		}
+
+		if (chunkToWrite === undefined) {
+			writeStream.end(() => {
+				openPromise.resolve()
+			})
+
+			return
+		}
+
+		writeStream.write(chunkToWrite, () => {
+			writeNextChunk()
+		})
+	}
+
+	writeNextChunk()
+
+	return openPromise.promise
+}
+
+export async function writeFileSafe(filePath: string, content: Uint8Array | string) {
 	const tempDir = getAppTempDir(appName)
 	const tempFilePath = path.join(tempDir, `${getRandomHexString(16)}.partial`)
 
-	await writeFile(tempFilePath, data, options)
+	await writeFile(tempFilePath, content)
 
 	await move(tempFilePath, filePath)
 }

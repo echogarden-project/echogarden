@@ -1956,7 +1956,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 	if (fileExtension == 'txt') {
 		fileSaver = async (audio, timeline, text) => {
 			await ensureDir(fileDir)
-			return writeFileSafe(outputFilePath, text, { encoding: 'utf-8' })
+			return writeFileSafe(outputFilePath, text)
 		}
 	} else if (fileExtension == 'json') {
 		fileSaver = async (audio, timeline, text) => {
