@@ -1,4 +1,4 @@
-import { roundToDigits, writeToStderr } from './Utilities.js'
+import { logToStderr, roundToDigits } from './Utilities.js'
 
 declare const chrome: any
 declare const process: any
@@ -27,6 +27,7 @@ export class Timer {
 	getElapsedTimeAndRestart(): number {
 		const elapsedTime = this.elapsedTime
 		this.restart()
+
 		return elapsedTime
 	}
 
@@ -35,7 +36,8 @@ export class Timer {
 
 		//
 		const message = `${title}: ${roundToDigits(elapsedTime, timePrecision)}ms`
-		writeToStderr(message)
+
+		logToStderr(message)
 		//
 
 		this.restart()
