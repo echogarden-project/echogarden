@@ -6,7 +6,6 @@ import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
 import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
-import { TypedArray } from './WasmMemoryManager.js'
 
 const log = logToStderr
 
@@ -18,14 +17,14 @@ export function concatFloat32Arrays(arrays: Float32Array[]) {
 	return concatTypedArrays<Float32Array>(Float32Array, arrays)
 }
 
-function concatTypedArrays<R>(ArrayConstructor: any, arrays: TypedArray[]) {
+function concatTypedArrays<T extends TypedArray>(TypedArrayConstructor: TypedArrayConstructor<T>, arrays: T[]) {
 	let totalLength = 0
 
 	for (const array of arrays) {
 		totalLength += array.length
 	}
 
-	const result = new ArrayConstructor(totalLength)
+	const result = new TypedArrayConstructor(totalLength)
 
 	let writeOffset = 0
 
@@ -35,7 +34,7 @@ function concatTypedArrays<R>(ArrayConstructor: any, arrays: TypedArray[]) {
 		writeOffset += array.length
 	}
 
-	return result as R
+	return result as T
 }
 
 export function shuffleArray<T>(array: T[], randomGen: RandomGenerator) {

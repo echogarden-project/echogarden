@@ -1,4 +1,4 @@
-import { DynamicUint8Array } from "../utilities/DynamicUint8Array.js"
+import { DynamicUint8Array, createDynamicUint8Array } from "../utilities/DynamicTypedArray.js"
 import { logToStderr } from "../utilities/Utilities.js"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -337,13 +337,13 @@ export interface DecodedValueAndReadOffset {
 // Tests
 ////////////////////////////////////////////////////////////////////////////////////
 export function testLeb128Signed() {
-	const encodedBytes = new DynamicUint8Array()
+	const encodedBytes = createDynamicUint8Array()
 
 	function runTest(testValue: number) {
 		encodedBytes.clear()
 
 		encodeSignedInt32Fast(testValue, encodedBytes)
-		const { decodedValue } = decodeSignedInt32Fast(encodedBytes.data, 0)
+		const { decodedValue } = decodeSignedInt32Fast(encodedBytes.elements, 0)
 
 		if (decodedValue !== testValue) {
 			throw new Error(`Expected ${testValue} but got ${decodedValue}`)

@@ -13,7 +13,7 @@ export function encodeHex(buffer: Uint8Array) {
 		stringBuilder.appendCharCode(hexCharCodeLookup[valueLow4Bits])
 	}
 
-	return stringBuilder.getOutputString()
+	return stringBuilder.toString()
 }
 
 export function decodeHex(hexString: string) {

@@ -1,3 +1,5 @@
+import { charCodesToString } from "../utilities/StringUtilities.js"
+
 export function encodeAscii(asciiString: string) {
 	const buffer = new Uint8Array(asciiString.length)
 
@@ -15,5 +17,5 @@ export function encodeAscii(asciiString: string) {
 }
 
 export function decodeAscii(buffer: Uint8Array) {
-	return String.fromCharCode(...buffer)
+	return charCodesToString(buffer)
 }

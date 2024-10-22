@@ -85,7 +85,6 @@ export function writeInt16LE(buffer: Uint8Array, value: number, offset: number) 
 		throw new Error(`Value ${value} is outside the range of a 16-bit signed integer`)
 	}
 
-
 	let unsignedValue: number
 
 	if (value >= 0) {

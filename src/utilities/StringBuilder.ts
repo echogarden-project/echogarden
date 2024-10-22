@@ -1,24 +1,23 @@
-export class StringBuilder {
-	private outputBuffer: Uint16Array
-	private outputPosition = 0
-	private outputString = ''
+import { DynamicUint16Array, createDynamicUint16Array } from "./DynamicTypedArray.js"
+import { charCodesToString } from "./StringUtilities.js"
 
-	constructor(private outputBufferCapacity = 1024) {
-		this.outputBuffer = new Uint16Array(this.outputBufferCapacity)
+export class StringBuilder {
+	private outputBuffer: DynamicUint16Array
+
+	constructor(initialCapacity = 8) {
+		this.outputBuffer = createDynamicUint16Array(initialCapacity)
 	}
 
 	appendCharCode(charCode: number) {
-		this.outputBuffer[this.outputPosition++] = charCode
-
-		if (this.outputPosition === this.outputBufferCapacity) {
-			this.flushBufferToOutputString()
-		}
+		this.outputBuffer.add(charCode)
 	}
 
 	appendCharCodes(...charCodes: number[]) {
-		for (let i = 0, length = charCodes.length; i < length; i++) {
-			this.appendCharCode(charCodes[i])
-		}
+		this.outputBuffer.addArray(charCodes)
+	}
+
+	appendCharCodeArray(charCodes: ArrayLike<number>) {
+		this.outputBuffer.addArray(charCodes)
 	}
 
 	appendString(str: string) {
@@ -38,21 +37,7 @@ export class StringBuilder {
 		}
 	}
 
-	getOutputString(): string {
-		this.flushBufferToOutputString()
-
-		return this.outputString
-	}
-
-	private flushBufferToOutputString() {
-		if (this.outputPosition === 0) {
-			return
-		}
-
-		const charCodes = this.outputBuffer.subarray(0, this.outputPosition)
-
-		this.outputString += String.fromCharCode(...charCodes)
-
-		this.outputPosition = 0
+	toString() {
+		return charCodesToString(this.outputBuffer.toTypedArray())
 	}
 }

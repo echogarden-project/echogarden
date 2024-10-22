@@ -1,4 +1,4 @@
-import { DynamicUint8Array } from "../utilities/DynamicUint8Array.js"
+import { createDynamicUint8Array, DynamicUint8Array } from "../utilities/DynamicTypedArray.js"
 import { logToStderr } from "../utilities/Utilities.js"
 
 
@@ -242,13 +242,13 @@ export interface DecodedValueAndReadOffset {
 // Tests
 ////////////////////////////////////////////////////////////////////////////////////
 export function testLPVarintSigned() {
-	const encodedBytes = new DynamicUint8Array()
+	const encodedBytes = createDynamicUint8Array()
 
 	function runTest(testValue: number) {
 		encodedBytes.clear()
 
 		encodeSignedInt32(testValue, encodedBytes)
-		const { decodedValue } = decodeSignedInt32(encodedBytes.data, 0)
+		const { decodedValue } = decodeSignedInt32(encodedBytes.elements, 0)
 
 		if (decodedValue !== testValue) {
 			throw new Error(`Expected ${testValue} but got ${decodedValue}`)
@@ -267,13 +267,13 @@ export function testLPVarintSigned() {
 }
 
 export function testLPVarintUnsigned() {
-	const encodedBytes = new DynamicUint8Array()
+	const encodedBytes = createDynamicUint8Array()
 
 	function runTest(testValue: number) {
 		encodedBytes.clear()
 
 		encodeUnsignedInt31(testValue, encodedBytes)
-		const { decodedValue } = decodeUnsignedInt31(encodedBytes.data, 0)
+		const { decodedValue } = decodeUnsignedInt31(encodedBytes.elements, 0)
 
 		if (decodedValue !== testValue) {
 			throw new Error(`Expected ${testValue} but got ${decodedValue}`)
