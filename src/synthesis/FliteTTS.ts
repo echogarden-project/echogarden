@@ -2,7 +2,7 @@ import { SynthesisVoice } from '../api/API.js'
 import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from '../utilities/Utilities.js'
-import { readFile, open, close, remove, ensureDir } from '../utilities/FileSystem.js'
+import { open, close, remove, ensureDir, readFileAsBinary, readFileAsUtf8 } from '../utilities/FileSystem.js'
 import path from 'node:path'
 import { escape } from 'html-escaper'
 import { getAppTempDir } from '../utilities/PathUtilities.js'
@@ -100,8 +100,8 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 		throw new Error(`Flite failed with exit code ${exitCode}`)
 	}
 
-	const waveData = await readFile(tempAudioFilePath)
-	const stdOutString = await readFile(tempStdOutFilePath, 'utf8')
+	const waveData = await readFileAsBinary(tempAudioFilePath)
+	const stdOutString = await readFileAsUtf8(tempStdOutFilePath)
 
 	await cleanup()
 
@@ -118,7 +118,7 @@ async function getModuleObject() {
 	if (!fliteModuleObject) {
 		const fliteWasiPath = await resolveModuleMainPath('@echogarden/flite-wasi')
 
-		fliteModuleObject = await WebAssembly.compile(await readFile(fliteWasiPath))
+		fliteModuleObject = await WebAssembly.compile(await readFileAsBinary(fliteWasiPath))
 	}
 
 	return fliteModuleObject

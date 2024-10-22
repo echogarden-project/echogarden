@@ -8,10 +8,10 @@ import { OpenPromise } from './OpenPromise.js'
 import { getRandomHexString } from './Utilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir } from './PathUtilities.js'
-import { writeFile as nodeFsWriteFile } from 'node:fs/promises'
 
-export const readFile = promisify(gracefulFS.readFile)
-//export const gracefulFsWriteFile = promisify(gracefulFS.writeFile)
+import { writeFile as nodeFsWriteFile } from 'node:fs/promises'
+import { createDynamicUint8Array } from '../data-structures/DynamicTypedArray.js'
+import { ChunkedUtf8Decoder } from '../encodings/Utf8.js'
 
 export const readdir = promisify(gracefulFS.readdir)
 export const stat = promisify(gracefulFS.stat)
@@ -27,7 +27,6 @@ export const existsSync = gracefulFS.existsSync
 
 export const remove = fsExtra.remove
 export const copy = fsExtra.copy
-// const outputFile = fsExtra.outputFile
 
 export async function readDirRecursive(dir: string, fileFilter?: (filePath: string) => boolean) {
 	if (!(await stat(dir)).isDirectory()) {
@@ -88,15 +87,66 @@ export async function computeFileSha256Hex(filePath: string) {
 }
 
 export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
-	const fileContent = await readFile(jsonFilePath, { encoding: 'utf-8' })
+	const fileTextContent = await readFileAsUtf8(jsonFilePath)
 
 	if (useJson5) {
 		const { default: JSON5 } = await import('json5')
 
-		return JSON5.parse(fileContent)
+		return JSON5.parse(fileTextContent)
 	} else {
-		return JSON.parse(fileContent)
+		return JSON.parse(fileTextContent)
 	}
+}
+
+export async function readFileAsBinary(filePath: string) {
+	const chunkSize = 2 ** 20
+
+	const fileInfo = await stat(filePath)
+	const fileSize = fileInfo.size
+
+	const result = createDynamicUint8Array(fileSize)
+
+	function processChunk(chunk: Uint8Array) {
+		result.addArray(chunk)
+	}
+
+	await processFileInChunks(filePath, chunkSize, processChunk)
+
+	return result.toTypedArray()
+}
+
+export async function readFileAsUtf8(filePath: string) {
+	const chunkSize = 2 ** 20
+
+	const result = new ChunkedUtf8Decoder()
+
+	function processChunk(chunk: Uint8Array) {
+		result.writeChunk(chunk)
+	}
+
+	await processFileInChunks(filePath, chunkSize, processChunk)
+
+	return result.toString()
+}
+
+export async function processFileInChunks(filePath: string, chunkSize: number, processChunk: (chunk: Uint8Array) => void) {
+	const openPromise = new OpenPromise<void>()
+
+	const stream = createReadStream(filePath, { highWaterMark: chunkSize });
+
+	stream.on('data', (chunk: Uint8Array) => {
+		processChunk(chunk)
+	})
+
+	stream.on('end', () => {
+		openPromise.resolve()
+	})
+
+	stream.on('error', (err: Error) => {
+		openPromise.reject(err)
+	})
+
+	return openPromise.promise
 }
 
 export async function writeFile(filePath: string, data: string | NodeJS.ArrayBufferView, options?: fsExtra.WriteFileOptions) {

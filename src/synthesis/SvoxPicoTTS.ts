@@ -5,7 +5,7 @@ import { bandwidthToQFactor } from '../dsp/BiquadFilter.js'
 import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { readFile } from '../utilities/FileSystem.js'
+import { readFileAsBinary } from '../utilities/FileSystem.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
 
 let svoxPicoInstance: any
@@ -52,7 +52,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	async function loadResource(localFilePath: string) {
 		const virtualFilePath = '.' + localFilePath.substring(localFilePath.lastIndexOf('/'))
 
-		const fileData = await readFile(localFilePath)
+		const fileData = await readFileAsBinary(localFilePath)
 		m.FS.writeFile(virtualFilePath, fileData)
 
 		const virtualFilePathRef = wasmMemory.allocNullTerminatedUtf8String(virtualFilePath)

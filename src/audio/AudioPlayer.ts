@@ -11,7 +11,7 @@ import { getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Uti
 import { encodeToAudioBuffer } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
-import { readAndParseJsonFile, readFile, remove, writeFile } from '../utilities/FileSystem.js'
+import { readAndParseJsonFile, readFileAsUtf8, remove, writeFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
@@ -26,7 +26,7 @@ export async function playAudioFileWithTimelineFile(audioFilename: string, timel
 
 	let transcript: string | undefined
 	if (transcriptFileName) {
-		transcript = await readFile(transcriptFileName, 'utf8')
+		transcript = await readFileAsUtf8(transcriptFileName)
 	}
 
 	await playAudioWithWordTimeline(rawAudio, timeline, transcript)

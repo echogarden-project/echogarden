@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket, ServerOptions as WsServerOptions } from 'ws
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { readFile, existsSync } from '../utilities/FileSystem.js'
+import { existsSync, readFileAsBinary } from '../utilities/FileSystem.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { sendMessageToWorker, addListenerToWorkerMessages, startNewWorkerThread, startMessageChannel } from './Worker.js'
 import { Worker } from 'node:worker_threads'
@@ -38,8 +38,8 @@ export async function startServer(serverOptions: ServerOptions, onStarted: (opti
 		const { createServer } = await import('https')
 
 		const httpsServer = createServer({
-			cert: await readFile(serverOptions.certPath!),
-			key: await readFile(serverOptions.keyPath!)
+			cert: Buffer.from(await readFileAsBinary(serverOptions.certPath!)),
+			key: Buffer.from(await readFileAsBinary(serverOptions.keyPath!))
 		}, onHttpRequest)
 
 		httpsServer.listen(serverOptions.port!)

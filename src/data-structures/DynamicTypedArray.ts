@@ -20,12 +20,12 @@ export class DynamicTypedArray<T extends TypedArray> {
 	}
 
 	addArray(elements: ArrayLike<number>) {
-		const newElementCount = elements.length
+		const addedCount = elements.length
 
-		this.ensureCapacity(this.length + newElementCount)
+		this.ensureCapacity(this.length + addedCount)
 
 		this.elements.set(elements, this.length)
-		this.length += newElementCount
+		this.length += addedCount
 	}
 
 	ensureCapacity(requiredCapacity: number) {

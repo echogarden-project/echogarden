@@ -1,10 +1,10 @@
 import { decodeToChannels } from '../audio/AudioBufferConversion.js'
 import { decodeAscii } from '../encodings/Ascii.js'
-import { readFile } from '../utilities/FileSystem.js'
+import { readFileAsBinary } from '../utilities/FileSystem.js'
 import { SampleFormat } from './WaveCodec.js'
 
 export async function decodeTimitAudioFile(filename: string) {
-	return decodeTimitAudio(await readFile(filename))
+	return decodeTimitAudio(await readFileAsBinary(filename))
 }
 
 export function decodeTimitAudio(data: Uint8Array) {

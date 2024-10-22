@@ -10,7 +10,7 @@ import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio, sliceRawAudio } from '../audio/AudioUtilities.js'
-import { readFile } from '../utilities/FileSystem.js'
+import { readFileAsUtf8 } from '../utilities/FileSystem.js'
 import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
@@ -1540,7 +1540,7 @@ export class Whisper {
 		const tiktokenModulePackagePath = await loadPackage('whisper-tiktoken-data')
 
 		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
-		let tiktokenData = await readFile(tiktokenDataFilePath, { encoding: 'utf8' })
+		let tiktokenData = await readFileAsUtf8(tiktokenDataFilePath)
 
 		const tokenConfig = this.tokenConfig
 

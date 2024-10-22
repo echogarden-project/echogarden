@@ -21,7 +21,9 @@ export class StringBuilder {
 	}
 
 	appendString(str: string) {
-		for (let i = 0, length = str.length; i < length; i++) {
+		const length = str.length
+
+		for (let i = 0; i < length; i++) {
 			this.appendCharCode(str.charCodeAt(i))
 		}
 	}

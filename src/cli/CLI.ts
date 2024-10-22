@@ -15,7 +15,7 @@ import { splitToParagraphs, splitToWords, wordCharacterPattern } from '../nlp/Se
 import { playAudioSamples, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties } from '../utilities/Timeline.js'
-import { ensureDir, existsSync, readAndParseJsonFile, readFile, readdir, writeFileSafe } from '../utilities/FileSystem.js'
+import { ensureDir, existsSync, readAndParseJsonFile, readdir, readFileAsUtf8, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
 import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
@@ -431,7 +431,7 @@ export async function speak(operationData: CLIOperationData) {
 		}
 
 		const sourceFileExtension = getLowercaseFileExtension(sourceFile)
-		const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
+		const fileContent = await readFileAsUtf8(sourceFile)
 
 		if (options.ssml && sourceFileExtension != 'xml' && sourceFileExtension != 'ssml') {
 			throw new Error(`SSML option is set, but source file doesn't have an 'xml' or 'ssml' extension.`)
@@ -445,7 +445,7 @@ export async function speak(operationData: CLIOperationData) {
 			const textContent = await convertHtmlToText(fileContent)
 			textSegments = splitToParagraphs(textContent, 'single', 'preserve')
 		} else if (sourceFileExtension == 'srt' || sourceFileExtension == 'vtt') {
-			const fileContent = await readFile(sourceFile, { encoding: 'utf-8' })
+			const fileContent = await readFileAsUtf8(sourceFile)
 			//textSegments = subtitlesToTimeline(fileContent).map(entry => entry.text)
 			textSegments = [subtitlesToText(fileContent)]
 		} else if (sourceFileExtension == 'xml' || sourceFileExtension == 'ssml') {
@@ -621,7 +621,7 @@ export async function align(operationData: CLIOperationData) {
 	}
 
 	const referenceFileExtension = getLowercaseFileExtension(alignmentReferenceFile)
-	const fileContent = await readFile(alignmentReferenceFile, { encoding: 'utf-8' })
+	const fileContent = await readFileAsUtf8(alignmentReferenceFile)
 
 	let text: string
 
@@ -717,7 +717,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 	}
 
 	const referenceFileExtension = getLowercaseFileExtension(alignmentReferenceFile)
-	const fileContent = await readFile(alignmentReferenceFile, { encoding: 'utf-8' })
+	const fileContent = await readFileAsUtf8(alignmentReferenceFile)
 
 	let text: string
 
@@ -835,7 +835,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 
 	{
 		const nativeTranscriptFileExtension = getLowercaseFileExtension(nativeTranscriptFilePath)
-		const fileContent = await readFile(nativeTranscriptFilePath, { encoding: 'utf-8' })
+		const fileContent = await readFileAsUtf8(nativeTranscriptFilePath)
 
 
 		if (nativeTranscriptFileExtension == 'txt') {
@@ -853,7 +853,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 
 	{
 		const translatedTranscriptFileExtension = getLowercaseFileExtension(translatedTranscriptFilePath)
-		const fileContent = await readFile(translatedTranscriptFilePath, { encoding: 'utf-8' })
+		const fileContent = await readFileAsUtf8(translatedTranscriptFilePath)
 
 		if (translatedTranscriptFileExtension == 'txt') {
 			translatedTranscript = fileContent
@@ -967,7 +967,7 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 	}
 
 	const translationFileExtension = getLowercaseFileExtension(translationFilePath)
-	const translationFileContent = await readFile(translationFilePath, { encoding: 'utf-8' })
+	const translationFileContent = await readFileAsUtf8(translationFilePath)
 
 	let translationText: string
 
@@ -1039,7 +1039,7 @@ export async function translateText(operationData: CLIOperationData) {
 	}
 
 	const inputFileExtension = getLowercaseFileExtension(inputFilename)
-	const inputFileContent = await readFile(inputFilename, { encoding: 'utf-8' })
+	const inputFileContent = await readFileAsUtf8(inputFilename)
 
 	let inputText: string
 
@@ -1223,7 +1223,7 @@ export async function detectLanguage(operationData: CLIOperationData, mode: 'spe
 
 		await checkOutputFilenames(outputFilenames, false, true, false)
 
-		let text = await readFile(inputFilePath, { encoding: 'utf-8' })
+		let text = await readFileAsUtf8(inputFilePath)
 
 		if (inputFileExtension == 'srt' || inputFileExtension == 'vtt') {
 			text = subtitlesToText(text)

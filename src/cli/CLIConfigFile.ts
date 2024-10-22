@@ -1,7 +1,7 @@
-import { readAndParseJsonFile, readFile } from '../utilities/FileSystem.js'
+import { readAndParseJsonFile, readFileAsUtf8 } from '../utilities/FileSystem.js'
 
 export async function parseConfigFile(path: string): Promise<ParsedConfigFile> {
-	const fileContent = await readFile(path, { encoding: 'utf-8' })
+	const fileContent = await readFileAsUtf8(path)
 
 	const lines = fileContent
 		.split(/\r?\n/g)
