@@ -1,5 +1,5 @@
 import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEventData, SynthesisResult, VoiceListRequestOptions, requestVoiceList, synthesize } from '../api/Synthesis.js'
-import { Queue } from '../utilities/Queue.js'
+import { Queue } from '../data-structures/Queue.js'
 import { logToStderr, yieldToEventLoop } from '../utilities/Utilities.js'
 import { AudioSourceParam } from '../audio/AudioUtilities.js'
 import { RecognitionOptions, RecognitionResult, recognize } from '../api/Recognition.js'

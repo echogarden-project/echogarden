@@ -5,7 +5,7 @@ import { logToStderr } from '../utilities/Utilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { OnnxExecutionProvider, dmlProviderAvailable, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 import chalk from 'chalk'
-import { WindowedList } from '../utilities/WindowedList.js'
+import { WindowedList } from '../data-structures/WindowedList.js'
 import { logLevelGreaterOrEqualTo } from '../api/API.js'
 
 const log = logToStderr

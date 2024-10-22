@@ -1,4 +1,4 @@
-import { createDynamicUint8Array, DynamicUint8Array } from "../utilities/DynamicTypedArray.js"
+import { createDynamicUint8Array, DynamicUint8Array } from "../data-structures/DynamicTypedArray.js"
 import { logToStderr } from "../utilities/Utilities.js"
 
 

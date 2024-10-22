@@ -1,4 +1,4 @@
-import { DynamicUint16Array, createDynamicUint16Array } from "./DynamicTypedArray.js"
+import { DynamicUint16Array, createDynamicUint16Array } from "../data-structures/DynamicTypedArray.js"
 import { charCodesToString } from "./StringUtilities.js"
 
 export class StringBuilder {
