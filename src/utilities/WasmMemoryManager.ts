@@ -1,4 +1,5 @@
 import { decodeUtf8, encodeUtf8 } from "../encodings/Utf8.js"
+import { TypedArray } from "../typings/TypedArray.js"
 import { concatUint8Arrays } from "./Utilities.js"
 
 export class WasmMemoryManager {
@@ -540,8 +541,6 @@ export class Float64ArrayRef extends TypedArrayRef<Float64Array> {
 		return this.module.HEAPF64.subarray(startIndex, startIndex + this.length) as Float64Array
 	}
 }
-
-export type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
 export type WasmRef = ValueRef<number> | ValueRef<string> | TypedArrayRef<TypedArray>
 
 export interface WasmMemoryManagerOptions {

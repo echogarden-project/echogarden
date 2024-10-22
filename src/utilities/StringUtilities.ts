@@ -1,3 +1,5 @@
+import { TypedArray } from '../typings/TypedArray.js'
+
 export function includesAnyOf(str: string, substrings: string[]) {
 	return indexOfAnyOf(str, substrings) >= 0
 }

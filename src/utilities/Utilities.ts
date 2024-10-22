@@ -6,6 +6,7 @@ import { randomUUID, randomBytes } from 'node:crypto'
 import { Logger } from './Logger.js'
 import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
+import { TypedArray, TypedArrayConstructor } from '../typings/TypedArray.js'
 
 const log = logToStderr
 

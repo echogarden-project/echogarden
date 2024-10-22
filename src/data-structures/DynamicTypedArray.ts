@@ -1,3 +1,5 @@
+import { TypedArray, TypedArrayConstructor } from "../typings/TypedArray.js"
+
 export class DynamicTypedArray<T extends TypedArray> {
 	elements: TypedArray
 	length = 0
