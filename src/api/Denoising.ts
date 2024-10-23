@@ -21,7 +21,7 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const processingSampleRate = 48000
 
 	logger.start(`Resample audio to ${processingSampleRate} Hz`)
-	const resampledRawAudio = await resampleAudioSpeex(inputRawAudio, processingSampleRate, 3)
+	const resampledRawAudio = await resampleAudioSpeex(inputRawAudio, processingSampleRate, 1)
 
 	logger.start(`Initialize ${options.method} module`)
 
