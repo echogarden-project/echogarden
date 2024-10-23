@@ -6,9 +6,10 @@ import { Timer } from './Timer.js'
 import { Logger } from './Logger.js'
 import path from 'node:path'
 import { extractTarball } from './Compression.js'
-import { move, remove, readdir, ensureDir, FileWriter } from './FileSystem.js'
+import { move, remove, readdir, ensureDir } from './FileSystem.js'
 import chalk from 'chalk'
 import { logLevelGreaterOrEqualTo } from '../api/GlobalOptions.js'
+import { FileWriter } from './FileWriter.js'
 
 export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = 'archive') {
 	const logger = new Logger()
