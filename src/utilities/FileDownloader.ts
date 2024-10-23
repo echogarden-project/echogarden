@@ -7,7 +7,7 @@ import { Timer } from './Timer.js'
 import { Logger } from './Logger.js'
 import path from 'node:path'
 import { extractTarball } from './Compression.js'
-import { createWriteStream, move, remove, readdir, ensureDir } from './FileSystem.js'
+import { move, remove, readdir, ensureDir, FileWriter } from './FileSystem.js'
 import chalk from 'chalk'
 import { logLevelGreaterOrEqualTo } from '../api/GlobalOptions.js'
 
@@ -144,7 +144,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	}
 
 	const partialFilePath = `${targetFilePath}.${getRandomHexString(16)}.partial`
-	const fileWriteStream = createWriteStream(partialFilePath, { encoding: 'binary', autoClose: true })
+	const fileWriter = new FileWriter(partialFilePath)
 
 	let statusInterval = setInterval(() => {
 		updateStatus()
@@ -158,7 +158,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			const chunkLength = chunk.length
 
-			fileWriteStream.write(chunk)
+			fileWriter.write(chunk)
 
 			downloadedBytes += chunkLength
 
@@ -177,7 +177,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 			clearInterval(statusInterval)
 			updateStatus()
 
-			fileWriteStream.end()
+			fileWriter.dispose()
 
 			write('\n')
 
@@ -194,7 +194,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		try {
 			clearInterval(statusInterval)
 
-			fileWriteStream.end()
+			fileWriter.dispose()
 			await remove(partialFilePath)
 		} finally {
 			downloadPromise.reject(err)

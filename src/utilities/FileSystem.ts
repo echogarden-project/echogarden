@@ -4,7 +4,6 @@ import * as os from 'node:os'
 
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { OpenPromise } from './OpenPromise.js'
 import { getRandomHexString } from './Utilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir } from './PathUtilities.js'
@@ -19,9 +18,9 @@ export const close = promisify(gracefulFS.close)
 export const chmod = promisify(gracefulFS.chmod)
 export const copyFile = promisify(gracefulFS.copyFile)
 export const access = promisify(gracefulFS.access)
+export const read = promisify(gracefulFS.read)
+export const write = promisify(gracefulFS.write)
 
-export const createReadStream = gracefulFS.createReadStream
-export const createWriteStream = gracefulFS.createWriteStream
 export const existsSync = gracefulFS.existsSync
 
 export const remove = fsExtra.remove
@@ -71,18 +70,18 @@ export async function isFileIsUpToDate(filePath: string, timeRangeSeconds: numbe
 }
 
 export async function computeFileSha256Hex(filePath: string) {
-	const resultOpenPromise = new OpenPromise<string>()
-
 	const crypto = await import('crypto')
 	const hash = crypto.createHash('sha256')
 
-	const readStream = createReadStream(filePath)
+	async function processChunk(chunk: Uint8Array) {
+		hash.update(chunk)
+	}
 
-	readStream.on('data', data => hash.update(data))
-	readStream.on('error', error => resultOpenPromise.reject(error))
-	readStream.on('end', () => resultOpenPromise.resolve(hash.digest('hex')))
+	await readFileInChunks(filePath, 2 ** 64, processChunk)
 
-	return resultOpenPromise.promise
+	const result = hash.digest('hex')
+
+	return result
 }
 
 export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
@@ -105,7 +104,7 @@ export async function readFileAsBinary(filePath: string) {
 
 	const result = createDynamicUint8Array(fileSize)
 
-	function processChunk(chunk: Uint8Array) {
+	async function processChunk(chunk: Uint8Array) {
 		result.addArray(chunk)
 	}
 
@@ -119,7 +118,7 @@ export async function readFileAsUtf8(filePath: string) {
 
 	const result = new ChunkedUtf8Decoder()
 
-	function processChunk(chunk: Uint8Array) {
+	async function processChunk(chunk: Uint8Array) {
 		result.writeChunk(chunk)
 	}
 
@@ -128,24 +127,42 @@ export async function readFileAsUtf8(filePath: string) {
 	return result.toString()
 }
 
-export async function readFileInChunks(filePath: string, chunkSize: number, processChunk: (chunk: Uint8Array) => void) {
-	const openPromise = new OpenPromise<void>()
+export async function readFileInChunks(filePath: string, maxChunkSize: number, processChunk: (chunk: Uint8Array) => Promise<void>) {
+	const fileHandle = await open(filePath, 'r')
 
-	const readStream = createReadStream(filePath, { highWaterMark: chunkSize });
+	const buffer = new Uint8Array(maxChunkSize)
 
-	readStream.on('data', (chunk: Uint8Array) => {
-		processChunk(chunk)
-	})
+	let readOffset = 0
 
-	readStream.on('end', () => {
-		openPromise.resolve()
-	})
+	while (true) {
+		let bytesRead: number
 
-	readStream.on('error', (err: Error) => {
-		openPromise.reject(err)
-	})
+		try {
+			({ bytesRead } = await read(fileHandle, buffer, 0, maxChunkSize, readOffset))
+		} catch (e) {
+			await close(fileHandle)
 
-	return openPromise.promise
+			throw e
+		}
+
+		if (bytesRead === 0) {
+			await close(fileHandle)
+
+			return
+		}
+
+		const chunk = buffer.subarray(0, bytesRead)
+
+		try {
+			await processChunk(chunk)
+		} catch (e) {
+			await close(fileHandle)
+
+			throw e
+		}
+
+		readOffset += bytesRead
+	}
 }
 
 export async function writeFile(filePath: string, content: Uint8Array | string) {
@@ -165,21 +182,23 @@ export async function writeBinaryFile(filePath: string, content: Uint8Array) {
 
 	await ensureDir(fileDir)
 
-	let offset = 0
+	const fileWriter = new FileWriter(filePath)
 
-	async function getChunk() {
-		const chunk = content.subarray(offset, offset + chunkSize)
+	let readOffset = 0
+
+	while (true) {
+		const chunk = content.subarray(readOffset, readOffset + chunkSize)
 
 		if (chunk.length === 0) {
-			return undefined
+			break
 		}
 
-		offset += chunkSize
+		await fileWriter.write(chunk)
 
-		return chunk
+		readOffset += chunkSize
 	}
 
-	return writeFileInChunks(filePath, getChunk)
+	await fileWriter.dispose()
 }
 
 export async function writeUtf8File(filePath: string, content: string) {
@@ -189,77 +208,27 @@ export async function writeUtf8File(filePath: string, content: string) {
 
 	await ensureDir(fileDir)
 
-	let offset = 0
+	const fileWriter = new FileWriter(filePath)
+
+	let readOffset = 0
 
 	const textEncoder = new TextEncoder()
 
-	async function getChunk() {
-		const stringChunk = content.substring(offset, offset + chunkSize)
+	while (true) {
+		const stringChunk = content.substring(readOffset, readOffset + chunkSize)
 
 		if (stringChunk.length === 0) {
-			return undefined
+			break
 		}
 
 		const chunk = textEncoder.encode(stringChunk)
 
-		offset += chunkSize
+		fileWriter.write(chunk)
 
-		return chunk
+		readOffset += chunkSize
 	}
 
-	return writeFileInChunks(filePath, getChunk)
-}
-
-export async function writeFileInChunks(filePath: string, getChunk: () => Promise<Uint8Array | undefined>) {
-	const openPromise = new OpenPromise<void>()
-
-	const fileDir = path.dirname(filePath)
-
-	try {
-		await ensureDir(fileDir)
-	} catch (e) {
-		openPromise.reject(e)
-
-		return
-	}
-
-	const writeStream = createWriteStream(filePath)
-
-	writeStream.on('error', (err) => {
-		openPromise.reject(err)
-	})
-
-	writeStream.on('finish', () => {
-		openPromise.resolve()
-	})
-
-	async function writeNextChunk() {
-		let chunkToWrite: Uint8Array | undefined
-
-		try {
-			chunkToWrite = await getChunk()
-		} catch (e) {
-			openPromise.reject(e)
-
-			return
-		}
-
-		if (chunkToWrite === undefined) {
-			writeStream.end(() => {
-				openPromise.resolve()
-			})
-
-			return
-		}
-
-		writeStream.write(chunkToWrite, () => {
-			writeNextChunk()
-		})
-	}
-
-	writeNextChunk()
-
-	return openPromise.promise
+	await fileWriter.dispose()
 }
 
 export async function writeFileSafe(filePath: string, content: Uint8Array | string) {
@@ -365,23 +334,70 @@ export async function testDirectoryIsWritable(dir: string) {
 	return true
 }
 
-export async function copyFileAlternative(source: string, dest: string) {
-	return new Promise<void>((resolve, reject) => {
-		const readStream = createReadStream(source)
-		const writeStream = createWriteStream(dest)
+export class FileWriter {
+	private fileHandle?: number
+	private disposed = false
+	private writeOffset = 0
 
-		readStream.on('error', (err: any) => {
-			reject(err)
-		})
+	constructor(public readonly filePath: string) {
+	}
 
-		writeStream.on('error', (err: any) => {
-			reject(err)
-		})
+	async write(chunk: Uint8Array) {
+		if (this.isDisposed) {
+			throw new Error(`FileWriter has been disposed`)
+		}
 
-		readStream.pipe(writeStream)
+		await this.openIfNeeded()
 
-		readStream.on('end', () => {
-			resolve()
-		})
-	})
+		let chunkReadOffset = 0
+
+		while (chunkReadOffset < chunk.length) {
+			let bytesWritten: number
+
+			try {
+				({ bytesWritten } = await write(this.fileHandle!, chunk, chunkReadOffset, undefined, this.writeOffset))
+			} catch (e) {
+				await this.dispose()
+
+				throw e
+			}
+
+			chunkReadOffset += bytesWritten
+			this.writeOffset += bytesWritten
+		}
+	}
+
+	private async openIfNeeded() {
+		if (this.isDisposed) {
+			throw new Error(`FileWriter has been disposed`)
+		}
+
+		if (this.isOpened) {
+			return
+		}
+
+		this.fileHandle = await open(this.filePath, 'w')
+	}
+
+	async dispose() {
+		if (this.isDisposed) {
+			return
+		}
+
+		if (this.isOpened) {
+			await close(this.fileHandle!)
+		}
+
+		this.fileHandle = undefined
+		this.writeOffset = 0
+		this.disposed = true
+	}
+
+	get isOpened() {
+		return this.fileHandle !== undefined
+	}
+
+	get isDisposed() {
+		return this.disposed
+	}
 }
