@@ -1,46 +1,34 @@
-import { StringBuilder } from "../utilities/StringBuilder.js"
-
-export function encodeUtf8(utf8Text: string) {
+export function encodeUtf8(text: string) {
 	const textEncoder = new TextEncoder()
 
-	return textEncoder.encode(utf8Text)
+	return textEncoder.encode(text)
 }
 
 export function decodeUtf8(buffer: Uint8Array) {
-	const textDecoder = new TextDecoder()
+	const maxChunkSize = 2 ** 24
 
-	return textDecoder.decode(buffer)
+	const decoder = new ChunkedUtf8Decoder()
+
+	for (let offset = 0; offset < buffer.length; offset += maxChunkSize) {
+		const chunk = buffer.subarray(offset, offset + maxChunkSize)
+
+		decoder.writeChunk(chunk)
+	}
+
+	return decoder.toString()
 }
 
 export class ChunkedUtf8Decoder {
 	private str = ''
-	private readonly textDecoder = new TextDecoder()
+	private readonly textDecoder = new TextDecoder('utf-8')
 
 	writeChunk(chunk: Uint8Array) {
 		const decodedChunk = this.textDecoder.decode(chunk)
+
 		this.str += decodedChunk
 	}
 
 	toString() {
 		return this.str
-	}
-}
-
-export class ChunkedUtf8Decoder_WithStringBuilder {
-	private stringBuilder: StringBuilder
-	private readonly textDecoder = new TextDecoder()
-
-	constructor(initialCapacity?: number) {
-		 this.stringBuilder = new StringBuilder(initialCapacity)
-	}
-
-	writeChunk(chunk: Uint8Array) {
-		const decodedChunk = this.textDecoder.decode(chunk)
-
-		this.stringBuilder.appendString(decodedChunk)
-	}
-
-	toString() {
-		return this.stringBuilder.toString()
 	}
 }

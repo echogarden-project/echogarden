@@ -1,5 +1,5 @@
-import { DynamicUint16Array, createDynamicUint16Array } from "../data-structures/DynamicTypedArray.js"
-import { charCodesToString } from "./StringUtilities.js"
+import { DynamicUint16Array, createDynamicUint16Array } from '../data-structures/DynamicTypedArray.js'
+import { decodeUtf16 } from '../encodings/Utf16.js'
 
 export class StringBuilder {
 	private outputBuffer: DynamicUint16Array
@@ -40,6 +40,6 @@ export class StringBuilder {
 	}
 
 	toString() {
-		return charCodesToString(this.outputBuffer.toTypedArray())
+		return decodeUtf16(this.outputBuffer.toTypedArray())
 	}
 }

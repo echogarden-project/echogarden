@@ -203,15 +203,3 @@ export function substituteCharactersUsingLookup(text: string, substitutionLookup
 
 	return resultText
 }
-
-export function charCodesToString(charCodes: TypedArray, maxChunkSize = 2 ** 16) {
-	let stringChunks: string[] = []
-
-	for (let readOffset = 0; readOffset <= charCodes.length; readOffset += maxChunkSize) {
-		const chunk = charCodes.subarray(readOffset, readOffset + maxChunkSize)
-
-		stringChunks.push(String.fromCharCode(...chunk))
-	}
-
-	return stringChunks.join('')
-}

@@ -1,12 +1,21 @@
-import { StringBuilder } from '../utilities/StringBuilder.js';
+import { decodeAscii } from './Ascii.js';
 
-export function encodeBase64(
-	inputBytes: Uint8Array,
+export function encodeBase64(inputBytes: Uint8Array,
 	paddingCharacter: string | undefined = '=',
 	charCodeMap?: Uint8Array): string {
 
+	const asciiBuffer = encodeBase64AsAsciiBuffer(inputBytes, paddingCharacter, charCodeMap)
+
+	return decodeAscii(asciiBuffer)
+}
+
+export function encodeBase64AsAsciiBuffer(
+	inputBytes: Uint8Array,
+	paddingCharacter: string | undefined = '=',
+	charCodeMap?: Uint8Array): Uint8Array {
+
 	if (!inputBytes || inputBytes.length == 0) {
-		return ''
+		return new Uint8Array(0)
 	}
 
 	let paddingCharCode: number
@@ -23,52 +32,53 @@ export function encodeBase64(
 		charCodeMap = defaultBase64CharCodeMap
 	}
 
-	const stringBuilder = new StringBuilder(inputBytes.length)
+	const charCodes = new Uint8Array(Math.floor((inputBytes.length * 4 / 3) + 4))
 
 	const inputBytesLength = inputBytes.length
 
+	let writeOffset = 0
 	let readOffset = 0
 
-	for (; readOffset <= inputBytesLength - 3; readOffset += 3) {
+	while (readOffset <= inputBytesLength - 3) {
 		const uint24 =
-			inputBytes[readOffset] << 16 |
-			inputBytes[readOffset + 1] << 8 |
-			inputBytes[readOffset + 2]
+			inputBytes[readOffset++] << 16 |
+			inputBytes[readOffset++] << 8 |
+			inputBytes[readOffset++]
 
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 6) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24) & 63])
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 18) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 12) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 6) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24) & 63]
 	}
 
 	if (readOffset === inputBytesLength - 2) {
 		// If two bytes are left, output 3 encoded characters and one padding character
 		const uint24 =
-			inputBytes[readOffset] << 16 |
-			inputBytes[readOffset + 1] << 8
+			inputBytes[readOffset++] << 16 |
+			inputBytes[readOffset++] << 8
 
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 6) & 63])
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 18) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 12) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 6) & 63]
 
 		if (paddingCharCode >= 0) {
-			stringBuilder.appendCharCode(paddingCharCode)
+			charCodes[writeOffset++] = paddingCharCode
 		}
 	} else if (readOffset === inputBytesLength - 1) {
 		// Arrived at last byte at a position that did not complete a full 3 byte set
 		const uint24 =
-			inputBytes[readOffset] << 16
+			inputBytes[readOffset++] << 16
 
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 18) & 63])
-		stringBuilder.appendCharCode(charCodeMap[(uint24 >>> 12) & 63])
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 18) & 63]
+		charCodes[writeOffset++] = charCodeMap[(uint24 >>> 12) & 63]
 
 		if (paddingCharCode >= 0) {
-			stringBuilder.appendCharCode(paddingCharCode)
-			stringBuilder.appendCharCode(paddingCharCode)
+			charCodes[writeOffset++] = paddingCharCode
+			charCodes[writeOffset++] = paddingCharCode
 		}
 	}
 
-	return stringBuilder.toString()
+	return charCodes.subarray(0, writeOffset)
 }
 
 export function decodeBase64(
@@ -109,14 +119,15 @@ export function decodeBase64(
 
 	const stringLength = base64String.length
 
+	let readOffset = 0
 	let writeOffset = 0
 
-	for (let readOffset = 0; readOffset < stringLength; readOffset += 4) {
+	while (readOffset < stringLength) {
 		const uint24 =
-			(reverseCharCodeMap[base64String.charCodeAt(readOffset)] << 18) |
-			(reverseCharCodeMap[base64String.charCodeAt(readOffset + 1)] << 12) |
-			(reverseCharCodeMap[base64String.charCodeAt(readOffset + 2)] << 6) |
-			(reverseCharCodeMap[base64String.charCodeAt(readOffset + 3)])
+			(reverseCharCodeMap[base64String.charCodeAt(readOffset++)] << 18) |
+			(reverseCharCodeMap[base64String.charCodeAt(readOffset++)] << 12) |
+			(reverseCharCodeMap[base64String.charCodeAt(readOffset++)] << 6) |
+			(reverseCharCodeMap[base64String.charCodeAt(readOffset++)])
 
 		outputBuffer[writeOffset++] = (uint24 >>> 16) & 255
 		outputBuffer[writeOffset++] = (uint24 >>> 8) & 255

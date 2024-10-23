@@ -8,23 +8,27 @@ export class DynamicTypedArray<T extends TypedArray> {
 		this.elements = new TypedArrayConstructor(initialCapacity)
 	}
 
-	add(element: number) {
-		this.ensureCapacity(this.length + 1)
+	add(newElement: number) {
+		const length = this.length
 
-		this.elements[this.length] = element
+		if (length === this.elements.length) {
+			this.ensureCapacity(length + 1)
+		}
+
+		this.elements[length] = newElement
 		this.length += 1
 	}
 
-	addMany(...elements: number[]) {
-		this.addArray(elements)
+	addMany(...newElements: number[]) {
+		this.addArray(newElements)
 	}
 
-	addArray(elements: ArrayLike<number>) {
-		const addedCount = elements.length
+	addArray(newElements: ArrayLike<number>) {
+		const addedCount = newElements.length
 
 		this.ensureCapacity(this.length + addedCount)
 
-		this.elements.set(elements, this.length)
+		this.elements.set(newElements, this.length)
 		this.length += addedCount
 	}
 

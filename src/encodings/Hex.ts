@@ -1,51 +1,63 @@
-import { StringBuilder } from '../utilities/StringBuilder.js'
+import { decodeAscii } from "./Ascii.js"
 
 export function encodeHex(buffer: Uint8Array) {
-	const stringBuilder = new StringBuilder()
+	const asciiBuffer = encodeHexAsAsciiBuffer(buffer)
 
-	for (let i = 0; i < buffer.length; i++) {
-		const value = buffer[i]
+	return decodeAscii(asciiBuffer)
+}
+
+export function encodeHexAsAsciiBuffer(buffer: Uint8Array) {
+	const bufferLen = buffer.length
+
+	const charCodes = new Uint8Array(bufferLen * 2)
+
+	let readOffset = 0
+	let writeOffset = 0
+
+	while (readOffset < bufferLen) {
+		const value = buffer[readOffset++]
 
 		const valueHigh4Bits = (value >>> 4) & 0xf
 		const valueLow4Bits = value & 0xf
 
-		stringBuilder.appendCharCode(hexCharCodeLookup[valueHigh4Bits])
-		stringBuilder.appendCharCode(hexCharCodeLookup[valueLow4Bits])
+		charCodes[writeOffset++] = hexCharCodeLookup[valueHigh4Bits]
+		charCodes[writeOffset++] = hexCharCodeLookup[valueLow4Bits]
 	}
 
-	return stringBuilder.toString()
+	return charCodes
 }
 
 export function decodeHex(hexString: string) {
-	if (hexString.length % 2 !== 0) {
+	const hexLength = hexString.length
+
+	if (hexLength % 2 !== 0) {
 		throw new Error(`Hexadecimal string doesn't have an even number of characters`)
 	}
 
-	const bufferLength = hexString.length / 2
+	const buffer = new Uint8Array(hexLength / 2)
 
-	const buffer = new Uint8Array(bufferLength)
+	let readOffset = 0
+	let writeOffset = 0
 
-	for (
-		let writeOffset = 0, readOffset = 0;
-		writeOffset < bufferLength;
-		writeOffset++, readOffset += 2) {
-
-		const valueHigh4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset))
-		const valueLow4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset + 1))
+	while (readOffset < hexLength) {
+		const valueHigh4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset++))
+		const valueLow4Bits = hexCharCodeToValue(hexString.charCodeAt(readOffset++))
 
 		const value = (valueHigh4Bits << 4) | valueLow4Bits
 
-		buffer[writeOffset] = value
+		buffer[writeOffset++] = value
 	}
 
 	return buffer
 }
 
 function hexCharCodeToValue(hexCharCode: number) {
-	if (hexCharCode >= 48 && hexCharCode <= 57) {
+	if (hexCharCode >= 48 && hexCharCode <= 57) { // '0'..'9'
 		return hexCharCode - 48
-	} else if (hexCharCode >= 97 && hexCharCode <= 102) {
+	} else if (hexCharCode >= 97 && hexCharCode <= 102) { // 'a'..'f'
 		return 10 + hexCharCode - 97
+	} else if (hexCharCode >= 65 && hexCharCode <= 70) { // 'A'..'F'
+		return 10 + hexCharCode - 65
 	} else {
 		throw new Error(`Can't decode character '${String.fromCharCode(hexCharCode)}' (code: ${hexCharCode}) as hexadecimal`)
 	}

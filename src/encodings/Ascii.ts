@@ -1,13 +1,13 @@
-import { charCodesToString } from "../utilities/StringUtilities.js"
-
 export function encodeAscii(asciiString: string) {
-	const buffer = new Uint8Array(asciiString.length)
+	const len = asciiString.length
 
-	for (let i = 0; i < asciiString.length; i++) {
+	const buffer = new Uint8Array(len)
+
+	for (let i = 0; i < len; i++) {
 		const charCode = asciiString.charCodeAt(i)
 
-		if (charCode >= 256) {
-			throw new Error(`Character '${asciiString[i]}' (code: ${charCode}) can't be encoded as ASCII`)
+		if (charCode >= 128) {
+			throw new Error(`Character '${asciiString[i]}' (code: ${charCode}) can't be encoded as a standard ASCII character`)
 		}
 
 		buffer[i] = charCode
@@ -17,5 +17,30 @@ export function encodeAscii(asciiString: string) {
 }
 
 export function decodeAscii(buffer: Uint8Array) {
-	return charCodesToString(buffer)
+	const maxChunkSize = 2 ** 24
+
+	const decoder = new ChunkedAsciiDecoder()
+
+	for (let offset = 0; offset < buffer.length; offset += maxChunkSize) {
+		const chunk = buffer.subarray(offset, offset + maxChunkSize)
+
+		decoder.writeChunk(chunk)
+	}
+
+	return decoder.toString()
+}
+
+export class ChunkedAsciiDecoder {
+	private str = ''
+	private readonly textDecoder = new TextDecoder('windows-1252')
+
+	writeChunk(chunk: Uint8Array) {
+		const decodedChunk = this.textDecoder.decode(chunk)
+
+		this.str += decodedChunk
+	}
+
+	toString() {
+		return this.str
+	}
 }
