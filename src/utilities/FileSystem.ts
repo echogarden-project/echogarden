@@ -11,6 +11,7 @@ import { getAppTempDir } from './PathUtilities.js'
 import { createDynamicUint8Array } from '../data-structures/DynamicTypedArray.js'
 import { ChunkedUtf8Decoder } from '../encodings/Utf8.js'
 import { FileWriter } from './FileWriter.js'
+import { FileReader } from './FileReader.js'
 
 export const readdir = promisify(gracefulFS.readdir)
 export const stat = promisify(gracefulFS.stat)
@@ -74,11 +75,14 @@ export async function computeFileSha256Hex(filePath: string) {
 	const crypto = await import('crypto')
 	const hash = crypto.createHash('sha256')
 
-	async function processChunk(chunk: Uint8Array) {
+	const fileReader = new FileReader(filePath)
+	const buffer = new Uint8Array(2 ** 64)
+
+	while (!fileReader.isFinished) {
+		const chunk = await fileReader.readChunk(buffer)
+
 		hash.update(chunk)
 	}
-
-	await readFileInChunks(filePath, 2 ** 64, processChunk)
 
 	const result = hash.digest('hex')
 
@@ -103,13 +107,15 @@ export async function readFileAsBinary(filePath: string) {
 	const fileInfo = await stat(filePath)
 	const fileSize = fileInfo.size
 
+	const fileReader = new FileReader(filePath)
+	const buffer = new Uint8Array(chunkSize)
 	const result = createDynamicUint8Array(fileSize)
 
-	async function processChunk(chunk: Uint8Array) {
+	while (!fileReader.isFinished) {
+		const chunk = await fileReader.readChunk(buffer)
+
 		result.addArray(chunk)
 	}
-
-	await readFileInChunks(filePath, chunkSize, processChunk)
 
 	return result.toTypedArray()
 }
@@ -117,67 +123,32 @@ export async function readFileAsBinary(filePath: string) {
 export async function readFileAsUtf8(filePath: string) {
 	const chunkSize = 2 ** 20
 
+	const fileReader = new FileReader(filePath)
+	const buffer = new Uint8Array(chunkSize)
+
 	const result = new ChunkedUtf8Decoder()
 
-	async function processChunk(chunk: Uint8Array) {
+	while (!fileReader.isFinished) {
+		const chunk = await fileReader.readChunk(buffer)
+
 		result.writeChunk(chunk)
 	}
-
-	await readFileInChunks(filePath, chunkSize, processChunk)
 
 	return result.toString()
 }
 
-export async function readFileInChunks(filePath: string, maxChunkSize: number, processChunk: (chunk: Uint8Array) => Promise<void>) {
-	const fileHandle = await open(filePath, 'r')
-
-	const buffer = new Uint8Array(maxChunkSize)
-
-	let readOffset = 0
-
-	while (true) {
-		let bytesRead: number
-
-		try {
-			({ bytesRead } = await read(fileHandle, buffer, 0, maxChunkSize, readOffset))
-		} catch (e) {
-			await close(fileHandle)
-
-			throw e
-		}
-
-		if (bytesRead === 0) {
-			await close(fileHandle)
-
-			return
-		}
-
-		const chunk = buffer.subarray(0, bytesRead)
-
-		try {
-			await processChunk(chunk)
-		} catch (e) {
-			await close(fileHandle)
-
-			throw e
-		}
-
-		readOffset += bytesRead
-	}
-}
-
 export async function writeFile(filePath: string, content: Uint8Array | string) {
-	if (typeof content === 'string') {
-		return writeUtf8File(filePath, content)
-	} else if (content instanceof Uint8Array) {
+	if (content instanceof Uint8Array) {
 		return writeBinaryFile(filePath, content)
+	} else if (typeof content === 'string') {
+		return writeUtf8File(filePath, content)
 	} else {
 		throw new Error(`Content can only be a Uint8Array or string`)
 	}
 }
 
 export async function writeBinaryFile(filePath: string, content: Uint8Array) {
-	const chunkSize = 2 ** 20
+	const maxChunkSize = 2 ** 20
 
 	const fileDir = path.dirname(filePath)
 
@@ -188,7 +159,7 @@ export async function writeBinaryFile(filePath: string, content: Uint8Array) {
 	let readOffset = 0
 
 	while (true) {
-		const chunk = content.subarray(readOffset, readOffset + chunkSize)
+		const chunk = content.subarray(readOffset, readOffset + maxChunkSize)
 
 		if (chunk.length === 0) {
 			break
@@ -196,14 +167,14 @@ export async function writeBinaryFile(filePath: string, content: Uint8Array) {
 
 		await fileWriter.write(chunk)
 
-		readOffset += chunkSize
+		readOffset += chunk.length
 	}
 
 	await fileWriter.dispose()
 }
 
 export async function writeUtf8File(filePath: string, content: string) {
-	const chunkSize = 2 ** 20
+	const maxChunkSize = 2 ** 20
 
 	const fileDir = path.dirname(filePath)
 
@@ -211,12 +182,12 @@ export async function writeUtf8File(filePath: string, content: string) {
 
 	const fileWriter = new FileWriter(filePath)
 
-	let readOffset = 0
-
 	const textEncoder = new TextEncoder()
 
+	let readOffset = 0
+
 	while (true) {
-		const stringChunk = content.substring(readOffset, readOffset + chunkSize)
+		const stringChunk = content.substring(readOffset, readOffset + maxChunkSize)
 
 		if (stringChunk.length === 0) {
 			break
@@ -226,7 +197,7 @@ export async function writeUtf8File(filePath: string, content: string) {
 
 		await fileWriter.write(chunk)
 
-		readOffset += chunkSize
+		readOffset += stringChunk.length
 	}
 
 	await fileWriter.dispose()
