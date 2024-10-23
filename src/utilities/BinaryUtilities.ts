@@ -123,17 +123,16 @@ export function writeInt32LE(buffer: Uint8Array, value: number, offset: number) 
 export function writeAscii(buffer: Uint8Array, asciiString: string, writeStartOffset: number) {
 	const writeEndOffset = Math.min(writeStartOffset + asciiString.length, buffer.length)
 
-	for (
-		let writeOffset = writeStartOffset, readOffset = 0;
-		writeOffset < writeEndOffset;
-		writeOffset++, readOffset++) {
+	let readOffset = 0
+	let writeOffset = writeStartOffset
 
-		const charCode = asciiString.charCodeAt(readOffset)
+	while (writeOffset < writeEndOffset) {
+		const charCode = asciiString.charCodeAt(readOffset++)
 
-		if (charCode >= 256) {
+		if (charCode >= 128) {
 			throw new Error(`Character '${asciiString[readOffset]}' (code: ${charCode}) can't be encoded as ASCII`)
 		}
 
-		buffer[writeOffset] = charCode
+		buffer[writeOffset++] = charCode
 	}
 }
