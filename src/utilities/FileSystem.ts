@@ -385,12 +385,15 @@ export class FileWriter {
 		}
 
 		if (this.isOpened) {
-			await close(this.fileHandle!)
+			try {
+				await close(this.fileHandle!)
+			} catch (e) {
+			}
 		}
-
-		this.fileHandle = undefined
-		this.writeOffset = 0
+		
 		this.disposed = true
+		this.writeOffset = 0
+		this.fileHandle = undefined
 	}
 
 	get isOpened() {

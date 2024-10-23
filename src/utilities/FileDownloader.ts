@@ -1,7 +1,6 @@
 import { GaxiosOptions, request } from 'gaxios'
 import { Readable } from 'stream'
 import { getRandomHexString, writeToStderr } from './Utilities.js'
-import { OpenPromise } from './OpenPromise.js'
 
 import { Timer } from './Timer.js'
 import { Logger } from './Logger.js'
@@ -45,8 +44,6 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 
 export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = 'Downloading') {
 	const write = logLevelGreaterOrEqualTo('info') ? writeToStderr : () => {}
-
-	const downloadPromise = new OpenPromise<void>()
 
 	const timer = new Timer()
 
@@ -143,6 +140,9 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		}
 	}
 
+	const contentLengthString = response.headers['content-length']
+	totalBytes = contentLengthString != undefined ? parseInt(contentLengthString) : undefined
+
 	const partialFilePath = `${targetFilePath}.${getRandomHexString(16)}.partial`
 	const fileWriter = new FileWriter(partialFilePath)
 
@@ -150,56 +150,30 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		updateStatus()
 	}, statusUpdateInterval)
 
-	response.data.on('data', (chunk: Uint8Array) => {
-		try {
-			const contentLengthString = response.headers['content-length']
-
-			totalBytes = contentLengthString != undefined ? parseInt(contentLengthString) : undefined
-
-			const chunkLength = chunk.length
-
-			fileWriter.write(chunk)
-
-			downloadedBytes += chunkLength
-
-			if (downloadStarted == false) {
+	try {
+		for await (const chunk of response.data) {
+			if (downloadStarted === false) {
 				downloadStarted = true
 			}
-		} catch (err) {
-			clearInterval(statusInterval)
 
-			downloadPromise.reject(err)
+			downloadedBytes += chunk.length
+
+			await fileWriter.write(chunk)
 		}
-	})
+	} catch (e) {
+		clearInterval(statusInterval)
 
-	response.data.on('end', async () => {
-		try {
-			clearInterval(statusInterval)
-			updateStatus()
+		await fileWriter.dispose()
 
-			fileWriter.dispose()
+		throw e
+	}
 
-			write('\n')
+	clearInterval(statusInterval)
+	updateStatus()
 
-			await move(partialFilePath, targetFilePath)
+	await fileWriter.dispose()
 
-			downloadPromise.resolve()
-		} catch (err) {
-			clearInterval(statusInterval)
-			downloadPromise.reject(err)
-		}
-	})
+	write('\n')
 
-	response.data.on('error', async (err: any) => {
-		try {
-			clearInterval(statusInterval)
-
-			fileWriter.dispose()
-			await remove(partialFilePath)
-		} finally {
-			downloadPromise.reject(err)
-		}
-	})
-
-	return downloadPromise.promise
+	await move(partialFilePath, targetFilePath)
 }
