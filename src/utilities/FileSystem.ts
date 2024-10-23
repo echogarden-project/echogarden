@@ -224,7 +224,7 @@ export async function writeUtf8File(filePath: string, content: string) {
 
 		const chunk = textEncoder.encode(stringChunk)
 
-		fileWriter.write(chunk)
+		await fileWriter.write(chunk)
 
 		readOffset += chunkSize
 	}
