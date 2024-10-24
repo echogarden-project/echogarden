@@ -190,7 +190,6 @@ export async function testDirectoryIsWritable(dir: string) {
 	return true
 }
 
-
 export async function readDirRecursive(dir: string, pathFilter?: (filePath: string) => boolean) {
 	if (!(await stat(dir)).isDirectory()) {
 		throw new Error(`'${dir}' is not a directory`)
