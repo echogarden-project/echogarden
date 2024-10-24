@@ -38,18 +38,23 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 
 			await logger.startAsync(`Convert audio to 44.1 kHz stereo`)
 
-			const inputRawAudio44100Stereo = await ensureRawAudio(inputRawAudio, 44100, 2)
+			let inputRawAudioAs44100Stereo: RawAudio | undefined = await ensureRawAudio(inputRawAudio, 44100, 2)
 
 			logger.end()
 
 			const modelProfile = getProfileForMDXNetModelName(mdxNetOptions.model!)
 
-			isolatedRawAudio = await MDXNetSourceSeparation.isolate(inputRawAudio44100Stereo, modelPath, modelProfile, mdxNetOptions)
-
+			isolatedRawAudio = await MDXNetSourceSeparation.isolate(inputRawAudioAs44100Stereo, modelPath, modelProfile, mdxNetOptions)
 			logger.end()
 
+			// Release memory for the converted input audio since it's not needed anymore
+			inputRawAudioAs44100Stereo = undefined
+
+			await logger.startAsync(`Convert isolated audio to back original sample rate (${inputRawAudio.sampleRate} Hz) and channel count (${inputRawAudio.audioChannels.length})`)
+			isolatedRawAudio = await ensureRawAudio(isolatedRawAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length)
+
 			await logger.startAsync(`Subtract from original waveform to extract background audio`)
-			backgroundRawAudio = subtractAudio(inputRawAudio44100Stereo, isolatedRawAudio)
+			backgroundRawAudio = subtractAudio(inputRawAudio, isolatedRawAudio)
 
 			break
 		}
