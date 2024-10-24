@@ -1544,7 +1544,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 
 		if (cacheFilePath) {
-			await writeFileSafe(cacheFilePath, stringifyAndFormatJson(voiceList))
+			await writeFileSafe(cacheFilePath, await stringifyAndFormatJson(voiceList))
 		}
 
 		return voiceList

@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { parseCLIArguments } from './CLIParser.js'
-import { getWithDefault, logToStderr, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
+import { getWithDefault, logToStderr, parseJson, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchema.js'
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
@@ -1806,8 +1806,7 @@ async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptions
 			throw new Error(`The property '${key}' is not a Boolean, and cannot be negated using the 'not-' prefix.`)
 		} else if (optionType == 'array' || optionType == 'object') {
 			try {
-				const { default: JSON5 } = await import('json5')
-				parsedValue = JSON5.parse(value)
+				parsedValue = await parseJson(value, true)
 			} catch (e) {
 				parsedValue = value
 			}
@@ -1963,7 +1962,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 			await ensureDir(fileDir)
 
 			const roundedTimeline = roundTimelineProperties(timeline)
-			return writeFileSafe(outputFilePath, stringifyAndFormatJson(roundedTimeline))
+			return writeFileSafe(outputFilePath, await stringifyAndFormatJson(roundedTimeline))
 		}
 	} else if (fileExtension == 'srt') {
 		fileSaver = async (audio, timeline, text, subtitlesConfig) => {

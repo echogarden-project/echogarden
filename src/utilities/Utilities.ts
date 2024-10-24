@@ -142,8 +142,28 @@ export function printMatrix(matrix: Float32Array[]) {
 	}
 }
 
-export function stringifyAndFormatJson(obj: any) {
-	return JSON.stringify(obj, undefined, 4)
+export async function parseJson(jsonText: string, useJson5 = false) {
+	if (useJson5) {
+		const { default: JSON5 } = await import('json5')
+
+		return JSON5.parse(jsonText)
+	} else {
+		return JSON.parse(jsonText)
+	}
+}
+
+export async function stringifyAndFormatJson(obj: any, useJson5 = false) {
+	let textContent: string
+
+	if (useJson5) {
+		const { default: JSON5 } = await import('json5')
+
+		textContent = JSON5.stringify(obj, undefined, 4)
+	} else {
+		textContent = JSON.stringify(obj, undefined, 4)
+	}
+
+	return textContent
 }
 
 export function secondsToHMS(totalSeconds: number) {

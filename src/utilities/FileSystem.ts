@@ -4,7 +4,7 @@ import * as os from 'node:os'
 
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { getRandomHexString } from './Utilities.js'
+import { getRandomHexString, parseJson, stringifyAndFormatJson } from './Utilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir } from './PathUtilities.js'
 
@@ -13,94 +13,27 @@ import { ChunkedUtf8Decoder } from '../encodings/Utf8.js'
 import { FileWriter } from './FileWriter.js'
 import { FileReader } from './FileReader.js'
 
-export const readdir = promisify(gracefulFS.readdir)
-export const stat = promisify(gracefulFS.stat)
 export const open = promisify(gracefulFS.open)
 export const close = promisify(gracefulFS.close)
-export const chmod = promisify(gracefulFS.chmod)
-export const copyFile = promisify(gracefulFS.copyFile)
-export const access = promisify(gracefulFS.access)
+
 export const read = promisify(gracefulFS.read)
 export const write = promisify(gracefulFS.write)
 
 export const existsSync = gracefulFS.existsSync
 
+export const stat = promisify(gracefulFS.stat)
+export const chmod = promisify(gracefulFS.chmod)
+export const access = promisify(gracefulFS.access)
+
+export const readdir = promisify(gracefulFS.readdir)
+export const copyFile = promisify(gracefulFS.copyFile)
+
 export const remove = fsExtra.remove
 export const copy = fsExtra.copy
 
-export async function readDirRecursive(dir: string, fileFilter?: (filePath: string) => boolean) {
-	if (!(await stat(dir)).isDirectory()) {
-		throw new Error(`'${dir}' is not a directory`)
-	}
-
-	const filenamesInDir = await readdir(dir)
-	const filesInDir = filenamesInDir.map(filename => path.join(dir, filename))
-
-	const result: string[] = []
-	const subDirectories: string[] = []
-
-	for (const filePath of filesInDir) {
-		if ((await stat(filePath)).isDirectory()) {
-			subDirectories.push(filePath)
-		} else {
-			if (fileFilter && !fileFilter(filePath)) {
-				continue
-			}
-
-			result.push(filePath)
-		}
-	}
-
-	for (const subDirectory of subDirectories) {
-		const filesInSubdirectory = await readDirRecursive(subDirectory, fileFilter)
-		result.push(...filesInSubdirectory)
-	}
-
-	return result
-}
-
-export async function isFileIsUpToDate(filePath: string, timeRangeSeconds: number) {
-	const fileUpdateTime = (await stat(filePath)).mtime.valueOf()
-
-	const currentTime = (new Date()).valueOf()
-
-	const differenceInMilliseconds = currentTime - fileUpdateTime
-
-	const differenceInSeconds = differenceInMilliseconds / 1000
-
-	return differenceInSeconds <= timeRangeSeconds
-}
-
-export async function computeFileSha256Hex(filePath: string) {
-	const crypto = await import('crypto')
-	const hash = crypto.createHash('sha256')
-
-	const fileReader = new FileReader(filePath)
-	const buffer = new Uint8Array(2 ** 64)
-
-	while (!fileReader.isFinished) {
-		const chunk = await fileReader.readChunk(buffer)
-
-		hash.update(chunk)
-	}
-
-	const result = hash.digest('hex')
-
-	return result
-}
-
-export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
-	const fileTextContent = await readFileAsUtf8(jsonFilePath)
-
-	if (useJson5) {
-		const { default: JSON5 } = await import('json5')
-
-		return JSON5.parse(fileTextContent)
-	} else {
-		return JSON.parse(fileTextContent)
-	}
-}
-
+///////////////////////////////////////////////////////////////////////////////////////////
+// File read operations
+///////////////////////////////////////////////////////////////////////////////////////////
 export async function readFileAsBinary(filePath: string) {
 	const chunkSize = 2 ** 20
 
@@ -137,6 +70,15 @@ export async function readFileAsUtf8(filePath: string) {
 	return result.toString()
 }
 
+export async function readAndParseJsonFile(jsonFilePath: string, useJson5 = false) {
+	const textContent = await readFileAsUtf8(jsonFilePath)
+
+	return parseJson(textContent, useJson5)
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// File write operations
+///////////////////////////////////////////////////////////////////////////////////////////
 export async function writeFile(filePath: string, content: Uint8Array | string) {
 	if (content instanceof Uint8Array) {
 		return writeBinaryFile(filePath, content)
@@ -203,6 +145,12 @@ export async function writeUtf8File(filePath: string, content: string) {
 	await fileWriter.dispose()
 }
 
+export async function writeJsonFile(filePath: string, content: any, useJson5 = false) {
+	const textContent = await stringifyAndFormatJson(content, useJson5)
+
+	await writeUtf8File(filePath, textContent)
+}
+
 export async function writeFileSafe(filePath: string, content: Uint8Array | string) {
 	const tempDir = getAppTempDir(appName)
 	const tempFilePath = path.join(tempDir, `${getRandomHexString(16)}.partial`)
@@ -210,6 +158,68 @@ export async function writeFileSafe(filePath: string, content: Uint8Array | stri
 	await writeFile(tempFilePath, content)
 
 	await move(tempFilePath, filePath)
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Directory operations
+///////////////////////////////////////////////////////////////////////////////////////////
+export async function ensureDir(dirPath: string) {
+	dirPath = path.normalize(dirPath)
+
+	if (existsSync(dirPath)) {
+		const dirStats = await stat(dirPath)
+
+		if (!dirStats.isDirectory()) {
+			throw new Error(`The path '${dirPath}' exists but is not a directory.`)
+		}
+	} else {
+		return fsExtra.ensureDir(dirPath)
+	}
+}
+
+export async function testDirectoryIsWritable(dir: string) {
+	const testFileName = path.join(dir, getRandomHexString(16))
+
+	try {
+		await fsExtra.createFile(testFileName)
+		await remove(testFileName)
+	} catch (e) {
+		return false
+	}
+
+	return true
+}
+
+
+export async function readDirRecursive(dir: string, pathFilter?: (filePath: string) => boolean) {
+	if (!(await stat(dir)).isDirectory()) {
+		throw new Error(`'${dir}' is not a directory`)
+	}
+
+	const filenamesInDir = await readdir(dir)
+	const filesInDir = filenamesInDir.map(filename => path.join(dir, filename))
+
+	const result: string[] = []
+	const subDirectories: string[] = []
+
+	for (const filePath of filesInDir) {
+		if ((await stat(filePath)).isDirectory()) {
+			subDirectories.push(filePath)
+		} else {
+			if (pathFilter && !pathFilter(filePath)) {
+				continue
+			}
+
+			result.push(filePath)
+		}
+	}
+
+	for (const subDirectory of subDirectories) {
+		const filesInSubdirectory = await readDirRecursive(subDirectory, pathFilter)
+		result.push(...filesInSubdirectory)
+	}
+
+	return result
 }
 
 export function getAppDataDir(appName: string) {
@@ -231,36 +241,9 @@ export function getAppDataDir(appName: string) {
 	return dataDir
 }
 
-export async function chmodRecursive(rootPath: string, newMode: number) {
-	const rootPathStat = await stat(rootPath)
-
-	await chmod(rootPath, newMode)
-
-	if (rootPathStat.isDirectory()) {
-		const fileList = await readdir(rootPath)
-
-		for (const filename of fileList) {
-			const filePath = path.join(rootPath, filename)
-
-			await chmodRecursive(filePath, newMode)
-		}
-	}
-}
-
-export async function ensureDir(dirPath: string) {
-	dirPath = path.normalize(dirPath)
-
-	if (existsSync(dirPath)) {
-		const dirStats = await stat(dirPath)
-
-		if (!dirStats.isDirectory()) {
-			throw new Error(`The path '${dirPath}' exists but is not a directory.`)
-		}
-	} else {
-		return fsExtra.ensureDir(dirPath)
-	}
-}
-
+///////////////////////////////////////////////////////////////////////////////////////////
+// Copy operations
+///////////////////////////////////////////////////////////////////////////////////////////
 export async function move(source: string, dest: string) {
 	source = path.normalize(source)
 	dest = path.normalize(dest)
@@ -283,6 +266,9 @@ export async function move(source: string, dest: string) {
 	return fsExtra.move(source, dest, { overwrite: true })
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////
+// Misc operations
+///////////////////////////////////////////////////////////////////////////////////////////
 export async function existsAndIsWritable(targetPath: string) {
 	try {
 		await access(targetPath, gracefulFS.constants.W_OK);
@@ -293,15 +279,49 @@ export async function existsAndIsWritable(targetPath: string) {
 	return true
 }
 
-export async function testDirectoryIsWritable(dir: string) {
-	const testFileName = path.join(dir, getRandomHexString(16))
+export async function chmodRecursive(rootPath: string, newMode: number) {
+	const rootPathStat = await stat(rootPath)
 
-	try {
-		await fsExtra.createFile(testFileName)
-		await remove(testFileName)
-	} catch (e) {
-		return false
+	await chmod(rootPath, newMode)
+
+	if (rootPathStat.isDirectory()) {
+		const fileList = await readdir(rootPath)
+
+		for (const filename of fileList) {
+			const filePath = path.join(rootPath, filename)
+
+			await chmodRecursive(filePath, newMode)
+		}
+	}
+}
+
+export async function isFileIsUpToDate(filePath: string, maxTimeDifferenceSeconds: number) {
+	const fileUpdateTime = (await stat(filePath)).mtime.valueOf()
+
+	const currentTime = (new Date()).valueOf()
+
+	const differenceInMilliseconds = currentTime - fileUpdateTime
+
+	const differenceInSeconds = differenceInMilliseconds / 1000
+
+	return differenceInSeconds <= maxTimeDifferenceSeconds
+}
+
+export async function computeFileSha256Hex(filePath: string) {
+	const crypto = await import('crypto')
+
+	const hash = crypto.createHash('sha256')
+
+	const fileReader = new FileReader(filePath)
+	const buffer = new Uint8Array(2 ** 16)
+
+	while (!fileReader.isFinished) {
+		const chunk = await fileReader.readChunk(buffer)
+
+		hash.update(chunk)
 	}
 
-	return true
+	const result = hash.digest('hex')
+
+	return result
 }
