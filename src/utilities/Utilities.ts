@@ -166,6 +166,37 @@ export async function stringifyAndFormatJson(obj: any, useJson5 = false) {
 	return textContent
 }
 
+export async function parseJSONAndGetType(str: string, useJson5 = false) {
+	let parsedValue: any = undefined
+
+	try {
+		parsedValue = await parseJson(str, useJson5)
+	} catch (e) {
+	}
+
+	let jsonType: 'null' | 'string' | 'number' | 'boolean' | 'array' | 'object' | undefined = undefined
+
+	if (parsedValue === null) {
+		jsonType = 'null'
+	} else if (typeof parsedValue === 'string') {
+		jsonType = 'string'
+	} else if (typeof parsedValue === 'number') {
+		jsonType = 'number'
+	} else if (typeof parsedValue === 'boolean') {
+		jsonType = 'boolean'
+	} else if (Array.isArray(parsedValue)) {
+		jsonType = 'array'
+	} else if (typeof parsedValue === 'object') {
+		jsonType = 'object'
+	}
+
+	return {
+		parsedValue,
+		jsonType
+	}
+}
+
+
 export function secondsToHMS(totalSeconds: number) {
 	let remainingSeconds = totalSeconds
 

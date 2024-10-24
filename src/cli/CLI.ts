@@ -1,6 +1,6 @@
 import * as API from '../api/API.js'
 import { parseCLIArguments } from './CLIParser.js'
-import { getWithDefault, logToStderr, parseJson, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
+import { parseJSONAndGetType, getWithDefault, logToStderr, parseJson, setupUnhandledExceptionListeners, splitFilenameOnExtendedExtension, stringifyAndFormatJson } from '../utilities/Utilities.js'
 import { getOptionTypeFromSchema, SchemaTypeDefinition } from './CLIOptionsSchema.js'
 import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLIConfigFile.js'
 
@@ -23,7 +23,6 @@ import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import JSON5 from 'json5'
 import { getLowercaseFileExtension, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
 import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements } from '../utilities/StringUtilities.js'
@@ -1811,13 +1810,10 @@ async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptions
 				parsedValue = value
 			}
 		} else if (optionIsUnion) {
-			const isArrayJSON = value.startsWith('[') && value.endsWith(']')
-			const isObjectJSON = value.startsWith('{') && value.endsWith('}')
-			const isNumberJSON = !isNaN(Number.parseFloat(value))
-			const isBooleanJSON = value == 'true' || value == 'false'
+			const { parsedValue: json5ParsedValue, jsonType } = await parseJSONAndGetType(value, true)
 
-			if (isArrayJSON || isObjectJSON || isNumberJSON || isBooleanJSON) {
-				parsedValue = JSON5.parse(value)
+			if (jsonType === 'number' || jsonType === 'boolean' || jsonType === 'array' || jsonType === 'object') {
+				parsedValue = json5ParsedValue
 			} else {
 				parsedValue = value
 			}
