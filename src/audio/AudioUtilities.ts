@@ -401,23 +401,19 @@ export function getRawAudioDuration(rawAudio: RawAudio) {
 export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: number, outChannelCount?: number) {
 	let inputAsRawAudio: RawAudio = input as RawAudio
 
-	if (inputAsRawAudio.audioChannels?.length > 0 && inputAsRawAudio.sampleRate) {
+	if (isRawAudio(input)) {
 		const inputAudioChannelCount = inputAsRawAudio.audioChannels.length
 
 		if (outChannelCount == 1 && inputAudioChannelCount > 1) {
 			inputAsRawAudio = downmixToMono(inputAsRawAudio)
-		}
-
-		if (outChannelCount == 2 && inputAudioChannelCount == 1) {
+		} else if (outChannelCount == 2 && inputAudioChannelCount == 1) {
 			inputAsRawAudio = cloneRawAudio(inputAsRawAudio)
 			inputAsRawAudio.audioChannels.push(inputAsRawAudio.audioChannels[0].slice())
-		}
-
-		if (outChannelCount != null && outChannelCount > 2 && outChannelCount != inputAudioChannelCount) {
+		} else if (outChannelCount != null && outChannelCount > 2 && outChannelCount != inputAudioChannelCount) {
 			throw new Error(`Can't convert ${inputAudioChannelCount} channels to ${outChannelCount} channels. Channel conversion of raw audio currently only supports mono and stereo inputs.`)
 		}
 
-		if (outSampleRate && inputAsRawAudio.sampleRate != outSampleRate) {
+		if (outSampleRate && inputAsRawAudio.sampleRate !== outSampleRate) {
 			inputAsRawAudio = await resampleAudioSpeex(inputAsRawAudio, outSampleRate)
 		}
 	} else if (typeof input == 'string' || input instanceof Uint8Array) {
@@ -432,19 +428,43 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 }
 
 export function subtractAudio(audio1: RawAudio, audio2: RawAudio) {
-	const sampleCount = audio1.audioChannels[0].length
-
-	const subtractedAudioChannels = [new Float32Array(sampleCount), new Float32Array(sampleCount)]
-
-	for (let i = 0; i < sampleCount; i++) {
-		for (let channelIndex = 0; channelIndex < 2; channelIndex++) {
-			subtractedAudioChannels[channelIndex][i] = audio1.audioChannels[channelIndex][i] - audio2.audioChannels[channelIndex][i]
-		}
+	if (audio1.sampleRate !== audio2.sampleRate) {
+		throw new Error(`Audio sequences have different sample rates`)
 	}
 
-	const subtractedRawAudio: RawAudio = { audioChannels: subtractedAudioChannels, sampleRate: audio1.sampleRate }
+	if (audio1.audioChannels.length !== audio2.audioChannels.length) {
+		throw new Error(`Audio sequences have different channel counts`)
+	}
+
+	const sampleRate = audio1.sampleRate
+	const channelCount = audio1.audioChannels.length
+	const sampleCount = Math.min(audio1.audioChannels[0].length, audio2.audioChannels[0].length)
+
+	const subtractedAudioChannels: Float32Array[] = []
+
+	for (let channelIndex = 0; channelIndex < channelCount; channelIndex++) {
+		const subtractedSamples = new Float32Array(sampleCount)
+
+		const samples1 = audio1.audioChannels[channelIndex]
+		const samples2 = audio2.audioChannels[channelIndex]
+
+		for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+			subtractedSamples[sampleIndex] = samples1[sampleIndex] - samples2[sampleIndex]
+		}
+
+		subtractedAudioChannels.push(subtractedSamples)
+	}
+
+	const subtractedRawAudio: RawAudio = {
+		audioChannels: subtractedAudioChannels,
+		sampleRate: sampleRate
+	}
 
 	return subtractedRawAudio
+}
+
+export function isRawAudio(obj: any): obj is RawAudio {
+	return typeof obj === 'object' && typeof obj.sampleRate === 'number' && Array.isArray(obj.audioChannels)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
