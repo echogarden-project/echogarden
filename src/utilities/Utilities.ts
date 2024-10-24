@@ -7,6 +7,7 @@ import { Logger } from './Logger.js'
 import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
 import { TypedArray, TypedArrayConstructor } from '../typings/TypedArray.js'
+import { encodeHex } from '../encodings/Hex.js'
 
 const log = logToStderr
 
@@ -86,18 +87,14 @@ export function formatObjectToString(obj: any) {
 	return formattedString
 }
 
-export function getRandomHexString(charCount = 32, upperCase = false) {
+export function getRandomHexString(charCount = 32) {
 	if (charCount % 2 !== 0) {
 		throw new Error(`'charCount' must be an even number`)
 	}
 
-	let hex = randomBytes(charCount / 2).toString('hex')
+	const randomHex = encodeHex(randomBytes(charCount / 2))
 
-	if (upperCase) {
-		hex = hex.toUpperCase()
-	}
-
-	return hex
+	return randomHex
 }
 
 export function getRandomUUID(dashes = true) {
