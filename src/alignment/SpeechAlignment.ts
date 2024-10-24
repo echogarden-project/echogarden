@@ -44,7 +44,7 @@ export async function alignUsingDtw(
 		const granularity = granularities[passIndex]
 		const windowDuration = windowDurations[passIndex]
 
-		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `granularity: ${granularity}, max window duration: ${windowDuration}s`, chalk.magentaBright)
+		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `granularity: ${granularity}, max window duration: ${windowDuration}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%)`, chalk.magentaBright)
 
 		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity), zeroFirstCoefficient: true }) as MfccOptions
 
@@ -66,7 +66,7 @@ export async function alignUsingDtw(
 			const minRecommendedWindowDuration = 0.2 * rawAudioDuration
 
 			if (windowDuration < minRecommendedWindowDuration) {
-				logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s, which is smaller than 20% of the source audio duration of ${rawAudioDuration.toFixed(1)}s. This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, chalk.yellowBright, 'warning')
+				logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%), which is less than 20% of the source audio duration (audio duration is ${rawAudioDuration.toFixed(1)}s and a 20% window would be ${(rawAudioDuration * 0.2).toFixed(1)}s). This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, chalk.yellowBright, 'warning')
 			}
 		}
 

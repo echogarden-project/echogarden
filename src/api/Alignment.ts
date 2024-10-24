@@ -92,10 +92,12 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		let granularities: DtwGranularity[]
 		let windowDurations: number[]
 
-		if (typeof options.dtw!.granularity == 'string') {
-			granularities = [options.dtw!.granularity]
-		} else if (Array.isArray(options.dtw!.granularity)) {
-			granularities = options.dtw!.granularity
+		const dtwOptions = options.dtw!
+
+		if (typeof dtwOptions.granularity == 'string') {
+			granularities = [dtwOptions.granularity]
+		} else if (Array.isArray(dtwOptions.granularity)) {
+			granularities = dtwOptions.granularity
 		} else {
 			if (sourceAudioDuration < 1 * 60) {
 				// If up to 1 minute, set granularity to high, single pass
@@ -112,17 +114,68 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			}
 		}
 
-		if (options.dtw!.windowDuration) {
-			if (typeof options.dtw!.windowDuration === 'number') {
-				windowDurations = [options.dtw!.windowDuration]
-			} else if (Array.isArray(options.dtw!.windowDuration)) {
-				windowDurations = options.dtw!.windowDuration
+		if (dtwOptions.windowDuration) {
+			function tryParsePercentageWindowDuration(durationString: string) {
+				durationString = durationString.trim()
+
+				const parseResult = durationString.match(/^([0-9]+)%$/)
+
+				if (parseResult == null) {
+					throw new Error(`A DTW window duration, when provided as a string, must be formatted as an integer percentage value like '15%'.`)
+				}
+
+				const percentageValue = parseInt(parseResult[1])
+
+				if (percentageValue == null || isNaN(percentageValue) || percentageValue <= 0 || percentageValue > 100) {
+					throw new Error(`'A DTW window duration, when provided as a percentage value, must be between 0 (non-inclusive) and 100 (inclusive).`)
+				}
+
+				let durationSeconds = percentageValue / 100 * sourceAudioDuration
+				durationSeconds = Math.ceil(durationSeconds)
+				durationSeconds = Math.min(durationSeconds, sourceAudioDuration)
+
+				return durationSeconds
+			}
+
+			if (typeof dtwOptions.windowDuration === 'number') {
+				const duration = Math.min(dtwOptions.windowDuration, sourceAudioDuration)
+
+				windowDurations = [duration]
+			} else if (typeof dtwOptions.windowDuration === 'string') {
+				const durationString = dtwOptions.windowDuration.trim()
+
+				const durationSeconds = tryParsePercentageWindowDuration(durationString)
+
+				windowDurations = [durationSeconds]
+			} else if (Array.isArray(dtwOptions.windowDuration)) {
+				const durationsValues = dtwOptions.windowDuration
+
+				if (durationsValues.length < 1) {
+					throw new Error(`DTW window durations, when given as an array, must have at least one element.`)
+				}
+
+				const durations: number[] = []
+
+				for (const durationValue of durationsValues) {
+					let durationSeconds: number
+
+					if (typeof durationValue === 'number') {
+						durationSeconds = durationValue
+						durationSeconds = Math.min(durationSeconds, sourceAudioDuration)
+					} else {
+						durationSeconds = tryParsePercentageWindowDuration(durationValue)
+					}
+
+					durations.push(durationSeconds)
+				}
+
+				windowDurations = durations
 			} else {
-				throw new Error(`'dtw.windowDuration' must be a number or an array of numbers.`)
+				throw new Error(`'dtw.windowDuration' must be a number or a percentage string, or array of numbers / percentage strings.`)
 			}
 		} else {
 			if (granularities.length > 2) {
-				throw new Error(`More than two passes requested, this requires window durations to be explicitly specified for each pass. For example 'dtw.windowDuration=[600,60,10]'.`)
+				throw new Error(`More than two passes requested, this requires window durations to be explicitly specified for each pass. For example 'dtw.windowDuration=['20%',60,10]'.`)
 			}
 
 			if (sourceAudioDuration < 5 * 60) {
@@ -361,7 +414,7 @@ export interface AlignmentOptions {
 
 	dtw?: {
 		granularity?: DtwGranularity | DtwGranularity[]
-		windowDuration?: number | number[]
+		windowDuration?: number | string | (string | number)[]
 		phoneAlignmentMethod?: PhoneAlignmentMethod
 	}
 
