@@ -27,12 +27,11 @@ export function bufferLEToInt16(buffer: Uint8Array) {
 export function int24ToBufferLE(int24s: Int32Array) {
 	const buffer = new Uint8Array(int24s.length * 3)
 
-	for (
-		let readOffset = 0, writeOffset = 0;
-		readOffset < int24s.length;
-		readOffset++, writeOffset += 3) {
+	let readOffset = 0
+	let writeOffset = 0
 
-		const signedValue = int24s[readOffset]
+	while (readOffset < int24s.length) {
+		const signedValue = int24s[readOffset++]
 
 		let unsignedValue: number
 
@@ -42,25 +41,28 @@ export function int24ToBufferLE(int24s: Int32Array) {
 			unsignedValue = signedValue + (2 ** 24)
 		}
 
-		buffer[writeOffset + 0] = (unsignedValue) & 0xff
-		buffer[writeOffset + 1] = (unsignedValue >> 8) & 0xff
-		buffer[writeOffset + 2] = (unsignedValue >> 16) & 0xff
+		buffer[writeOffset++] = (unsignedValue) & 0xff
+		buffer[writeOffset++] = (unsignedValue >> 8) & 0xff
+		buffer[writeOffset++] = (unsignedValue >> 16) & 0xff
 	}
 
 	return buffer
 }
 
 export function bufferLEToInt24(buffer: Uint8Array) {
+	if (buffer.length % 3 !== 0) {
+		throw new Error(`Buffer has a length of ${buffer.length}, which is not a multiple of 3`)
+	}
+
 	const result = new Int32Array(buffer.length / 3)
 
-	for (
-		let writeOffset = 0, readOffset = 0;
-		writeOffset < result.length;
-		writeOffset++, readOffset += 3) {
+	let readOffset = 0
+	let writeOffset = 0
 
-		const b0 = buffer[readOffset + 0]
-		const b1 = buffer[readOffset + 1]
-		const b2 = buffer[readOffset + 2]
+	while (writeOffset < result.length) {
+		const b0 = buffer[readOffset++]
+		const b1 = buffer[readOffset++]
+		const b2 = buffer[readOffset++]
 
 		const unsignedValue = (b0) | (b1 << 8) | (b2 << 16)
 
@@ -72,7 +74,7 @@ export function bufferLEToInt24(buffer: Uint8Array) {
 			signedValue = unsignedValue - (2 ** 24)
 		}
 
-		result[writeOffset] = signedValue
+		result[writeOffset++] = signedValue
 	}
 
 	return result
