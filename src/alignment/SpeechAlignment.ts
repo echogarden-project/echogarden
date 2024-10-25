@@ -15,7 +15,7 @@ import { cosineDistance, euclideanDistance, zeroIfNaN } from '../math/VectorMath
 import { EspeakEvent, EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { loadPackage } from '../utilities/PackageManager.js'
-import path from 'path'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 export async function alignUsingDtw(
 	sourceRawAudio: RawAudio,
@@ -307,7 +307,7 @@ export async function alignUsingDtwWithEmbeddings(
 	if (embeddingType === 'w2v-bert-2.0') {
 		const packageName = 'w2v-bert-2.0-uint8'
 		const modelDir = await loadPackage(packageName)
-		const modelFilePath = path.join(modelDir, `${packageName}.onnx`)
+		const modelFilePath = joinPath(modelDir, `${packageName}.onnx`)
 
 		const { Wav2Vec2BertFeatureEmbeddings } = await import('../speech-embeddings/WavToVec2BertFeatureEmbeddings.js')
 

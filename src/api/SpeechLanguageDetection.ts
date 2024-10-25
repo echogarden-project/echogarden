@@ -5,7 +5,6 @@ import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
 import { logToStderr } from '../utilities/Utilities.js'
-import path from 'path'
 import { type WhisperLanguageDetectionOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
@@ -14,6 +13,7 @@ import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 import { type SileroLanguageDetectionOptions } from '../speech-language-detection/SileroLanguageDetection.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { LanguageDetectionResults } from './LanguageDetectionCommon.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -55,9 +55,9 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 			const modelDir = await loadPackage('silero-lang-classifier-95')
 
-			const modelPath = path.join(modelDir, 'lang_classifier_95.onnx')
-			const languageDictionaryPath = path.join(modelDir, 'lang_dict_95.json')
-			const languageGroupDictionaryPath = path.join(modelDir, 'lang_group_dict_95.json')
+			const modelPath = joinPath(modelDir, 'lang_classifier_95.onnx')
+			const languageDictionaryPath = joinPath(modelDir, 'lang_dict_95.json')
+			const languageGroupDictionaryPath = joinPath(modelDir, 'lang_group_dict_95.json')
 			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []
 
 			const languageResults = await SileroLanguageDetection.detectLanguage(

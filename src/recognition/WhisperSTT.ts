@@ -11,7 +11,6 @@ import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio, sliceRawAudio } from '../audio/AudioUtilities.js'
 import { readFileAsUtf8 } from '../utilities/FileSystem.js'
-import path from 'path'
 import type { LanguageDetectionResults } from '../api/API.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
@@ -26,6 +25,7 @@ import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor,
 import { murmurHash3_int32Input } from '../utilities/Hashing.js'
 import { containsInvalidCodepoint, getTokenRepetitionScore } from '../utilities/StringUtilities.js'
 import { decodeUtf8 } from '../encodings/Utf8.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -1539,7 +1539,7 @@ export class Whisper {
 
 		const tiktokenModulePackagePath = await loadPackage('whisper-tiktoken-data')
 
-		const tiktokenDataFilePath = path.join(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
+		const tiktokenDataFilePath = joinPath(tiktokenModulePackagePath, this.isMultiligualModel ? 'multilingual.tiktoken' : 'gpt2.tiktoken')
 		let tiktokenData = await readFileAsUtf8(tiktokenDataFilePath)
 
 		const tokenConfig = this.tokenConfig
@@ -1604,7 +1604,7 @@ export class Whisper {
 
 		await logger.startAsync(`Create encoder inference session for model '${this.modelName}' (ONNX provider: ${onnxProvidersString})`)
 
-		const encoderFilePath = path.join(this.modelDir, 'encoder.onnx')
+		const encoderFilePath = joinPath(this.modelDir, 'encoder.onnx')
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -1626,7 +1626,7 @@ export class Whisper {
 
 		await logger.startAsync(`Create decoder inference session for model '${this.modelName}' (ONNX provider: ${onnxProvidersString})`)
 
-		const decoderFilePath = path.join(this.modelDir, 'decoder.onnx')
+		const decoderFilePath = joinPath(this.modelDir, 'decoder.onnx')
 
 		const Onnx = await import('onnxruntime-node')
 

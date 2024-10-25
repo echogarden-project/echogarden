@@ -1,14 +1,15 @@
-import path from 'node:path'
+import * as NodePath from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as os from 'node:os'
 
 export function getModuleRootDir() {
-	const currentScriptDir = path.dirname(fileURLToPath(import.meta.url))
-	return path.resolve(currentScriptDir, '..', '..')
+	const currentScriptDir = getDirName(fileURLToPath(import.meta.url))
+
+	return resolvePath(currentScriptDir, '..', '..')
 }
 
 export function resolveToModuleRootDir(relativePath: string) {
-	return path.resolve(getModuleRootDir(), relativePath)
+	return resolvePath(getModuleRootDir(), relativePath)
 }
 
 export function getLowercaseFileExtension(filename: string) {
@@ -28,14 +29,42 @@ export function getAppTempDir(appName: string) {
 	const homeDir = os.homedir()
 
 	if (platform == 'win32') {
-		tempDir = path.join(homeDir, 'AppData', 'Local', 'Temp', appName)
+		tempDir = joinPath(homeDir, 'AppData', 'Local', 'Temp', appName)
 	} else if (platform == 'darwin') {
-		tempDir = path.join(homeDir, 'Library', 'Caches', appName)
+		tempDir = joinPath(homeDir, 'Library', 'Caches', appName)
 	} else if (platform == 'linux') {
-		tempDir = path.join(homeDir, '.cache', appName)
+		tempDir = joinPath(homeDir, '.cache', appName)
 	} else {
 		throw new Error(`Unsupport platform ${platform}`)
 	}
 
 	return tempDir
+}
+
+export function joinPath(...paths: string[]) {
+	return NodePath.join(...paths)
+}
+
+export function resolvePath(...paths: string[]) {
+	return NodePath.resolve(...paths)
+}
+
+export function normalizePath(path: string) {
+	return NodePath.normalize(path)
+}
+
+export function getBaseName(path: string) {
+	return NodePath.basename(path)
+}
+
+export function getDirName(path: string) {
+	return NodePath.dirname(path)
+}
+
+export function getFileNameWithoutExtension(filePath: string) {
+	return NodePath.parse(filePath).name
+}
+
+export function parsePath(path: string) {
+	return NodePath.parse(path)
 }

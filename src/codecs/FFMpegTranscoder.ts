@@ -4,10 +4,10 @@ import { encodeRawAudioToWave, decodeWaveToRawAudio, RawAudio } from '../audio/A
 
 import { Logger } from '../utilities/Logger.js'
 import { commandExists, concatUint8Arrays, isUint8Array, logToStderr } from '../utilities/Utilities.js'
-import path from 'node:path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
 import { existsSync } from '../utilities/FileSystem.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -206,7 +206,7 @@ async function getFFMpegExecutablePath() {
 		filename += '.exe'
 	}
 
-	return path.join(ffmpegPackagePath, filename)
+	return joinPath(ffmpegPackagePath, filename)
 }
 
 export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBitrate?: number) {

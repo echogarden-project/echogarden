@@ -5,14 +5,12 @@ import { loadPackage } from '../utilities/PackageManager.js';
 import { EngineMetadata } from './Common.js';
 import chalk from 'chalk';
 import { readdir } from '../utilities/FileSystem.js';
-import path from 'node:path';
 import { defaultMDXNetOptions, getProfileForMDXNetModelName, MDXNetOptions } from '../source-separation/MDXNetSourceSeparation.js';
+import { joinPath } from '../utilities/PathUtilities.js';
 
 export async function isolate(input: AudioSourceParam, options: SourceSeparationOptions): Promise<SourceSeparationResult> {
 	const logger = new Logger()
 	const startTimestamp = logger.getTimestamp()
-
-	await logger.startAsync('Prepare for source separation')
 
 	const inputRawAudio = await ensureRawAudio(input)
 
@@ -34,7 +32,7 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 				throw new Error(`Couldn't find an ONNX model file in package directory`)
 			}
 
-			const modelPath = path.join(packageDir, modelFilename)
+			const modelPath = joinPath(packageDir, modelFilename)
 
 			await logger.startAsync(`Convert audio to 44.1 kHz stereo`)
 

@@ -5,13 +5,13 @@ import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, } from '../
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline } from '../utilities/Timeline.js'
-import path from 'path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata } from './Common.js'
 import chalk from 'chalk'
 import { type AdaptiveGateVADOptions } from '../voice-activity-detection/AdaptiveGateVAD.js'
 import { type WhisperVADOptions } from '../recognition/WhisperSTT.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -54,7 +54,7 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 
 			const modelDir = await loadPackage('silero-vad')
 
-			const modelPath = path.join(modelDir, 'silero-vad.onnx')
+			const modelPath = joinPath(modelDir, 'silero-vad.onnx')
 			const frameDuration = sileroOptions.frameDuration!
 
 			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []

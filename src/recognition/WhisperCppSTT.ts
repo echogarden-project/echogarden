@@ -5,9 +5,8 @@ import { type WhisperTask, type WhisperModelName } from './WhisperSTT.js'
 import { getRandomHexString } from '../utilities/Utilities.js'
 import { Timeline, TimelineEntryType } from '../utilities/Timeline.js'
 import { tryParseTimeRangePatternWithHours } from '../subtitles/Subtitles.js'
-import { getAppTempDir } from '../utilities/PathUtilities.js'
+import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
 import { appName } from '../api/Common.js'
-import path from 'node:path'
 import { readAndParseJsonFile, remove } from '../utilities/FileSystem.js'
 import { splitToLines } from '../nlp/Segmentation.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -78,7 +77,7 @@ export async function recognize(
 		const sourceAsWave = encodeRawAudioToWave(sourceRawAudio)
 
 		const tempDirPath = getAppTempDir(appName)
-		const outJsonFilePathWithoutExtension = path.join(tempDirPath, `${getRandomHexString(16)}`)
+		const outJsonFilePathWithoutExtension = joinPath(tempDirPath, `${getRandomHexString(16)}`)
 		const outJsonFilePath = `${outJsonFilePathWithoutExtension}.json`
 
 		const args: string[] = [
@@ -396,7 +395,7 @@ export async function loadModelPackage(modelId: WhisperCppModelId | undefined, l
 
 	const packageName = `whisper.cpp-${modelId}`
 	const modelDir = await loadPackage(packageName)
-	const modelPath = path.join(modelDir, `ggml-${modelId}.bin`)
+	const modelPath = joinPath(modelDir, `ggml-${modelId}.bin`)
 	const modelName = getModelNameFromModelId(modelId)
 
 	return { modelName, modelPath }
@@ -440,7 +439,7 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 		filename += '.exe'
 	}
 
-	return path.join(packagePath, filename)
+	return joinPath(packagePath, filename)
 }
 
 function getModelNameFromModelId(modelId: WhisperCppModelId): WhisperModelName {

@@ -4,19 +4,19 @@ import { getRandomHexString, writeToStderr } from './Utilities.js'
 
 import { Timer } from './Timer.js'
 import { Logger } from './Logger.js'
-import path from 'node:path'
 import { extractTarball } from './Compression.js'
 import { move, remove, readdir, ensureDir } from './FileSystem.js'
 import chalk from 'chalk'
 import { logLevelGreaterOrEqualTo } from '../api/GlobalOptions.js'
 import { FileWriter } from './FileWriter.js'
+import { joinPath } from './PathUtilities.js'
 
 export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = 'archive') {
 	const logger = new Logger()
 
 	const randomID = getRandomHexString(16).toLowerCase()
-	const tempTarballPath = path.join(baseTempPath, `/${randomID}.tarball`)
-	const tempDirPath = path.join(baseTempPath, `/${randomID}`)
+	const tempTarballPath = joinPath(baseTempPath, `/${randomID}.tarball`)
+	const tempDirPath = joinPath(baseTempPath, `/${randomID}`)
 	await ensureDir(tempDirPath)
 
 	logger.end()
@@ -32,8 +32,8 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	await remove(tempTarballPath)
 
 	for (const filename of await readdir(tempDirPath)) {
-		const sourceFilePath = path.join(tempDirPath, filename)
-		const targetFilePath = path.join(targetDir, filename)
+		const sourceFilePath = joinPath(tempDirPath, filename)
+		const targetFilePath = joinPath(targetDir, filename)
 
 		await move(sourceFilePath, targetFilePath)
 	}

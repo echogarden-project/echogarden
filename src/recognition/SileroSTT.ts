@@ -5,10 +5,10 @@ import { logToStderr } from '../utilities/Utilities.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
-import path from 'path'
 
 import type * as Onnx from 'onnxruntime-node'
 import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -87,8 +87,8 @@ export class SileroSTT {
 
 		const Onnx = await import('onnxruntime-node')
 
-		const modelPath = path.join(this.modelDirectoryPath, 'model.onnx')
-		const labelsPath = path.join(this.modelDirectoryPath, 'labels.json')
+		const modelPath = joinPath(this.modelDirectoryPath, 'model.onnx')
+		const labelsPath = joinPath(this.modelDirectoryPath, 'labels.json')
 
 		this.labels = await readAndParseJsonFile(labelsPath)
 

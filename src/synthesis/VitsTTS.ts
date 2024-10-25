@@ -5,9 +5,9 @@ import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioU
 import { Lexicon } from '../nlp/Lexicon.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { readAndParseJsonFile, readdir } from '../utilities/FileSystem.js'
-import path from 'node:path'
 import { EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 const cachedInstanceLookup = new Map<string, VitsTTS>()
 
@@ -196,7 +196,7 @@ export class VitsTTS {
 			throw new Error(`Couldn't file any ONNX model file in ${this.modelPath}`)
 		}
 
-		const onnxModelFilepath = path.join(this.modelPath, onnxModelFilename)
+		const onnxModelFilepath = joinPath(this.modelPath, onnxModelFilename)
 
 		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.executionProviders })
 

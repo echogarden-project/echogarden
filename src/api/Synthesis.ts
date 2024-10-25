@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
@@ -27,6 +25,7 @@ import { type ElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
+import { joinPath, resolvePath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -427,8 +426,8 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const { textAnalysisFilename, signalGenerationFilename } = SvoxPicoTTS.getResourceFilenamesForLanguage(language)
 
-			const resourceFilePath = path.resolve(voicePackagePath!, textAnalysisFilename)
-			const signalGenerationFilePath = path.resolve(voicePackagePath!, signalGenerationFilename)
+			const resourceFilePath = resolvePath(voicePackagePath!, textAnalysisFilename)
+			const signalGenerationFilePath = resolvePath(voicePackagePath!, signalGenerationFilename)
 
 			const { rawAudio } = await SvoxPicoTTS.synthesize(preparedText, resourceFilePath, signalGenerationFilePath)
 
@@ -1273,11 +1272,11 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 	if (!cacheDir) {
 		const appDataDir = getAppDataDir(appName)
-		cacheDir = path.join(appDataDir, 'voice-list-cache')
+		cacheDir = joinPath(appDataDir, 'voice-list-cache')
 		await ensureDir(cacheDir)
 	}
 
-	const cacheFilePath = path.join(cacheDir, `${options.engine}.voices.json`)
+	const cacheFilePath = joinPath(cacheDir, `${options.engine}.voices.json`)
 
 	async function loadVoiceList() {
 		let voiceList: SynthesisVoice[] = []

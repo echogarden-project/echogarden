@@ -3,9 +3,8 @@ import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from '../utilities/Utilities.js'
 import { open, close, remove, ensureDir, readFileAsBinary, readFileAsUtf8 } from '../utilities/FileSystem.js'
-import path from 'node:path'
 import { escape } from 'html-escaper'
-import { getAppTempDir } from '../utilities/PathUtilities.js'
+import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
@@ -25,8 +24,8 @@ export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: 
 	const tempDir = getAppTempDir('flite')
 	await ensureDir(tempDir)
 
-	const tempAudioFilePath = path.join(tempDir, outFileName)
-	const tempStdOutFilePath = path.join(tempDir, stdOutFileName)
+	const tempAudioFilePath = joinPath(tempDir, outFileName)
+	const tempStdOutFilePath = joinPath(tempDir, stdOutFileName)
 
 	const stdOutFileFd = await open(tempStdOutFilePath, 'w+')
 

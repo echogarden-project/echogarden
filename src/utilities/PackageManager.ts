@@ -1,9 +1,8 @@
-import path from 'node:path'
 import { downloadAndExtractTarball } from './FileDownloader.js'
 import { getAppDataDir, ensureDir, existsSync, remove } from './FileSystem.js'
 import { appName } from '../api/Common.js'
 import { GaxiosOptions } from 'gaxios'
-import { getAppTempDir } from './PathUtilities.js'
+import { getAppTempDir, joinPath } from './PathUtilities.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
 
 export async function loadPackage(packageName: string) {
@@ -11,7 +10,7 @@ export async function loadPackage(packageName: string) {
 
 	const packagesPath = await ensureAndGetPackagesDir()
 
-	const packagePath = path.join(packagesPath, packageName)
+	const packagePath = joinPath(packagesPath, packageName)
 
 	if (existsSync(packagePath)) {
 		return packagePath
@@ -44,7 +43,7 @@ export async function removePackage(packageName: string) {
 
 	const packagesPath = await ensureAndGetPackagesDir()
 
-	const packagePath = path.join(packagesPath, packageName)
+	const packagePath = joinPath(packagesPath, packageName)
 
 	await remove(packagePath)
 }
@@ -52,7 +51,7 @@ export async function removePackage(packageName: string) {
 export async function ensureAndGetPackagesDir() {
 	const dataPath = getAppDataDir(appName)
 
-	const packagesPath = path.join(dataPath, 'packages')
+	const packagesPath = joinPath(dataPath, 'packages')
 
 	await ensureDir(packagesPath)
 

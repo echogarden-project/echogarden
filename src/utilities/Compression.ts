@@ -1,7 +1,7 @@
-import path from 'node:path'
 import { Logger } from './Logger.js'
 import { readdir, stat } from './FileSystem.js'
 import { encodeUtf8 } from '../encodings/Utf8.js'
+import { getBaseName, getDirName } from './PathUtilities.js'
 
 export async function createTarball(filePath: string, outputFile: string, prefixPath = '') {
 	const pathStat = await stat(filePath)
@@ -16,7 +16,7 @@ export async function createTarball(filePath: string, outputFile: string, prefix
 export async function createTarballForFile(filePath: string, outputFile: string, prefixPath = '') {
 	const logger = new Logger()
 
-	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
+	logger.start(`Creating ${prefixPath || getBaseName(outputFile)}`)
 
 	const { create } = await import('tar')
 
@@ -26,8 +26,8 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 		throw new Error(`${filePath} is not a file`)
 	}
 
-	const filename = path.basename(filePath)
-	const dirname = path.dirname(filePath)
+	const filename = getBaseName(filePath)
+	const dirname = getDirName(filePath)
 
 	await create({
 		gzip: { level: 9 },
@@ -52,7 +52,7 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 export async function createTarballForDir(inputDir: string, outputFile: string, prefixPath = '') {
 	const logger = new Logger()
 
-	logger.start(`Creating ${prefixPath || path.basename(outputFile)}`)
+	logger.start(`Creating ${prefixPath || getBaseName(outputFile)}`)
 
 	const { create } = await import('tar')
 

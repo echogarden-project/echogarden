@@ -1,8 +1,8 @@
-import path from 'path'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { resolveModuleMainPath, roundToDigits } from '../utilities/Utilities.js'
 import { LanguageDetectionResults } from '../api/LanguageDetectionCommon.js'
+import { getDirName, joinPath } from '../utilities/PathUtilities.js'
 
 let fastTextLanguageDetectionModel: any
 
@@ -41,7 +41,7 @@ async function loadLanguageDetectionModel() {
 		const fastText = new FastText()
 
 		const moduleMainPath = await resolveModuleMainPath('@echogarden/fasttext-wasm')
-		const modelPath = path.join(path.dirname(moduleMainPath), 'lid.176.ftz')
+		const modelPath = joinPath(getDirName(moduleMainPath), 'lid.176.ftz')
 
 		const model = await fastText.loadModel(modelPath)
 

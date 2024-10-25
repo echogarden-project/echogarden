@@ -1,7 +1,7 @@
-import path from 'path'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { commandExists } from '../utilities/Utilities.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
+import { joinPath } from '../utilities/PathUtilities.js'
 
 export async function tryResolvingSoxPath() {
 	if (getGlobalOption('soxPath')) {
@@ -14,7 +14,7 @@ export async function tryResolvingSoxPath() {
 	if (platform === 'win32') {
 		const soxPackagePath = await loadPackage('sox-14.4.1a-win32')
 
-		return path.join(soxPackagePath, 'sox.exe')
+		return joinPath(soxPackagePath, 'sox.exe')
 	}
 
 	if (await commandExists('sox')) {
@@ -24,7 +24,7 @@ export async function tryResolvingSoxPath() {
 	if (platform === 'linux' && arch === 'x64') {
 		const soxPackagePath = await loadPackage('sox-14.4.2-linux-minimal')
 
-		return path.join(soxPackagePath, 'sox')
+		return joinPath(soxPackagePath, 'sox')
 	}
 
 	return undefined

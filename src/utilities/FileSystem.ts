@@ -2,11 +2,10 @@ import * as fsExtra from 'fs-extra/esm'
 import gracefulFS from 'graceful-fs'
 import * as os from 'node:os'
 
-import path from 'node:path'
 import { promisify } from 'node:util'
 import { getRandomHexString, parseJson, stringifyAndFormatJson } from './Utilities.js'
 import { appName } from '../api/Common.js'
-import { getAppTempDir } from './PathUtilities.js'
+import { getAppTempDir, getDirName, joinPath, normalizePath, parsePath } from './PathUtilities.js'
 
 import { createDynamicUint8Array } from '../data-structures/DynamicTypedArray.js'
 import { ChunkedUtf8Decoder } from '../encodings/Utf8.js'
@@ -92,7 +91,7 @@ export async function writeFile(filePath: string, content: Uint8Array | string) 
 export async function writeBinaryFile(filePath: string, content: Uint8Array) {
 	const maxChunkSize = 2 ** 20
 
-	const fileDir = path.dirname(filePath)
+	const fileDir = getDirName(filePath)
 
 	await ensureDir(fileDir)
 
@@ -118,7 +117,7 @@ export async function writeBinaryFile(filePath: string, content: Uint8Array) {
 export async function writeUtf8File(filePath: string, content: string) {
 	const maxChunkSize = 2 ** 20
 
-	const fileDir = path.dirname(filePath)
+	const fileDir = getDirName(filePath)
 
 	await ensureDir(fileDir)
 
@@ -153,7 +152,7 @@ export async function writeJsonFile(filePath: string, content: any, useJson5 = f
 
 export async function writeFileSafe(filePath: string, content: Uint8Array | string) {
 	const tempDir = getAppTempDir(appName)
-	const tempFilePath = path.join(tempDir, `${getRandomHexString(16)}.partial`)
+	const tempFilePath = joinPath(tempDir, `${getRandomHexString(16)}.partial`)
 
 	await writeFile(tempFilePath, content)
 
@@ -164,7 +163,7 @@ export async function writeFileSafe(filePath: string, content: Uint8Array | stri
 // Directory operations
 ///////////////////////////////////////////////////////////////////////////////////////////
 export async function ensureDir(dirPath: string) {
-	dirPath = path.normalize(dirPath)
+	dirPath = normalizePath(dirPath)
 
 	if (existsSync(dirPath)) {
 		const dirStats = await stat(dirPath)
@@ -178,7 +177,7 @@ export async function ensureDir(dirPath: string) {
 }
 
 export async function testDirectoryIsWritable(dir: string) {
-	const testFileName = path.join(dir, getRandomHexString(16))
+	const testFileName = joinPath(dir, getRandomHexString(16))
 
 	try {
 		await fsExtra.createFile(testFileName)
@@ -196,7 +195,7 @@ export async function readDirRecursive(dir: string, pathFilter?: (filePath: stri
 	}
 
 	const filenamesInDir = await readdir(dir)
-	const filesInDir = filenamesInDir.map(filename => path.join(dir, filename))
+	const filesInDir = filenamesInDir.map(filename => joinPath(dir, filename))
 
 	const result: string[] = []
 	const subDirectories: string[] = []
@@ -228,11 +227,11 @@ export function getAppDataDir(appName: string) {
 	const homeDir = os.homedir()
 
 	if (platform == 'win32') {
-		dataDir = path.join(homeDir, 'AppData', 'Local', appName)
+		dataDir = joinPath(homeDir, 'AppData', 'Local', appName)
 	} else if (platform == 'darwin') {
-		dataDir = path.join(homeDir, 'Library', 'Application Support', appName)
+		dataDir = joinPath(homeDir, 'Library', 'Application Support', appName)
 	} else if (platform == 'linux') {
-		dataDir = path.join(homeDir, '.local', 'share', appName)
+		dataDir = joinPath(homeDir, '.local', 'share', appName)
 	} else {
 		throw new Error(`Unsupport platform ${platform}`)
 	}
@@ -244,8 +243,8 @@ export function getAppDataDir(appName: string) {
 // Copy operations
 ///////////////////////////////////////////////////////////////////////////////////////////
 export async function move(source: string, dest: string) {
-	source = path.normalize(source)
-	dest = path.normalize(dest)
+	source = normalizePath(source)
+	dest = normalizePath(dest)
 
 	if (existsSync(dest)) {
 		const destPathExistsAndIsWritable = await existsAndIsWritable(dest)
@@ -254,7 +253,7 @@ export async function move(source: string, dest: string) {
 			throw new Error(`The destination path '${dest}' exists but is not writable. There may be a permissions or locking issue.`)
 		}
 	} else {
-		const destDir = path.parse(dest).dir
+		const destDir = parsePath(dest).dir
 		const destDirIsWritable = await testDirectoryIsWritable(destDir)
 
 		if (!destDirIsWritable) {
@@ -287,7 +286,7 @@ export async function chmodRecursive(rootPath: string, newMode: number) {
 		const fileList = await readdir(rootPath)
 
 		for (const filename of fileList) {
-			const filePath = path.join(rootPath, filename)
+			const filePath = joinPath(rootPath, filename)
 
 			await chmodRecursive(filePath, newMode)
 		}
