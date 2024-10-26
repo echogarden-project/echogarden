@@ -21,7 +21,7 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const processingSampleRate = 48000
 
 	logger.start(`Resample audio to ${processingSampleRate} Hz`)
-	const resampledRawAudio = await resampleAudioSpeex(inputRawAudio, processingSampleRate, 1)
+	const inputRawAudio48khz = await resampleAudioSpeex(inputRawAudio, processingSampleRate, 0)
 
 	logger.start(`Initialize ${options.method} module`)
 
@@ -34,10 +34,11 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 
 			const denoisedAudioChannels: Float32Array[] = []
 
-			for (const audioChannel of resampledRawAudio.audioChannels) {
+			for (const audioChannel of inputRawAudio48khz.audioChannels) {
 				const audioChannelRawAudio: RawAudio = { audioChannels: [audioChannel], sampleRate: processingSampleRate }
 
 				const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audioChannelRawAudio)
+
 				denoisedAudioChannels.push(denoisedRawAudio.audioChannels[0])
 			}
 
@@ -59,8 +60,8 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	const dryMixGainDecibels = options.postProcessing!.dryMixGain!
 
 	const preMixPeakDecibels = getSamplePeakDecibels(denoisedAudio.audioChannels)
-	applyGainDecibelsInPlace(resampledRawAudio, dryMixGainDecibels)
-	denoisedAudio = mixAudio(denoisedAudio, resampledRawAudio)
+	applyGainDecibelsInPlace(inputRawAudio48khz, dryMixGainDecibels)
+	denoisedAudio = mixAudio(denoisedAudio, inputRawAudio48khz)
 	const postMixPeakDecibels = getSamplePeakDecibels(denoisedAudio.audioChannels)
 
 	if (shouldNormalize) {
@@ -68,6 +69,9 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	} else {
 		applyGainDecibelsInPlace(denoisedAudio, preMixPeakDecibels - postMixPeakDecibels)
 	}
+
+	logger.start(`Resample denoised audio back to original sample rate (${inputRawAudio.sampleRate} Hz)`)
+	denoisedAudio = await ensureRawAudio(denoisedAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length)
 
 	logger.end()
 
