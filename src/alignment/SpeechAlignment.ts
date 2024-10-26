@@ -578,7 +578,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 	progressLogger.start("Load espeak module")
 	const Espeak = await import("../synthesis/EspeakTTS.js")
 
-	progressLogger.start("Synthesize alignment reference with eSpeak")
+	progressLogger.start("Synthesize alignment reference using eSpeak")
 
 	const result = {
 		rawAudio: getEmptyRawAudio(1, await Espeak.getSampleRate()) as RawAudio,
@@ -648,7 +648,7 @@ export async function createAlignmentReferenceUsingEspeak(
 
 	const logger = new Logger()
 
-	logger.start('Synthesize alignment reference with eSpeak')
+	logger.start('Synthesize alignment reference using eSpeak')
 
 	const synthesisOptions: API.SynthesisOptions = {
 		engine: 'espeak',
