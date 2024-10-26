@@ -10,7 +10,6 @@ import { SubtitlesConfig, subtitlesToText, timelineToSubtitles } from '../subtit
 import { Logger, resetActiveLogger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/FFMpegTranscoder.js'
-import path, { parse as parsePath } from 'node:path'
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
 import { playAudioSamples, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -23,7 +22,7 @@ import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { getLowercaseFileExtension, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
+import { getLowercaseFileExtension, joinPath, parsePath, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
 import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements } from '../utilities/StringUtilities.js'
 
@@ -1936,7 +1935,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 		const filenameParts = splitFilenameOnExtendedExtension(parsedPath.base)
 
 		for (let i = 1; existsSync(outputFilePath); i++) {
-			outputFilePath = path.join(parsedPath.dir, `${filenameParts[0]}_${formatIntegerWithLeadingZeros(i, 3)}`)
+			outputFilePath = joinPath(parsedPath.dir, `${filenameParts[0]}_${formatIntegerWithLeadingZeros(i, 3)}`)
 
 			if (filenameParts[1]) {
 				outputFilePath += `.${filenameParts[1]}`
