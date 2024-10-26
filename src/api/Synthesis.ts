@@ -26,6 +26,7 @@ import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
 import { joinPath, resolvePath } from '../utilities/PathUtilities.js'
+import { Timer } from '../utilities/Timer.js'
 
 const log = logToStderr
 
@@ -53,6 +54,8 @@ export async function synthesize(input: string | string[], options: SynthesisOpt
 async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
 	const logger = new Logger()
 	options = extendDeep(defaultSynthesisOptions, options)
+
+	const synthesisStartTime = Timer.currentTime
 
 	if (!options.language && !options.voice) {
 		logger.start('No language or voice specified. Detect language')
@@ -281,6 +284,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	const resultAudio = await convertToTargetCodecIfNeeded(resultRawAudio)
 
 	logger.end()
+
+	logger.logDuration('Total synthesis time', synthesisStartTime, chalk.magentaBright)
 
 	return {
 		audio: resultAudio,
@@ -954,7 +959,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	logger.end()
 
-	logger.logDuration('Total synthesis time', startTimestamp, chalk.magentaBright)
+	logger.logDuration('Segment synthesis time', startTimestamp, chalk.magentaBright)
 
 	return { synthesizedAudio, timeline }
 }
