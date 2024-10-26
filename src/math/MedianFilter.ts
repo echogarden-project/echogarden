@@ -1,5 +1,3 @@
-import { createVector } from "./VectorMath.js"
-
 export function medianOf5Filter(points: ArrayLike<number>): Float32Array {
 	// This function computes the moving median with a window of 5 elements.
 
