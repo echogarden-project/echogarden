@@ -92,7 +92,7 @@ export function decodeBase64(
 	}
 
 	if (!paddingCharacter || paddingCharacter.length !== 1) {
-		throw new Error(`A single padding character must be provided for Base 64 decoding`)
+		throw new Error(`A valid padding character must be provided for Base 64 decoding`)
 	}
 
 	// Add padding if omitted
