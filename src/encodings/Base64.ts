@@ -4,13 +4,14 @@ export function encodeBase64(inputBytes: Uint8Array,
 	paddingCharacter: string | undefined = '=',
 	charCodeMap?: Uint8Array): string {
 
-	const asciiBuffer = encodeBase64AsAsciiBuffer(inputBytes, paddingCharacter, charCodeMap)
+	const asciiBuffer = encodeBase64AsAsciiBuffer(inputBytes, undefined, paddingCharacter, charCodeMap)
 
 	return decodeAscii(asciiBuffer)
 }
 
 export function encodeBase64AsAsciiBuffer(
 	inputBytes: Uint8Array,
+	asciiBuffer?: Uint8Array,
 	paddingCharacter: string | undefined = '=',
 	charCodeMap?: Uint8Array): Uint8Array {
 
@@ -32,7 +33,13 @@ export function encodeBase64AsAsciiBuffer(
 		charCodeMap = defaultBase64CharCodeMap
 	}
 
-	const charCodes = new Uint8Array(Math.floor((inputBytes.length * 4 / 3) + 4))
+	let charCodes: Uint8Array
+
+	if (asciiBuffer) {
+		charCodes = asciiBuffer
+	} else {
+		charCodes = new Uint8Array(Math.floor((inputBytes.length * 4 / 3) + 4))
+	}
 
 	const inputBytesLength = inputBytes.length
 
