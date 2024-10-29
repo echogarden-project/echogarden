@@ -226,6 +226,22 @@ export function complexToBinBuffer(complexBins: ComplexNumber[]) {
 	return binBuffer
 }
 
+// Convert complex bin to magnitude and phase
+export function complexToMagnitudeAndPhase(real: number, imaginary: number) {
+	const magnitude = Math.sqrt((real ** 2) + (imaginary ** 2))
+	const phase = Math.atan2(imaginary, real)
+
+	return { magnitude, phase }
+}
+
+// Convert magnitude and phase to complex bin
+export function magnitudeAndPhaseToComplex(magnitude: number, phase: number) {
+	const real = magnitude * Math.cos(phase)
+	const imaginary = magnitude * Math.sin(phase)
+
+	return { real, imaginary } as ComplexNumber
+}
+
 // Get window weights for a particular window function
 export function getWindowWeights(windowType: WindowType, windowSize: number) {
 	const weights = new Float32Array(windowSize)
@@ -236,6 +252,10 @@ export function getWindowWeights(windowType: WindowType, windowSize: number) {
 		for (let i = 0; i < windowSize; i++) {
 			//weights[i] = 0.5 * (1 - Math.cos(2 * Math.PI * (i / (windowSize - 1))))
 			weights[i] = 0.5 * (1 - Math.cos(innerFactor * i))
+		}
+	} else if (windowType == 'hann-sqrt') {
+		for (let i = 0; i < windowSize; i++) {
+			weights[i] = Math.sqrt(0.5 * (1 - Math.cos(innerFactor * i)))
 		}
 	} else if (windowType == 'hamming') {
 		for (let i = 0; i < windowSize; i++) {
@@ -284,4 +304,4 @@ async function getSimdPFFFTInstance() {
 	return pffftSimdInstance
 }
 
-export type WindowType = 'hann' | 'hamming' | 'povey'
+export type WindowType = 'hann' | 'hann-sqrt' | 'hamming' | 'povey'
