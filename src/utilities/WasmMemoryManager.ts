@@ -259,6 +259,12 @@ export class WasmMemoryManager {
 			this.free(wasmReference)
 		}
 	}
+
+	detach<T extends WasmRef>(wasmReference: T) {
+		this.allocatedReferences.delete(wasmReference)
+
+		return wasmReference
+	}
 }
 
 abstract class ValueRef<T extends number | string> {
@@ -304,6 +310,10 @@ abstract class ValueRef<T extends number | string> {
 
 	free() {
 		this.manager.free(this as any)
+	}
+
+	detach() {
+		return this.manager.detach(this as any) as this
 	}
 
 	clearAddress() {
@@ -461,6 +471,10 @@ abstract class TypedArrayRef<T extends TypedArray> {
 
 	clearAddress() {
 		this.ptr = 0
+	}
+
+	detach() {
+		return this.manager.detach(this)
 	}
 
 	get isFreed() { return this.ptr == 0 }
