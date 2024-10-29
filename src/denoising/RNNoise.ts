@@ -9,11 +9,11 @@ let rnnoiseInstance: any
 export async function denoiseAudio(rawAudio: RawAudio) {
 	const logger = new Logger()
 	if (rawAudio.sampleRate != 48000) {
-		throw new Error('Sample rate must be 48000')
+		throw new Error(`RNNoise requires a 48000 Hz sample rate (${rawAudio.sampleRate} Hz given)`)
 	}
 
-	if (rawAudio.audioChannels.length != 1) {
-		throw new Error('Channel count must be 1')
+	if (rawAudio.audioChannels.length !== 1) {
+		throw new Error('RNNoise requires a channel count of 1')
 	}
 
 	if (rawAudio.audioChannels[0].length == 0) {

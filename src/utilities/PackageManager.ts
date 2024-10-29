@@ -208,4 +208,8 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	// W2V-BERT models
 	'w2v-bert-2.0-int8': '20240517',
 	'w2v-bert-2.0-uint8': '20240517',
+
+	// NSNet2 models
+	'nsnet2-20ms-baseline': '20242610',
+	'nsnet2-20ms-48k-baseline': '20242610',
 }
