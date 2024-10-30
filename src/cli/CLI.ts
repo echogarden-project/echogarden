@@ -11,7 +11,7 @@ import { Logger, resetActiveLogger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/FFMpegTranscoder.js'
 import { splitToParagraphs, splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
-import { playAudioSamples, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
+import { playAudioSamplesWithKeyboardControls, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties } from '../utilities/Timeline.js'
 import { ensureDir, existsSync, readAndParseJsonFile, readdir, readFileAsUtf8, writeFileSafe } from '../utilities/FileSystem.js'
@@ -498,7 +498,7 @@ export async function speak(operationData: CLIOperationData) {
 			const audioWithAddedGain = applyGainDecibels(segmentData.audio as RawAudio, gainAmount)
 			const segmentWordTimeline = segmentData.timeline.flatMap(sentenceTimeline => sentenceTimeline.timeline!)
 
-			await playAudioWithWordTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript)
+			await playAudioWithWordTimeline(audioWithAddedGain, segmentWordTimeline, segmentData.transcript, cliOptions.player)
 		}
 	}
 
@@ -588,7 +588,7 @@ export async function transcribe(operationData: CLIOperationData) {
 
 		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript, cliOptions.player)
 	}
 }
 
@@ -684,7 +684,7 @@ export async function align(operationData: CLIOperationData) {
 
 		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, transcript, cliOptions.player)
 	}
 }
 
@@ -789,7 +789,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 
 		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, translatedTranscript)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, wordTimeline, translatedTranscript, cliOptions.player)
 	}
 }
 
@@ -928,7 +928,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 
 		const normalizedAudioToPlay = normalizeAudioLevel(audioToPlay)
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, translatedWordTimeline, translatedTranscript)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, translatedWordTimeline, translatedTranscript, cliOptions.player)
 	}
 }
 
@@ -1016,7 +1016,7 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 		transcriptToPlay = translationText
 		timelineToPlay = translationWordTimeline
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, timelineToPlay, transcriptToPlay)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, timelineToPlay, transcriptToPlay, cliOptions.player)
 	}
 }
 
@@ -1184,7 +1184,7 @@ export async function translateSpeech(operationData: CLIOperationData) {
 			transcriptToPlay = transcriptToPlay.trim()
 		}
 
-		await playAudioWithWordTimeline(normalizedAudioToPlay, timelineToPlay, transcriptToPlay)
+		await playAudioWithWordTimeline(normalizedAudioToPlay, timelineToPlay, transcriptToPlay, cliOptions.player)
 	}
 }
 
@@ -1330,7 +1330,7 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 			return { ...entry, type: 'word' } as TimelineEntry
 		})
 
-		await playAudioWithWordTimeline(normalizedAudio, timelineToPlay)
+		await playAudioWithWordTimeline(normalizedAudio, timelineToPlay, cliOptions.player)
 	}
 }
 
@@ -1375,7 +1375,7 @@ export async function denoise(operationData: CLIOperationData) {
 	logger.end()
 
 	if (cliOptions.play) {
-		await playAudioSamples(denoisedAudio)
+		await playAudioSamplesWithKeyboardControls(denoisedAudio, cliOptions.player)
 	}
 }
 
@@ -1418,7 +1418,7 @@ export async function isolate(operationData: CLIOperationData) {
 	logger.end()
 
 	if (cliOptions.play) {
-		await playAudioSamples(isolatedRawAudio)
+		await playAudioSamplesWithKeyboardControls(isolatedRawAudio, cliOptions.player)
 	}
 }
 

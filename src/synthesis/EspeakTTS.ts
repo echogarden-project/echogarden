@@ -3,7 +3,6 @@ import { int16PcmToFloat32 } from '../audio/AudioBufferConversion.js'
 import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
-import { playAudioWithTimelinePhones } from '../audio/AudioPlayer.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
 import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
@@ -597,20 +596,6 @@ export const defaultEspeakOptions: EspeakOptions = {
 	pitchRange: 1.0,
 	useKlatt: false,
 	insertSeparators: false
-}
-
-export async function testEspeakSynthesisWithPrePhonemizedInputs(text: string) {
-	const ipaPhonemizedSentence = (await phonemizeSentence(text, 'en-us')).flatMap(clause => clause)
-	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, 'en-us', undefined, false)).flatMap(clause => clause)
-	log(kirshenbaumPhonemizedSentence)
-
-	const fragments = ipaPhonemizedSentence.map(word =>
-		word.map(phoneme =>
-			ipaPhoneToKirshenbaum(phoneme)).join('')).map(word => ` [[${word}]] `)
-
-	const { rawAudio, timeline } = await synthesizeFragments(fragments, defaultEspeakOptions)
-
-	await playAudioWithTimelinePhones(rawAudio, timeline)
 }
 
 export async function testKirshenbaumPhonemization(text: string) {
