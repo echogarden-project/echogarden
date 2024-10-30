@@ -112,6 +112,8 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 		}
 	}
 
+	logger.logTitledMessage(`Postprocess`, ``, chalk.magentaBright)
+
 	logger.start(`Resample denoised audio (${denoisedAudio.sampleRate} Hz) back to original sample rate (${inputRawAudio.sampleRate} Hz)`)
 
 	denoisedAudio = await ensureRawAudio(denoisedAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length)
