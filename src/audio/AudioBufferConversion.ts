@@ -93,24 +93,32 @@ export function decodeToChannels(audioBuffer: Uint8Array, channelCount: number, 
 
 // Int8 PCM <-> Float32 conversion
 export function int8PcmToFloat32(input: Int8Array) {
-	const output = new Float32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = input[i]
+	const output = new Float32Array(len)
 
-		output[i] = sample < 0 ? sample / 128 : sample / 127
+	for (let i = 0; i < len; i++) {
+		output[i] = input[i] / 128
 	}
 
 	return output
 }
 
 export function float32ToInt8Pcm(input: Float32Array) {
-	const output = new Int8Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = clampFloatSample(input[i])
+	const output = new Int8Array(len)
 
-		output[i] = (sample < 0 ? sample * 128 : sample * 127) | 0
+	for (let i = 0; i < len; i++) {
+		const int8Sample = input[i] * 128
+
+		if (int8Sample < -128) {
+			output[i] = -128
+		} else if (int8Sample > 127) {
+			output[i] = 127
+		} else {
+			output[i] = int8Sample
+		}
 	}
 
 	return output
@@ -118,24 +126,32 @@ export function float32ToInt8Pcm(input: Float32Array) {
 
 // Int16 PCM <-> Float32 conversion
 export function int16PcmToFloat32(input: Int16Array) {
-	const output = new Float32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = input[i]
+	const output = new Float32Array(len)
 
-		output[i] = sample < 0 ? sample / 32768 : sample / 32767
+	for (let i = 0; i < len; i++) {
+		output[i] = input[i] / 32768
 	}
 
 	return output
 }
 
 export function float32ToInt16Pcm(input: Float32Array) {
-	const output = new Int16Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = clampFloatSample(input[i])
+	const output = new Int16Array(len)
 
-		output[i] = (sample < 0 ? sample * 32768 : sample * 32767) | 0
+	for (let i = 0; i < len; i++) {
+		const int16Sample = input[i] * 32768
+
+		if (int16Sample < -32768) {
+			output[i] = -32768
+		} else if (int16Sample > 32767) {
+			output[i] = 32767
+		} else {
+			output[i] = int16Sample
+		}
 	}
 
 	return output
@@ -143,24 +159,32 @@ export function float32ToInt16Pcm(input: Float32Array) {
 
 // Int24 PCM <-> Float32 conversion (uses int32 for storage)
 export function int24PcmToFloat32(input: Int32Array) {
-	const output = new Float32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = input[i]
+	const output = new Float32Array(len)
 
-		output[i] = sample < 0 ? sample / 8388608 : sample / 8388607
+	for (let i = 0; i < len; i++) {
+		output[i] = input[i] / 8388608
 	}
 
 	return output
 }
 
 export function float32ToInt24Pcm(input: Float32Array) {
-	const output = new Int32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = clampFloatSample(input[i])
+	const output = new Int32Array(len)
 
-		output[i] = (sample < 0 ? sample * 8388608 : sample * 8388607) | 0
+	for (let i = 0; i < len; i++) {
+		const int24Sample = input[i] * 8388608
+
+		if (int24Sample < -8388608) {
+			output[i] = -8388608
+		} else if (int24Sample > 8388607) {
+			output[i] = 8388607
+		} else {
+			output[i] = int24Sample
+		}
 	}
 
 	return output
@@ -168,24 +192,32 @@ export function float32ToInt24Pcm(input: Float32Array) {
 
 // Int32 PCM <-> Float32 conversion
 export function int32PcmToFloat32(input: Int32Array) {
-	const output = new Float32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = input[i]
+	const output = new Float32Array(len)
 
-		output[i] = sample < 0 ? sample / 2147483648 : sample / 2147483647
+	for (let i = 0; i < len; i++) {
+		output[i] = input[i] / 2147483648
 	}
 
 	return output
 }
 
 export function float32ToInt32Pcm(input: Float32Array) {
-	const output = new Int32Array(input.length)
+	const len = input.length
 
-	for (let i = 0; i < input.length; i++) {
-		const sample = clampFloatSample(input[i])
+	const output = new Int32Array(len)
 
-		output[i] = (sample < 0 ? sample * 2147483648 : sample * 2147483647) | 0
+	for (let i = 0; i < len; i++) {
+		const int32Sample = input[i] * 2147483648
+
+		if (int32Sample < -2147483648) {
+			output[i] = -2147483648
+		} else if (int32Sample > 2147483647) {
+			output[i] = 2147483647
+		} else {
+			output[i] = int32Sample
+		}
 	}
 
 	return output
@@ -233,7 +265,7 @@ export function deInterleaveChannels(interleavedChannels: Float32Array, channelC
 	}
 
 	const sampleCount = interleavedChannels.length / channelCount
-	
+
 	const channels: Float32Array[] = []
 
 	for (let i = 0; i < channelCount; i++) {
