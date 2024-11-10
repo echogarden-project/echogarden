@@ -92,9 +92,7 @@ declare module 'onnxruntime-node' {
 
 	type RunOptions = InferenceSession.RunOptions
 
-	/**
-	 * Binding exports a simple synchronized inference session object wrap.
-	 */
+	// Binding exports a simple synchronized inference session object wrap.
 	export namespace Binding {
 		interface InferenceSession {
 			loadModel(modelPath: string, options: SessionOptions): void
@@ -115,5 +113,5 @@ declare module 'onnxruntime-node' {
 	}
 
 	// From version.d.ts
-	export const version = '1.16.1'
+	export const version = '1.20.0'
 }
