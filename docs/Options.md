@@ -227,7 +227,7 @@ Applies to CLI operation: `align`, API method: `align`
 
 **DTW**:
 * `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['xx-low','medium']`. Auto-selected by default.
-* `dtw.windowDuration`: maximum duration (in seconds) of the Sakoe-Chiba window when performing DTW alignment. Higher values consume quadratically larger amounts of memory. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided, like `dtw.windowDuration=[240,20]`. Auto-selected by default
+* `dtw.windowDuration`: sets the maximum duration of the Sakoe-Chiba window when performing DTW alignment. The value can be specified in seconds, like `240`, or as  an integer percentage (formatted like `15%`), relative to the total duration of the source audio. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided (which can mix absolute and relative values), like `dtw.windowDuration=['15%',20]`. Auto-selected by default
 
 **DTW-RA**:
 * `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.engine = whisper` and `recognition.whisper.model = base.en`
@@ -388,13 +388,18 @@ Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActiv
 Applies to CLI operation: `denoise`, API method: `denoise`
 
 **General**:
-* `engine`: can only be `rnnoise`
+* `engine`: `rnnoise` or `nsnet2`. Defaults to `rnnoise`
 
 **Post-processing**:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `false`
 * `postProcessing.targetPeak`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxGainIncrease`: max gain increase (decibels) when performing normalization. Defaults to `30`
-* `postProcessing.dryMixGain`: gain (decibels) of dry (original) signal to mix back to the denoised (wet) signal. Defaults to `-20`
+* `postProcessing.dryMixGain`: gain (decibels) of dry (original) signal to mix back to the denoised (wet) signal. Defaults to `-100`
+
+**NSNet2**:
+* `nsnet2.model`: can be `baseline-16khz` or `baseline-48khz`. Defaults to `baseline-48khz`
+* `nsnet2.provider`: ONNX execution provider (**Note**: `dml` provider seems to fail with these models). Defaults to `cpu`
+* `maxAttenuation`: maximum amount of attenuation, in decibels, applied to an FFT bin when filtering the audio frames. Defaults to `30`
 
 ## Source separation
 
@@ -439,6 +444,7 @@ On the CLI, global options can be used with any operation. To set global options
 These options are for the CLI only.
 
 * `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
+* `--player`: audio player to use. Can be `audio-io` (uses the [`audio-io` package](https://github.com/echogarden-project/audio-io) to directly output to native OS audio buffers) or `sox` (requires `sox` to be available on path on macOS, auto-downloaded on other platforms). Defaults to `audio-io`
 * `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
 * `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
 * `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json`, if found at the current directory

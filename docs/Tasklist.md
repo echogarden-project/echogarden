@@ -201,7 +201,6 @@
 * See if the installation of `winax` can be automated and only initiate if it is in a Windows environment
 * Ensure that all modules have no internal state other than caching
 * Start thinking about some modules being available in the browser. Which node core APIs the use? Which of them can be polyfilled, and which cannot?
-* Change all the Emscripten WASM modules to use the `EXPORT_ES6=1` flag and rebuild them. Support for node.js modules was added in September 2022 (https://github.com/emscripten-core/emscripten/pull/17915)
 * Remove built-in voices from `flite` to reduce size?
 * Slim down `kuromoji` package to reduce base installation size
 

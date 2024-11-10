@@ -52,7 +52,7 @@ Synthesizes the given input.
 	channels: Float32Array[]
 }
 ```
-* A `Buffer` containing the audio in encoded form, in the case a particular codec was specified in the `outputAudioFormat.codec` option.
+* A `Uint8Array` containing the audio in encoded form, in the case a particular codec was specified in the `outputAudioFormat.codec` option.
 
 #### Segment and sentence event callbacks
 
