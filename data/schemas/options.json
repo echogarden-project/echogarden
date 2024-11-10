@@ -483,9 +483,15 @@
                   "type": "number"
                 },
                 {
+                  "type": "string"
+                },
+                {
                   "type": "array",
                   "items": {
-                    "type": "number"
+                    "type": [
+                      "string",
+                      "number"
+                    ]
                   }
                 }
               ]
@@ -1791,9 +1797,6 @@
           "type": "string"
         },
         {
-          "$ref": "#/definitions/global.Buffer"
-        },
-        {
           "type": "object",
           "properties": {
             "BYTES_PER_ELEMENT": {
@@ -1835,45 +1838,6 @@
         {
           "$ref": "#/definitions/RawAudio"
         }
-      ]
-    },
-    "global.Buffer": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "number"
-      },
-      "properties": {
-        "BYTES_PER_ELEMENT": {
-          "type": "number"
-        },
-        "buffer": {
-          "type": "object",
-          "properties": {
-            "byteLength": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "byteLength"
-          ],
-          "additionalProperties": false
-        },
-        "byteLength": {
-          "type": "number"
-        },
-        "byteOffset": {
-          "type": "number"
-        },
-        "length": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "BYTES_PER_ELEMENT",
-        "buffer",
-        "byteLength",
-        "byteOffset",
-        "length"
       ]
     },
     "RawAudio": {
@@ -2036,8 +2000,8 @@
     "DenoisingOptions": {
       "type": "object",
       "properties": {
-        "method": {
-          "$ref": "#/definitions/DenoisingMethod"
+        "engine": {
+          "$ref": "#/definitions/DenoisingEngine"
         },
         "postProcessing": {
           "type": "object",
@@ -2061,13 +2025,44 @@
             "maxGainIncrease"
           ],
           "additionalProperties": false
+        },
+        "nsnet2": {
+          "$ref": "#/definitions/NSNet2Options"
         }
       },
       "additionalProperties": false
     },
-    "DenoisingMethod": {
+    "DenoisingEngine": {
       "type": "string",
-      "const": "rnnoise"
+      "enum": [
+        "rnnoise",
+        "nsnet2"
+      ]
+    },
+    "NSNet2Options": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/NSNet2ModelName"
+        },
+        "modelDirectoryPath": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/OnnxExecutionProvider"
+        },
+        "maxAttenuation": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NSNet2ModelName": {
+      "type": "string",
+      "enum": [
+        "baseline-16khz",
+        "baseline-48khz"
+      ]
     },
     "ServerOptions": {
       "type": "object",
@@ -2131,6 +2126,9 @@
         "play": {
           "type": "boolean"
         },
+        "player": {
+          "$ref": "#/definitions/AudioPlayerID"
+        },
         "overwrite": {
           "type": "boolean"
         },
@@ -2142,6 +2140,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "AudioPlayerID": {
+      "type": "string",
+      "enum": [
+        "audio-io",
+        "sox"
+      ]
     }
   }
 }
