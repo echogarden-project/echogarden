@@ -1,28 +1,42 @@
+import { EncodeIntoResult } from "./TextEncodingsCommon.js"
+
 export function encodeAscii(asciiString: string) {
-	const len = asciiString.length
+	const charCount = asciiString.length
 
-	const buffer = new Uint8Array(len)
+	const resultArray = new Uint8Array(charCount)
 
-	for (let i = 0; i < len; i++) {
-		const charCode = asciiString.charCodeAt(i)
+	const { written } = encodeAsciiInto(asciiString, resultArray)
 
-		if (charCode >= 128) {
-			throw new Error(`Character '${asciiString[i]}' (code: ${charCode}) can't be encoded as a standard ASCII character`)
-		}
-
-		buffer[i] = charCode
-	}
-
-	return buffer
+	return resultArray.subarray(0, written)
 }
 
-export function decodeAscii(buffer: Uint8Array) {
-	const maxChunkSize = 2 ** 24
+export function encodeAsciiInto(asciiString: string, resultBuffer: Uint8Array): EncodeIntoResult {
+	const len = asciiString.length
+
+	if (resultBuffer.length < len) {
+		throw new Error(`Result Uint8Array is not large enough to hold the string`)
+	}
+
+	for (let readOffset = 0; readOffset < len; readOffset++) {
+		const charCode = asciiString.charCodeAt(readOffset)
+
+		if (charCode >= 128) {
+			throw new Error(`Character '${asciiString[readOffset]}' (code: ${charCode}) can't be encoded as a standard ASCII character`)
+		}
+
+		resultBuffer[readOffset] = charCode
+	}
+
+	return { read: len, written: len }
+}
+
+export function decodeAscii(encodedString: Uint8Array) {
+	const maxChunkLength = 2 ** 24
 
 	const decoder = new ChunkedAsciiDecoder()
 
-	for (let offset = 0; offset < buffer.length; offset += maxChunkSize) {
-		const chunk = buffer.subarray(offset, offset + maxChunkSize)
+	for (let offset = 0; offset < encodedString.length; offset += maxChunkLength) {
+		const chunk = encodedString.subarray(offset, offset + maxChunkLength)
 
 		decoder.writeChunk(chunk)
 	}
