@@ -16,7 +16,7 @@ import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
 import { appName } from '../api/Common.js'
 import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
-import { type InitAudioOutputResult } from '@echogarden/audio-io'
+import { type AudioOutput } from '@echogarden/audio-io'
 
 export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string, player?: AudioPlayerID) {
 	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)
@@ -179,10 +179,10 @@ export async function playAudioSamples_AudioIO(rawAudio: RawAudio, onTimePositio
 	const audioFrameCount = rawAudio.audioChannels[0].length
 	const audioDuration = getRawAudioDuration(rawAudio)
 
-	const { initAudioOutput } = await import('@echogarden/audio-io')
+	const { createAudioOutput } = await import('@echogarden/audio-io')
 
 	let frameOffset = 0
-	let audioOutput: InitAudioOutputResult
+	let audioOutput: AudioOutput
 	let abortRequested = false
 	let ended = false
 
@@ -243,7 +243,7 @@ export async function playAudioSamples_AudioIO(rawAudio: RawAudio, onTimePositio
 		})
 	}
 
-	audioOutput = await initAudioOutput({
+	audioOutput = await createAudioOutput({
 		sampleRate, // Sample rate in Hz, should be an integer like 44100, 22050, 8000
 		channelCount, // Channel count, likely 1 (mono), or 2 (stereo)
 		bufferDuration, // Target buffer duration, in milliseconds. Defaults to 100.0
