@@ -34,29 +34,11 @@ export function encodeUtf32Into(text: string, resultBuffer: Uint32Array): Encode
 }
 
 export function decodeUtf32(encodedString: Uint32Array) {
-	const maxChunkLength = 2 ** 10
+	let result = ''
 
-	const decoder = new ChunkedUtf32Decoder()
-
-	for (let offset = 0; offset < encodedString.length; offset += maxChunkLength) {
-		const chunk = encodedString.subarray(offset, offset + maxChunkLength)
-
-		decoder.writeChunk(chunk)
+	for (let i = 0; i < encodedString.length; i++) {
+		result += String.fromCodePoint(encodedString[i])
 	}
 
-	return decoder.toString()
-}
-
-export class ChunkedUtf32Decoder {
-	private str = ''
-
-	writeChunk(chunk: Uint32Array) {
-		const decodedChunk = String.fromCodePoint(...chunk)
-
-		this.str += decodedChunk
-	}
-
-	toString() {
-		return this.str
-	}
+	return result
 }
