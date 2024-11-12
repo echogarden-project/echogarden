@@ -1,8 +1,6 @@
 import { request } from 'gaxios'
 import WebSocket from 'ws'
 
-import { escape } from 'html-escaper'
-
 import * as AzureCognitiveServicesTTS from './AzureCognitiveServicesTTS.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'

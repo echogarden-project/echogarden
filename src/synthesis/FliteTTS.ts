@@ -3,7 +3,6 @@ import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from '../utilities/Utilities.js'
 import { open, close, remove, ensureDir, readFileAsBinary, readFileAsUtf8 } from '../utilities/FileSystem.js'
-import { escape } from 'html-escaper'
 import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr

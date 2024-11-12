@@ -21,11 +21,6 @@ declare module 'cldr-segmentation' {
 	}
 }
 
-declare module 'html-escaper' {
-	export function escape(str: string): string
-	export function unescape(str: string): string
-}
-
 declare module 'sam-js'
 declare module 'winax'
 

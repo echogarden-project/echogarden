@@ -2,8 +2,6 @@ import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { escape } from 'html-escaper'
-
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'

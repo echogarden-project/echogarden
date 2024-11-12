@@ -197,7 +197,7 @@ export async function translateText_MobileWeb(
 		if (match) {
 			const { htmlToText } = await import('html-to-text')
 
-			translatedText = htmlToText(match[0], { wordwrap: Infinity }).trim()
+			translatedText = htmlToText(match[0], { wordwrap: false }).trim()
 		} else {
 			translatedText = ''
 		}

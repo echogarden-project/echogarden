@@ -10,6 +10,7 @@ import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { escapeHtml } from '../encodings/HtmlEscape.js'
 
 const log = logToStderr
 
@@ -432,9 +433,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	logger.start('Get eSpeak Emscripten instance')
 
 	if (!espeakOptions.ssml) {
-		const { escape } = await import('html-escaper')
-
-		text = escape(text)
+		text = escapeHtml(text)
 	}
 
 	const { instance } = await getEspeakInstance()

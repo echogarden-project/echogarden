@@ -106,17 +106,3 @@ export function medianOf3(a: number, b: number, c: number) {
 		}
 	}
 }
-
-// Slower, variable-width median filter using the `moving-median` package
-export async function medianFilter(points: ArrayLike<number>, width: number) {
-	const { default: createMedianFilter } = await import('moving-median')
-
-	const filter = createMedianFilter(width)
-	const result = []
-
-	for (let i = 0; i < points.length; i++) {
-		result.push(filter(points[i]))
-	}
-
-	return result
-}
