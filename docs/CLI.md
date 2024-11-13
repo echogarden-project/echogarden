@@ -10,7 +10,7 @@ Each operation can accept one or more options, in the form `--[optionName]=[valu
 
 **Keyboard shortcuts**:
 * While the program is running, you can press `esc` to exit immediately
-* When audio is playing, you can press `enter` to skip it
+* When audio is playing, you can press `enter` to skip it, `space` to pause, `right` to skip 1 second forward, and `left` to skip 1 second backwards
 
 ### Related pages
 * [Options reference](Options.md)
