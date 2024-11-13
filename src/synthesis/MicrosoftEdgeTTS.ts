@@ -9,6 +9,7 @@ import { concatUint8Arrays, getRandomHexString, logToStderr } from '../utilities
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 import { decodeUtf8, encodeUtf8 } from '../encodings/Utf8.js'
+import { escapeHtml } from '../encodings/HtmlEscape.js'
 
 const traceEnabled = false
 
@@ -190,7 +191,7 @@ async function requestSynthesis(
 		`<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'>` +
 		`<voice  name='${voice}'>` +
 		`<prosody pitch='${ssmlPitchString}' rate='${ssmlRateString}' volume='${ssmlVolumeString}'>` +
-		escape(text) +
+		escapeHtml(text) +
 		`</prosody>` +
 		`</voice>` +
 		`</speak>`

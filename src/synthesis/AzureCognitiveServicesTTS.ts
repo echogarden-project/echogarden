@@ -6,6 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
+import { escapeHtml } from '../encodings/HtmlEscape.js'
 
 export async function synthesize(
 	text: string,
@@ -88,7 +89,7 @@ export async function synthesize(
 
 		if (!ssmlEnabled && ssmlPitchString != '+0%' || ssmlRateString != '+0Hz') {
 			ssmlEnabled = true
-			text = escape(text)
+			text = escapeHtml(text)
 		}
 
 		if (ssmlEnabled) {
