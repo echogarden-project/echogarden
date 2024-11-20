@@ -1,5 +1,5 @@
 import { ComplexNumber } from '../math/VectorMath.js'
-import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 // Compute short-term Fourier transform (real-valued)
@@ -34,7 +34,7 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 	const windowWeights = getWindowWeights(windowType, windowSize)
 
-	const m = await getPFFFTInstance(isPffftSimdSupportedForFFTOrder(fftOrder))
+	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
 	const wasmMemory = new WasmMemoryManager(m, {
 		wasmAlloc: m._pffft_aligned_malloc,
 		wasmFree: m._pffft_aligned_free
@@ -99,7 +99,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	const outSamples = new Float32Array(outSampleCount)
 
-	const m = await getPFFFTInstance(isPffftSimdSupportedForFFTOrder(fftOrder))
+	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
 
 	const wasmMemory = new WasmMemoryManager(m, {
 		wasmAlloc: m._pffft_aligned_malloc,
@@ -275,7 +275,13 @@ export function getWindowWeights(windowType: WindowType, windowSize: number) {
 	return weights
 }
 
-export function isPffftSimdSupportedForFFTOrder(fftOrder: number) {
+export async function isPffftSimdSupportedForFFTOrder(fftOrder: number) {
+	const simdSupported = await isWasmSimdSupported()
+
+	if (simdSupported === false) {
+		return false
+	}
+
 	return fftOrder % 32 === 0
 }
 

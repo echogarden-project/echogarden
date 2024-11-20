@@ -489,3 +489,9 @@ export function getIntegerRange(start: number, end: number) {
 export function isUint8Array(value: any): value is Uint8Array {
 	return value instanceof Uint8Array
 }
+
+export async function isWasmSimdSupported() {
+	const wasmFeatureDetect = await import('wasm-feature-detect')
+
+	return wasmFeatureDetect.simd()
+}

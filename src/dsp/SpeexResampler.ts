@@ -1,5 +1,5 @@
 import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
-import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 
 let speexResamplerInstance: any
@@ -109,9 +109,13 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 
 export async function getSpeexResamplerInstance() {
 	if (!speexResamplerInstance) {
-		const { default: SpeexResamplerInitializer } = await import('@echogarden/speex-resampler-wasm')
-
-		speexResamplerInstance = await SpeexResamplerInitializer()
+		if (await isWasmSimdSupported()) {
+			const { default: SpeexResamplerInitializer } = await import('@echogarden/speex-resampler-wasm/simd')
+			speexResamplerInstance = await SpeexResamplerInitializer()
+		} else {
+			const { default: SpeexResamplerInitializer } = await import('@echogarden/speex-resampler-wasm')
+			speexResamplerInstance = await SpeexResamplerInitializer()
+		}
 	}
 
 	return speexResamplerInstance

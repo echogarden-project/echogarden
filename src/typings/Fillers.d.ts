@@ -53,6 +53,7 @@ declare module '@echogarden/sonic-wasm'
 declare module '@echogarden/pffft-wasm'
 declare module '@echogarden/pffft-wasm/simd'
 declare module '@echogarden/speex-resampler-wasm'
+declare module '@echogarden/speex-resampler-wasm/simd'
 declare module '@echogarden/vosk'
 
 declare module 'onnxruntime-node' {
