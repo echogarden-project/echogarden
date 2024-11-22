@@ -55,7 +55,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	const logger = new Logger()
 	options = extendDeep(defaultSynthesisOptions, options)
 
-	const synthesisStartTime = Timer.currentTime
+	const totalSynthesisTimeTimer = new Timer()
 
 	if (!options.language && !options.voice) {
 		logger.start('No language or voice specified. Detect language')
@@ -285,7 +285,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 	logger.end()
 
-	logger.logDuration('Total synthesis time', synthesisStartTime, chalk.magentaBright)
+	logger.logTitledMessage('Total synthesis time', `${totalSynthesisTimeTimer.elapsedTime.toFixed(1)}ms`, chalk.magentaBright)
 
 	return {
 		audio: resultAudio,
