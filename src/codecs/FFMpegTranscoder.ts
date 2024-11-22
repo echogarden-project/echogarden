@@ -180,6 +180,8 @@ async function getFFMpegExecutablePath() {
 		packageName = 'ffmpeg-6.0-win32-x64'
 	} else if (platform === 'win32' && arch === 'ia32') {
 		packageName = 'ffmpeg-6.0-win32-ia32'
+	} else if (platform === 'win32' && arch === 'arm64') {
+		packageName = 'ffmpeg-6.1-win32-arm64'
 	} else if (platform === 'darwin' && arch === 'x64') {
 		packageName = 'ffmpeg-6.0-darwin-x64'
 	} else if (platform === 'darwin' && arch === 'arm64') {
