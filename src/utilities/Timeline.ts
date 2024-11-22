@@ -297,9 +297,9 @@ function replaceSentenceEndersWithinWordsWithMaskingCharacter(transcript: string
 			const wordEndOffset = wordEntry.endOffsetUtf16!
 
 			modifiedTranscript =
-				transcript.substring(0, wordStartOffset) +
+				modifiedTranscript.substring(0, wordStartOffset) +
 				newWordText +
-				transcript.substring(wordEndOffset)
+				modifiedTranscript.substring(wordEndOffset)
 		}
 	}
 
