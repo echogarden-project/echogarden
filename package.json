@@ -32,7 +32,7 @@
 		"darwin",
 		"linux"
 	],
-	"main": "./dist/API/API.js",
+	"main": "./dist/api/API.js",
 	"type": "module",
 	"files": [
 		"src",
