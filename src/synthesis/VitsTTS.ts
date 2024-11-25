@@ -149,7 +149,7 @@ export class VitsTTS {
 
 		await logger.startAsync('Generate audio using synthesis model')
 
-		const { default: Onnx } = await import('onnxruntime-node')
+		const Onnx = await import('onnxruntime-node')
 
 		const inputTensor = new Onnx.Tensor('int64', bigIntIds, [1, bigIntIds.length])
 		const inputLengthsTensor = new Onnx.Tensor('int64', idLengths, [1])
@@ -187,7 +187,7 @@ export class VitsTTS {
 		const logger = new Logger()
 		await logger.startAsync('Initialize VITS ONNX synthesis model')
 
-		const { default: Onnx } = await import('onnxruntime-node')
+		const Onnx = await import('onnxruntime-node')
 
 		const filesInModelPath = await readdir(this.modelPath)
 		const onnxModelFilename = filesInModelPath.find(filename => filename.endsWith('.onnx'))

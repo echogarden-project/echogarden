@@ -1,4 +1,4 @@
-import AlawMulaw from 'alawmulaw'
+import * as AlawMulaw from 'alawmulaw'
 import * as BinaryArrayConversion from '../utilities/BinaryArrayConversion.js'
 import { BitDepth, SampleFormat } from '../codecs/WaveCodec.js'
 

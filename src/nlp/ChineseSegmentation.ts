@@ -61,7 +61,7 @@ let JiebaWasmInstance: typeof import('jieba-wasm')
 
 async function getJiebaWasmInstance() {
 	if (!JiebaWasmInstance) {
-		const { default: JiebaWasm } = await import('jieba-wasm')
+		const JiebaWasm = await import('jieba-wasm')
 
 		JiebaWasmInstance = JiebaWasm
 	}
