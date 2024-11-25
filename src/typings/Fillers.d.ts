@@ -21,7 +21,6 @@ declare module 'cldr-segmentation' {
 	}
 }
 
-declare module 'sam-js'
 declare module 'winax'
 
 declare module 'tinyld' {
