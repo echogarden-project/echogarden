@@ -211,241 +211,6 @@ export async function translateText_MobileWeb(
 	}]
 }
 
-export async function translateText_WebAPI(text: string, sourceLanguage: string, targetLanguage: string, tld = 'com') {
-	const logger = new Logger()
-
-	logger.start(`Prepare request`)
-
-	const bodyFormParameters = [[text, sourceLanguage, targetLanguage, 1], []]
-
-	const requestForm = [[['MkEWBc', JSON.stringify(bodyFormParameters), null, 'generic']]]
-	const stringifiedForm = JSON.stringify(requestForm)
-	const requestBody =
-		`f.req=${encodeURIComponent(stringifiedForm)}&`// +
-
-	// Example:
-	//
-	// f.req: [[["MkEWBc","[[\"Hey there!\\n\\nHow are you doing today?\",\"en\",\"es\",1],[]]",null,"generic"]]]
-	// at: AFS6Qyg7vBwAdNvYB3ncQi_YvmYH:1717146157247
-
-	logger.start(`Request translation from Google Translate`)
-
-	const response = await request<string>({
-		method: 'POST',
-
-		url: `https://translate.google.${tld}/_/TranslateWebserverUi/data/batchexecute`,
-
-		params: {
-			'rpcids': 'MkEWBc',
-			/*'source-path': '/',
-			'f.sid': '4165351081036910547',
-			'bl': 'boq_translate-webserver_20240528.08_p1',
-			'hl': 'en-US',
-			'soc-app': '1',
-			'soc-platform': '1',
-			'soc-device': '1',
-			'_reqid': '435214',
-			*/
-			'rt': 'c',
-		},
-
-		headers: {
-			...getChromeOnWindowsHeaders({
-				origin: `https://translate.google.${tld}`,
-				referrer: `https://translate.google.${tld}/`
-			}),
-
-			'Content-Type': 'application/x-www-form-urlencoded',
-		},
-
-		body: requestBody,
-
-		//proxy: 'http://localhost:8080',
-
-		responseType: 'text'
-	})
-
-	logger.start('Parse response')
-
-	const responseLines = splitToLines(response.data).filter(line => line.trim().length > 0)
-
-	const dataLine = responseLines[2]
-
-	const outerArray = JSON.parse(dataLine)
-	const innerArray = JSON.parse(outerArray[0][2])
-	const sentenceEntries: any[] = innerArray[1][0][0][5]
-
-	const translationsPairs = sentenceEntries.map<TranslationPair>((element: any) => {
-		const translationPair: TranslationPair = {
-			sourceText: element[6],
-			translatedText: element[0],
-		}
-
-		return translationPair
-	})
-
-	logger.end()
-
-	return translationsPairs
-}
-
-export async function translateText_OldWebAPI(text: string, sourceLanguage: string, targetLanguage: string, tld = 'com') {
-	const logger = new Logger()
-
-	logger.start(`Prepare request`)
-
-	const token = getToken(text)
-
-	logger.start(`Request translation from Google Translate`)
-
-	const response = await request<string>({
-		method: 'GET',
-
-		url: `https://translate.google.${tld}/translate_a/single`,
-
-		params: {
-			client: 't',
-			sl: normalizeLanguageCodeForGoogleTranslate(sourceLanguage),
-			tl: normalizeLanguageCodeForGoogleTranslate(targetLanguage),
-			hl: normalizeLanguageCodeForGoogleTranslate(targetLanguage),
-			dt: ['at', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 't'],
-			ie: 'UTF-8',
-			oe: 'UTF-8',
-			otf: 1,
-			ssel: 0,
-			tsel: 0,
-			kc: 7,
-			q: text,
-			tk: token,
-		},
-
-		headers: getChromeOnWindowsHeaders({
-			origin: `https://translate.google.${tld}`,
-			referrer: `https://translate.google.${tld}/`
-		}),
-
-		responseType: 'json'
-	})
-
-	const translationsPairs: TranslationPair[] = []
-
-	for (const element of response.data[0] as any as any[]) {
-		if (element == null || element[0] == null || element[1] == null) {
-			continue
-		}
-
-		translationsPairs.push({
-			sourceText: element[1],
-			translatedText: element[0],
-		})
-	}
-
-	logger.end()
-
-	return translationsPairs
-}
-
-function getToken(query: any) {
-	function shiftLeftOrRightThenSumOrXor(num: number, optString: any) {
-		for (let i = 0; i < optString.length - 2; i += 3) {
-			let acc = optString.charAt(i + 2)
-
-			if ('a' <= acc) {
-				acc = acc.charCodeAt(0) - 87
-			} else {
-				acc = Number(acc)
-			}
-
-			if (optString.charAt(i + 1) == '+') {
-				acc = num >>> acc
-			} else {
-				acc = num << acc
-			}
-
-			if (optString.charAt(i) == '+') {
-				num += acc & 4294967295
-			} else {
-				num ^= acc
-			}
-		}
-
-		return num
-	}
-
-	function transformQuery(query: any) {
-		const bytesArray: number[] = []
-
-		let idx: number = 0
-
-		for (let i = 0; i < query.length; i++) {
-			let charCode = query.charCodeAt(i)
-
-			if (128 > charCode) {
-				bytesArray[idx++] = charCode
-			} else {
-				if (2048 > charCode) {
-					bytesArray[idx++] = (charCode >> 6) | 192
-				} else {
-					if (
-						55296 == (charCode & 64512) &&
-						i + 1 < query.length &&
-						56320 == (query.charCodeAt(i + 1) & 64512)
-					) {
-						charCode =
-							65536 +
-							((charCode & 1023) << 10) +
-							(query.charCodeAt(++i) & 1023)
-
-						bytesArray[idx++] = (charCode >> 18) | 240
-						bytesArray[idx++] = ((charCode >> 12) & 63) | 128
-					} else {
-						bytesArray[idx++] = (charCode >> 12) | 224
-					}
-
-					bytesArray[idx++] = ((charCode >> 6) & 63) | 128
-				}
-
-				bytesArray[idx++] = (charCode & 63) | 128
-			}
-		}
-
-		return bytesArray
-	}
-
-	function calcHash(query: any, windowTkk: any) {
-		const tkkSplited = windowTkk.split('.')
-		const tkkIndex = Number(tkkSplited[0]) || 0
-		const tkkKey = Number(tkkSplited[1]) || 0
-
-		const bytesArray = transformQuery(query)
-
-		let encondingRound = tkkIndex
-
-		for (let i = 0; i < bytesArray.length; i++) {
-			encondingRound += bytesArray[i]
-
-			encondingRound = shiftLeftOrRightThenSumOrXor(encondingRound, '+-a^+6')
-		}
-
-		encondingRound = shiftLeftOrRightThenSumOrXor(encondingRound, '+-3^+b+-f')
-
-		encondingRound ^= tkkKey
-
-		if (encondingRound <= 0) {
-			encondingRound = (encondingRound & 2147483647) + 2147483648
-		}
-
-		const normalizedResult = encondingRound % 1000000
-
-		return normalizedResult.toString() + '.' + (normalizedResult ^ tkkIndex)
-	}
-
-	// TKK value from https://github.com/FilipePS/Traduzir-paginas-web/blob/f3a4956a1aa96b7a9124864158a5200827694521/background/translationService.js
-	const googleTranslateTKK = '448487.932609646'
-
-	return calcHash(query, googleTranslateTKK)
-}
-
 function normalizeLanguageCodeForGoogleTranslate(languageCode: string) {
 	switch (languageCode) {
 		case 'zh': {
@@ -555,6 +320,8 @@ export const supportedLanguageCodes = [
 	'ha', // Hausa
 	'haw', // Hawaiian
 	'he', // Hebrew
+	'iu', // Inuktitut (Syllabics)
+	'iu-Latn', // Inuktitut (Latin script)
 	'iw', // Hebrew
 	'hil', // Hiligaynon
 	'hi', // Hindi
@@ -657,7 +424,7 @@ export const supportedLanguageCodes = [
 	'sm', // Samoan
 	'sg', // Sango
 	'sa', // Sanskrit
-	'sat-Latn', // Santali
+	'sat-Latn', // Santali (Latin script)
 	'gd', // Scots Gaelic
 	'nso', // Sepedi
 	'sr', // Serbian
@@ -680,7 +447,7 @@ export const supportedLanguageCodes = [
 	'sv', // Swedish
 	'ty', // Tahitian
 	'tg', // Tajik
-	'ber-Latn', // Tamazight
+	'ber-Latn', // Tamazight (Latin script)
 	'ber', // Tamazight (Tifinagh)
 	'ta', // Tamil
 	'tt', // Tatar
