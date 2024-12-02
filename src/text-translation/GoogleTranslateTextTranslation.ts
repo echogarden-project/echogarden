@@ -1,8 +1,8 @@
 import { request } from "gaxios"
 import { Logger } from "../utilities/Logger.js"
-import { Fragment, splitToFragments, splitToLines } from "../nlp/Segmentation.js"
+import { Fragment, splitToFragments } from "../nlp/Segmentation.js"
 import { TranslationPair } from "../api/TextTranslation.js"
-import { getChromeOnWindowsHeaders, getChromeOnAndroidHeaders } from "../utilities/BrowserRequestHeaders.js"
+import { getChromeOnAndroidHeaders } from "../utilities/BrowserRequestHeaders.js"
 import { logToStderr } from "../utilities/Utilities.js"
 import { getShortLanguageCode } from "../utilities/Locale.js"
 import { PlainTextOptions } from "../api/Common.js"
@@ -90,7 +90,7 @@ export async function translateText(
 
 		const translatedTextForPart = fragmentTranslationPair[0].translatedText
 
-		logger.logTitledMessage(`Translated part`, `"${translatedTextForPart.replaceAll(' | ', '\n') }"`)
+		logger.logTitledMessage(`Translated part`, `"${translatedTextForPart.replaceAll(' | ', '\n')}"`)
 
 		const splitTranslation = translatedTextForPart.split(`|`)
 
