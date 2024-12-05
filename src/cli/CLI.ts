@@ -1881,10 +1881,10 @@ async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutput
 
 		const placeholderPatternMatch = outputFilename.match(filenamePlaceholderPattern)
 
-		if (placeholderPatternMatch) {
-			if (placeholderPatternMatch[1] != 'segment') {
-				throw new Error(`Invalid placeholder pattern: '${placeholderPatternMatch[1]}'. Placeholder output filename pattern currently only supports 'segment'. For example: '/out/[segment].wav'`)
-			}
+		if (placeholderPatternMatch && placeholderPatternMatch[1] === 'segment') {
+			//if (placeholderPatternMatch[1] != 'segment') {
+			//	throw new Error(`Invalid placeholder pattern: '${placeholderPatternMatch[1]}'. Placeholder output filename pattern currently only supports 'segment'. For example: '/out/[segment].wav'`)
+			//}
 
 			includesPlaceholderPattern = true
 		}
@@ -2020,7 +2020,7 @@ const supportedMetadataFileExtensions = ['txt', 'json']
 const supportedSubtitleFileExtensions = ['srt', 'vtt']
 const supportedOutputMediaFileExtensions = ['wav', 'mp3', 'opus', 'm4a', 'ogg', 'flac']
 
-const filenamePlaceholderPattern = /\[(.*)\]\.(.*)$/
+const filenamePlaceholderPattern = /^\[([^\]]+)\]\.(.+)$/
 
 const overwriteByDefault = false
 
