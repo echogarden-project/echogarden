@@ -22,7 +22,7 @@ import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { getLowercaseFileExtension, joinPath, parsePath, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
+import { getDirName, getFileNameWithoutExtension, getLowercaseFileExtension, joinPath, parsePath, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
 import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements } from '../utilities/StringUtilities.js'
 
@@ -517,9 +517,7 @@ export async function speak(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const placeholderPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (placeholderPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -562,9 +560,7 @@ export async function transcribe(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -658,9 +654,7 @@ export async function align(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -763,9 +757,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -892,9 +884,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -994,9 +984,7 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -1071,9 +1059,7 @@ export async function translateText(operationData: CLIOperationData) {
 		logger.start('\nWrite output files')
 
 		for (const outputFilename of outputFilenames) {
-			const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-			if (partPatternMatch) {
+			if (isPlaceholderFilePath(outputFilename)) {
 				continue
 			}
 
@@ -1134,9 +1120,7 @@ export async function translateSpeech(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -1298,9 +1282,7 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const partPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (partPatternMatch) {
+		if (isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
@@ -1879,13 +1861,7 @@ async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutput
 			throw new Error(errorText)
 		}
 
-		const placeholderPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (placeholderPatternMatch && placeholderPatternMatch[1] === 'segment') {
-			//if (placeholderPatternMatch[1] != 'segment') {
-			//	throw new Error(`Invalid placeholder pattern: '${placeholderPatternMatch[1]}'. Placeholder output filename pattern currently only supports 'segment'. For example: '/out/[segment].wav'`)
-			//}
-
+		if (isPlaceholderFilePath(outputFilename)) {
 			includesPlaceholderPattern = true
 		}
 	}
@@ -1911,13 +1887,13 @@ async function writeOutputFilesForSegment(outputFilenames: string[], index: numb
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const placeholderPatternMatch = outputFilename.match(filenamePlaceholderPattern)
-
-		if (!placeholderPatternMatch) {
+		if (!isPlaceholderFilePath(outputFilename)) {
 			continue
 		}
 
-		const segmentFilename = outputFilename.replace(filenamePlaceholderPattern, `${formatIntegerWithLeadingZeros(index + 1, digitCount)} - ${initialText}.$2`)
+		const fileDir = getDirName(outputFilename)
+		const fileExtension = getLowercaseFileExtension(outputFilename)
+		const segmentFilename = joinPath(fileDir, `${formatIntegerWithLeadingZeros(index + 1, digitCount)} - ${initialText}.${fileExtension}`)
 
 		const fileSaver = getFileSaver(segmentFilename, allowOverwrite)
 		await fileSaver(audio, timeline, text)
@@ -2016,11 +1992,15 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 	return fileSaver
 }
 
+function isPlaceholderFilePath(filePath: string) {
+	const filenameWithoutExtension = getFileNameWithoutExtension(filePath)
+
+	return filenameWithoutExtension === '[segment]'
+}
+
 const supportedMetadataFileExtensions = ['txt', 'json']
 const supportedSubtitleFileExtensions = ['srt', 'vtt']
 const supportedOutputMediaFileExtensions = ['wav', 'mp3', 'opus', 'm4a', 'ogg', 'flac']
-
-const filenamePlaceholderPattern = /^\[([^\]]+)\]\.(.+)$/
 
 const overwriteByDefault = false
 
