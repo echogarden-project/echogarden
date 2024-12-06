@@ -253,7 +253,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await AmazonTranscribeSTT.recgonize(sourceRawAudio, shortLanguageCode, region, accessKeyId, secretAccessKey))
+			({ transcript, timeline } = await AmazonTranscribeSTT.recgonize(sourceRawAudio, languageCode, region, accessKeyId, secretAccessKey))
 
 			break
 		}
