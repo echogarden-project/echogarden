@@ -3,15 +3,16 @@
 Echogarden is an easy-to-use speech toolset that includes a variety of speech processing tools.
 
 * Easy to install, run, and update
+* Can be used either as a command-line utility, or imported as a Node.js package
 * Runs on Windows (x64, ARM64), macOS (x64, ARM64) and Linux (x64, ARM64)
 * Written in TypeScript, for the Node.js runtime
 * Doesn't require Python, Docker, or other system-level dependencies
-* Doesn't rely on essential platform-specific binaries. Engines are either ported via WebAssembly, imported using the [ONNX runtime](https://onnxruntime.ai/), or written in pure JavaScript
+* Doesn't rely on essential platform-specific binaries. Engines are either ported via WebAssembly, imported using the [ONNX runtime](https://onnxruntime.ai/), or written in pure TypeScript
 
 ## Features
 
 * **Text-to-speech** using the [VITS](https://github.com/jaywalnut310/vits) neural architecture, and [15 other offline and online engines](docs/Engines.md), including cloud services by [Google](https://cloud.google.com/text-to-speech), [Microsoft](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/), [Amazon](https://aws.amazon.com/polly/), [OpenAI](https://platform.openai.com/) and [Elevenlabs](https://elevenlabs.io/)
-* **Speech-to-text** using a built-in JavaScript/ONNX port of the [OpenAI Whisper](https://openai.com/research/whisper) speech recognition architecture, [whisper.cpp](https://github.com/ggerganov/whisper.cpp), and [several other engines](docs/Engines.md), including cloud services by [Google](https://cloud.google.com/speech-to-text), [Microsoft](https://azure.microsoft.com/en-us/products/ai-services/speech-to-text/), [Amazon](https://aws.amazon.com/transcribe/) and [OpenAI](https://platform.openai.com/)
+* **Speech-to-text** using a custom TypeScript/ONNX port of the [OpenAI Whisper](https://openai.com/research/whisper) speech recognition architecture, [whisper.cpp](https://github.com/ggerganov/whisper.cpp), and [several other engines](docs/Engines.md), including cloud services by [Google](https://cloud.google.com/speech-to-text), [Microsoft](https://azure.microsoft.com/en-us/products/ai-services/speech-to-text/), [Amazon](https://aws.amazon.com/transcribe/) and [OpenAI](https://platform.openai.com/)
 * **Speech-to-transcript alignment** using several variants of [dynamic time warping](https://en.wikipedia.org/wiki/Dynamic_time_warping) (DTW, DTW-RA), including support for multi-pass (hierarchical) processing, or via guided decoding using Whisper recognition models. Supports 100+ languages
 * **Speech-to-text translation**, translates speech in any of the [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages) supported by Whisper, to English, with near word-level timing for the translated transcript
 * **Speech-to-translated-transcript alignment** synchronizes spoken audio in one language, to a provided English-translated transcript, using the Whisper engine
@@ -48,6 +49,7 @@ A small sample of command lines:
 echogarden speak "Hello World!"
 echogarden speak-file story.txt
 echogarden transcribe speech.mp3
+echogarden translate-speech speech.webm subtitles.srt
 echogarden align speech.opus transcript.txt
 echogarden isolate speech.wav
 ```
@@ -58,7 +60,7 @@ See the [Command-line interface guide](docs/CLI.md) for more details on the oper
 
 ## Using the Node.js API
 
-If you are a developer, you can also [import the package as a module](docs/API.md). The API operations and options closely mirror the CLI.
+If you are a developer, you can also [directly import the package as a dependency](docs/API.md). The API operations and options closely mirror the CLI.
 
 ## Documentation
 

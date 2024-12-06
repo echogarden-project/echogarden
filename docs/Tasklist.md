@@ -2,7 +2,6 @@
 
 ## Bugs
 
-
 ### eSpeak
 
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
@@ -16,28 +15,24 @@
 
 ### External bugs
 
-* `espeak-ng`: 'Oh dear!”' is read as "oh dear exclamation mark", because of the special quote character following the exclamation mark
 * `espeak-ng`: [Marker right after sentence end is not reported as an event](https://github.com/espeak-ng/espeak-ng/issues/920)
-* `espeak-ng`: On Japanese text, it says "Chinese character" or "Japanese character" for characters it doesn't know
+* `espeak-ng`: On Japanese text, it says "Chinese letter" or "Japanese letter" for characters it doesn't support
 * `espeak-ng`: Broken markers on the Korean voice
 * `wtf_wikipedia` Sometimes fails on `getResult.js` without throwing a humanly readable error
 * `wtf_wikipedia` Sometimes captures markup like `.svg` etc.
 * `msspeech`: Initialization fails on Chinese and Japanese voices (but not Korean)
 * `compromise`: Slow initialization time. Currently, it takes more than a second
-* Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
-* `whisper.cpp`: Timestamps aren't very accurate when `enableDTW` is set. There's a constant lag
-* Node.js WASI for `flite` on Node `v21.7.2` and `v20.12.1` is intermittently crashing the process when `run` is called
+* Browser extension: Chromium doesn't fire timer events when cursor is positioned over scrollbar or body margins
 
 ## Features and enhancements
 
 ### CLI
 * Show names of files written to disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
 * Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg
-* Consider what to do with non-supported templates like `[hello]`
 * Show a message when a new version is available
 * Figure out which terminal outputs should go to stdout, or if that's a good idea at all
 * Print available synthesis voices when no voice matches (or suggest near matches)
-* `transcribe` may also accept `http://` and `https://` URLs and pull the remote media file
+* `transcribe`: accept `http://` and `https://` URLs and pull the remote media file
 * Make `enum` options case-insensitive if possible
 * More fine-grained intermediate progress report for operations
 * Suggest possible correction on the error of not using `=`, e.g. `speed 0.9` instead of `speed=0.9`
@@ -93,13 +88,11 @@
 ### Text language detection
 * Deploy and add the new n-gram based text language detection model
 
-### Segmentation
-* See if it's possible or useful to reliably use eSpeak as a segmentation engine.
-
 ### Subtitles
-* Split long words if needed. This is especially important for Chinese and Japanese
-* If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
+* Split long words if needed
+* Clauses shouldn't be split in the middle of numbers, like the `,` in `123,456`
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
+* If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
 * Add more clause separators, for even more special cases
 * Add option to output usable word or phoneme-level caption files (investigate how it's done on YouTube auto-captions)
 * Parse VTT's language
@@ -155,7 +148,6 @@
 ### Alignment
 
 ### Alignment / DTW
-* Accept percentages like `20%` in the `windowDuration` option
 * For the `granularity` option, add more granularities like `xxx-low` and `xxxx-low` (should the naming be changed? Maybe transition to a new naming scheme?)
 * Add and test official support for more than 6 hours of audio
 
@@ -258,14 +250,12 @@
 * Coqui STT server connection
 * [MarbleNet VAD](https://github.com/NVIDIA/NeMo/blob/main/tutorials/asr/Online_Offline_Microphone_VAD_Demo.ipynb), included of the NVIDIA NeMo framework, can be exported to ONNX
 * Silero text enhancement engine can be ported to ONNX
-* See what can be done for supporting WinRT speech: in particular `windows.media.speechsynthesis` and `windows.media.speechrecognition` support, possibly using NodeRT or some other method
 * Figure out how to support `julius` speech recognition via WASM
 * Any way to support RHVoice?
 
 ## Maybe?
 
 * Using a machine translation model to provide speech translation to languages other than English
-* Is it possible to get sentence boundaries without punctuation using NLP techniques like part-of-speech tagging?
 
 ## May or may not be good ideas
 
