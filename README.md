@@ -54,7 +54,7 @@ echogarden align speech.opus transcript.txt
 echogarden isolate speech.wav
 ```
 
-See the [Command-line interface guide](docs/CLI.md) for more details on the operations supported, and the [configuration options reference](docs/Options.md) for a comprehensive list of all options supported.
+See the [command-line interface guide](docs/CLI.md) for more details on the operations supported, and the [configuration options reference](docs/Options.md) for a comprehensive list of all options supported.
 
 **Note**: on `v2.0.0`, a [newly developed audio playback library](https://github.com/echogarden-project/audio-io) was integrated into the command line interface. If you're having trouble hearing sound, or the sound is distorted, please [report this as an issue](https://github.com/echogarden-project/audio-io/issues). You can also switch back to the older [SoX](https://sourceforge.net/projects/sox/)-based player by adding `--player=sox` to the command-line. On macOS, you'll need to ensure SoX is available on the system path by installing it with a system package manager like [Homebrew](https://brew.sh/) (`brew install sox`).
 
