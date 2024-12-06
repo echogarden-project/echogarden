@@ -3,9 +3,9 @@
 Echogarden is an easy-to-use speech toolset that includes a variety of speech processing tools.
 
 * Easy to install, run, and update
-* Can be used either as a command-line utility, or imported as a Node.js package
-* Runs on Windows (x64, ARM64), macOS (x64, ARM64) and Linux (x64, ARM64)
 * Written in TypeScript, for the Node.js runtime
+* Can be used either as a command-line utility, or imported as an `npm` package
+* Runs on Windows (x64, ARM64), macOS (x64, ARM64) and Linux (x64, ARM64)
 * Doesn't require Python, Docker, or other system-level dependencies
 * Doesn't rely on essential platform-specific binaries. Engines are either ported via WebAssembly, imported using the [ONNX runtime](https://onnxruntime.ai/), or written in pure TypeScript
 
@@ -56,7 +56,7 @@ echogarden isolate speech.wav
 
 See the [Command-line interface guide](docs/CLI.md) for more details on the operations supported, and the [configuration options reference](docs/Options.md) for a comprehensive list of all options supported.
 
-**Note**: on `v2.0.0`, a [newly developed audio playback library](https://github.com/echogarden-project/audio-io) was integrated to the CLI interface. If you're having trouble hearing sound, or the sound is distorted, please [report this as an issue](https://github.com/echogarden-project/audio-io/issues). You can switch back to the older [SoX](https://sourceforge.net/projects/sox/) based player by adding `--player=sox` to the command-line. On macOS, you'll need to ensure SoX is installed in path by installing it with a system package manager like [Homebrew](https://brew.sh/) (`brew install sox`).
+**Note**: on `v2.0.0`, a [newly developed audio playback library](https://github.com/echogarden-project/audio-io) was integrated into the command line interface. If you're having trouble hearing sound, or the sound is distorted, please [report this as an issue](https://github.com/echogarden-project/audio-io/issues). You can also switch back to the older [SoX](https://sourceforge.net/projects/sox/)-based player by adding `--player=sox` to the command-line. On macOS, you'll need to ensure SoX is available on the system path by installing it with a system package manager like [Homebrew](https://brew.sh/) (`brew install sox`).
 
 ## Using the Node.js API
 
