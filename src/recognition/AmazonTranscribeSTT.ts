@@ -9,6 +9,23 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 })
 
 	const logger = new Logger()
+
+	if (!supportedLanguageCodes.includes(languageCode)) {
+		let matchingLanguageCode: string | undefined = undefined
+
+		if (languageCode.length === 2) {
+			matchingLanguageCode = languageCodeDefaultDialects.find(value => value.startsWith(languageCode))
+		}
+
+		if (matchingLanguageCode) {
+			logger.log(`Short language code '${languageCode}' has been extended to the default dialect '${matchingLanguageCode}'`)
+
+			languageCode = matchingLanguageCode
+		} else {
+			throw new Error(`Language code ${languageCode} is not supported by Amazon Transcribe`)
+		}
+	}
+
 	logger.start('Initialize Amazon Transcribe streaming client module')
 
 	const streamingTranscribeSdk = await import('@aws-sdk/client-transcribe-streaming')
@@ -109,3 +126,101 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 	return { transcript, timeline }
 }
+
+export const supportedLanguageCodes: string[] = [
+	'af-ZA',
+	'ar-AE',
+	'ar-SA',
+	'ca-ES',
+	'cs-CZ',
+	'da-DK',
+	'de-CH',
+	'de-DE',
+	'el-GR',
+	'en-AB',
+	'en-AU',
+	'en-GB',
+	'en-IE',
+	'en-IN',
+	'en-NZ',
+	'en-US',
+	'en-WL',
+	'en-ZA',
+	'es-ES',
+	'es-US',
+	'eu-ES',
+	'fa-IR',
+	'fi-FI',
+	'fr-CA',
+	'fr-FR',
+	'gl-ES',
+	'he-IL',
+	'hi-IN',
+	'hr-HR',
+	'id-ID',
+	'it-IT',
+	'ja-JP',
+	'ko-KR',
+	'lv-LV',
+	'ms-MY',
+	'nl-NL',
+	'no-NO',
+	'pl-PL',
+	'pt-BR',
+	'pt-PT',
+	'ro-RO',
+	'ru-RU',
+	'sk-SK',
+	'so-SO',
+	'sr-RS',
+	'sv-SE',
+	'th-TH',
+	'tl-PH',
+	'uk-UA',
+	'vi-VN',
+	'zh-CN',
+	'zh-HK',
+	'zh-TW',
+	'zu-ZA',
+]
+
+export const languageCodeDefaultDialects: string[] = [
+	'af-ZA',
+	'ar-SA',
+	'ca-ES',
+	'cs-CZ',
+	'da-DK',
+	'de-DE',
+	'el-GR',
+	'en-US',
+	'es-ES',
+	'eu-ES',
+	'fa-IR',
+	'fi-FI',
+	'fr-FR',
+	'gl-ES',
+	'he-IL',
+	'hi-IN',
+	'hr-HR',
+	'id-ID',
+	'it-IT',
+	'ja-JP',
+	'ko-KR',
+	'lv-LV',
+	'ms-MY',
+	'nl-NL',
+	'no-NO',
+	'pl-PL',
+	'pt-BR',
+	'ro-RO',
+	'ru-RU',
+	'sk-SK',
+	'so-SO',
+	'sr-RS',
+	'sv-SE',
+	'th-TH',
+	'tl-PH',
+	'uk-UA',
+	'vi-VN',
+	'zh-CN',
+]
