@@ -1,4 +1,4 @@
-import type { Item, LanguageCode, StartStreamTranscriptionCommandInput } from '@aws-sdk/client-transcribe-streaming'
+import { Item, LanguageCode, StartStreamTranscriptionCommandInput } from '@aws-sdk/client-transcribe-streaming'
 import { wordCharacterPattern } from '../nlp/Segmentation.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
@@ -10,7 +10,7 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 	const logger = new Logger()
 
-	if (!supportedLanguageCodes.includes(languageCode)) {
+	if (!(languageCode in LanguageCode)) {
 		let matchingLanguageCode: string | undefined = undefined
 
 		if (languageCode.length === 2) {
@@ -126,63 +126,6 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 
 	return { transcript, timeline }
 }
-
-export const supportedLanguageCodes: string[] = [
-	'af-ZA',
-	'ar-AE',
-	'ar-SA',
-	'ca-ES',
-	'cs-CZ',
-	'da-DK',
-	'de-CH',
-	'de-DE',
-	'el-GR',
-	'en-AB',
-	'en-AU',
-	'en-GB',
-	'en-IE',
-	'en-IN',
-	'en-NZ',
-	'en-US',
-	'en-WL',
-	'en-ZA',
-	'es-ES',
-	'es-US',
-	'eu-ES',
-	'fa-IR',
-	'fi-FI',
-	'fr-CA',
-	'fr-FR',
-	'gl-ES',
-	'he-IL',
-	'hi-IN',
-	'hr-HR',
-	'id-ID',
-	'it-IT',
-	'ja-JP',
-	'ko-KR',
-	'lv-LV',
-	'ms-MY',
-	'nl-NL',
-	'no-NO',
-	'pl-PL',
-	'pt-BR',
-	'pt-PT',
-	'ro-RO',
-	'ru-RU',
-	'sk-SK',
-	'so-SO',
-	'sr-RS',
-	'sv-SE',
-	'th-TH',
-	'tl-PH',
-	'uk-UA',
-	'vi-VN',
-	'zh-CN',
-	'zh-HK',
-	'zh-TW',
-	'zu-ZA',
-]
 
 export const languageCodeDefaultDialects: string[] = [
 	'af-ZA',
