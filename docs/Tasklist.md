@@ -2,9 +2,12 @@
 
 ## Bugs
 
-### eSpeak
+### eSpeak-ng
 
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
+
+### Subtitles
+* Phrase splitting may split on number separators like the `,` in `100,000`. The new segmentation library would resolve that
 
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
@@ -247,6 +250,7 @@
 * [PlayHT](https://play.ht/) speech synthesis cloud service
 * [Deepgram](https://deepgram.com/) cloud text-to-speech API
 * [Assembly AI](https://www.assemblyai.com/) cloud speech recognition API
+* [Picovoice Orca](https://github.com/Picovoice/orca) local text-to-speech
 * Coqui STT server connection
 * [MarbleNet VAD](https://github.com/NVIDIA/NeMo/blob/main/tutorials/asr/Online_Offline_Microphone_VAD_Demo.ipynb), included of the NVIDIA NeMo framework, can be exported to ONNX
 * Silero text enhancement engine can be ported to ONNX
@@ -264,6 +268,7 @@
 
 ## Other ideas
 
+* Speaker diarization
 * Support alignment of EPUB 3 eBooks with a corresponding audiobook
 * Voice cloning
 * Speech-to-speech voice conversion
