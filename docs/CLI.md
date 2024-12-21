@@ -362,17 +362,17 @@ Shows a list of available engines for a given command:
 echogarden list-engines speak
 ```
 
-### `list-tts-voices`
+### `list-voices`
 
 Shows a list of available TTS voices for a given engine:
 
 ```bash
-echogarden list-tts-voices google-cloud
+echogarden list-voices google-cloud
 ```
 
 Saves the voice list in a JSON file:
 ```bash
-echogarden list-tts-voices google-cloud google-cloud-voices.json
+echogarden list-voices google-cloud google-cloud-voices.json
 ```
 
 ## Internal package management
