@@ -1,4 +1,4 @@
-import { TypedArray, TypedArrayConstructor } from "../typings/TypedArray.js"
+import { TypedArray, TypedArrayConstructor } from '../typings/TypedArray.js'
 
 export class DynamicTypedArray<T extends TypedArray> {
 	elements: TypedArray
@@ -9,14 +9,14 @@ export class DynamicTypedArray<T extends TypedArray> {
 	}
 
 	add(newElement: number) {
-		const length = this.length
+		const newLength = this.length + 1
 
-		if (length === this.elements.length) {
-			this.ensureCapacity(length + 1)
+		if (newLength > this.capacity) {
+			this.ensureCapacity(newLength)
 		}
 
-		this.elements[length] = newElement
-		this.length += 1
+		this.elements[this.length] = newElement
+		this.length = newLength
 	}
 
 	addMany(...newElements: number[]) {
@@ -24,16 +24,18 @@ export class DynamicTypedArray<T extends TypedArray> {
 	}
 
 	addArray(newElements: ArrayLike<number>) {
-		const addedCount = newElements.length
+		const newLength = this.length + newElements.length
 
-		this.ensureCapacity(this.length + addedCount)
+		if (newLength > this.capacity) {
+			this.ensureCapacity(newLength)
+		}
 
 		this.elements.set(newElements, this.length)
-		this.length += addedCount
+		this.length = newLength
 	}
 
 	ensureCapacity(requiredCapacity: number) {
-		if (requiredCapacity > this.elements.length) {
+		if (requiredCapacity > this.capacity) {
 			const newCapacity = requiredCapacity * 2
 
 			const newElements = new this.TypedArrayConstructor(newCapacity)
@@ -41,6 +43,10 @@ export class DynamicTypedArray<T extends TypedArray> {
 
 			this.elements = newElements
 		}
+	}
+
+	get capacity() {
+		return this.elements.length
 	}
 
 	toTypedArray() {
