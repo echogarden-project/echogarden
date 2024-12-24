@@ -1569,7 +1569,7 @@ export class Whisper {
 
 		const timestampTokensCount = 1501
 
-		for (let i = 0; i < timestampTokensCount; i++) {
+		for (let i = 0; i <= timestampTokensCount; i++) {
 			const tokenIndex = this.tokenConfig.timestampTokensStart + i
 			const tokenTime = this.timestampTokenToSeconds(tokenIndex)
 
@@ -1727,11 +1727,15 @@ export class Whisper {
 			throw new Error(`Invalid timestamp token: ${timestampToken}`)
 		}
 
-		return (timestampToken - this.tokenConfig.timestampTokensStart) * 0.02
+		let seconds = (timestampToken - this.tokenConfig.timestampTokensStart) * 0.02
+		seconds = clip(seconds, 0.0, 30.0)
+
+		return seconds
 	}
 
 	isValidToken(token: number) {
-		return token < this.tokenConfig.timestampTokensEnd
+		//return token < this.tokenConfig.timestampTokensEnd
+		return token <= this.tokenConfig.timestampTokensEnd
 	}
 
 	assertIsValidToken(token: number) {
