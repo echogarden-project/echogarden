@@ -1,0 +1,103 @@
+{
+   "$schema": "https://biomejs.dev/schemas/1.9.3/schema.json",
+   "vcs": {
+      "enabled": true,
+      "clientKind": "git",
+      "useIgnoreFile": true,
+      "defaultBranch": "main"
+   },
+   "organizeImports": {
+      "enabled": true
+   },
+   "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 3,
+      "lineEnding": "lf",
+      "lineWidth": 100
+   },
+   "linter": {
+      "enabled": true,
+      "rules": {
+         "recommended": true,
+         "complexity": {
+            "noExcessiveCognitiveComplexity": {
+               "level": "error",
+               "options": {
+                  "maxAllowedComplexity": 25
+               }
+            },
+            "noBannedTypes": "off",
+            "noUselessStringConcat": "error",
+            "noUselessUndefinedInitialization": "error",
+            "noVoid": "error",
+            "useDateNow": "error",
+            "useSimplifiedLogicExpression": "error",
+            "noForEach": "off"
+         },
+         "correctness": {
+            "noConstantMathMinMaxClamp": "error",
+            "noInvalidBuiltinInstantiation": "error",
+            "noUndeclaredDependencies": "off",
+            "noUndeclaredVariables": "error",
+            "noUnusedFunctionParameters": "warn",
+            "noUnusedImports": "warn",
+            "noUnusedPrivateClassMembers": "warn",
+            "noUnusedVariables": "warn",
+            "useArrayLiterals": "error",
+            "useHookAtTopLevel": "error",
+            "useImportExtensions": "off"
+         },
+         "performance": {
+            "noBarrelFile": "error",
+            "noReExportAll": "error"
+         },
+         "style": {
+            "noUselessElse": "off",
+            "noDefaultExport": "off",
+            "noDoneCallback": "error",
+            "noImplicitBoolean": "error",
+            "noNamespace": "error",
+            "noNamespaceImport": "off",
+            "noNegationElse": "error",
+            "noParameterProperties": "error",
+            "noShoutyConstants": "error",
+            "noYodaExpression": "error",
+            "useBlockStatements": "error",
+            "useCollapsedElseIf": "error",
+            "useConsistentArrayType": "error",
+            "useConsistentBuiltinInstantiation": "error",
+            "useDefaultSwitchClause": "error",
+            "useExplicitLengthCheck": "error",
+            "useFilenamingConvention": {
+               "level": "error",
+               "options": {
+                  "strictCase": false,
+                  "requireAscii": true
+               }
+            },
+            "useForOf": "off",
+            "useFragmentSyntax": "off",
+            "useImportType": "off",
+            "useNamingConvention": "error",
+            "useNodeAssertStrict": "error",
+            "useShorthandAssign": "error",
+            "useThrowNewError": "error",
+            "useThrowOnlyError": "error"
+         },
+         "suspicious": {
+            "noConsole": "off",
+            "noConsoleLog": "error",
+            "noEmptyBlockStatements": "error",
+            "noEvolvingTypes": "off",
+            "noExplicitAny": "off",
+            "noMisplacedAssertion": "error",
+            "noReactSpecificProps": "off",
+            "noSkippedTests": "error",
+            "useAwait": "error",
+            "useErrorMessage": "error",
+            "useNumberToFixedDigitsArgument": "error"
+         }
+      }
+   }
+}

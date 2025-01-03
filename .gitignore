@@ -1,4 +1,6 @@
 .eslintrc.json
+.exclude
+.idea
 .vscode
 desktop.ini
 echogarden.config
