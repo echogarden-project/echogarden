@@ -1,0 +1,36 @@
+{
+   "include": ["src/**/*"],
+   "compilerOptions": {
+      "allowJs": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": ".",
+      "declaration": true,
+      "emitBOM": false,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "importsNotUsedAsValues": "remove",
+      "isolatedModules": true,
+      "module": "nodenext",
+      "moduleDetection": "auto",
+      "moduleResolution": "nodenext",
+      "newLine": "lf",
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitAny": true,
+      "noImplicitReturns": true,
+      "noImplicitThis": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "outDir": "./dist",
+      "paths": {
+         "@src/*": ["./src/*"],
+         "@testutils/*": ["./vitest/utils/*"]
+      },
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "sourceMap": true,
+      "strict": true,
+      "strictPropertyInitialization": true,
+      "target": "ES2022",
+      "verbatimModuleSyntax": true
+   }
+}
