@@ -1,7 +1,33 @@
 import { WebSocket } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
-import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesisResult, VoiceListRequestOptions } from '../api/Synthesis.js'
-import { SynthesisResponseMessage, SynthesisSegmentEventMessage, SynthesisSentenceEventMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage, SpeechLanguageDetectionRequestMessage, SpeechLanguageDetectionResponseMessage, TextLanguageDetectionResponseMessage, TextLanguageDetectionRequestMessage, SynthesisRequestMessage } from './Worker.js'
+import {
+	RequestVoiceListResult,
+	SynthesisOptions,
+	SynthesisSegmentEvent,
+	SynthesisResult,
+	VoiceListRequestOptions
+} from '../api/Synthesis.js'
+import {
+	SynthesisResponseMessage,
+	SynthesisSegmentEventMessage,
+	SynthesisSentenceEventMessage,
+	VoiceListRequestMessage,
+	WorkerRequestMessage,
+	VoiceListResponseMessage,
+	AlignmentRequestMessage,
+	AlignmentResponseMessage,
+	RecognitionRequestMessage,
+	RecognitionResponseMessage,
+	SpeechTranslationRequestMessage,
+	SpeechTranslationResponseMessage,
+	SpeechLanguageDetectionRequestMessage,
+	SpeechLanguageDetectionResponseMessage,
+	TextLanguageDetectionResponseMessage,
+	TextLanguageDetectionRequestMessage,
+	VoiceActivityDetectionRequestMessage,
+	VoiceActivityDetectionResponseMessage,
+	SynthesisRequestMessage
+} from './Worker.js'
 import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { AudioSourceParam, RawAudio } from '../audio/AudioUtilities.js'
@@ -11,6 +37,7 @@ import { SpeechTranslationOptions, SpeechTranslationResult } from '../api/Speech
 import { Worker as WorkerThread } from 'node:worker_threads'
 import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult } from '../api/SpeechLanguageDetection.js'
 import { TextLanguageDetectionOptions, TextLanguageDetectionResult } from '../api/TextLanguageDetection.js'
+import { VADOptions, VADResult } from '../api/VoiceActivityDetection.js'
 import { decodeUtf8 } from '../encodings/Utf8.js'
 
 const log = logToStderr
@@ -244,6 +271,34 @@ export class Client {
 
 		function onResponse(responseMessage: TextLanguageDetectionResponseMessage) {
 			if (responseMessage.messageType == 'TextLanguageDetectionResponse') {
+				requestOpenPromise.resolve(responseMessage)
+			}
+		}
+
+		function onError(e: any) {
+			requestOpenPromise.reject(e)
+		}
+
+		try {
+			this.sendRequest(requestMessage, onResponse, onError)
+		} catch (e) {
+			onError(e)
+		}
+
+		return requestOpenPromise.promise
+	}
+
+	async detectVoiceActivity(input: AudioSourceParam, options: VADOptions): Promise<VADResult> {
+		const requestOpenPromise = new OpenPromise<VADResult>()
+
+		const requestMessage: VoiceActivityDetectionRequestMessage = {
+			messageType: 'VoiceActivityDetectionRequest',
+			input,
+			options
+		}
+
+		function onResponse(responseMessage: VoiceActivityDetectionResponseMessage) {
+			if (responseMessage.messageType == 'VoiceActivityDetectionResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			}
 		}
