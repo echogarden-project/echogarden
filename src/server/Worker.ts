@@ -12,6 +12,7 @@ import { SpeechLanguageDetectionOptions, SpeechLanguageDetectionResult, detectSp
 import chalk from 'chalk'
 import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { TextLanguageDetectionOptions, TextLanguageDetectionResult, detectTextLanguage } from '../api/TextLanguageDetection.js'
+import { VADOptions, VADResult, detectVoiceActivity } from '../api/VoiceActivityDetection.js'
 
 const log = logToStderr
 
@@ -143,6 +144,11 @@ export async function processMessage(message: WorkerRequestMessage, sendMessage:
 
 		case 'TextLanguageDetectionRequest': {
 			await processTextLanguageDetectionRequest(message, sendMessage)
+			break
+		}
+
+		case 'VoiceActivityDetectionRequest': {
+			await processVoiceActivityDetectionRequest(message, sendMessage)
 			break
 		}
 
@@ -351,6 +357,31 @@ export interface TextLanguageDetectionResponseMessage extends WorkerMessageBase,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+// Voice activity detection operations
+///////////////////////////////////////////////////////////////////////////////////////////////
+async function processVoiceActivityDetectionRequest(message: VoiceActivityDetectionRequestMessage, sendMessage: MessageFunc) {
+	const result = await detectVoiceActivity(message.input, message.options)
+
+	const responseMessage: VoiceActivityDetectionResponseMessage = {
+		messageType: 'VoiceActivityDetectionResponse',
+		...result
+	}
+
+	sendMessage(responseMessage)
+}
+
+// Voice activity detection message types
+export interface VoiceActivityDetectionRequestMessage extends WorkerMessageBase {
+	messageType: 'VoiceActivityDetectionRequest'
+	input: string
+	options: VADOptions
+}
+
+export interface VoiceActivityDetectionResponseMessage extends WorkerMessageBase, VADResult {
+	messageType: 'VoiceActivityDetectionResponse'
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 // Messaging methods
 ///////////////////////////////////////////////////////////////////////////////////////////////
 export function sendMessageToWorker(message: any) {
@@ -414,7 +445,14 @@ export async function startNewWorkerThread() {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Base message types
 ///////////////////////////////////////////////////////////////////////////////////////////////
-export type WorkerRequestMessage = SynthesisRequestMessage | VoiceListRequestMessage | RecognitionRequestMessage | AlignmentRequestMessage | SpeechTranslationRequestMessage | SpeechLanguageDetectionRequestMessage | TextLanguageDetectionRequestMessage
+export type WorkerRequestMessage = SynthesisRequestMessage
+	| VoiceListRequestMessage
+	| RecognitionRequestMessage
+	| AlignmentRequestMessage
+	| SpeechTranslationRequestMessage
+	| SpeechLanguageDetectionRequestMessage
+	| TextLanguageDetectionRequestMessage
+	| VoiceActivityDetectionRequestMessage
 
 export interface WorkerMessageBase {
 	messageType: string
