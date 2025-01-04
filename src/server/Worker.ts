@@ -373,7 +373,7 @@ async function processVoiceActivityDetectionRequest(message: VoiceActivityDetect
 // Voice activity detection message types
 export interface VoiceActivityDetectionRequestMessage extends WorkerMessageBase {
 	messageType: 'VoiceActivityDetectionRequest'
-	input: string
+	input: AudioSourceParam
 	options: VADOptions
 }
 
