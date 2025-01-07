@@ -4,7 +4,7 @@ Here's a quick guide on how to set up a development environment for making and t
 
 **Related pages**:
 * [How to help](Contributing.md)
-* [Technical overview](Techincal.md)
+* [Technical overview](Technical.md)
 * [Node.js API reference](API.md)
 
 ## Quick start
