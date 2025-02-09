@@ -159,10 +159,10 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 			const sentenceStartTime = timeOffset
 
-			let sentencetSynthesisOptions: SynthesisOptions = { postProcessing: { normalizeAudio: false } }
-			sentencetSynthesisOptions = extendDeep(options, sentencetSynthesisOptions)
+			let sentenceSynthesisOptions: SynthesisOptions = { postProcessing: { normalizeAudio: false } }
+			sentenceSynthesisOptions = extendDeep(options, sentenceSynthesisOptions)
 
-			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentencetSynthesisOptions)
+			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentenceSynthesisOptions)
 
 			const endPause = sentenceIndex == sentences.length - 1 ? options.segmentEndPause! : options.sentenceEndPause!
 			sentenceRawAudio.audioChannels[0] = trimAudioEnd(sentenceRawAudio.audioChannels[0], endPause * sentenceRawAudio.sampleRate)
