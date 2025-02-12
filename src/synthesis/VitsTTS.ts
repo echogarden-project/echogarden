@@ -156,7 +156,12 @@ export class VitsTTS {
 		const scalesTensor = new Onnx.Tensor('float32', [metadata.inference.noise_scale, lengthScale, metadata.inference.noise_w], [3])
 		const speakerIdTensor = new Onnx.Tensor('int64', new BigInt64Array([BigInt(speakerId)]), [1])
 
-		const modelInputs = { input: inputTensor, input_lengths: inputLengthsTensor, scales: scalesTensor, sid: speakerIdTensor }
+		const modelInputs = {
+			input: inputTensor,
+			input_lengths: inputLengthsTensor,
+			scales: scalesTensor,
+			sid: speakerIdTensor
+		}
 
 		const modelResults = await this.session!.run(modelInputs)
 		const modelOutput = modelResults['output']
