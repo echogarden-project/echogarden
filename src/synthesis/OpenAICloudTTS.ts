@@ -169,6 +169,16 @@ export const voiceList: SynthesisVoice[] = [
 		gender: 'male',
 	},
 	{
+		name: 'ash',
+		languages: ['en-US', ...supportedLanguages],
+		gender: 'male',
+	},
+	{
+		name: 'coral',
+		languages: ['en-US', ...supportedLanguages],
+		gender: 'female',
+	},
+	{
 		name: 'echo',
 		languages: ['en-US', ...supportedLanguages],
 		gender: 'male',
@@ -185,6 +195,11 @@ export const voiceList: SynthesisVoice[] = [
 	},
 	{
 		name: 'nova',
+		languages: ['en-US', ...supportedLanguages],
+		gender: 'female',
+	},
+	{
+		name: 'sage',
 		languages: ['en-US', ...supportedLanguages],
 		gender: 'female',
 	},
