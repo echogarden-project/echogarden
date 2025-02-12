@@ -114,15 +114,17 @@ export class KokoroTTS {
 		const clauseBreakTokenId = charToTokenIDLookup[',']
 		const wordBreakTokenId = charToTokenIDLookup[' ']
 
-		let sentenceEndBreaker: string
+		let sentenceEndChar: string
 
 		if (simplifiedSentenceText.endsWith('?') || simplifiedSentenceText.endsWith(`?"`) || simplifiedSentenceText.endsWith(`?)`)) {
-			sentenceEndBreaker = '?'
+			sentenceEndChar = '?'
 		} else if (simplifiedSentenceText.endsWith('!') || simplifiedSentenceText.endsWith(`!"`) || simplifiedSentenceText.endsWith(`!)`)) {
-			sentenceEndBreaker = '!'
+			sentenceEndChar = '!'
 		} else {
-			sentenceEndBreaker = '.'
+			sentenceEndChar = '.'
 		}
+
+		const sentenceEndTokenId = charToTokenIDLookup[sentenceEndChar]
 
 		const allTokenIds: number[] = []
 
@@ -163,7 +165,7 @@ export class KokoroTTS {
 			}
 		}
 
-		allTokenIds.push(charToTokenIDLookup[sentenceEndBreaker])
+		allTokenIds.push(sentenceEndTokenId)
 
 		const maxPartLength = 510
 
@@ -198,7 +200,10 @@ export class KokoroTTS {
 					partTokenIds.pop()
 				}
 
-				if (partTokenIds.length > 0) {
+
+				if (partTokenIds.find(
+					tokenId => ![wordBreakTokenId, clauseBreakTokenId, sentenceEndTokenId].includes(tokenId))) {
+						
 					parts.push([0, ...partTokenIds, 0])
 				}
 
@@ -239,7 +244,9 @@ export class KokoroTTS {
 
 		logger.end()
 
-		const synthesizedAudio: RawAudio = { audioChannels: concatAudioSegments(audioParts), sampleRate }
+		const concatenatedAudioParts = audioParts.length > 0 ? concatAudioSegments(audioParts) : [new Float32Array(0)]
+
+		const synthesizedAudio: RawAudio = { audioChannels: concatenatedAudioParts, sampleRate }
 
 		await logger.startAsync('Align with reference synthesized audio')
 
