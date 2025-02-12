@@ -191,12 +191,43 @@
           },
           "additionalProperties": false
         },
+        "kokoro": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
+            },
+            "model": {
+              "type": "string",
+              "enum": [
+                "82m-v1.0-fp32",
+                "82m-v1.0-quantized"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
         "pico": {
           "type": "object",
           "additionalProperties": false
         },
         "flite": {
           "type": "object",
+          "additionalProperties": false
+        },
+        "gnuspeech": {
+          "type": "object",
+          "properties": {
+            "tempo": {
+              "type": "number"
+            },
+            "controlRate": {
+              "type": "number"
+            },
+            "debug": {
+              "type": "boolean"
+            }
+          },
           "additionalProperties": false
         },
         "espeak": {
@@ -376,8 +407,10 @@
       "type": "string",
       "enum": [
         "vits",
+        "kokoro",
         "pico",
         "flite",
+        "gnuspeech",
         "espeak",
         "sam",
         "sapi",
@@ -1471,12 +1504,43 @@
           },
           "additionalProperties": false
         },
+        "kokoro": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "$ref": "#/definitions/OnnxExecutionProvider"
+            },
+            "model": {
+              "type": "string",
+              "enum": [
+                "82m-v1.0-fp32",
+                "82m-v1.0-quantized"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
         "pico": {
           "type": "object",
           "additionalProperties": false
         },
         "flite": {
           "type": "object",
+          "additionalProperties": false
+        },
+        "gnuspeech": {
+          "type": "object",
+          "properties": {
+            "tempo": {
+              "type": "number"
+            },
+            "controlRate": {
+              "type": "number"
+            },
+            "debug": {
+              "type": "boolean"
+            }
+          },
           "additionalProperties": false
         },
         "espeak": {
