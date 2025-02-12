@@ -495,3 +495,13 @@ export async function isWasmSimdSupported() {
 
 	return wasmFeatureDetect.simd()
 }
+
+export function indexOfLastMatchingNumberInRange(values: number[], targetValue: number, startIndex: number, endIndex: number) {
+	for (let i = endIndex - 1; i >= startIndex; i--) {
+		if (values[i] === targetValue) {
+			return i
+		}
+	}
+
+	return -1
+}
