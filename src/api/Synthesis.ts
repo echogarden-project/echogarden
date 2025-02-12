@@ -414,6 +414,47 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
+		case 'kokoro': {
+			if (inputIsSSML) {
+				throw new Error(`The Kokoro engine doesn't currently support SSML inputs`)
+			}
+
+			const kokoroOptions = options.kokoro!
+
+			const kokoroTTS = await import('../synthesis/KokoroTTS.js')
+
+			const lexicons = await loadLexiconsForLanguage(language, options.customLexiconPaths)
+			const onnxExecutionProviders: OnnxExecutionProvider[] = kokoroOptions.provider ? [kokoroOptions.provider] : []
+			const modelName = kokoroOptions.model!
+			const modelPackageName = `kokoro-${modelName}`
+
+			const modelPath = await loadPackage(modelPackageName)
+			const voicesPath = await loadPackage('kokoro-82m-v1.0-voices')
+
+			logger.end()
+
+			logger.logTitledMessage(`Using model`, modelPackageName)
+
+			const { rawAudio, timeline: outTimeline } = await kokoroTTS.synthesizeSentence(
+				text,
+				selectedVoice,
+				speed,
+				lexicons,
+				modelPath,
+				voicesPath,
+				onnxExecutionProviders
+			)
+
+			synthesizedAudio = rawAudio
+			timeline = outTimeline
+
+			shouldPostprocessPitch = true
+
+			logger.end()
+
+			break
+		}
+
 		case 'pico': {
 			if (inputIsSSML) {
 				throw new Error(`The SVOX Pico engine doesn't currently support SSML inputs`)
@@ -455,6 +496,35 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			synthesizedAudio = rawAudio
 
 			shouldPostprocessPitch = true
+
+			break
+		}
+
+		case 'gnuspeech': {
+			if (inputIsSSML) {
+				throw new Error(`The Gnuspeech engine doesn't currently support SSML inputs`)
+			}
+
+			const engineOptions = options.gnuspeech!
+
+			const GnuSpeech = await import('../synthesis/GnuSpeechTTS.js')
+			const { defaultGnuSpeechOptions } = await import('@echogarden/gnuspeech-wasm')
+
+			const gnuSpeechOptions = extendDeep(defaultGnuSpeechOptions, engineOptions)
+
+			if (!engineOptions.tempo) {
+				gnuSpeechOptions.tempo = speed
+			}
+
+			await logger.startAsync(`Synthesize with Gnuspeech`)
+
+			const { rawAudio } = await GnuSpeech.synthesize(simplifiedText, gnuSpeechOptions)
+
+			synthesizedAudio = rawAudio
+
+			shouldPostprocessPitch = true
+
+			logger.end()
 
 			break
 		}
@@ -959,7 +1029,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	logger.end()
 
-	logger.logDuration('Segment synthesis time', startTimestamp, chalk.magentaBright)
+	logger.logDuration('Part synthesis time', startTimestamp, chalk.magentaBright)
 
 	return { synthesizedAudio, timeline }
 }
@@ -997,7 +1067,12 @@ function convertPitchScaleToSSMLValueString(pitch: number, voiceGender: VoiceGen
 	}
 }
 
-export type SynthesisEngine = 'vits' | 'pico' | 'flite' | 'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' | 'google-cloud' | 'microsoft-azure' | 'amazon-polly' | 'openai-cloud' | 'elevenlabs' | 'google-translate' | 'microsoft-edge' | 'streamlabs-polly'
+export type SynthesisEngine =
+	'vits' | 'kokoro' | 'pico' | 'flite' | 'gnuspeech' |
+	'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' |
+	'google-cloud' | 'microsoft-azure' | 'amazon-polly' |
+	'openai-cloud' | 'elevenlabs' | 'google-translate' |
+	'microsoft-edge' | 'streamlabs-polly'
 
 export type TimePitchShiftingMethod = 'sonic' | 'rubberband'
 
@@ -1051,10 +1126,21 @@ export interface SynthesisOptions {
 		provider?: OnnxExecutionProvider
 	}
 
+	kokoro?: {
+		provider?: OnnxExecutionProvider
+		model?: '82m-v1.0-fp32' | '82m-v1.0-quantized'
+	}
+
 	pico?: {
 	}
 
 	flite?: {
+	}
+
+	gnuspeech?: {
+		tempo?: number
+		controlRate?: number
+		debug?: boolean
 	}
 
 	espeak?: {
@@ -1186,17 +1272,25 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 		provider: undefined,
 	},
 
+	kokoro: {
+		model: '82m-v1.0-fp32'
+	},
+
 	pico: {
 	},
 
 	flite: {
 	},
 
+	gnuspeech: {
+		debug: false,
+	},
+
 	espeak: {
 		rate: undefined,
 		pitch: undefined,
 		pitchRange: undefined,
-		useKlatt: false
+		useKlatt: false,
 	},
 
 	sam: {
@@ -1330,6 +1424,14 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				break
 			}
 
+			case 'gnuspeech': {
+				const GnuSpeech = await import('../synthesis/GnuSpeechTTS.js')
+
+				voiceList = GnuSpeech.voiceList
+
+				break
+			}
+
 			case 'sam': {
 				voiceList.push({
 					name: 'sam',
@@ -1346,6 +1448,14 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				voiceList = VitsTTS.voiceList.map(entry => {
 					return { ...entry, packageName: `vits-${entry.name}` }
 				})
+
+				break
+			}
+
+			case 'kokoro': {
+				const KokoroTTS = await import('../synthesis/KokoroTTS.js')
+
+				voiceList = KokoroTTS.voiceList
 
 				break
 			}
@@ -1702,27 +1812,39 @@ export const synthesisEngines: EngineMetadata[] = [
 		type: 'local'
 	},
 	{
+		id: 'kokoro',
+		name: 'Kokoro',
+		description: 'A high-quality neural speech synthesis model based on the StyleTTS 2 architecture.',
+		type: 'local'
+	},
+	{
 		id: 'pico',
 		name: 'SVOX Pico',
-		description: 'A legacy diphone-based synthesis engine.',
+		description: 'A legacy diphone-based speech synthesizer.',
 		type: 'local'
 	},
 	{
 		id: 'flite',
 		name: 'Flite',
-		description: 'A legacy diphone-based synthesis engine.',
+		description: 'A legacy diphone-based speech synthesizer.',
+		type: 'local'
+	},
+	{
+		id: 'gnuspeech',
+		name: 'Gnuspeech',
+		description: 'A legacy articulatory speech synthesizer.',
 		type: 'local'
 	},
 	{
 		id: 'espeak',
 		name: 'eSpeak NG',
-		description: `A lightweight 'robot' sounding formant-based synthesizer.`,
+		description: `A lightweight, highly multilingual, 'robot'-like formant-based speech synthesizer.`,
 		type: 'local'
 	},
 	{
 		id: 'sam',
 		name: 'SAM (Software Automatic Mouth)',
-		description: `A classic 'robot' speech synthesizer from 1982.`,
+		description: `A classic 'robot'-like speech synthesizer from 1982.`,
 		type: 'local'
 	},
 	{
