@@ -6,6 +6,7 @@
 * `espeak`: [GNU GPL v3](https://github.com/espeak-ng/espeak-ng/blob/master/COPYING)
 * `flite`: [BSD License](https://github.com/festvox/flite/blob/master/COPYING)
 * `pico`: [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
+* `gnuspeech`: [GNU GPL v3](https://github.com/mym-br/gnuspeech_sa/blob/master/COPYING.txt)
 * `sam`: [Abandonware / fair-use / unknown](https://github.com/discordier/sam#license)
 * `vosk` [Apache License 2.0](https://github.com/alphacep/vosk-api/blob/master/COPYING)
 * `tinyld` [MIT License](https://github.com/komodojp/tinyld/blob/develop/license)
