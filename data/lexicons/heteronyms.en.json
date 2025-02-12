@@ -167,6 +167,48 @@
 				"example": "There's no use."
 			}
 		],
+		"close": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k l ˈoʊ z",
+						"en-gb-x-rp": "k l ˈoʊ z"
+					}
+				},
+
+				"pos": [
+					"VB"
+				],
+
+				"precededBy": [
+					"to", "we", "you", "they", "who", "i", "me", "will", "also", "don't", "didn't", "not", "doesn't", "please", "we'll", "would", "wouldn't", "should", "shouldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "can", "could", "couldn't"
+				],
+
+				"notPrecededBy": [
+					"the", "a", "for", "no", "in", "of", "make", "its", "single", "their", "good", "making", "her", "his", "its", "our", "your", "my", "any", "personal"
+				],
+
+				"succeededBy": [
+					"the", "a", "an", "their", "it", "this", "them", "his", "her", "our", "your", "its", "these", "all", "my", "any", "those", "some", "one", "more", "every", "up", "down", "other"
+				],
+
+				"notSucceededBy": [
+					"to", "with"
+				],
+
+				"example": "I will close the door."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k l ˈoʊ s",
+						"en-gb-x-rp": "k l ˈoʊ s"
+					}
+				},
+
+				"example": "This seems very close."
+			}
+		],
 		"live": [
 			{
 				"pronunciation": {
@@ -226,7 +268,7 @@
 				],
 
 				"notPrecededBy": [
-					"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many", "innocent"
+					"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many", "innocent", "improve", "better"
 				],
 
 				"succeededBy": [
@@ -1300,11 +1342,11 @@
 				],
 
 				"precededBy": [
-					"to", "i", "me", "us", "they", "we", "you", "will", "would", "can", "can't", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "did", "didn't", "then"
+					"to", "i", "me", "us", "they", "we", "you", "will", "would", "can", "can't", "may", "might", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "did", "didn't", "then", "people"
 				],
 
 				"notPrecededBy": [
-					"of", "for", "this", "similar", "with", "criminal", "dangerous", "ethical", "unethical", "good", "future", "disorderly"
+					"of", "for", "this", "similar", "with", "criminal", "dangerous", "ethical", "unethical", "good", "future", "disorderly", "his", "her", "our", "my"
 				],
 
 				"succeededBy": [
