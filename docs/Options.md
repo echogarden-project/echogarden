@@ -12,14 +12,14 @@ Here's a detailed reference for all the options accepted by the Echogarden CLI a
 Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
 
 **General**:
-* `engine`: identifier of the synthesis engine to use, such as `espeak`, `vits` or `google-translate` (see [the full engine list](Engines.md)). Auto-selected if not set
-* `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected if not set
+* `engine`: identifier of the synthesis engine to use. Can be `kokoro`, `vits`, `pico`, `flite`, `gnuspeech`, `espeak`, `sam`, `sapi`, `msspeech`, `coqui-server`, `google-cloud`, `microsoft-azure`, `amazon-polly`, `openai-cloud`, `elevenlabs`, `google-translate`, `microsoft-edge` or `streamlabs-polly` (see [the engines documentation page](Engines.md) for more detailed information about each engine). Auto-selected if not set
+* `language`: language code, can be ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`, etc. [ISO 639-3](https://en.wikipedia.org/wiki/ISO_639-3), or a plain language name like `french`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Auto-selected if not set
 * `voiceGender`: gender of the voice to use. Optional
 * `speed`: speech rate factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
 * `pitch`: pitch factor, relative to default. In the range `0.1`..`10.0`. Defaults to `1.0`
-* `pitchVariation`: pitch variation factor. In the range `0.1`..`10.0`. Defaults to `1.0`
-* `splitToSentences`: split text to sentences before synthesis. Defaults to `true`
+* `pitchVariation`: pitch variation factor. Not supported by most models. In the range `0.1`..`10.0`. Defaults to `1.0`
+* `splitToSentences`: split text to sentences before synthesis. **Note:** setting this to `false` will not produce optimal results with some engines, like `vits` and `kokoro`, as they work best with single sentence utterances. Defaults to `true`
 * `ssml`: the input is SSML. Defaults to `false`
 * `sentenceEndPause`: pause duration (seconds) at end of sentence. Defaults to `0.75`
 * `segmentEndPause`: pause duration (seconds) at end of segment. Defaults to `1.0`
@@ -44,6 +44,10 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 **Output audio format**:
 * `outputAudioFormat.codec`: Codec identifier (**Note**: API only. CLI uses file extensions instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the [API documentation](API.md]). Optional
 * `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
+
+**Kokoro**:
+* `kokoro.model`: model variant to use. Can be `82m-v1.0-fp32` or `82m-v1.0-quantized`. **Note**: the quantized model, while having lower memory usage, is significantly slower than the non-quantized (FP32) one. Defaults to `v1.0-fp32`
+* `kokoro.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). **Note**: `dml` provider (DirectML) seems to currently fail on inference. The cause for this error is [still under investigation](https://github.com/hexgrad/kokoro/issues/79). Defaults to `cpu`
 
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Defaults to `0`

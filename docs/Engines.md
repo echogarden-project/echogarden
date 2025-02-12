@@ -5,9 +5,11 @@
 
 **Offline**:
 
+* [Kokoro](https://github.com/hexgrad/kokoro) (`kokoro`): neural speech synthesis model based on the [StyleTTS 2 architecture](https://github.com/yl4579/StyleTTS2). Currently there are 20 US English voices, 8 UK English voices, and a few other voices in Spanish, French, Hindi, Italian, Brazilian Portuguese and Chinese
 * [VITS](https://github.com/jaywalnut310/vits) (`vits`): end-to-end neural speech synthesis architecture. Available models were trained by Michael Hansen as part of his [Piper speech synthesis system](https://github.com/rhasspy/piper). Currently, there are 123 voices, in a range of languages, including English (US, UK), Spanish (ES, MX), Portuguese (PT, BR), Italian, French, German, Dutch (NL, BE), Swedish, Norwegian, Danish, Finnish, Polish, Greek, Romanian, Serbian, Czech, Hungarian, Slovak, Slovenian, Turkish, Arabic, Farsi, Russian, Ukrainian, Catalan, Luxembourgish, Icelandic, Swahili, Kazakh, Georgian, Nepali, Vietnamese and Chinese. You can listen to audio samples of all voices and languages in [Piper's samples page](https://rhasspy.github.io/piper-samples/)
 * [SVOX Pico](https://github.com/naggety/picotts) (`pico`): a legacy diphone-based synthesis engine. Supports English (US, UK), Spanish, Italian, French, and German
 * [Flite](https://github.com/festvox/flite) (`flite`): a legacy diphone-based synthesis engine. Supports English (US, Scottish), and several Indic languages: Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada and Punjabi
+* [Gnuspeech](https://github.com/mym-br/gnuspeech_sa) (`gnuspeech`): a legacy articulatory speech synthesizer. Supports English only
 * [eSpeak-NG](https://github.com/espeak-ng/espeak-ng/) (`espeak`): a lightweight "robot" sounding formant-based synthesizer. Supports 100+ languages. Used internally for speech alignment, phonemization, and other internal tasks
 * [SAM (Software Automatic Mouth)](https://github.com/discordier/sam) (`sam`): a classic "robot" speech synthesizer from 1982. English only
 
@@ -46,7 +48,7 @@ These cloud-based engines connect to public cloud APIs that are not officially p
 ## Speech-to-text
 
 **Offline**:
-* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high-accuracy transformer-based speech recognition architecture. TypeScript implementation, with inference done via the [ONNX runtime](https://onnxruntime.ai/). Supports [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages). There are several models of different sizes, some are multilingual, and some are English only: `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large`, `large-v1` and `large-v2`, `large-v3`. **Note**: large models are not currently supported by `onnxruntime-node` due to model size restrictions
+* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high-accuracy transformer-based speech recognition architecture. TypeScript implementation, with inference done via the [ONNX runtime](https://onnxruntime.ai/). Supports [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages). There are several models of different sizes, some are multilingual, and some are English only: `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large-v3-turbo`. **Note**: Unquantized large models are not currently supported by `onnxruntime-node` due to model size restrictions
 * [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): a C++ port of the Whisper architecture by Georgi Gerganov. Supports all Whisper models, including several quantized ones (see full model list in the [options reference](docs/Options.md)). Has various builds, including CUDA and OpenCL for GPU support
 * [Vosk](https://github.com/alphacep/vosk-api) (`vosk`): models available for 25+ languages. **Note**: the Vosk package is not included in the default installation, but you can add support for it using `npm install @echogarden/vosk -g`. Then, you'll need to manually [download a model](https://alphacephei.com/vosk/models) and specify its directory path via the `vosk.modelPath` option
 * [Silero](https://github.com/snakers4/silero-models) (`silero`): models available for English, Spanish, German and Ukrainian. For [non-commercial use only](https://github.com/snakers4/silero-models/blob/master/LICENSE)
@@ -133,6 +135,7 @@ Another use case it to take a timeline produced as part of synthesized or recogn
 
 ## Speech denoising
 
+* [NSNet2](https://github.com/NeonGeckoCom/nsnet2-denoiser) (`nsnet2`): Noise Suppression Net 2. Noise suppression models used as baselines for the ICASSP 2021 Deep Noise Suppression challenge
 * [RNNoise](https://github.com/xiph/rnnoise) (`rnnoise`): a noise suppression library based on a recurrent neural network
 
 ## Source separation

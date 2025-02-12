@@ -118,7 +118,7 @@
 * When `splitToSentences` is set to `false`, the timeline doesn't include proper sentences. Find a way to pass larger sections to the TTS, but still have proper sentences in the timeline
 
 ### Synthesis / preprocessing
-* Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts"
+* Extend the heteronyms JSON document with additional words like "conducts", "survey", "protest", "transport", "abuse", "combat", "combats", "affect", "contest", "detail", "marked", "contrast", "construct", "constructs", "console", "recall", "permit", "permits", "prospect", "prospects", "proceed", "proceeds", "invite", "reject", "deserts", "transcript", "transcripts", "compact", "impact", "impacts", "estimate"
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`, `August 21, 2023`)
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules
 * Add support for multiple words in `precededBy` and `succeededBy`
