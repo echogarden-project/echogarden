@@ -48,7 +48,7 @@ export class FileReader {
 
 	private async openIfNeeded() {
 		if (this.isDisposed) {
-			throw new Error(`FileWriter has been disposed`)
+			throw new Error(`FileReader has been disposed`)
 		}
 
 		if (this.isOpened) {
