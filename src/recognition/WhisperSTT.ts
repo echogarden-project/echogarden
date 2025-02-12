@@ -792,7 +792,7 @@ export class Whisper {
 		let decodedTokensCrossAttentionQKs: OnnxLikeFloat32Tensor[] = []
 
 		for (let i = 0; i < decodedTokens.length; i++) {
-			decodedTokensTimestampLogits.push(new Array(1501))
+			decodedTokensTimestampLogits.push(new Array(1501)) // Should the length be 1500 instead?
 			decodedTokensConfidence.push(1.0)
 			decodedTokensCrossAttentionQKs.push(undefined as any)
 		}
