@@ -126,6 +126,11 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'vits-en_GB-cori-medium': '20241001',
 	'vits-cy_GB-gwryw_gogleddol-medium': '20241001',
 
+	// Kokoro models
+	'kokoro-82m-v1.0-fp32': '20250209',
+	'kokoro-82m-v1.0-quantized': '20250209',
+	'kokoro-82m-v1.0-voices': '20250209',
+
 	// Whisper (integrated engine) models
 	'whisper-tiny': '20231126',
 	'whisper-tiny.en': '20231126',
