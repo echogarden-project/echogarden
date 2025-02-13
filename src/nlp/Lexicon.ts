@@ -77,6 +77,9 @@ export async function loadLexiconsForLanguage(language: string, customLexiconPat
 	const lexicons: Lexicon[] = []
 
 	if (getShortLanguageCode(language) == 'en') {
+		const wordsLexicon = await loadLexiconFile(resolveToModuleRootDir('data/lexicons/words.en.json'))
+		lexicons.push(wordsLexicon)
+
 		const heteronymsLexicon = await loadLexiconFile(resolveToModuleRootDir('data/lexicons/heteronyms.en.json'))
 		lexicons.push(heteronymsLexicon)
 	}

@@ -1,0 +1,184 @@
+{
+	"en": {
+		"vs.": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "v ˈɜː s ᵻ z",
+						"en-gb-x-rp": "v ˈɜː s ɪ z"
+					}
+				}
+			}
+		],
+		"inherently": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ n h ˈɛ ɹ ə n t l i",
+						"en-gb-x-rp": "ɪ n h ˈɛ ɹ ə n t l i"
+					}
+				}
+			}
+		],
+		"subsection": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈʌ b s ɛ k ʃ ə n",
+						"en-gb-x-rp": "s ˈʌ b s ɛ k ʃ ə n"
+					}
+				}
+			}
+		],
+		"subsections": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈʌ b s ɛ k ʃ ə n z",
+						"en-gb-x-rp": "s ˈʌ b s ɛ k ʃ ə n z"
+					}
+				}
+			}
+		],
+		"subvector": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈə b v ɛ k t ɚ",
+						"en-gb-x-rp": "s ˈə b v ɛ k t ɐ"
+					}
+				}
+			}
+		],
+		"subvectors": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈə b v ɛ k t ɚ z",
+						"en-gb-x-rp": "s ˈə b v ɛ k t ɐ z"
+					}
+				}
+			}
+		],
+		"recommender": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˌiː k ə m ˈɛ n d ɚ",
+						"en-gb-x-rp": "ɹ ˌiː k ə m ˈɛ n d ɐ"
+					}
+				}
+			}
+		],
+		"representation": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˌɛ p ɹ ə z ɛ n t ˈeɪ ʃ ə n",
+						"en-gb-x-rp": "ɹ ˌɛ p ɹ ᵻ z ɛ n t ˈeɪ ʃ ə n"
+					}
+				}
+			}
+		],
+		"representations": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˌɛ p ɹ ə z ɛ n t ˈeɪ ʃ ə n z",
+						"en-gb-x-rp": "ɹ ˌɛ p ɹ ᵻ z ɛ n t ˈeɪ ʃ ə n z"
+					}
+				}
+			}
+		],
+		"residual": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ə z ˈɪ dʒ uː əl",
+						"en-gb-x-rp": "ɹ ᵻ z ˈɪ dʒ ʊ l"
+					}
+				}
+			}
+		],
+		"residuals": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ə z ˈɪ dʒ uː əl z",
+						"en-gb-x-rp": "ɹ ᵻ z ˈɪ dʒ ʊ l z"
+					}
+				}
+			}
+		],
+		"kokoro": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ˈoʊ k ə ɹ oʊ",
+						"en-gb-x-rp": "k ˈəʊ k ə ɹ əʊ"
+					}
+				}
+			}
+		],
+		"query": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k w ˈɛ ɹ i",
+						"en-gb-x-rp": "k w ˈiə ɹ i"
+					}
+				}
+			}
+		],
+		"queries": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k w ˈɛ ɹ i z",
+						"en-gb-x-rp": "k w ˈiə ɹ i z"
+					}
+				}
+			}
+		],
+		"jupyter": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "dʒ ˈuː p ɪ ɾ ɚ",
+						"en-gb-x-rp": "dʒ ˈuː p ɪ t ɐ"
+					}
+				}
+			}
+		],
+		"movies": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˈuː v i z",
+						"en-gb-x-rp": "m ˈuː v i z"
+					}
+				}
+			}
+		],
+		"preprocessing": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ɹ ˈi p ɹ ˌɑː s ɛ s ɪ ŋ",
+						"en-gb-x-rp": "p ɹ ˈi p ɹ ˌəʊ s ɛ s ɪ ŋ"
+					}
+				}
+			}
+		],
+		"annoy": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ə n ˈɔ ɪ",
+						"en-gb-x-rp": "ə n ˈɔ ɪ"
+					}
+				}
+			}
+		]
+	}
+}
