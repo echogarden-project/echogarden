@@ -185,7 +185,7 @@
 				],
 
 				"notPrecededBy": [
-					"the", "a", "for", "no", "in", "of", "make", "its", "single", "their", "good", "making", "her", "his", "its", "our", "your", "my", "any", "personal"
+					"the", "a", "be", "for", "no", "in", "of", "make", "its", "single", "their", "good", "making", "her", "his", "its", "our", "your", "my", "any", "personal"
 				],
 
 				"succeededBy": [
@@ -896,7 +896,7 @@
 				],
 
 				"succeededBy": [
-					"down", "up", "through", "the", "it", "each", "a", "an", "you", "me", "us", "them", "your", "their", "his", "her", "herself", "himself", "itself", "everybody", "our"
+					"down", "up", "out", "through", "the", "it", "each", "a", "an", "you", "me", "us", "them", "your", "their", "his", "her", "herself", "himself", "itself", "everybody", "our"
 				],
 
 				"notSucceededBy": [
@@ -1671,7 +1671,7 @@
 				],
 
 				"precededBy": [
-					"the", "a", "all", "his", "her", "its", "our", "be", "very"
+					"very", "quite"
 				],
 
 				"notPrecededBy": [
