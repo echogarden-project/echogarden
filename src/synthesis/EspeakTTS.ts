@@ -324,7 +324,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			throw new Error('Unexpected: token timeline should exist and have at least one token')
 		}
 
-		if (tokenTimeline.length !== 1 && tokenTimeline[0].text != '') {
+		if (tokenTimeline.length !== 1 || tokenTimeline[0].text !== '') {
 			continue
 		}
 
