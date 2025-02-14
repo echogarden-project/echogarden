@@ -94,6 +94,14 @@ Press F5 to start debugging.
 
 You can change `"args": ["speak", "Hello World!", "--debug"]` to any command line arguments you want to test. Adding the `--debug` CLI option ensures that errors are shown with full stack traces.
 
+## Setting up a default configuration file
+
+You can use a default configuration file to make it easier to test various CLI options.
+
+Create a new file called `echogarden.config` at the base directory of the project.
+
+The reference for how this file is structured is included in the [CLI guide](./CLI.md).
+
 ## Updating the options schema
 
 If you add, modify or remove options from the API, that are exposed to the CLI, you should run:
@@ -102,4 +110,4 @@ If you add, modify or remove options from the API, that are exposed to the CLI, 
 npm run generate-options-schema
 ```
 
-To update the JSON schema used when parsing command line options in the CLI. Otherwise, the CLI may not recognize the modified option names or types.
+at the base directory, to update the JSON schema used when parsing command line options in the CLI. Otherwise, the CLI may not recognize the modified option names or types.

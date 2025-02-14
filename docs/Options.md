@@ -47,11 +47,11 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 
 **Kokoro**:
 * `kokoro.model`: model variant to use. Can be `82m-v1.0-fp32` or `82m-v1.0-quantized`. **Note**: the quantized model, while having lower memory usage, is significantly slower than the non-quantized (FP32) one. Defaults to `v1.0-fp32`
-* `kokoro.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). **Note**: `dml` provider (DirectML) seems to currently fail on inference. The cause for this error is [still under investigation](https://github.com/hexgrad/kokoro/issues/79). Defaults to `cpu`
+* `kokoro.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). **Note**: `dml` provider (DirectML) seems to currently fail on inference. The cause for this error is [still under investigation](https://github.com/echogarden-project/echogarden/issues/94). Defaults to `cpu`
 
 **VITS**:
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Defaults to `0`
-* `vits.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Using GPU acceleration for VITS may or may not be faster than CPU, depending on your hardware. Defaults to `cpu`
+* `vits.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU acceleration for VITS may or may not be faster than CPU, depending on your hardware. Defaults to `cpu`
 
 **eSpeak**:
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
@@ -118,9 +118,10 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 Applies to CLI operation: `list-voices`, API method: `requestVoiceList`
 
 **General**:
-* `language`: language code to filter by (optional)
-* `voice`: name or name pattern to filter by (optional)
-* `voiceGender`: gender to filter by (optional)
+* `engine`: engine to list voices for. Required
+* `language`: language code to filter by. Optional
+* `voice`: name or name pattern to filter by. Optional
+* `voiceGender`: gender to filter by. Optional
 
 Also accepted are the following engine-specific options that may be required in order to retrieve the voice list:
 * `googleCloud.apiKey`
@@ -134,7 +135,7 @@ Also accepted are the following engine-specific options that may be required in 
 Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **General**:
-* `engine`: identifier of the recognition engine to use, such as `whisper` or `vosk` (see [the full engine list](Engines.md))
+* `engine`: identifier of the recognition engine to use, can be `whisper`, `whisper.cpp`, `vosk` or `silero` (see [the full engine list](Engines.md) for more detailed information)
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 * `crop`: crop to active parts using voice activity detection before starting recognition. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting recognition. Defaults to `false`
@@ -156,8 +157,8 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.repetitionThreshold`: minimal repetition / compressibility score to cause a part not to be auto-prompted to the next part. Defaults to `2.4`
 * `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens. Setting to `false` can reduce the occurrence of hallucinations and token repetition loops, possibly due to the overall reduction in the number of tokens decoded. This has no impact on the accuracy of timestamps, since they are derived independently using cross-attention weights. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
 * `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high` for the `tiny` and `base` models, and `medium` for the larger models
-* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
-* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`, and on Windows, `dml` if available for larger models (`small`, `medium`, `large`)
+* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
+* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information).. Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`, and on Windows, `dml` if available, for larger models (`small`, `medium`, `large`)
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
 **Whisper.cpp**:
@@ -182,7 +183,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **Silero**:
 * `silero.modelPath`: path to a Silero model. Note that latest `en`, `de`, `fr` and `uk` models are automatically installed when needed based on the selected language. This should only be used to manually specify a different model, otherwise specify `language` instead
-* `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Defaults to `cpu`, or `dml` if available
+* `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Defaults to `cpu`, or `dml` if available
 
 **Google Cloud**:
 * `googleCloud.apiKey`: Google Cloud API key (required)
@@ -244,7 +245,7 @@ Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, u
 * `whisper.model`: Whisper model to use. Defaults to `tiny` or `tiny.en`
 * `whisper.endTokenThreshold`: minimal probability to accept an end token for a recognized part. The probability is measured via the softmax between the end token's logit and the second highest logit. You can try to adjust this threshold in cases the model is ending a part with too few, or many tokens decoded. Defaults to `0.9`. On the last audio part, it is always effectively set to `Infinity`, to ensure the remaining transcript tokens are decoded in full
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode per part. Should help avoid edge cases where the model never reaches an end token for the part, which otherwise may cause the model to decode too many tokens and eventually crash. Defaults to 250
-* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high` for the `tiny` and `base` models, and `medium` for the larger models. Note: setting `high` for model `large-v3-turbo` reverts to `medium`.
+* `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high` for the `tiny` and `base` models, and `medium` for the larger models. Note: setting `high` for model `large-v3-turbo` reverts to `medium`, due to poor results with the `high` setting for that model (possibly related to the 16-bit quantization).
 * `whisper.encoderProvider`: encoder ONNX provider. See details in recognition section above
 * `whisper.decoderProvider`: decoder ONNX provider. See details in recognition section above
 
@@ -360,7 +361,7 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 * `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
 
 **Silero**:
-* `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Using GPU may be faster, but the initialization overhead is larger. **Note**: `dml` provider seems to be unstable at the moment for this model. Defaults to `cpu`
+* `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU may be faster, but the initialization overhead is larger. **Note**: `dml` provider seems to be unstable at the moment for this model. Defaults to `cpu`
 
 ### Text language detection
 
@@ -385,7 +386,7 @@ Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActiv
 
 **Silero**:
 * `silero.frameDuration`: Silero frame duration (ms). Can be `30`, `60` or `90`. Defaults to `90`
-* `silero.provider`: ONNX provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Using GPU is likely to be slower than CPU due to inference being independently executed on each audio frame. Defaults to `cpu` (recommended)
+* `silero.provider`: ONNX provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU is likely to be slower than CPU due to inference being independently executed on each audio frame. Defaults to `cpu` (recommended)
 
 ## Speech denoising
 
@@ -402,7 +403,7 @@ Applies to CLI operation: `denoise`, API method: `denoise`
 
 **NSNet2**:
 * `nsnet2.model`: can be `baseline-16khz` or `baseline-48khz`. Defaults to `baseline-48khz`
-* `nsnet2.provider`: ONNX execution provider (**Note**: `dml` provider seems to fail with these models). Defaults to `cpu`
+* `nsnet2.provider`: ONNX execution provider. Can be `cpu`, `dml` or `cuda` (**Note**: `dml` provider seems to fail with these models). Defaults to `cpu`
 * `maxAttenuation`: maximum amount of attenuation, in decibels, applied to an FFT bin when filtering the audio frames. Defaults to `30`
 
 ## Source separation
@@ -416,7 +417,7 @@ Applies to CLI operation: `isolate`, API method: `isolate`
 **MDX-NET**:
 
 * `mdxNet.model`: model to use. Currently available models are `UVR_MDXNET_1_9703`, `UVR_MDXNET_2_9682`, `UVR_MDXNET_3_9662`, `UVR_MDXNET_KARA`, and higher quality models `UVR_MDXNET_Main` and `Kim_Vocal_2`. Defaults to `UVR_MDXNET_1_9703`
-* `mdxNet.provider`: ONNX execution provider to use. Can be `cpu`, `dml` ([DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration - Windows only), or `cuda` (Linux only - requires [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-downloads) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads) to be installed). Defaults to `dml` if available (Windows) or `cpu` (other platforms)
+* `mdxNet.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Defaults to `dml` if available (Windows) or `cpu` (other platforms)
 
 # Common options
 

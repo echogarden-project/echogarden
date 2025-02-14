@@ -2,36 +2,43 @@
 
 * Echogarden is written in TypeScript and targets the Node.js platform.
 * It uses ESM modules and latest ECMAScript and TypeScript features.
-* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime, with some exceptions: the CLI does invoke a command line `ffmpeg` tool, auto-downloaded from internal packages. Using expansion packages simplifies the installation and ensures non-buggy version are used. Since SoX `v14.4.2` is broken on Windows, it bundles `v14.4.1`.
+* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime, with some exceptions: the CLI does invoke a command line `ffmpeg` tool, auto-downloaded using its internal package system.
 * It does not depend on essential native node.js modules requiring install-time compilation with `node-gyp`. This greatly simplifies the installation experience for end-users (the ONNX runtime bundles precompiled NAPI modules for all supported platforms - it doesn't require any compilation during its installation).
 
 ## Package system
 
 Echogarden uses its own package system to download and install various components as needed. These components can be TTS voices, STT models, or other types of models and data.
 
-Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/packages/[package-name]`. Each package has its own subdirectory.
+Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/packages/[package-id-string]`. Each package has its own subdirectory.
 
 `[data-folder]` is located at:
 * `%AppData%\Local\echogarden` on Windows
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
 
+`[package-id-string]` is formatted as:
+```
+[engine name]-[package id]-[date as yyyymmdd]
+```
+
 By using downloadable packages, the installed size is made significantly smaller and the installation faster. The total size of all available packages is currently about 50GB (may not be up-to-date).
 
-The packages are currently hosted and downloaded from a dedicated [Hugging Face repository](https://huggingface.co/echogarden/echogarden-packages).
+The packages are currently hosted and downloaded from a [dedicated Hugging Face repository](https://huggingface.co/echogarden/echogarden-packages).
 
 ## Can the base install size be made smaller?
 
-The base installed (uncompressed) size, including dependencies, is around 270MB. This is without any models or voices, which are downloaded as needed.
+The base installed (uncompressed) size, including dependencies, is around 400MB (may not be up-to-date). This is without any models or voices, which are downloaded as needed.
 
 Currently, the largest contributors to the size are:
 
-* `onnxruntime-node` (NAPI): 133MB
-* `kuromoji` (JavaScript) 40MB
-* `flite-wasi` (WASI): 20MB
-* `espeak-ng-emscripten` (WASM): 18MB
+* `onnxruntime-node` (core inference runtime, NAPI): 180MB
+* `kuromoji` (Japanese tokenizer, JavaScript) 40MB
+* `espeak-ng-emscripten` (core synthesis and phonemization engine, WASM): 23MB
+* `tiktoken` (tokenizer library, WASM): 22MB
+* `flite-wasi` (synthesis engine, WASI): 20MB
+* `jieba-wasm` (Chinese tokenizer, WASM): 14MB
 
-`onnxruntime-node` is large because it bundles pre-compiled binaries for multiple platforms. `kuromoji` is large because of its dictionary files and some unessential test code it bundles. The other three packages include large WASM binaries.
+`onnxruntime-node` is large because it bundles pre-compiled binaries for multiple platforms. `kuromoji` is large because of its dictionary files and some unessential test code it bundles. The other packages include large WASM binaries.
 
 So, yes, in the future it may be possible to reduce the core installed size by dynamically installing some of these dependencies, or using modified, "slimmed-down" versions of some packages.
 
@@ -44,7 +51,7 @@ However, it is a lot of work, and only a subset of the engines can be supported 
 * Significantly slower inference when using CPU for ONNX models
 * No cross-domain network connectivity - can't connect to Google Cloud, Microsoft, Amazon etc. without a proxy
 * Large initial download size would make it too heavy and slow to load as part of a standard web page directly
-* Large memory requirement for the VITS models, starting at about 800MB - 1GB, which is a bit too much for a browser
+* Large memory requirements for the various ONNX models, starting at about 800MB - 1GB, which is a bit too much for a browser
 * Due to the high code complexity, data size, and memory consumption, it is unlikely that a browser extension, internally bundling some of the models, would be accepted to the Chrome and Firefox web stores
 * Will require a virtual file system to store models and make use of downloadable packages
 * Requires duplicating a lot of prior work, porting many node.js-only APIs, and increasing code complexity
@@ -71,5 +78,5 @@ Also, `option=value` is more similar to the syntax used in the configuration fil
 
 * `src`: TypeScript source code
 * `dist`: compiled JavaScript modules
-* `data`: various data files, including phonetic lexicons and language code conversion tables. `data/schemas` stores JSON schemas for all configuration options, auto-generated using [`ts-json-schema-generator`](https://github.com/vega/ts-json-schema-generator) directly from the TypeScript code, and used by the CLI to parse and validate the options provided
+* `data`: various data files, including phonetic lexicons and language code conversion tables. `data/schemas` stores JSON schemas for all configuration options, auto-generated using [`ts-json-schema-generator`](https://github.com/vega/ts-json-schema-generator) directly from the TypeScript code, and used by the CLI to parse and validate the options provided. `data/lexicons` contains phonetic lexicons used in speech synthesis and alignment
 * `docs`: documentation

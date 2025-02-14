@@ -47,7 +47,7 @@ You can specify an engine using the `--engine` option (a full list of engines ca
 
 The CLI supports multiple output files. This would synthesize a text file, and save the resulting audio in both `result.mp3` and `result.wav`, as well as subtitles in `result.srt`:
 ```bash
-echogarden speak-file text.txt result.mp3 result.wav result.srt --engine=vits --speed=1.1
+echogarden speak-file text.txt result.mp3 result.wav result.srt --engine=kokoro --speed=1.1
 ```
 
 Synthesize a web page (it will try to extract its main article parts and omit the rest):
