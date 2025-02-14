@@ -3,9 +3,9 @@ import { getShortLanguageCode } from '../utilities/Locale.js'
 import { resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 
 export function tryGetFirstLexiconSubstitution(sentenceWords: string[], wordIndex: number, lexicons: Lexicon[], languageCode: string) {
-	const reversedLexicons = [...lexicons].reverse() // Give precedence to later lexicons
+	for (let i = lexicons.length - 1; i >= 0; i--) {
+		const lexicon = lexicons[i]
 
-	for (const lexicon of reversedLexicons) {
 		const match = tryGetLexiconSubstitution(sentenceWords, wordIndex, lexicon, languageCode)
 
 		if (match) {
@@ -20,51 +20,51 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 	let word = sentenceWords[wordIndex]
 
 	if (!word) {
-		return
+		return undefined
 	}
 
 	const shortLanguageCode = getShortLanguageCode(languageCode)
 	const lexiconForLanguage = lexicon[shortLanguageCode]
 
 	if (!lexiconForLanguage) {
-		return
+		return undefined
 	}
 
 	const lexiconEntry = lexiconForLanguage[word]
 
 	if (!lexiconEntry) {
-		return
+		return undefined
 	}
 
 	for (let i = 0; i < lexiconEntry.length; i++) {
-		const substitutionEntry = lexiconEntry[i]
+		const candidateEntry = lexiconEntry[i]
 
-		const substitutionPhonemesText = substitutionEntry?.pronunciation?.espeak?.[languageCode]
+		const pronunciationPhonemesText = candidateEntry?.pronunciation?.espeak?.[languageCode]
 
-		if (!substitutionPhonemesText) {
+		if (!pronunciationPhonemesText) {
 			continue
 		}
 
-		const precedingWord = sentenceWords[wordIndex - 1] || ''
-		const succeedingWord = sentenceWords[wordIndex + 1] || ''
+		const precedingWord = sentenceWords[wordIndex - 1] ?? ''
+		const followingWord = sentenceWords[wordIndex + 1] ?? ''
 
-		const precededBy = substitutionEntry?.precededBy || []
-		const notPrecededBy = substitutionEntry?.notPrecededBy || []
+		const precededBy = candidateEntry?.precededBy ?? []
+		const notPrecededBy = candidateEntry?.notPrecededBy ?? []
 
-		const succeededBy = substitutionEntry?.succeededBy || []
-		const notSucceededBy = substitutionEntry?.notSucceededBy || []
+		const followedBy = candidateEntry?.followedBy ?? candidateEntry?.succeededBy ?? []
+		const notFollowedBy = candidateEntry?.notFollowedBy ?? candidateEntry?.notSucceededBy ?? []
 
-		const hasNegativePattern = notPrecededBy.includes(precedingWord) || notSucceededBy.includes(succeedingWord)
-		const hasPositivePattern = precededBy.includes(precedingWord) || succeededBy.includes(succeedingWord)
+		const hasNegativePattern = notPrecededBy.includes(precedingWord) || notFollowedBy.includes(followingWord)
+		const hasPositivePattern = precededBy.includes(precedingWord) || followedBy.includes(followingWord)
 
-		if (i == lexiconEntry.length - 1 || (hasPositivePattern && !hasNegativePattern)) {
-			const substitutionPhonemes = substitutionPhonemesText.split(/ +/g)
+		if (i === lexiconEntry.length - 1 || (hasPositivePattern && !hasNegativePattern)) {
+			const substitutionPhonemes = pronunciationPhonemesText.split(/ +/g)
 
 			return substitutionPhonemes
 		}
 	}
 
-	return
+	return undefined
 }
 
 export async function loadLexiconFile(jsonFilePath: string): Promise<Lexicon> {
@@ -115,8 +115,11 @@ export type LexiconEntry = {
 	precededBy?: string[]
 	notPrecededBy?: string[]
 
-	succeededBy?: string[]
-	notSucceededBy?: string[]
+	followedBy?: string[]
+	notFollowedBy?: string[]
+
+	succeededBy?: string[] // Deprecated. Replaced by 'followedBy'
+	notSucceededBy?: string[] // Deprecated. Replaced by 'notFollowedBy'
 
 	example?: string
 }

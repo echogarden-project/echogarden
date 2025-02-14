@@ -21,10 +21,10 @@
 					"to", "please", "will", "would", "could", "may", "might"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"is", "isn't", "was", "wasn't", "will", "would"
 				],
 
@@ -59,14 +59,14 @@
 				],
 
 				"notPrecededBy": [
-					"the", "a", "some", "at", "be", "were", "was", "are", "our", "of", "its", "my", "your", "this", "been"
+					"the", "a", "some", "at", "be", "were", "was", "are", "our", "of", "its", "my", "your", "this", "been", "wrapped", "mysterious", "nice", "cute", "great", "awesome"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"a", "an", "the", "your", "their", "it", "its", "his", "her", "our", "this", "their", "them", "some", "himself", "herself", "themselves", "unique", "special", "great", "excellent", "nice"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"day", "moment", "time", "times"
 				],
 
@@ -104,11 +104,11 @@
 					"the", "to", "those", "my", "your", "these", "those", "more", "some", "of", "are", "few", "some", "many"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"itself", "us", "opportunities", "them", "a", "an", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 
 				],
 
@@ -146,11 +146,11 @@
 					"the", "a", "for", "no", "in", "emergency", "of", "make", "its", "single", "drug", "substance", "land", "their", "good", "making", "mask", "public", "police", "future", "day", "marijuana", "efficient", "tobacco", "mandatory", "full", "own", "first", "her", "his", "its", "our", "your", "my", "any", "mixed", "personal"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "an", "their", "it", "this", "them", "his", "our", "your", "its", "these", "all", "him", "her", "my", "any", "those", "some", "authorization", "one", "more", "social", "public", "hand", "force", "every", "up", "technology", "data", "other"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "for"
 				],
 
@@ -185,14 +185,14 @@
 				],
 
 				"notPrecededBy": [
-					"the", "a", "be", "for", "no", "in", "of", "make", "its", "single", "their", "good", "making", "her", "his", "its", "our", "your", "my", "any", "personal"
+					"the", "a", "be", "for", "no", "in", "of", "make", "its", "single", "their", "good", "making", "her", "his", "its", "our", "your", "my", "any", "personal", "how"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "an", "their", "it", "this", "them", "his", "her", "our", "your", "its", "these", "all", "my", "any", "those", "some", "one", "more", "every", "up", "down", "other"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"to", "with"
 				],
 
@@ -229,11 +229,11 @@
 					"a", "the", "of", "be", "no", "broadcast", "for", "on", "with", "went", "in", "streamed", "is", "going", "my", "our", "it", "been", "was", "were"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"their", "her", "his", "your", "my", "it", "our", "this", "that", "all", "away", "up", "a", "the", "of", "as", "well", "carefully", "long", "longer", "anywhere", "together", "alone", "near", "forever", "close", "far", "further", "nearby", "right", "happily", "peacefully", "alongside", "independently", "away", "with", "without"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"action", "stream", "streaming", "streamed", "audience", "performance", "performances", "work", "video", "event", "events", "show", "shows", "tv", "television", "internet", "ammunition", "coverage", "broadcast", "broadcast", "entertainment", "sport", "sports", "chat", "updates", "blog", "feed", "feeds", "fire", "fires", "online", "birth", "births", "webcast", "webcasts", "theater", "concert", "concerts", "today", "tomorrow", "yesterday", "animal", "animals", "virtual", "session", "sessions", "auction", "auctions", "crowd", "audience", "service", "theatre", "virus", "viruses", "studio", "interview", "album", "cartridges", "radio", "games", "tour", "musical"
 				],
 
@@ -271,11 +271,11 @@
 					"the", "to", "their", "our", "these", "those", "some", "saved", "matter", "few", "some", "many", "innocent", "improve", "better"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"a", "an", "here", "there"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"public", "have", "be"
 				],
 
@@ -313,10 +313,10 @@
 					"the", "be", "are", "is", "be", "a", "this", "that", "was", "were", "any", "his", "her", "their", "its","every", "each", "its", "one", "pilot", "new", "research", "housing", "million", "development", "construction", "next", "rail"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "in"
 				],
 
@@ -354,11 +354,11 @@
 					"the", "to", "his", "her", "our", "your", "these", "those", "whose", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "pilot", "new", "research", "housing", "development", "construction", "next", "rail"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 					"were", "on", "whose", "are"
 				],
 
@@ -396,11 +396,11 @@
 					"the", "this", "that", "a", "my", "our", "your", "their", "due"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "their", "its", "out", "all", "a", "an", "his", "her", "this", "our", "my", "your"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 					"of", "is", "to", "for", "will"
 				],
 
@@ -438,10 +438,10 @@
 					"the", "be", "are", "is", "be", "a", "this", "was", "were", "been", "that", "being", "any", "his", "her", "its", "their", "every", "of", "years", "each", "sensetive", "its", "one"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"matter", "matters", "of", "in"
 				],
 
@@ -479,11 +479,11 @@
 					"the", "to", "his", "her", "our", "your", "their", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "such", "other", "are", "were"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 					"was", "were", "on", "whose"
 				],
 
@@ -521,11 +521,11 @@
 					"the", "an", "one", "some", "sharp", "this", "every", "foreign", "small", "shiny", "metal", "any", "immovable", "moving", "that", "large", "earth", "new", "blunt", "shared", "mystical", "another", "single", "different", "shaped", "unwanted", "use", "suspicious", "celestial", "integral", "your", "hot", "invisible", "shared", "mystical"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"to", "themselves", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an", "the"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "in", "was", "like", "is", "oriented", "which", "made", "be", "looks", "made"
 				],
 
@@ -563,11 +563,11 @@
 					"the", "to", "some", "more", "many", "some", "their", "these", "those", "of", "any", "in", "sharp", "large", "small", "other", "falling", "varied", "different", "unusual", "unwanted"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"to", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "She objects to the idea."
@@ -604,11 +604,11 @@
 					"the", "an", "this", "that", "any", "his", "her", "my", "our", "its", "their", "every", "each", "one", "percent", "cent", "significant", "tax", "sharp", "daily", "price", "small", "large", "slight", "tiny", "huge", "minor", "major"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "in"
 				],
 
@@ -646,11 +646,11 @@
 					"a", "the", "this", "that", "any", "his", "her", "its", "their", "every", "each", "one", "percent", "cent", "significant", "tax", "sharp", "daily", "price", "small", "slight", "minor", "major"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "in"
 				],
 
@@ -688,10 +688,10 @@
 					"the", "a", "this", "that", "any", "his", "her", "its", "their", "whose", "every", "each", "one", "year", "new", "of", "under", "current"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "I don't want to contract pneumonia."
@@ -728,11 +728,11 @@
 					"the", "to", "his", "her", "our", "your", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "two", "three", "four", "usual", "no"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "his", "her", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"were", "on", "whose", "are", "who"
 				],
 
@@ -770,11 +770,11 @@
 					"high", "low", "strong"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"up", "down", "out", "the", "my", "his", "her", "our"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"gust", "gusts"
 				],
 
@@ -812,11 +812,11 @@
 					"the", "to", "his", "her", "our", "your", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "usual", "no"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "his", "her", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"were", "on", "whose", "are"
 				],
 
@@ -854,11 +854,11 @@
 					"deep", "her", "his", "its", "my", "their", "open", "closed", "gunshot"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"up", "down"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "I wound the clock several times."
@@ -895,11 +895,11 @@
 					"the", "with", "a", "one"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"down", "up", "out", "through", "the", "it", "each", "a", "an", "you", "me", "us", "them", "your", "their", "his", "her", "herself", "himself", "itself", "everybody", "our"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"gas", "shedding", "jerking"
 				],
 
@@ -937,11 +937,11 @@
 					"the", "to", "some", "in", "into", "to", "with", "shed", "through", "my", "no", "brought", "any", "these", "those", "our", "only", "cause", "make", "shed", "shedding", "crocodile", "back", "more", "saw", "cause", "whose"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"to", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "in", "after", "flowed"
 				],
 
@@ -979,11 +979,11 @@
 					"a", "the", "been"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "all", "his", "her", "its", "our", "me", "you", "us"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"was", "had"
 				],
 
@@ -1020,11 +1020,11 @@
 					"the", "to", "his", "her", "our", "were", "your", "these", "those", "few", "some", "many", "most", "all", "different", "various", "of", "these", "other", "new", "two", "three", "four", "usual", "no", "identifying", "find", "gather", "interview", "finding", "gathering", "interviewing"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"were", "on", "whose", "are", "who"
 				],
 
@@ -1062,11 +1062,11 @@
 					"a", "the", "new", "of", "track", "on", "his", "her", "our", "its", "their", "some", "same", "world", "previous", "personal", "this", "that", "criminal", "another", "in", "daily", "day", "time", "school", "public", "no", "historical", "winning"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "all", "his", "her", "its", "our", "your", "me", "you", "us", "button"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"i", "we", "was", "has", "had", "will", "not",  "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "of", "number"
 				],
 
@@ -1103,11 +1103,11 @@
 					"the", "to", "his", "her", "our", "your", "their", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "two", "three", "four", "no", "medical", "criminal", "since", "financial", "tax", "own", "state", "jail", "track", "break", "broke", "broken", "health"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"were", "on", "whose", "are"
 				],
 
@@ -1145,11 +1145,11 @@
 					"a", "the", "new", "of", "on", "his", "her", "our", "its", "their", "some", "same", "previous", "this", "that", "another", "in", "no", "historical"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "all", "his", "her", "its", "our", "your"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"i", "we", "was", "has", "had", "will", "not", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "of"
 				],
 
@@ -1186,11 +1186,11 @@
 					"to", "the", "his", "her", "our", "your", "their", "few", "some", "many", "most", "all", "different", "various", "of", "these", "those", "other", "new", "no", "since"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"with", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"were", "on", "whose", "are"
 				],
 
@@ -1227,11 +1227,11 @@
 				"notPrecededBy": [
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"out"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "You can see it on the inside of the box."
@@ -1267,10 +1267,10 @@
 				"notPrecededBy": [
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "This is the outside area."
@@ -1307,11 +1307,11 @@
 					"misleading", "such", "course", "streaming", "most", "free", "original", "whatever", "which", "that", "the", "of", "full", "partial"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"creators", "rules", "which", "to", "on", "is", "was", "from", "as", "at", "moderation", "officer", "creation", "generation", "which", "will", "would", "won't", "wouldn't", "may", "might", "must", "mustn't", "including"
 				],
 
@@ -1349,11 +1349,11 @@
 					"of", "for", "this", "similar", "with", "criminal", "dangerous", "ethical", "unethical", "good", "future", "disorderly", "his", "her", "our", "my"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "her", "his", "our", "my", "your", "their", "a", "an", "tests", "exams", "classes", "surveys", "ongoing"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"of", "authority"
 				],
 
@@ -1391,11 +1391,11 @@
 					"the", "a", "is", "be", "been", "was", "were", "weren't", "are", "makes", "picture", "with", "via", "so", "isn't", "from"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"its", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"time", "but", "storm", "opportunity", "fit", "example", "way", "match", "sense", "place", "world", "solution", "as", "record", "gift", "game", "partner", "balance", "in", "day", "choice", "combination", "spot", "score", "recipe", "person", "union", "season", "timing", "home", "size", "candidate", "of", "start", "amount", "soundtrack", "blend", "marriage", "setting", "thing"
 				],
 
@@ -1433,11 +1433,11 @@
 					"keynote", "public"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "this", "these", "their", "it", "issues", "any", "some", "those", "all", "them", "concerns", "how", "our", "what", "a", "an", "its", "his", "her", "various", "specific", "ongoing", "whether", "your", "every", "critical"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "I will address the issue."
@@ -1474,11 +1474,11 @@
 					"the", "in", "of", "made", "good", "its", "significant", "some", "little", "their", "his", "her", "my"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "I will progress into the darkness."
@@ -1504,7 +1504,7 @@
 				},
 
 				"pos": [
-					"NNP"
+					"NN"
 				],
 
 				"precededBy": [
@@ -1515,11 +1515,11 @@
 					"to", "i", "we", "they", "can", "could"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"worth"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "I gave her all the produce."
@@ -1539,7 +1539,7 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "d ᵻ z ˈɜː t",
+						"en-us": "d ᵻ z ˈə ɹ t",
 						"en-gb-x-rp": "d ɪ z ˈɜː t"
 					}
 				},
@@ -1549,18 +1549,19 @@
 				],
 
 				"precededBy": [
-					"i", "we", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't"
+					"i", "we", "would", "wouldn't", "won't", "do", "don't", "does", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't"
 				],
 
 				"notPrecededBy": [
 					"the", "a", "with", "semi", "harsh"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"me", "us", "your", "our", "his", "her", "its"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
+					"island", "road"
 				],
 
 				"example": "Please don't desert me."
@@ -1596,11 +1597,11 @@
 				"notPrecededBy":[
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"detail", "details", "difference", "differences", "variation", "variations", "change", "changes"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 				],
 
 				"example": "There's a minute difference between the two."
@@ -1636,11 +1637,11 @@
 					"is", "are", "was", "were", "not", "i", "we", "they", "it's", "we're", "wasn't", "weren't"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"source", "right", "goal", "murder", "concern", "evidence", "solution"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"to", "that", "anything"
 				],
 
@@ -1677,11 +1678,11 @@
 				"notPrecededBy": [
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"person", "individual", "man", "woman"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 				],
 
 				"example": "She is a very learned person."
@@ -1717,11 +1718,11 @@
 					"i'm"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"person", "individual", "man", "woman"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "This has been given by the blessed."
@@ -1758,11 +1759,11 @@
 					"a", "two", "in", "three", "four", "is", "the", "their", "his", "her"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "the", "a", "an", "all", "some"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"parts"
 				],
 
@@ -1800,11 +1801,11 @@
 					"a", "in", "is", "the", "this", "these", "their", "his", "her", "its", "your", "our", "my", "any", "of", "new", "for", "medical", "scientific", "several", "one", "more", "recent", "related", "extensive", "clinical", "own", "good", "bad", "great", "useful"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"it", "the", "a", "an", "all", "some", "into", "these"
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 					"report", "note"
 				],
 
@@ -1841,11 +1842,11 @@
 				"notPrecededBy": [
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"the", "a", "all", "his", "her", "its", "our", "me", "you", "us"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 				],
 
 				"example": "Excuse me? Can you help me?"
@@ -1875,17 +1876,17 @@
 				],
 
 				"precededBy": [
-					"to", "i", "me", "will", "would", "they", "we", "don't", "doesn't", "wouldn't", "can", "can't", "may", "might", "did", "didn't", "could", "couldn't", "must", "mustn't"
+					"to", "i", "me", "will", "would", "wouldn't", "they", "we", "don't", "doesn't", "can", "can't", "may", "might", "did", "didn't", "could", "couldn't", "must", "mustn't", "not"
 				],
 
 				"notPrecededBy": [
 				],
 
-				"succeededBy": [
+				"followedBy": [
 					"to", "our", "my", "down"
 				],
 
-				"notSucceededBy":[
+				"notFollowedBy":[
 				],
 
 				"example": "Bow to the queen."
@@ -1911,7 +1912,7 @@
 				},
 
 				"pos": [
-					"NNP"
+					"NN"
 				],
 
 				"precededBy": [
@@ -1919,14 +1920,14 @@
 				],
 
 				"notPrecededBy": [
+					"to", "i", "will", "would", "wouldn't", "they", "we", "don't", "doesn't", "can", "can't", "may", "might", "did", "didn't", "could", "couldn't", "must", "mustn't", "not"
+				],
+
+				"followedBy": [
 					"to"
 				],
 
-				"succeededBy": [
-					"to"
-				],
-
-				"notSucceededBy":[
+				"notFollowedBy":[
 				],
 
 				"example": "I've sent my resume."
@@ -1934,13 +1935,15 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ɹ ˈeɪ s uː m",
+						"en-us": "ɹ ə z ˈu m",
 						"en-gb-x-rp": "ɹ ɪ z j ˈuː m"
 					}
 				},
 
 				"example": "Wait until they resume the game."
 			}
+		],
+		"resumes [placeholder]": [
 		],
 		"entrance": [
 			{
@@ -1962,10 +1965,10 @@
 					"an", "special", "dedicated"
 				],
 
-				"succeededBy": [
+				"followedBy": [
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 				],
 
 				"example": "The music will entrance you."
@@ -1980,6 +1983,189 @@
 				"example": "Please go to the entrance."
 			}
 		],
+		"refuse": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ᵻ f j ˈu z",
+						"en-gb-x-rp": "ɹ ᵻ f j ˈuː z"
+					}
+				},
+				"pos": [
+					"VB"
+				],
+
+				"precededBy": [
+					"to", "i", "me", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't"
+				],
+
+				"notPrecededBy": [
+					"the"
+				],
+
+				"followedBy": [
+					"to"
+				],
+
+				"notFollowedBy": [
+				],
+
+				"example": "I must refuse."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˈɛ f j uː s",
+						"en-gb-x-rp": "ɹ ˈɛ f j uː s"
+					}
+				},
+				"example": "We separate refuse from recyclables."
+			}
+		],
+		"import": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ m p ˈɔːɹ t",
+						"en-gb-x-rp": "ɪ m p ˈɔː t"
+					}
+				},
+				"pos": [
+					"VB"
+				],
+
+				"precededBy": [
+					"to", "i", "me", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't", "not"
+				],
+
+				"notPrecededBy": [
+					"the", "an", "this", "our", "my"
+				],
+
+				"followedBy": [
+					"to"
+				],
+
+				"notFollowedBy": [
+				],
+
+				"example": "I will import the car from China."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɪ m p ɔːɹ t",
+						"en-gb-x-rp": "ˈɪ m p ɔː t"
+					}
+				},
+				"example": "That car is an import."
+			}
+		],
+		"imports": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ m p ˈɔːɹ t z",
+						"en-gb-x-rp": "ɪ m p ˈɔː t z"
+					}
+				},
+				"pos": [
+					"VB"
+				],
+
+				"precededBy": [
+					"he", "she", "it"
+				],
+
+				"notPrecededBy": [
+					"the", "those", "their", "our"
+				],
+
+				"followedBy": [
+					"to"
+				],
+
+				"notFollowedBy": [
+				],
+
+				"example": "The company imports these cars."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɪ m p ɔːɹ t z",
+						"en-gb-x-rp": "ˈɪ m p ɔː t z"
+					}
+				},
+				"example": "These cars are all imports."
+			}
+		],
+		"extract": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɛ k s t ɹ æ k t",
+						"en-gb-x-rp": "ˈɛ k s t ɹ a k t"
+					}
+				},
+				"pos": [
+					"NN"
+				],
+				"precededBy": [
+					"the", "this", "our", "an", "short", "long", "lengthy", "interesting", "fascinating"
+				],
+				"notPrecededBy": [
+					"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't", "not"
+				],
+				"followedBy": [
+				],
+				"notFollowedBy": [
+					"to"
+				],
+				"example": "The plant extracts the metal."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˌɪ k s t ɹ ˈæ k t",
+						"en-gb-x-rp": "ᵻ k s t ɹ ˈa k t"
+					}
+				},
+				"example": "Here is an extract."
+			}
+		],
+		"extracts": [],
+		"conducts": [],
+		"survey": [],
+		"protest": [],
+		"transport": [],
+		"abuse": [],
+		"combat": [],
+		"combats": [],
+		"affect": [],
+		"contest": [],
+		"detail": [],
+		"marked": [],
+		"contrast": [],
+		"construct": [],
+		"constructs": [],
+		"console": [],
+		"recall": [],
+		"permit": [],
+		"permits": [],
+		"prospect": [],
+		"prospects": [],
+		"proceed": [],
+		"proceeds": [],
+		"invite": [],
+		"reject": [],
+		"deserts": [],
+		"transcript": [],
+		"transcripts": [],
+		"compact": [],
+		"impact": [],
+		"impacts": [],
+		"estimate": [],
 		"row [disabled]": [
 			{
 				"pronunciation": {
@@ -1988,11 +2174,9 @@
 						"en-gb-x-rp": "ɹ ˈoʊ"
 					}
 				},
-
 				"pos": [
-					"VB"
+					"NN"
 				],
-
 				"example": "I ordered them in a row."
 			},
 			{
@@ -2002,11 +2186,9 @@
 						"en-gb-x-rp": "ɹ ˈoʊ"
 					}
 				},
-
 				"pos": [
-					"NNP"
+					"VB"
 				],
-
 				"example": "Row the boat!"
 			},
 			{
@@ -2016,11 +2198,9 @@
 						"en-gb-x-rp": "ɹ ˈəʊ"
 					}
 				},
-
 				"pos": [
-					"NNP"
+					"NN"
 				],
-
 				"example": "There was a row among those people."
 			}
 		],
@@ -2070,7 +2250,7 @@
 				},
 
 				"pos": [
-					"NNP"
+					"NN"
 				],
 
 				"case": "capitalized",
@@ -2083,11 +2263,11 @@
 
 				],
 
-				"succeededBy": [
+				"followedBy": [
 
 				],
 
-				"notSucceededBy": [
+				"notFollowedBy": [
 
 				],
 

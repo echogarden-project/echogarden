@@ -140,6 +140,16 @@
 				}
 			}
 		],
+		"queried": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k w ˈɛ ɹ i d",
+						"en-gb-x-rp": "k w ˈiə ɹ i d"
+					}
+				}
+			}
+		],
 		"jupyter": [
 			{
 				"pronunciation": {
@@ -176,6 +186,196 @@
 					"espeak": {
 						"en-us": "ə n ˈɔ ɪ",
 						"en-gb-x-rp": "ə n ˈɔ ɪ"
+					}
+				}
+			}
+		],
+		"modulo": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˈɑ dʒ ə l ˌoʊ",
+						"en-gb-x-rp": "m ˈɒ dj ə l əʊ"
+					}
+				}
+			}
+		],
+		"elon": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈiː l ɒ n",
+						"en-gb-x-rp": "ˈiː l ɒ n"
+					}
+				}
+			}
+		],
+		"dubai": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d uː b ˈɑɪ",
+						"en-gb-x-rp": "d uː b ˈɑɪ"
+					}
+				}
+			}
+		],
+		"exponent": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɛ k s p əʊ n ə n t",
+						"en-gb-x-rp": "ɪ k s p ˈəʊ n ə n t"
+					}
+				}
+			}
+		],
+		"exponents": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɛ k s p əʊ n ə n t z",
+						"en-gb-x-rp": "ɪ k s p ˈəʊ n ə n t z"
+					}
+				}
+			}
+		],
+		"heteronym": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "h ˈɛ d ə r ə n ˌɪ m",
+						"en-gb-x-rp": "h ˈɛ t ə r əʊ n ɪ m"
+					}
+				}
+			}
+		],
+		"heteronyms": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "h ˈɛ d ə r ə n ˌɪ m z",
+						"en-gb-x-rp": "h ˈɛ t ə r əʊ n ɪ m z"
+					}
+				}
+			}
+		],
+		"youtube": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "j ˈuː t ˌuː b",
+						"en-gb-x-rp": "j ˈuː t j uː b"
+					}
+				}
+			}
+		],
+		"youtuber": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "j ˈuː t ˌu bː ə ɹ",
+						"en-gb-x-rp": "j ˈuː t j uː b ə"
+					}
+				}
+			}
+		],
+		"beautiful": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b j ˈu d ə f əl",
+						"en-gb-x-rp": "b j ˈuː t ᵻ f l"
+					}
+				}
+			}
+		],
+		"jaggies": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "dʒ ˈæ ɡ i z",
+						"en-gb-x-rp": "dʒ ˈa ɡ i z"
+					}
+				}
+			}
+		],
+		"robust": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ oʊ b ˈʌ s t",
+						"en-gb-x-rp": "ɹ oʊ b ˈʌ s t"
+					}
+				}
+			}
+		],
+		"dataset": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ˈeɪ d ə s ˌɛ t",
+						"en-gb-x-rp": "d ˈeɪ t ə s ɛ t"
+					}
+				}
+			}
+		],
+		"deploy": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ə p l ˈɔɪ",
+						"en-gb-x-rp": "d ᵻ p l ˈɔɪ"
+					}
+				}
+			}
+		],
+		"penalty": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ˈɛ n l t i",
+						"en-gb-x-rp": "p ˈɛ n l t i"
+					}
+				}
+			}
+		],
+		"penalties": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ˈɛ n l t i z",
+						"en-gb-x-rp": "p ˈɛ n l t i z"
+					}
+				}
+			}
+		],
+		"debug": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ˌi b ˈʌ ɡ",
+						"en-gb-x-rp": "d ˌi b ˈʌ ɡ"
+					}
+				}
+			}
+		],
+		"preferable": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ɹ ˈɛ f əɹ ə b ə l",
+						"en-gb-x-rp": "p ɹ ˈɛ f əɹ ə b l"
+					}
+				}
+			}
+		],
+		"aka [disabled]": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈeɪ ˈk eɪ ˈeɪ",
+						"en-gb-x-rp": "ˈeɪ ˈk eɪ ˈeɪ"
 					}
 				}
 			}
