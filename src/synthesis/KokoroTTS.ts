@@ -111,7 +111,7 @@ export class KokoroTTS {
 
 		logger.end()
 
-		const clauseBreakTokenId = charToTokenIDLookup[',']
+		const phraseBreakTokenId = charToTokenIDLookup[',']
 		const wordBreakTokenId = charToTokenIDLookup[' ']
 
 		let sentenceEndChar: string
@@ -128,11 +128,11 @@ export class KokoroTTS {
 
 		const allTokenIds: number[] = []
 
-		for (let clauseIndex = 0; clauseIndex < phonemizedSentence.length; clauseIndex++) {
-			const clause = phonemizedSentence[clauseIndex]
+		for (let phraseIndex = 0; phraseIndex < phonemizedSentence.length; phraseIndex++) {
+			const phrase = phonemizedSentence[phraseIndex]
 
-			for (let wordIndex = 0; wordIndex < clause.length; wordIndex++) {
-				const word = clause[wordIndex]
+			for (let wordIndex = 0; wordIndex < phrase.length; wordIndex++) {
+				const word = phrase[wordIndex]
 
 				for (const phoneme of word) {
 					let processedPhoneme = phoneme
@@ -154,11 +154,11 @@ export class KokoroTTS {
 					}
 				}
 
-				if (wordIndex < clause.length - 1) {
+				if (wordIndex < phrase.length - 1) {
 					allTokenIds.push(wordBreakTokenId)
 				} else {
-					if (clauseIndex < phonemizedSentence.length - 1) {
-						allTokenIds.push(clauseBreakTokenId)
+					if (phraseIndex < phonemizedSentence.length - 1) {
+						allTokenIds.push(phraseBreakTokenId)
 						allTokenIds.push(wordBreakTokenId)
 					}
 				}
@@ -181,10 +181,10 @@ export class KokoroTTS {
 				if (endIndex >= allTokenIds.length) {
 					endIndex = allTokenIds.length
 				} else {
-					const indexOfLastClauseBreak = indexOfLastMatchingNumberInRange(allTokenIds, clauseBreakTokenId, startIndex, endIndex)
+					const indexOfLastPhraseBreak = indexOfLastMatchingNumberInRange(allTokenIds, phraseBreakTokenId, startIndex, endIndex)
 
-					if (indexOfLastClauseBreak !== -1) {
-						endIndex = indexOfLastClauseBreak + 1
+					if (indexOfLastPhraseBreak !== -1) {
+						endIndex = indexOfLastPhraseBreak + 1
 					} else {
 						const indexOfLastWordBreak = indexOfLastMatchingNumberInRange(allTokenIds, wordBreakTokenId, startIndex, endIndex)
 
@@ -196,14 +196,14 @@ export class KokoroTTS {
 
 				const partTokenIds = allTokenIds.slice(startIndex, endIndex)
 
-				if (partTokenIds[partTokenIds.length - 1] === clauseBreakTokenId) {
+				if (partTokenIds[partTokenIds.length - 1] === phraseBreakTokenId) {
 					partTokenIds.pop()
 				}
 
 
 				if (partTokenIds.find(
-					tokenId => ![wordBreakTokenId, clauseBreakTokenId, sentenceEndTokenId].includes(tokenId))) {
-						
+					tokenId => ![wordBreakTokenId, phraseBreakTokenId, sentenceEndTokenId].includes(tokenId))) {
+
 					parts.push([0, ...partTokenIds, 0])
 				}
 
@@ -252,7 +252,7 @@ export class KokoroTTS {
 
 		const { alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
-		const referenceWordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
+		const referenceWordTimeline = referenceTimeline.flatMap(phrase => phrase.timeline!)
 
 		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
 		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, ['high'], [dtwWindowDuration])

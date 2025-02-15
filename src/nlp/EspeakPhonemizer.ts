@@ -7,14 +7,14 @@ const log = logToStderr
 export async function phonemizeSentence(sentence: string, espeakVoice: string, substitutionMap?: Map<string, string[]>, useIpa = true) {
 	const ipaString = await EspeakTTS.textToPhonemes(sentence, espeakVoice, useIpa)
 
-	const clauseStrings = ipaString.split(' | ')
+	const phraseStrings = ipaString.split(' | ')
 
-	const clauses: string[][][] = []
+	const phrases: string[][][] = []
 
-	for (let clauseIndex = 0; clauseIndex < clauseStrings.length; clauseIndex++) {
-		const clauseString = clauseStrings[clauseIndex]
+	for (let phraseIndex = 0; phraseIndex < phraseStrings.length; phraseIndex++) {
+		const phraseString = phraseStrings[phraseIndex]
 
-		const wordStrings = clauseString.trim().split(/ +/g)
+		const wordStrings = phraseString.trim().split(/ +/g)
 		const words: string[][] = []
 
 		for (let wordIndex = 0; wordIndex < wordStrings.length; wordIndex++) {
@@ -40,11 +40,11 @@ export async function phonemizeSentence(sentence: string, espeakVoice: string, s
 		}
 
 		if (words.length > 0) {
-			clauses.push(words)
+			phrases.push(words)
 		}
 	}
 
-	return clauses
+	return phrases
 }
 
 export async function phonemizeText(text: string, voice: string, substitutionMap?: Map<string, string[]>) {
@@ -58,46 +58,46 @@ export async function phonemizeText(text: string, voice: string, substitutionMap
 			.replaceAll('»', ', ')
 
 	const segmentedText = await Segmentation.parse(text, voice)
-	const preparedClauses: string[] = []
-	const clauseBreakers: string[] = []
+	const preparedPhrases: string[] = []
+	const phraseBreakers: string[] = []
 
 	for (const sentence of segmentedText) {
-		for (const clause of sentence.phrases) {
-			const words = clause.words.filter(wordObject => Segmentation.isWordOrSymbolWord(wordObject.text))
-			const preparedClauseText = words.map(word => word.text.replace(/\./g, ' ')).join(' ')
+		for (const phrase of sentence.phrases) {
+			const words = phrase.words.filter(wordObject => Segmentation.isWordOrSymbolWord(wordObject.text))
+			const preparedPhraseText = words.map(word => word.text.replace(/\./g, ' ')).join(' ')
 
-			preparedClauses.push(preparedClauseText)
+			preparedPhrases.push(preparedPhraseText)
 
-			const trimmedClauseText = clause.text.trim()
-			const lastChar = trimmedClauseText[trimmedClauseText.length - 1]
+			const trimmedPhraseText = phrase.text.trim()
+			const lastChar = trimmedPhraseText[trimmedPhraseText.length - 1]
 
-			if (clause.isSentenceFinalizer) {
-				if (trimmedClauseText.endsWith('?') || trimmedClauseText.endsWith(`?"`)) {
-					clauseBreakers.push('?')
-				} else if (trimmedClauseText.endsWith('!') || trimmedClauseText.endsWith(`!"`)) {
-					clauseBreakers.push('!')
+			if (phrase.isSentenceFinalizer) {
+				if (trimmedPhraseText.endsWith('?') || trimmedPhraseText.endsWith(`?"`)) {
+					phraseBreakers.push('?')
+				} else if (trimmedPhraseText.endsWith('!') || trimmedPhraseText.endsWith(`!"`)) {
+					phraseBreakers.push('!')
 				} else {
-					clauseBreakers.push('.')
+					phraseBreakers.push('.')
 				}
 			} else {
 				if (lastChar == ':' || lastChar == ';') {
-					clauseBreakers.push(lastChar)
+					phraseBreakers.push(lastChar)
 				} else {
-					clauseBreakers.push(',')
+					phraseBreakers.push(',')
 				}
 			}
 		}
 	}
 
-	return phonemizeClauses(preparedClauses, voice, clauseBreakers, substitutionMap)
+	return phonemizePhrases(preparedPhrases, voice, phraseBreakers, substitutionMap)
 }
 
-export async function phonemizeClauses(clauses: string[], voice: string, clauseBreakers: string[], substitutionMap?: Map<string, string[]>) {
-	if (clauses.length == 0) {
+export async function phonemizePhrases(phrases: string[], voice: string, phraseBreakers: string[], substitutionMap?: Map<string, string[]>) {
+	if (phrases.length == 0) {
 		return []
 	}
 
-	const preparedText = clauses.join('\n\n') // filter(clause => clause.trim().length > 0)
+	const preparedText = phrases.join('\n\n') // filter(phrase => phrase.trim().length > 0)
 
 	const ipaString = await EspeakTTS.textToIPA(preparedText, voice)
 
@@ -130,31 +130,31 @@ export async function phonemizeClauses(clauses: string[], voice: string, clauseB
 		})
 	})
 
-	if (ipaLines.length != clauseBreakers.length) {
-		log(clauses)
+	if (ipaLines.length != phraseBreakers.length) {
+		log(phrases)
 		log(ipaLines)
-		log(clauseBreakers)
+		log(phraseBreakers)
 
-		throw new Error(`Unexpected: IPA lines count (${ipaLines.length}) is not equal to clause breakers count (${clauseBreakers.length})`)
+		throw new Error(`Unexpected: IPA lines count (${ipaLines.length}) is not equal to phrase breakers count (${phraseBreakers.length})`)
 	}
 
 	for (let i = 0; i < phonemeLines.length; i++) {
 		const line = phonemeLines[i]
 		const lastWordInLine = line[line.length - 1]
 
-		lastWordInLine.push(clauseBreakers[i])
+		lastWordInLine.push(phraseBreakers[i])
 	}
 
 	return phonemeLines
 }
 
-export function phonemizedClausesToSentences(phonemizedClauses: string[][][]) {
+export function phonemizedPhrasesToSentences(phonemizedPhrases: string[][][]) {
 	let phonemizedSentences: string[][][] = [[]]
 
-	for (const phonemizedClause of phonemizedClauses) {
-		phonemizedSentences[phonemizedSentences.length - 1].push(...phonemizedClause)
+	for (const phonemizedPhrase of phonemizedPhrases) {
+		phonemizedSentences[phonemizedSentences.length - 1].push(...phonemizedPhrase)
 
-		const lastWord = phonemizedClause[phonemizedClause.length - 1]
+		const lastWord = phonemizedPhrase[phonemizedPhrase.length - 1]
 		const lastPhoneme = lastWord[lastWord.length - 1]
 
 		if (['.', '?', '!'].includes(lastPhoneme)) {

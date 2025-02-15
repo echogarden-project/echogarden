@@ -94,7 +94,7 @@ export class VitsTTS {
 
 		await logger.startAsync('Encode phonemes to identifiers')
 
-		const clauseEndBreaker = ','
+		const phraseEndBreaker = ','
 		let sentenceEndBreaker = '.'
 
 		if (sentence.endsWith('?') || sentence.endsWith(`?"`)) {
@@ -108,15 +108,15 @@ export class VitsTTS {
 		const startId = phonemeMap.get('^')!
 		const endId = phonemeMap.get('$')!
 
-		const clauseEndBreakerId = phonemeMap.get(clauseEndBreaker)!
+		const phraseEndBreakerId = phonemeMap.get(phraseEndBreaker)!
 		const sentenceEndBreakerId = phonemeMap.get(sentenceEndBreaker)!
 
 		const ids: number[] = [...startId, ...phonemeCharacterSeparatorId]
 
-		for (let clauseIndex = 0; clauseIndex < phonemizedSentence.length; clauseIndex++) {
-			const clause = phonemizedSentence[clauseIndex]
+		for (let phraseIndex = 0; phraseIndex < phonemizedSentence.length; phraseIndex++) {
+			const phrase = phonemizedSentence[phraseIndex]
 
-			for (const word of clause) {
+			for (const word of phrase) {
 				for (const phoneme of word) {
 					for (const phonemeCharacter of phoneme) {
 						const id = phonemeMap.get(phonemeCharacter)
@@ -130,13 +130,13 @@ export class VitsTTS {
 					}
 				}
 
-				if (clauseIndex < phonemizedSentence.length - 1) {
+				if (phraseIndex < phonemizedSentence.length - 1) {
 					ids.push(...wordSeparatorId, ...phonemeCharacterSeparatorId)
 				}
 			}
 
-			if (clauseIndex < phonemizedSentence.length - 1) {
-				ids.push(...clauseEndBreakerId, ...phonemeCharacterSeparatorId)
+			if (phraseIndex < phonemizedSentence.length - 1) {
+				ids.push(...phraseEndBreakerId, ...phonemeCharacterSeparatorId)
 			}
 		}
 
@@ -174,7 +174,7 @@ export class VitsTTS {
 
 		const { alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
 
-		const referenceWordTimeline = referenceTimeline.flatMap(clause => clause.timeline!)
+		const referenceWordTimeline = referenceTimeline.flatMap(phrase => phrase.timeline!)
 
 		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
 		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, ['high'], [dtwWindowDuration])
