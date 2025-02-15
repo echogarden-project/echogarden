@@ -118,7 +118,6 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 Applies to CLI operation: `list-voices`, API method: `requestVoiceList`
 
 **General**:
-* `engine`: engine to list voices for. Required
 * `language`: language code to filter by. Optional
 * `voice`: name or name pattern to filter by. Optional
 * `voiceGender`: gender to filter by. Optional
