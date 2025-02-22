@@ -7,11 +7,11 @@ import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 const log = logToStderr
 
-export async function synthesize(text: string, voiceId: string, modelId: string, options: ElevenlabsTTSOptions) {
+export async function synthesize(text: string, voiceId: string, modelId: string, options: ElevenLabsTTSOptions) {
 	const logger = new Logger()
 	logger.start('Request synthesis from ElevenLabs')
 
-	options = extendDeep(defaultElevenlabsTTSOptions, options)
+	options = extendDeep(defaultElevenLabsTTSOptions, options)
 
 	let response: GaxiosResponse<any>
 
@@ -118,7 +118,7 @@ export async function getVoiceList(apiKey: string) {
 	return voices
 }
 
-export interface ElevenlabsTTSOptions {
+export interface ElevenLabsTTSOptions {
 	apiKey?: string
 	stability?: number
 	similarityBoost?: number
@@ -126,7 +126,7 @@ export interface ElevenlabsTTSOptions {
 	useSpeakerBoost?: boolean
 }
 
-export const defaultElevenlabsTTSOptions = {
+export const defaultElevenLabsTTSOptions = {
 	apiKey: undefined,
 	stability: 0.5,
 	similarityBoost: 0.5,

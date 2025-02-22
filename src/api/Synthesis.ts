@@ -21,7 +21,7 @@ import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { type OpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
-import { type ElevenlabsTTSOptions } from '../synthesis/ElevenLabsTTS.js'
+import { type ElevenLabsTTSOptions } from '../synthesis/ElevenLabsTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
@@ -1198,7 +1198,7 @@ export interface SynthesisOptions {
 
 	openAICloud?: OpenAICloudTTSOptions
 
-	elevenlabs?: ElevenlabsTTSOptions,
+	elevenlabs?: ElevenLabsTTSOptions,
 
 	googleTranslate?: {
 		tld?: string
@@ -1600,7 +1600,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				const apiKey = engineOptions.apiKey
 
 				if (!apiKey) {
-					throw new Error(`No Elevenlabs API key provided`)
+					throw new Error(`No ElevenLabs API key provided`)
 				}
 
 				voiceList = await ElevenLabsTTS.getVoiceList(apiKey)
