@@ -913,6 +913,9 @@
         },
         "openAICloud": {
           "$ref": "#/definitions/OpenAICloudSTTOptions"
+        },
+        "deepgram": {
+          "$ref": "#/definitions/DeepgramSTTOptions"
         }
       },
       "additionalProperties": false
@@ -927,7 +930,8 @@
         "google-cloud",
         "microsoft-azure",
         "amazon-transcribe",
-        "openai-cloud"
+        "openai-cloud",
+        "deepgram"
       ]
     },
     "SpeechLanguageDetectionOptions": {
@@ -1223,6 +1227,18 @@
         },
         "requestWordTimestamps": {
           "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeepgramSTTOptions": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
         }
       },
       "additionalProperties": false
