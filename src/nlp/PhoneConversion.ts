@@ -5,7 +5,7 @@ export function ipaPhoneToKirshenbaum(ipaPhone: string) {
 		const convertedChar = ipaToKirshenbaum[char]
 
 		if (convertedChar == undefined) {
-			throw new Error(`Could not convert phone character '${char}' to Kirshenbaum encoding`)
+			throw new Error(`Couldn't convert IPA character '${char}' (part of phone '${ipaPhone}' the Kirshenbaum notation`)
 		}
 
 		result += convertedChar || '_'
@@ -252,257 +252,208 @@ const ipaToTimit: { [p: string]: string[] | undefined } = {
 	'ɾ': ['dx'],
 }
 
-// This is adapted from a lookup table on the eSpeak-ng source code
-const ipaToKirshenbaum: { [p: string]: string | undefined } = {
-    '1': '1',
-    '2': '2',
-    '4': '4',
-    '5': '5',
-    '6': '6',
-    '7': '7',
-    '9': '9',
-    ' ': ' ',
-    '!': '!',
-    '\'': '\'',
-    'ʰ': '#',
-    '$': '$',
-    '%': '%',
-    //'æ': '&',
-	'æ': 'a',
-    'ˈ': '\'',
-    '(': '(',
-    ')': ')',
-    'ɾ': '*',
-    '+': '+',
-    'ˌ': ',',
-    '-': '-',
-    '.': '.',
-    '/': '/',
-    'ɒ': '0',
-    'ɜ': '3',
-    'ɵ': '8',
-    'ː': ':',
-    'ʲ': ';',
-    '<': '<',
-    '=': '=',
-    '>': '>',
-    'ʔ': '?',
-    'ə': '@',
-    'ɑ': 'A',
-    'β': 'B',
-    'ç': 'C',
-    'ð': 'D',
-    'ɛ': 'E',
-    'F': 'F',
-    'ɢ': 'G',
-    'ħ': 'H',
-    'ɪ': 'I',
-    'ɟ': 'J',
-    'K': 'K',
-    'ɫ': 'L',
-    'ɱ': 'M',
-    'ŋ': 'N',
-    'ɔ': 'O',
-    'Φ': 'P',
-    'ɣ': 'Q',
-    'ʀ': 'R',
-    'ʃ': 'S',
-    'θ': 'T',
-    'ʊ': 'U',
-    'ʌ': 'V',
-    'œ': 'W',
-    'χ': 'X',
-    'ø': 'Y',
-    'ʒ': 'Z',
-    '̪': '[',
-    '\\': '\\',
-    ']': ']',
-    '^': '^',
-    '_': '_',
-    '`': '`',
-    'a': 'a',
-    'b': 'b',
-    'c': 'c',
-    'd': 'd',
-    'e': 'e',
-    'f': 'f',
-    'ɡ': 'g',
-    'h': 'h',
-    'i': 'i',
-    'j': 'j',
-    'k': 'k',
-    'l': 'l',
-    'm': 'm',
-    'n': 'n',
-    'o': 'o',
-    'p': 'p',
-    'q': 'q',
-    'r': 'r',
-    's': 's',
-    't': 't',
-    'u': 'u',
-    'v': 'v',
-	'w': 'w',
-    'x': 'x',
-    'y': 'y',
-    'z': 'z',
-    '{': '{',
-    '|': '|',
-    '}': '}',
-    '̃': '~',
-    '': '',
+export const ipaToKirshenbaum: Record<string, string> = {
+	//// Vowels
 
-	// Extensions
-	'ɚ': '3',
-	'ɹ': 'r',
-	'ɐ': 'a#',
-	'ᵻ': 'i',
-	'̩': ','
-}
-
-/*
-// Source: https://github.com/coruus/ascii-ipa/blob/master/kirshenbaum.py
-// Conversion regex: \('.*?': '.*?'\)
-// Replace: $2: $1
-const ipaToKirshenbaum2: { [p: string]: string | undefined } = {
-	'm': 'm',
-	'p': 'p',
-	'b': 'b',
-	'Φ': 'P',
-	'β': 'B',
-	'ʙ': 'b<trl>',
-	'pʼ': 'p`',
-	'ɓ': 'b`',
-	'ʘ': 'p!',
-	'ɱ': 'M',
-	'f': 'f',
-	'v': 'v',
-	'ʋ': 'r<lbd>',
-	'n\u032a': 'n[',
-	't\u032a': 't[',
-	'θ': 'T',
-	'ð': 'D',
-	'r\u032a': 'r[',
-	'l\u032a': 'l[',
-	't\u032a\u02bc': 't[`',
-	'ɗ': 'd`',
-	'ʇ': 't!',
-	'n': 'n',
-	't': 't',
-	'd': 'd',
-	's': 's',
-	'z': 'z',
-	'ɬ': 's<lat>',
-	'ɮ': 'z<lat>',
-	'ɹ': 'r',
-	'l': 'l',
-	'ʀ': 'r<trl>',
-	'ɾ': '*',
-	'ɺ': '*<lat>',
-	't\u02bc': 't`',
-	'ʗ': 'c!',
-	'ʖ': 'l!',
-	'ɳ': 'n.',
-	'ʈ': 't.',
-	'ɖ': 'd.',
-	'ʂ': 's.',
-	'ʐ': 'z.',
-	//'ɖ': 'r.',
-	'ɭ': 'l.',
-	'ɽ': '*.',
-	'ʃ': 'S',
-	'ʒ': 'Z',
-	'n^': 'n^',
-	'c': 'c',
-	'ɟ': 'J',
-	'ç': 'C',
-	'ʝ': 'C<vcd>',
-	'j': 'j',
-	'ɥ': 'j<rnd>',
-	'ʎ': 'l^',
-	'ʄ': 'J`',
-	'ŋ': 'N',
-	'k': 'k',
-	'g': 'g',
-	'x': 'x',
-	'ɣ': 'Q',
-	'ɰ': 'j<vel>',
-	'ɫ': 'L',
-	//'ɬ': '{vls,alv,lat,frc}',
-	'k\u02bc': 'k`',
-	'g\u02bc': 'g`',
-	'ʞ': 'k!',
-	'n\u2030g': 'n<lbv>',
-	'k\u2030p': 't<lbv>',
-	'g\u2030b': 'n<lbv>',
-	'ʍ': 'w<vls>',
-	'w': 'w',
-	'ɴ': 'n'',
-	'q': 'q',
-	'ɢ': 'G',
-	'χ': 'X',
-	'ʁ': 'g'',
-	//'ʀ': 'r'',
-	'ʠ': 'q`',
-	'ʛ': 'G`',
-	'ħ': 'H',
-	'ʕ': 'H<vcd>',
-	'ʔ': '?',
-	'h': 'h',
-	'ɦ': 'h<?>',
+	// Close
 	'i': 'i',
 	'y': 'y',
-	'ɪ': 'I',
-	'ʏ': 'I.',
-	'e': 'e',
-	'ø': 'Y',
-	'ɛ': 'E',
-	'œ': 'W',
-	'æ': '&',
-	'ɶ': '&.',
-	'ɨ': 'i'',
-	'ʉ': 'u'',
-	'ɘ': '@<umd>',
-	'ɝ': 'R<umd>',
-	'ə': '@',
-	'ɚ': 'R',
-	'ɵ': '@.',
-	//'ɜ': 'V'',
-	'ɜ': '3',
-	'ɞ': 'O'',
-	'a': 'a',
+	'ɨ': 'i"',
+	'ʉ': 'u"',
 	'ɯ': 'u-',
 	'u': 'u',
+
+	// Near-close
+	'ɪ': 'I',
+	'ɩ': 'I',
+	'ᵻ': 'I',
+	'ʏ': 'I.',
 	'ʊ': 'U',
+	'ɷ': 'U',
+
+	// Close-mid
+	'e': 'e',
+	'ø': 'Y',
+	//'ɘ': '@<umd>', // Reference
+	'ɘ': '@', // Simplified
+	'ɵ': '@.',
+	//'ɵ': '8', // eSpeak
 	'ɤ': 'o-',
 	'o': 'o',
+
+	// Mid:
+	'ə': '@',
+
+	// Open-mid:
+	'ɛ': 'E',
+	'œ': 'W',
+	//'ɜ': '3', // eSpeak
+	'ɜ': 'V"',
+	'ɞ': 'O"',
 	'ʌ': 'V',
 	'ɔ': 'O',
+
+	// Near-open
+	//'æ': '&', // Reference. note: passing '&' to eSpeak in SSML (XML) mode will cause an error due to escaping conflict
+	'æ': 'a', // eSpeak
+	'ɐ': 'a#',
+
+	// Open
+	'a': 'a',
+	//'ɶ': '&.', // Reference. note: passing '&' to eSpeak in SSML (XML) mode will cause an error due to escaping conflict
+	'ɶ': 'W#', // eSpeak
+	'ä': 'a"',
+	'ɒ̈': 'A".',
 	'ɑ': 'A',
-	'ɒ': 'A.',
+	//'ɒ': 'A.', // Reference
+	'ɒ': '0', // eSpeak
 
-	'ː': ':',
-	'\u0322': '.',
-	'\u02bc': '`',
-	'\u032a': '[',
-	'\u02b2': ';',
-	''': ''',
-	'^': '^',
-	'\u0334': '<H>',
-	'\u02b0': '<h>',
-	'\u02da': '<unx>',
-	'\u0325': '<vls>',
-	//'\u02da': '<o>',
-	'\u02b3': '<r>',
-	'\u02b7': '<w>',
-	'\u02b1': '<?>',
+	// Rhotic
+	'ɚ': 'R',
+	//'ɚ': '3', // eSpeak
+	//'ɝ': 'R<umd>', // Reference
+	'ɝ': 'R', // Simplified
 
-	'\u0303': '~',
-	//'\u0334': '~'
+	// More vowels
+	'ᵊ': '',
 
-	'ˈ': ''',
+	//// Consonants
+
+	// Nasals
+	'm': 'm',
+	'ɱ': 'M',
+	'n̪': 'n[',
+	'n': 'n',
+	'ɳ': 'n.',
+	'ṇ': 'n.',
+	'ɲ': 'n^',
+	'ŋ': 'N',
+	'ɴ': 'n"',
+	//'n͡g': 'n<lbv>',
+
+	// Stops
+	'p': 'p',
+	'b': 'b',
+	't̪': 't[',
+	'd̪': 'd[',
+	't': 't',
+	'd': 'd',
+	'ʈ': 't.',
+	'ṭ': 't.',
+	'ɖ': 'd.',
+	'ḍ': 'd.',
+	'c': 'c',
+	'ɟ': 'J',
+	'k': 'k',
+	'ɡ': 'g',
+	'q': 'q',
+	'ɢ': 'G',
+	//'k͡p': 't<lbv>',
+	//'ɡ͡b': 'd<lbv>',
+	'ʔ': '?',
+
+	// Fricatives
+	'φ': 'P',
+	'Φ': 'P',
+	'β': 'B',
+	'f': 'f',
+	'v': 'v',
+	'θ': 'T',
+	'ð': 'D',
+	's': 's',
+	'z': 'z',
+	'ʂ': 's.',
+	'ṣ': 's.',
+	'ʐ': 'z.',
+	'ẓ': 'z.',
+	'ʃ': 'S',
+	'ʒ': 'Z',
+	'ç': 'C',
+	'ʝ': 'C<vcd>',
+	'x': 'x',
+	'ɣ': 'Q',
+	'χ': 'X',
+	'ʁ': 'g"', // Reference
+	//'ʁ': 'r', // eSpeak
+	'ʍ': 'w<vls>',
+	'w': 'w',
+	'ħ': 'H',
+	'ʕ': 'H<vcd>',
+	'h': 'h',
+	'ɦ': 'h<?>',
+
+	// Approximants
+	'ʋ': 'r<lbd>',
+	'ɹ̪': 'r[',
+	'ɹ': 'r',
+	'ɻ': 'r.',
+	'ɻ̣': 'r.',
+	'j': 'j',
+	'ɥ': 'j<rnd>',
+	'ɰ': 'j<vel>',
+
+	// Laterals
+	'l̪': 'l[',
+	'l': 'l',
+	'ɭ': 'l.',
+	'ḷ': 'l.',
+	'ʎ': 'l^',
+	'ʟ': 'L',
+
+	// Trills
+	'ʙ': 'b<trl>',
+	//'r': 'r<trl>', // Reference alv trl
+	'r': 'R', // eSpeak
+	'ʀ': 'r"', // Reference uvl trl
+
+	// Flaps
+	'ɾ': '*',
+	'ɽ': '*.',
+	'ṛ': '*.',
+
+	// Ejectives
+	'pʼ': 'p`',
+	'tʼ': 't`',
+	'cʼ': 'c`',
+	'kʼ': 'k`',
+	'qʼ': 'q`',
+	'ʠ': 'q`',
+
+	// Implosives
+	'ɓ': 'b`',
+	'ɗ': 'd`',
+	'ʄ': 'J`',
+	'ɠ': 'g`',
+	'ʛ': 'G`',
+
+	// Clicks
+	'ʘ': 'p!',
+	'ǀ': 't!',
+	'ʇ': 't!',
+	'ǃ': 'c!',
+	'ǂ': 'c!',
+	'ʗ': 'c!',
+	'ʞ': 'k!',
+	'ǁ': 'l!',
+	'ʖ': 'l!',
+
+	// Lateral fricative
+	'ɬ': 'L',
+	'ɮ': 'z<lat>',
+	'ɫ': 'L',
+
+	// Lateral flap
+	'ɺ': '*<lat>',
+
+	// Other consonants
+	'ʰ': '#',
+	'ʲ': ';',
+	'̪': '[',
+	'̃': '~',
+
+	// Stress marks and other misc characters
+	'ˈ': '\'',
 	'ˌ': ',',
-	' ': ' ',
-	'\n': '\n'
+	'ː': ':',
+	'-': '-',
 }
-*/

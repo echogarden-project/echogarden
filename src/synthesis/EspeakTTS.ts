@@ -169,9 +169,8 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 
 		fragment = simplifyPunctuationCharacters(fragment)
 
-		fragment = fragment
-			.replaceAll('<', '&lt;')
-			.replaceAll('>', '&gt;')
+		//fragment = encodeHTMLAngleBrackets(fragment)
+		fragment = fragment.replaceAll('<', '_').replaceAll('>', '_').replaceAll(':', ',')
 
 		if (espeakOptions.insertSeparators && canInsertSeparators) {
 			const separator = ` | `
@@ -597,9 +596,9 @@ export const defaultEspeakOptions: EspeakOptions = {
 	insertSeparators: false
 }
 
-export async function testKirshenbaumPhonemization(text: string) {
-	const ipaPhonemizedSentence = (await phonemizeSentence(text, 'en-us')).flatMap(clause => clause)
-	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, 'en-us', undefined, false)).flatMap(clause => clause)
+export async function testKirshenbaumPhonemization(text: string, language = 'en-us') {
+	const ipaPhonemizedSentence = (await phonemizeSentence(text, language)).flatMap(clause => clause)
+	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, language, undefined, false)).flatMap(clause => clause)
 
 	const ipaFragments = ipaPhonemizedSentence.map(word => word.join(''))
 
@@ -610,6 +609,8 @@ export async function testKirshenbaumPhonemization(text: string) {
 			ipaPhoneToKirshenbaum(phoneme)).join(''))
 
 	for (let i = 0; i < fragments.length; i++) {
-		log(`IPA: ${ipaFragments[i]} | converted: ${fragments[i]} | ground truth: ${kirshenbaumFragments[i]}`)
+		if (fragments[i] !== kirshenbaumFragments[i]) {
+			log(`IPA: ${ipaFragments[i]} | converted: ${fragments[i]} | ground truth: ${kirshenbaumFragments[i]}`)
+		}
 	}
 }
