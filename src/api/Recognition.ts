@@ -15,6 +15,7 @@ import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
 import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 import { type SileroRecognitionOptions } from '../recognition/SileroSTT.js'
+import { type DeepgramSTTOptions } from '../recognition/DeepgramSTT.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
@@ -274,6 +275,22 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 			break
 		}
 
+		case 'deepgram': {
+			const DeepgramSTT = await import('../recognition/DeepgramSTT.js')
+
+			const deepgramOptions = options.deepgram!
+
+			if (!deepgramOptions.apiKey) {
+				throw new Error(`No Deepgram API key provided`)
+			}
+
+			logger.end();
+
+			({ transcript, timeline } = await DeepgramSTT.recognize(sourceRawAudio, options.language ? shortLanguageCode : undefined, deepgramOptions))
+
+			break
+		}
+
 		default: {
 			throw new Error(`Engine '${options.engine}' is not supported`)
 		}
@@ -330,7 +347,7 @@ export interface RecognitionResult {
 	backgroundRawAudio?: RawAudio
 }
 
-export type RecognitionEngine = 'whisper' | 'whisper.cpp' | 'vosk' | 'silero' | 'google-cloud' | 'microsoft-azure' | 'amazon-transcribe' | 'openai-cloud'
+export type RecognitionEngine = 'whisper' | 'whisper.cpp' | 'vosk' | 'silero' | 'google-cloud' | 'microsoft-azure' | 'amazon-transcribe' | 'openai-cloud' | 'deepgram'
 
 export interface RecognitionOptions {
 	engine?: RecognitionEngine
@@ -383,6 +400,8 @@ export interface RecognitionOptions {
 	}
 
 	openAICloud?: OpenAICloudSTTOptions
+
+	deepgram?: DeepgramSTTOptions
 }
 
 export const defaultRecognitionOptions: RecognitionOptions = {
@@ -443,6 +462,9 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 
 	openAICloud: {
 	},
+
+	deepgram: {
+	}
 }
 
 export const recognitionEngines: API.EngineMetadata[] = [
@@ -492,6 +514,12 @@ export const recognitionEngines: API.EngineMetadata[] = [
 		id: 'openai-cloud',
 		name: 'OpenAI Cloud',
 		description: 'OpenAI cloud speech-to-text service.',
+		type: 'cloud'
+	},
+	{
+		id: 'deepgram',
+		name: 'Deepgram',
+		description: 'Deepgram cloud speech-to-text service.',
 		type: 'cloud'
 	},
 ]

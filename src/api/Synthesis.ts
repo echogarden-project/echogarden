@@ -20,8 +20,8 @@ import { shouldCancelCurrentTask } from '../server/Worker.js'
 import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
-import { type OpenAICloudTTSOptions  } from '../synthesis/OpenAICloudTTS.js'
-import { type ElevenlabsTTSOptions } from '../synthesis/ElevenlabsTTS.js'
+import { type OpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
+import { type ElevenlabsTTSOptions } from '../synthesis/ElevenLabsTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
@@ -63,7 +63,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 		let segmentsPlainText = segments
 
 		if (options.ssml) {
-			segmentsPlainText= []
+			segmentsPlainText = []
 
 			for (const segment of segments) {
 				segmentsPlainText.push(await convertHtmlToText(segment))
@@ -811,7 +811,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				throw new Error(`The Elevenlabs engine doesn't support SSML inputs`)
 			}
 
-			const ElevenLabsTTS = await import('../synthesis/ElevenlabsTTS.js')
+			const ElevenLabsTTS = await import('../synthesis/ElevenLabsTTS.js')
 
 			const engineOptions = options.elevenlabs!
 
@@ -1593,7 +1593,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 			}
 
 			case 'elevenlabs': {
-				const ElevenLabsTTS = await import('../synthesis/ElevenlabsTTS.js')
+				const ElevenLabsTTS = await import('../synthesis/ElevenLabsTTS.js')
 
 				const engineOptions = options.elevenlabs!
 
