@@ -13,7 +13,7 @@ Here's a quick guide on how to set up a development environment for making and t
 * Ensure you have [Node.js](https://nodejs.org/en/download) installed
 * Ensure you have TypeScript installed (`npm install typescript -g`)
 * Run `npm install` at the project base directory
-* Compile using `tsc .` at the project base directory
+* Compile using `tsc -p .` at the project base directory
 
 ## Auto-compiling in Visual Studio Code
 
