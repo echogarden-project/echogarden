@@ -373,7 +373,7 @@
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
         "elevenlabs": {
-          "$ref": "#/definitions/ElevenlabsTTSOptions"
+          "$ref": "#/definitions/ElevenLabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
@@ -1386,7 +1386,7 @@
       },
       "additionalProperties": false
     },
-    "ElevenlabsTTSOptions": {
+    "ElevenLabsTTSOptions": {
       "type": "object",
       "properties": {
         "apiKey": {
@@ -1702,7 +1702,7 @@
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
         "elevenlabs": {
-          "$ref": "#/definitions/ElevenlabsTTSOptions"
+          "$ref": "#/definitions/ElevenLabsTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
