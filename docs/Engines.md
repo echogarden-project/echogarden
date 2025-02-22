@@ -61,6 +61,7 @@ These are commercial services that require a subscription and an API key to use:
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/ai-services/speech-to-text/) (`microsoft-azure`)
 * [Amazon Transcribe](https://aws.amazon.com/transcribe/) (`amazon-transcribe`)
 * [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`): runs the `large-v2` Whisper model on the cloud. Allows setting a custom provider, like [Groq](https://console.groq.com/docs/api-reference#audio), to request from any OpenAI-compatible provider
+* [Deepgram](https://deepgram.com/) (`deepgram`): a high-accuracy cloud speech recognition service with support for multiple languages and models, including Whisper
 
 ## Speech-to-transcript alignment
 

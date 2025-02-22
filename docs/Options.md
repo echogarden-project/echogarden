@@ -211,6 +211,11 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
 * `openAICloud.requestWordTimestamps`: request word timestamps from the server. Defaults to `true` for the default OpenAI endpoint, and `false` if a custom one is set using `baseURL`
 
+**Deepgram**:
+* `deepgram.apiKey`: API key (required)
+* `deepgram.model`: model to use, defaults to `whisper-large`. All the models can be found here: https://developers.deepgram.com/docs/model
+* `language`: specify language code (global option). If not provided, Deepgram will auto-detect the language
+
 ## Speech-to-transcript alignment
 
 Applies to CLI operation: `align`, API method: `align`
