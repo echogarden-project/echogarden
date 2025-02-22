@@ -50,7 +50,6 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 
 		data: requestBody,
 
-
 		responseType: 'json'
 	})
 
