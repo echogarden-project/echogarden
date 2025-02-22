@@ -505,3 +505,9 @@ export function indexOfLastMatchingNumberInRange(values: number[], targetValue: 
 
 	return -1
 }
+
+export function encodeHTMLAngleBrackets(text: string) {
+	return text.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('&', '&amp;')
+}
