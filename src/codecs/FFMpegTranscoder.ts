@@ -223,6 +223,7 @@ export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBi
 		}
 	} else if (fileExtension == 'opus') {
 		ffmpegOptions = {
+			format: 'ogg',
 			codec: 'libopus',
 			bitrate: 48,
 			customOptions: []
@@ -236,6 +237,7 @@ export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBi
 		}
 	} else if (fileExtension == 'ogg') {
 		ffmpegOptions = {
+			format: 'ogg',
 			codec: 'libvorbis',
 			bitrate: 48,
 			customOptions: []
