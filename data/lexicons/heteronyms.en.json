@@ -55,7 +55,7 @@
 				],
 
 				"precededBy": [
-					"to", "can", "can't", "will", "would", "we", "they", "i", "you", "me", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "shall", "people", "just"
+					"to", "can", "can't", "will", "would", "we", "they", "i", "you", "me", "don't", "doesn't", "should", "shouldn't", "wouldn't", "may", "might", "could", "couldn't", "these", "those", "must", "mustn't", "shall", "people", "just", "then"
 				],
 
 				"notPrecededBy": [
@@ -97,7 +97,7 @@
 				],
 
 				"precededBy": [
-					"he", "she", "it", "who", "this", "opportunity", "still", "situation", "often", "research"
+					"he", "she", "it", "who", "this", "opportunity", "still", "situation", "often", "research", "then"
 				],
 
 				"notPrecededBy": [
@@ -347,7 +347,7 @@
 				],
 
 				"precededBy": [
-					"he", "she", "it", "who"
+					"he", "she", "it", "who", "that"
 				],
 
 				"notPrecededBy": [
@@ -564,7 +564,7 @@
 				],
 
 				"followedBy": [
-					"to", "it", "you", "her", "his", "our", "my", "your", "their", "a", "an"
+					"to", "it", "her", "his", "our", "my", "your", "their", "a", "an"
 				],
 
 				"notFollowedBy": [
@@ -1104,7 +1104,7 @@
 				],
 
 				"followedBy": [
-					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an"
+					"it", "you", "them", "her", "his", "our", "my", "your", "their", "a", "an", "how", "why"
 				],
 
 				"notFollowedBy": [
@@ -2134,6 +2134,8 @@
 				"example": "Here is an extract."
 			}
 		],
+		"segment": [],
+		"segments": [],
 		"extracts": [],
 		"conducts": [],
 		"survey": [],
@@ -2166,6 +2168,9 @@
 		"impact": [],
 		"impacts": [],
 		"estimate": [],
+		"update": [],
+		"updates": [],
+
 		"row [disabled]": [
 			{
 				"pronunciation": {
@@ -2281,6 +2286,26 @@
 					}
 				},
 				"example": "You should lead the way."
+			}
+		],
+		"subsequence [disabled]": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈʌ b s ˌi k w ə n s",
+						"en-gb-x-rp": "s ˈʌ b s ˌi k w ə n s"
+					}
+				}
+			}
+		],
+		"subsequences [disabled]": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s ˈʌ b s ˌi k w ə n s ᵻ z",
+						"en-gb-x-rp": "s ˈʌ b s ˌi k w ə n s ᵻ z"
+					}
+				}
 			}
 		]
 	}

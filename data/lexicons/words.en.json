@@ -10,6 +10,16 @@
 				}
 			}
 		],
+		"inherent": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ n h ˈɛ ɹ ə n t",
+						"en-gb-x-rp": "ɪ n h ˈɛ ɹ ə n t"
+					}
+				}
+			}
+		],
 		"inherently": [
 			{
 				"pronunciation": {
@@ -370,6 +380,56 @@
 				}
 			}
 		],
+		"heavily": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "h ˈɛ v ə l i",
+						"en-gb-x-rp": "h ˈɛ v ᵻ l i"
+					}
+				}
+			}
+		],
+		"concatenative": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ə ŋ k ˈæ t ə n ˌeɪ ɾ ɪ v",
+						"en-gb-x-rp": "k ə ŋ k ˈæ t ə n ˌeɪ t ɪ v"
+					}
+				}
+			}
+		],
+		"resource": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˈi s ɔ ɹ s",
+						"en-gb-x-rp": "ɹ ᵻ s ˈɔː s"
+					}
+				}
+			}
+		],
+		"winterproof": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "w ˈɪ n t ə ɹ p ɹ ˌu f",
+						"en-gb-x-rp": "w ˈɪ n t ə ɹ p ɹ ˌu f"
+					}
+				}
+			}
+		],
+		"diphones": [],
+		"triphones": [],
+		"digraph": [],
+		"trigraph": [],
+		"viterbi": [],
+		"preprocess": [],
+		"ethereum": [],
+		"succinctly": [],
+		"amortize": [],
+		"stochastic": [],
 		"aka [disabled]": [
 			{
 				"pronunciation": {
