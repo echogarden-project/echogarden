@@ -170,7 +170,11 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		fragment = simplifyPunctuationCharacters(fragment)
 
 		//fragment = encodeHTMLAngleBrackets(fragment)
-		fragment = fragment.replaceAll('<', '_').replaceAll('>', '_').replaceAll(':', ',')
+		fragment = fragment.replaceAll('<', '_').replaceAll('>', '_')
+
+		if (fragment.split('').every(c => c === ':')) {
+			fragment = ','
+		}
 
 		if (espeakOptions.insertSeparators && canInsertSeparators) {
 			const separator = ` | `
