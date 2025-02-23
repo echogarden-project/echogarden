@@ -39,7 +39,12 @@ npm install -g echogarden@latest
 
 ## Update
 
-You can use [`npm-check-updates`](https://www.npmjs.com/package/npm-check-updates) to check for a newer version:
+Simple, but may not always update to the very latest major version:
+```
+npm update -g echogarden
+```
+
+You can also use [`npm-check-updates`](https://www.npmjs.com/package/npm-check-updates) to check for a newer version:
 ```bash
 npm install -g npm-check-updates
 ncu -g echogarden
