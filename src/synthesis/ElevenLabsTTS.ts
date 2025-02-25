@@ -4,10 +4,13 @@ import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { decodeBase64 } from '../encodings/Base64.js'
+import { isWordOrSymbolWord, splitToWords } from '../nlp/Segmentation.js'
+import { Timeline } from '../utilities/Timeline.js'
 
 const log = logToStderr
 
-export async function synthesize(text: string, voiceId: string, modelId: string, options: ElevenLabsTTSOptions) {
+export async function synthesize(text: string, voiceId: string, language: string, options: ElevenLabsTTSOptions) {
 	const logger = new Logger()
 	logger.start('Request synthesis from ElevenLabs')
 
@@ -17,7 +20,7 @@ export async function synthesize(text: string, voiceId: string, modelId: string,
 
 	try {
 		response = await request<any>({
-			url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+			url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
 
 			method: 'POST',
 
@@ -26,20 +29,26 @@ export async function synthesize(text: string, voiceId: string, modelId: string,
 				'xi-api-key': options.apiKey,
 			},
 
+			params: {
+				output_format: 'mp3_44100_64',
+			},
+
 			data: {
 				text,
 
-				model_id: modelId,
+				model_id: options.modelId,
 
 				voice_setting: {
 					stability: options.stability,
 					similarity_boost: options.similarityBoost,
 					style: options.style,
-					use_speaker_boost: options.useSpeakerBoost
-				}
+					use_speaker_boost: options.useSpeakerBoost,
+				},
+
+				seed: options.seed
 			},
 
-			responseType: 'arraybuffer'
+			responseType: 'json'
 		})
 	} catch (e: any) {
 		const response = e.response
@@ -57,11 +66,43 @@ export async function synthesize(text: string, voiceId: string, modelId: string,
 	}
 
 	logger.start('Decode synthesized audio')
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(new Uint8Array(response.data))
+	const audioData = decodeBase64(response.data.audio_base64)
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData)
+
+	let timeline: Timeline | undefined
+
+	const characters: string[] = response.data.alignment?.characters
+	const characterStartTimes: number[] = response.data.alignment?.character_start_times_seconds
+	const characterEndTimes: number[] = response.data.alignment?.character_end_times_seconds
+
+	if (characters && characterStartTimes && characterEndTimes) {
+		logger.start('Create timeline from returned character timings')
+
+		const referenceText = characters.join('')
+		const words = (await splitToWords(referenceText, language)).filter(w => isWordOrSymbolWord(w))
+
+		timeline = []
+
+		let offset = 0
+
+		for (const word of words) {
+			const wordStartIndex = referenceText.indexOf(word, offset)
+			const wordEndIndex = wordStartIndex + word.length
+
+			timeline.push({
+				type: 'word',
+				text: word,
+				startTime: characterStartTimes[wordStartIndex],
+				endTime: characterEndTimes[wordEndIndex] ?? characterEndTimes[wordEndIndex - 1]
+			})
+
+			offset = wordEndIndex
+		}
+	}
 
 	logger.end()
 
-	return { rawAudio }
+	return { rawAudio, timeline }
 }
 
 export async function getVoiceList(apiKey: string) {
@@ -78,40 +119,36 @@ export async function getVoiceList(apiKey: string) {
 		responseType: 'json'
 	})
 
-	const elevenlabsVoices: any[] = response.data.voices
+	const elevenLabsVoices: any[] = response.data.voices
 
-	const voices: SynthesisVoice[] = elevenlabsVoices.map(elevenlabsVoice => {
-		const modelId: string = elevenlabsVoice?.high_quality_base_model_ids?.[0] ?? 'eleven_monolingual_v1'
-		const accent: string | undefined = elevenlabsVoice?.labels?.accent
-		const gender: VoiceGender = elevenlabsVoice?.labels?.gender ?? 'unknown'
+	const voices: SynthesisVoice[] = elevenLabsVoices.map(elevenLabsVoice => {
+		const gender: VoiceGender = elevenLabsVoice?.labels?.gender ?? 'unknown'
 
 		const supportedLanguages: string[] = []
 
-		if (accent) {
-			if (accent.startsWith('american')) {
-				supportedLanguages.push('en-US')
-			} else if (accent.startsWith('british')) {
-				supportedLanguages.push('en-GB')
-			} else if (accent === 'irish') {
-				supportedLanguages.push('en-IE')
-			} else if (accent == 'australian') {
-				supportedLanguages.push('en-AU')
-			}
-		}
+		let accent: string | undefined = elevenLabsVoice?.labels?.accent
+		accent = accent?.toLowerCase() ?? ''
 
-		if (modelId.includes('multilingual')) {
-			supportedLanguages.push('en', ...supporteMultilingualLanguages)
+		if (accent.startsWith('american')) {
+			supportedLanguages.push('en-US')
+		} else if (accent.startsWith('british')) {
+			supportedLanguages.push('en-GB')
+		} else if (accent === 'irish') {
+			supportedLanguages.push('en-IE')
+		} else if (accent == 'australian') {
+			supportedLanguages.push('en-AU')
 		} else {
 			supportedLanguages.push('en')
 		}
 
+		supportedLanguages.push(...supportedLanguagesInMultilingualModels)
+
 		return {
-			name: elevenlabsVoice.name,
+			name: elevenLabsVoice.name,
 			languages: supportedLanguages,
 			gender,
 
-			elevenLabsVoiceId: elevenlabsVoice.voice_id,
-			elevenLabsModelId: modelId
+			elevenLabsVoiceId: elevenLabsVoice.voice_id,
 		}
 	})
 
@@ -120,18 +157,58 @@ export async function getVoiceList(apiKey: string) {
 
 export interface ElevenLabsTTSOptions {
 	apiKey?: string
+	modelId?: string
+
 	stability?: number
 	similarityBoost?: number
 	style?: number
 	useSpeakerBoost?: boolean
+
+	seed?: number
 }
 
 export const defaultElevenLabsTTSOptions = {
 	apiKey: undefined,
+	modelId: 'eleven_multilingual_v2',
+
 	stability: 0.5,
 	similarityBoost: 0.5,
 	style: 0,
-	useSpeakerBoost: true
+	useSpeakerBoost: true,
+
+	seed: undefined,
 }
 
-export const supporteMultilingualLanguages = ['zh', 'ko', 'nl', 'tr', 'sv', 'id', 'tl', 'ja', 'uk', 'el', 'cs', 'fi', 'ro', 'ru', 'da', 'bg', 'ms', 'sk', 'hr', 'ar', 'ta', 'pl', 'de', 'es', 'fr', 'it', 'hi', 'pt']
+export const supportedLanguagesInMultilingualModels = [
+	'ja',
+	'zh',
+	'de',
+	'hi',
+	'fr',
+	'ko',
+	'pt',
+	'it',
+	'es',
+	'id',
+	'nl',
+	'tr',
+	'fil',
+	'pl',
+	'sv',
+	'bg',
+	'ro',
+	'ar',
+	'cs',
+	'el',
+	'fi',
+	'hr',
+	'ms',
+	'sk',
+	'da',
+	'ta',
+	'uk',
+	'ru',
+	'hu',
+	'no',
+	'vi',
+]

@@ -22,6 +22,7 @@ import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { type OpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
 import { type ElevenLabsTTSOptions } from '../synthesis/ElevenLabsTTS.js'
+import { type DeepgramTTSOptions } from '../synthesis/DeepgramTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
@@ -808,23 +809,50 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 		case 'elevenlabs': {
 			if (inputIsSSML) {
-				throw new Error(`The Elevenlabs engine doesn't support SSML inputs`)
+				throw new Error(`The ElevenLabs engine doesn't support SSML inputs`)
 			}
 
 			const ElevenLabsTTS = await import('../synthesis/ElevenLabsTTS.js')
 
-			const engineOptions = options.elevenlabs!
+			const engineOptions = options.elevenLabs!
 
 			if (!engineOptions.apiKey) {
 				throw new Error(`No ElevenLabs API key provided`)
 			}
 
 			const voiceId = (selectedVoice as any)['elevenLabsVoiceId']
-			const modelId = (selectedVoice as any)['elevenLabsModelId']
 
 			logger.end()
 
-			const { rawAudio } = await ElevenLabsTTS.synthesize(text, voiceId, modelId, engineOptions)
+			const { rawAudio, timeline: outTimeline } = await ElevenLabsTTS.synthesize(text, voiceId, language, engineOptions)
+
+			synthesizedAudio = rawAudio
+			timeline = outTimeline
+
+			shouldPostprocessSpeed = true
+			shouldPostprocessPitch = true
+
+			break
+		}
+
+		case 'deepgram': {
+			if (inputIsSSML) {
+				throw new Error(`The Deepgram engine doesn't support SSML inputs`)
+			}
+
+			const DeepgramTTS = await import('../synthesis/DeepgramTTS.js')
+
+			const engineOptions = options.deepgram!
+
+			if (!engineOptions.apiKey) {
+				throw new Error(`No Deepgram API key provided`)
+			}
+
+			const modelId = selectedVoice.deepgramModelId
+
+			logger.end()
+
+			const { rawAudio } = await DeepgramTTS.synthesize(text, modelId, engineOptions)
 
 			synthesizedAudio = rawAudio
 
@@ -1071,8 +1099,8 @@ export type SynthesisEngine =
 	'vits' | 'kokoro' | 'pico' | 'flite' | 'gnuspeech' |
 	'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' |
 	'google-cloud' | 'microsoft-azure' | 'amazon-polly' |
-	'openai-cloud' | 'elevenlabs' | 'google-translate' |
-	'microsoft-edge' | 'streamlabs-polly'
+	'openai-cloud' | 'elevenlabs' | 'deepgram' |
+	'google-translate' | 'microsoft-edge' | 'streamlabs-polly'
 
 export type TimePitchShiftingMethod = 'sonic' | 'rubberband'
 
@@ -1198,7 +1226,9 @@ export interface SynthesisOptions {
 
 	openAICloud?: OpenAICloudTTSOptions
 
-	elevenlabs?: ElevenLabsTTSOptions,
+	elevenLabs?: ElevenLabsTTSOptions,
+
+	deepgram?: DeepgramTTSOptions
 
 	googleTranslate?: {
 		tld?: string
@@ -1340,7 +1370,10 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	openAICloud: {
 	},
 
-	elevenlabs: {
+	elevenLabs: {
+	},
+
+	deepgram: {
 	},
 
 	googleTranslate: {
@@ -1595,7 +1628,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 			case 'elevenlabs': {
 				const ElevenLabsTTS = await import('../synthesis/ElevenLabsTTS.js')
 
-				const engineOptions = options.elevenlabs!
+				const engineOptions = options.elevenLabs!
 
 				const apiKey = engineOptions.apiKey
 
@@ -1604,6 +1637,14 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				}
 
 				voiceList = await ElevenLabsTTS.getVoiceList(apiKey)
+
+				break
+			}
+
+			case 'deepgram': {
+				const DeepgramTTS = await import('../synthesis/DeepgramTTS.js')
+
+				voiceList = DeepgramTTS.voiceList
 
 				break
 			}
@@ -1800,6 +1841,7 @@ export interface SynthesisVoice {
 	gender: VoiceGender
 	speakerCount?: number
 	packageName?: string
+	[key: string]: any
 }
 
 export type VoiceGender = 'male' | 'female' | 'unknown'
@@ -1891,7 +1933,13 @@ export const synthesisEngines: EngineMetadata[] = [
 	},
 	{
 		id: 'elevenlabs',
-		name: 'Elevenlabs',
+		name: 'ElevenLabs',
+		description: 'A generative AI text-to-speech cloud service.',
+		type: 'cloud'
+	},
+	{
+		id: 'deepgram',
+		name: 'Deepgram',
 		description: 'A generative AI text-to-speech cloud service.',
 		type: 'cloud'
 	},

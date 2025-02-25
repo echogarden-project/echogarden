@@ -372,8 +372,11 @@
         "openAICloud": {
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
-        "elevenlabs": {
+        "elevenLabs": {
           "$ref": "#/definitions/ElevenLabsTTSOptions"
+        },
+        "deepgram": {
+          "$ref": "#/definitions/DeepgramTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
@@ -421,6 +424,7 @@
         "amazon-polly",
         "openai-cloud",
         "elevenlabs",
+        "deepgram",
         "google-translate",
         "microsoft-edge",
         "streamlabs-polly"
@@ -1239,6 +1243,9 @@
         },
         "model": {
           "type": "string"
+        },
+        "punctuate": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -1392,6 +1399,9 @@
         "apiKey": {
           "type": "string"
         },
+        "modelId": {
+          "type": "string"
+        },
         "stability": {
           "type": "number"
         },
@@ -1403,6 +1413,18 @@
         },
         "useSpeakerBoost": {
           "type": "boolean"
+        },
+        "seed": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeepgramTTSOptions": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -1701,8 +1723,11 @@
         "openAICloud": {
           "$ref": "#/definitions/OpenAICloudTTSOptions"
         },
-        "elevenlabs": {
+        "elevenLabs": {
           "$ref": "#/definitions/ElevenLabsTTSOptions"
+        },
+        "deepgram": {
+          "$ref": "#/definitions/DeepgramTTSOptions"
         },
         "googleTranslate": {
           "type": "object",
