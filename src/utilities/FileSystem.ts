@@ -130,15 +130,15 @@ export async function writeUtf8File(filePath: string, content: string) {
 	while (true) {
 		const stringChunk = content.substring(readOffset, readOffset + maxChunkSize)
 
-		if (stringChunk.length === 0) {
-			break
-		}
-
 		const chunk = textEncoder.encode(stringChunk)
 
 		await fileWriter.write(chunk)
 
 		readOffset += stringChunk.length
+
+		if (stringChunk.length === 0) {
+			break
+		}
 	}
 
 	await fileWriter.dispose()
