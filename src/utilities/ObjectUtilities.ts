@@ -30,7 +30,7 @@ export function deepClone<T>(val: T) {
 }
 
 function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
-	if (val == null || typeof val !== 'object') {
+	if (val === undefined || val === null || typeof val !== 'object') {
 		return val
 	}
 
@@ -57,71 +57,88 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 
 			seenObjects.pop()
 
-			return <any>clonedArray
+			return clonedArray as any
 		}
 
 		case '[object ArrayBuffer]': {
 			const clonedArray = new Uint8Array(obj.byteLength)
 			clonedArray.set(new Uint8Array(obj))
-			return <any>clonedArray.buffer
+
+			return clonedArray.buffer as any
 		}
 
 		case '[object Int8Array]': {
 			const clonedArray = new Int8Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Uint8Array]': {
 			const clonedArray = new Uint8Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Uint8ClampedArray]': {
 			const clonedArray = new Uint8ClampedArray(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Int16Array]': {
 			const clonedArray = new Int16Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Uint16Array]': {
 			const clonedArray = new Uint16Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Int32Array]': {
 			const clonedArray = new Int32Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Uint32Array]': {
 			const clonedArray = new Uint32Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Float32Array]': {
 			const clonedArray = new Float32Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
 		}
 
 		case '[object Float64Array]': {
 			const clonedArray = new Float64Array(obj.length)
 			clonedArray.set(obj)
-			return <any>clonedArray
+
+			return clonedArray as any
+		}
+
+		case '[object BigInt64Array]': {
+			const clonedArray = new BigInt64Array(obj.length)
+			clonedArray.set(obj)
+
+			return clonedArray as any
 		}
 
 		case '[object Date]': {
-			return <any>new Date(obj.valueOf())
+			return new Date(obj.valueOf()) as any
 		}
 
 		case '[object RegExp]': {
