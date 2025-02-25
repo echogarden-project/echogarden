@@ -1,4 +1,4 @@
-import { request } from 'gaxios'
+import { GaxiosResponse, request } from 'gaxios'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -18,9 +18,9 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 
 	// Prepare API request
 	const params: Record<string, string> = {
-		model: options.model || 'whisper-large',
-		encoding: 'flac',
-		//punctuate: 'true', // Problem when enabled: words in timeline are not capitalized, causing errors
+		model: options.model!,
+		encoding: 'opus',
+		punctuate: options.punctuate ? 'true' : 'false',
 	}
 
 	// Set language or enable auto-detection
@@ -31,32 +31,49 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 	}
 
 	// Set audio encoding parameters
-	logger.start('Convert audio to FLAC format')
+	logger.start('Convert audio to Opus format')
 
 	const audioData = await FFMpegTranscoder.encodeFromChannels(
 		rawAudio,
-		FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('flac')
+		FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('opus')
 	)
 
 	logger.start('Send request to Deepgram API')
 
-	const response = await request<any>({
-		method: 'POST',
+	let response: GaxiosResponse<any>
 
-		url: 'https://api.deepgram.com/v1/listen',
+	try {
+		response = await request<any>({
+			method: 'POST',
 
-		params,
+			url: 'https://api.deepgram.com/v1/listen',
 
-		headers: {
-			'Authorization': `Token ${options.apiKey}`,
-			'Content-Type': 'audio/flac',
-			'Accept': 'application/json'
-		},
+			params,
 
-		body: audioData,
+			headers: {
+				'Authorization': `Token ${options.apiKey}`,
+				'Content-Type': 'audio/ogg',
+				'Accept': 'application/json'
+			},
 
-		responseType: 'json',
-	})
+			body: audioData,
+
+			responseType: 'json',
+		})
+	} catch (e: any) {
+		const response = e.response
+
+		if (response) {
+			logger.log(`Request failed with status code ${response.status}`)
+
+			if (response.data) {
+				logger.log(`Server responded with:`)
+				logger.log(response.data)
+			}
+		}
+
+		throw e
+	}
 
 	const deepgramResponse: DeepgramResponse = response.data
 
@@ -65,19 +82,37 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 	// Extract transcript and create timeline
 	const transcript = firstAlternative?.transcript || ''
 
-	let timeline: Timeline = []
-
 	// Extract word-level timing information if available
 	const words = firstAlternative?.words || []
 
-	if (words.length > 0) {
-		timeline = words.map((word: DeepgramWordEntry): TimelineEntry => ({
-			type: 'word',
-			text: word.word,
-			startTime: word.start,
-			endTime: word.end,
-			confidence: word.confidence,
-		}))
+	const timeline = words.map((wordEntry: DeepgramWordEntry) => ({
+		type: 'word',
+		text: wordEntry.word,
+		startTime: wordEntry.start,
+		endTime: wordEntry.end,
+		confidence: wordEntry.confidence,
+	} as TimelineEntry))
+
+	// If `punctuate` is set to `true`, modify the text of all words to match their exact case in the transcript.
+	// This is required, otherwise it would later fail deriving word offsets.
+	if (options.punctuate) {
+		const lowerCaseTranscript = transcript.toLocaleLowerCase()
+
+		let readOffset = 0
+
+		for (const wordEntry of timeline) {
+			const wordEntryTextLowercase = wordEntry.text.toLocaleLowerCase()
+
+			const matchPosition = lowerCaseTranscript.indexOf(wordEntryTextLowercase, readOffset)
+
+			if (matchPosition === -1) {
+				throw new Error(`Couldn't match the word '${wordEntry.text}' in the lowercase transcript`)
+			}
+
+			wordEntry.text = transcript.substring(matchPosition, matchPosition + wordEntryTextLowercase.length)
+
+			readOffset = matchPosition + wordEntry.text.length
+		}
 	}
 
 	logger.end()
@@ -88,11 +123,13 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 export interface DeepgramSTTOptions {
 	apiKey?: string
 	model?: string
+	punctuate?: boolean
 }
 
 export const defaultDeepgramSTTOptions: DeepgramSTTOptions = {
 	apiKey: undefined,
-	model: 'nova-2'
+	model: 'nova-2',
+	punctuate: true,
 }
 
 interface DeepgramWordEntry {
