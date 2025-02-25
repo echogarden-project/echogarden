@@ -65,6 +65,10 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `sam.mouth`: mouth value, between `0`..`255` (defaults to `128`)
 * `sam.throat`: throat value, between `0`..`255` (defaults to `128`)
 
+**Gnuspeech**
+* `gnuspeech.tempo`: controls speech rate. Defaults to the value of the general `speed` option (`1.0` by default)
+* `gnuspeech.controlRate`: control rate. Defaults to `250.0`
+
 **SAPI**:
 * `sapi.rate`: SAPI speech rate, in its native units. An integer number between `-10` and `10`. Setting `speed` would apply time stretching instead. The two options can be used together
 
@@ -103,8 +107,15 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 
 **Elevenlabs**:
 * `elevenLabs.apiKey`: API key (required)
+* `elevenLabs.modelId`: model ID. See [this page](https://elevenlabs.io/docs/models) for an up-to-date list of available models. Defaults to `eleven_multilingual_v2`
 * `elevenLabs.stability`: stability. Defaults to `0.5`
 * `elevenLabs.similarityBoost`: similarity boost. Defaults to `0.5`
+* `elevenLabs.style`: style. Defaults to `0`
+* `elevenLabs.useSpeakerBoost`: use speaker boost. Defaults to `true`
+* `elevenLabs.seed`: seed for generation. Integer value that can make the generation predictable. Optional
+
+**Deepgram**:
+* `deepgram.apiKey`: API key (required)
 
 **Google Translate**:
 * `googleTranslate.tld`: top level domain to connect to. Can change the dialect for a small number of voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
@@ -213,8 +224,8 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **Deepgram**:
 * `deepgram.apiKey`: API key (required)
-* `deepgram.model`: model to use, defaults to `whisper-large`. All the models can be found here: https://developers.deepgram.com/docs/model
-* `language`: specify language code (global option). If not provided, Deepgram will auto-detect the language
+* `deepgram.model`: model to use. Can be any model the server supports, like `nova-3`, `nova-2`, `nova`, `enhanced`, `base` or `whisper` (see model list [here](https://developers.deepgram.com/docs/model)). Defaults to `nova-3`
+* `deepgram.punctuate`: request to add punctuation and capitalization to the resulting transcript. Defaults to `true`
 
 ## Speech-to-transcript alignment
 

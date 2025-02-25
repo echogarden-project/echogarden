@@ -35,7 +35,8 @@ These are commercial services that require a subscription and an API key to use:
 * [Azure Cognitive Services](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/) (`microsoft-azure`)
 * [Amazon Polly](https://aws.amazon.com/polly/) (`amazon-polly`)
 * [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`)
-* [Elevenlabs](https://elevenlabs.io/) (`elevenlabs`)
+* [ElevenLabs](https://elevenlabs.io/) (`elevenlabs`)
+* [Deepgram](https://deepgram.com/) (`deepgram`)
 
 **Cloud services (unofficial)**:
 

@@ -247,7 +247,6 @@
 ## Possible new engines or platforms
 
 * [PlayHT](https://play.ht/) speech synthesis cloud service
-* [Deepgram](https://deepgram.com/) cloud text-to-speech API
 * [Assembly AI](https://www.assemblyai.com/) cloud speech recognition API
 * [Picovoice Orca](https://github.com/Picovoice/orca) local text-to-speech
 * Coqui STT server connection
