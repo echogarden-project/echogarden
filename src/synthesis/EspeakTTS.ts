@@ -39,14 +39,19 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	let words = await splitToWords(text, language)
 
-	// Merge repeating symbol words to a single word to work around eSpeak bug
+	// Merge repeating non-words to a single word to work around eSpeak bug
 	const wordsWithMerges: string[] = []
 
 	for (let i = 0; i < words.length; i++) {
 		const currentWord = words[i]
 		const previousWord = words[i - 1]
 
-		if (i > 0 && currentWord === previousWord && !wordCharacterPattern.test(currentWord)) {
+		if (
+			i > 0 &&
+			currentWord === previousWord &&
+			!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
+			!wordCharacterPattern.test(currentWord)) {
+
 			wordsWithMerges[wordsWithMerges.length - 1] += currentWord
 		} else {
 			wordsWithMerges.push(currentWord)
