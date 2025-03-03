@@ -10,6 +10,7 @@ import { Lexicon } from '../nlp/Lexicon.js'
 import { indexOfLastMatchingNumberInRange } from '../utilities/Utilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
+import { substituteStringUsingLookup } from '../utilities/StringUtilities.js'
 
 const cachedInstanceLookup = new Map<string, KokoroTTS>()
 
@@ -60,6 +61,9 @@ export class KokoroTTS {
 		if (!voiceEntry) {
 			throw new Error(`Kokoro voice '${voice.name}' was not found.`)
 		}
+
+		const voicePrimaryLanguage = voice.languages[0]
+		const voicePrimaryLanguageShort = getShortLanguageCode(voicePrimaryLanguage)
 
 		sentenceText = //simplifyPunctuationCharacters(sentence.trim())
 			sentenceText
@@ -137,14 +141,50 @@ export class KokoroTTS {
 				for (const phoneme of word) {
 					let processedPhoneme = phoneme
 
-					if (getShortLanguageCode(voice.languages[0]) === 'en') {
-						processedPhoneme = processedPhoneme
-							.replace(/ʲ/g, "j")
-							.replace(/r/g, "ɹ")
-							.replace(/x/g, "k")
-							.replace(/ɬ/g, "l")
+					if (voicePrimaryLanguageShort === 'en') {
+						// Extract stress mark if needed
+						let stressMark: string | undefined
+
+						if (phoneme[0] === 'ˈ' || phoneme[0] === 'ˌ') {
+							stressMark = phoneme[0]
+
+							processedPhoneme = phoneme.substring(1)
+						}
+
+						// Apply English dialect specific substitutions
+						if (voicePrimaryLanguage === 'en-GB') {
+							processedPhoneme = substituteStringUsingLookup(
+								processedPhoneme,
+								britishEnglishESpeakToMisakiSubstitutions
+							)
+						} else {
+							processedPhoneme = substituteStringUsingLookup(
+								processedPhoneme,
+								americanEnglishESpeakToMisakiSubstitutions
+							)
+
+							processedPhoneme = processedPhoneme.replaceAll('ː', '')
+						}
+
+						// Apply English specific substitutions
+						processedPhoneme = substituteStringUsingLookup(
+							processedPhoneme,
+							englishESpeakToMisakiSubstitutions
+						)
+
+						// Bring back stress mark if needed
+						if (stressMark !== undefined) {
+							processedPhoneme = stressMark + processedPhoneme
+						}
+
+						// Workaround a word having only 'I' not being pronounced at some cases
+						if (processedPhoneme === 'I' && word.length === 1) {
+							processedPhoneme = 'aɪ'
+							//processedPhoneme = 'I'
+						}
 					}
 
+					// Perform tokenization
 					for (const phonemeCharacter of processedPhoneme) {
 						const id = charToTokenIDLookup[phonemeCharacter]
 
@@ -403,6 +443,47 @@ const charToTokenIDLookup: Record<string, number> = {
 	'↗': 172,
 	'↘': 173,
 	'ᵻ': 177
+}
+
+const englishESpeakToMisakiSubstitutions = {
+	'aɪ': 'I',
+	'aɪɚ': 'Iəɹ',
+	'aʊ': 'W',
+	'dʒ': 'ʤ',
+	'e': 'A',
+	'eɪ': 'A',
+	'r': 'ɹ',
+	'tʃ': 'ʧ',
+	'x': 'k',
+	'ç': 'k',
+	'ɐ': 'ə',
+	'ɔɪ': 'Y',
+	'əl': 'ᵊl',
+	'ɚ': 'əɹ',
+	'ɬ': 'l',
+	'ʔ': 't',
+	'ʔn': 'tᵊn',
+	'ʔˌn\u0329': 'tᵊn',
+	'ʲ': '',
+	'ʲO': 'jO',
+	'ʲQ': 'jQ',
+
+	// Make these substitutions regardless of dialect:
+	'əʊ': 'Q',
+	'oʊ': 'O',
+}
+
+const britishEnglishESpeakToMisakiSubstitutions = {
+	'eə': 'ɛː',
+	'iə': 'ɪə',
+	//'əʊ': 'Q',
+}
+
+const americanEnglishESpeakToMisakiSubstitutions = {
+	//'oʊ': 'O',
+	'ɜːɹ': 'ɜɹ',
+	'ɜː': 'ɜɹ',
+	'ɪə': 'iə',
 }
 
 const filenameLanguagePrefixLookup: Record<string, string> = {

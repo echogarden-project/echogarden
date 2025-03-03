@@ -203,3 +203,13 @@ export function substituteCharactersUsingLookup(text: string, substitutionLookup
 
 	return resultText
 }
+
+export function substituteStringUsingLookup(text: string, substitutionLookup: Record<string, string>) {
+	const substitution = substitutionLookup[text]
+
+	if (substitution !== undefined) {
+		return substitution
+	} else {
+		return text
+	}
+}
