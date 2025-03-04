@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "2.3.3",
+	"version": "2.3.4",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -112,7 +112,7 @@
 		"@types/graceful-fs": "^4.1.9",
 		"@types/jsdom": "^21.1.7",
 		"@types/msgpack-lite": "^0.1.11",
-		"@types/node": "^22.13.8",
+		"@types/node": "^22.13.9",
 		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.5.14",
 		"ts-json-schema-generator": "^2.3.0",
