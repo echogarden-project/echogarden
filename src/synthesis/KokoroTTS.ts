@@ -177,10 +177,12 @@ export class KokoroTTS {
 							processedPhoneme = stressMark + processedPhoneme
 						}
 
-						// Workaround a word having only 'I' not being pronounced at some cases
-						if (processedPhoneme === 'I' && word.length === 1) {
-							processedPhoneme = 'aɪ'
-							//processedPhoneme = 'I'
+						if (false) {
+							// Workaround a word having only 'I' not being pronounced at some cases
+							if (processedPhoneme === 'I' && word.length === 1) {
+								processedPhoneme = 'aɪ'
+								//processedPhoneme = 'ˌI'
+							}
 						}
 					}
 
@@ -446,7 +448,8 @@ const charToTokenIDLookup: Record<string, number> = {
 }
 
 const englishESpeakToMisakiSubstitutions = {
-	'aɪ': 'I',
+	//'aɪ': 'I', // Disable since model doesn't seem to work well with this mapping in some cases, like "I am"
+	'aɪə': 'Iə',
 	'aɪɚ': 'Iəɹ',
 	'aʊ': 'W',
 	'dʒ': 'ʤ',
