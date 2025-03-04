@@ -484,8 +484,8 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ˈɪ n d ə s t ɹ ɪ z",
-						"en-gb-x-rp": "ˈɪ n d ə s t ɹ ɪ z"
+						"en-us": "ˈɪ n d ə s t ɹ i z",
+						"en-gb-x-rp": "ˈɪ n d ə s t ɹ i z"
 					}
 				}
 			}
@@ -736,6 +736,46 @@
 					"espeak": {
 						"en-us": "p ˈoʊ k iː m ˌɑː n",
 						"en-gb-x-rp": "p ˈoʊ k ə m ˌɒ n"
+					}
+				}
+			}
+		],
+		"ram": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˈæ m",
+						"en-gb-x-rp": "ɹ ˈæ m"
+					}
+				}
+			}
+		],
+		"vram": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "v ˈiː ɹ ˌæ m",
+						"en-gb-x-rp": "v ˈiː ɹ ˌæ m"
+					}
+				}
+			}
+		],
+		"acyclic": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˌeɪ s ˈaɪ k l ɪ k",
+						"en-gb-x-rp": "ˌeɪ s ˈaɪ k l ɪ k"
+					}
+				}
+			}
+		],
+		"cuda": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ˈuː d ɑː",
+						"en-gb-x-rp": "k ˈuː d ɑː"
 					}
 				}
 			}

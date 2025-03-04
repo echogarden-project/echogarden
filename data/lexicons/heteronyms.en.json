@@ -1916,7 +1916,7 @@
 				],
 
 				"precededBy": [
-					"a", "his", "her", "my", "their", "your", "our", "whose", "long", "short", "great", "lengthy", "impressive", "incredible", "professional"
+					"a", "the", "his", "her", "my", "their", "your", "our", "whose", "long", "short", "great", "lengthy", "impressive", "incredible", "professional", "for"
 				],
 
 				"notPrecededBy": [
@@ -1943,7 +1943,46 @@
 				"example": "Wait until they resume the game."
 			}
 		],
-		"resumes [placeholder]": [
+		"resumes": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ˈɛ z uː m ˌeɪ z",
+						"en-gb-x-rp": "ɹ ˈɛ z j uː m ˌeɪ z"
+					}
+				},
+
+				"pos": [
+					"NN"
+				],
+
+				"precededBy": [
+					"the", "from", "these", "their", "our", "whose", "long", "short", "great", "lengthy", "impressive", "incredible", "professional"
+				],
+
+				"notPrecededBy": [
+					"he", "she", "it"
+				],
+
+				"followedBy": [
+					"to", "with"
+				],
+
+				"notFollowedBy":[
+				],
+
+				"example": "Here are all the resumes."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ə z ˈu m z",
+						"en-gb-x-rp": "ɹ ɪ z j ˈuː m z"
+					}
+				},
+
+				"example": "Wait until the game resumes."
+			}
 		],
 		"entrance": [
 			{
