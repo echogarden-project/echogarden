@@ -1138,7 +1138,7 @@
 				],
 
 				"precededBy": [
-					"i", "me", "we", "they", "to", "not", "doesn't", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall"
+					"i", "me", "we", "they", "to", "not", "doesn't", "don't", "should", "shouldn't", "will", "would", "wouldn't", "won't", "does", "doesn't", "can", "can't", "may", "might", "could", "couldn't", "must", "mustn't", "shall", "sometimes"
 				],
 
 				"notPrecededBy": [
@@ -2161,16 +2161,16 @@
 				"notFollowedBy": [
 					"to"
 				],
-				"example": "The plant extracts the metal."
+				"example": "Here is an extract of that."
 			},
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ˌɪ k s t ɹ ˈæ k t",
+						"en-us": "ɪ k s t ɹ ˈæ k t",
 						"en-gb-x-rp": "ᵻ k s t ɹ ˈa k t"
 					}
 				},
-				"example": "Here is an extract."
+				"example": "The plant extracts the water."
 			}
 		],
 		"segment": [],

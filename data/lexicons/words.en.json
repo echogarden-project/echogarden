@@ -580,6 +580,46 @@
 				}
 			}
 		],
+		"bigram": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ˈaɪ ɡ ɹ æ m",
+						"en-gb-x-rp": " b ˈaɪ ɡ ɹ æ m"
+					}
+				}
+			}
+		],
+		"bigrams": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ˈaɪ ɡ ɹ æ m z",
+						"en-gb-x-rp": " b ˈaɪ ɡ ɹ æ m z"
+					}
+				}
+			}
+		],
+		"trigram": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "t ɹ ˈaɪ ɡ ɹ æ m",
+						"en-gb-x-rp": "t ɹ ˈaɪ ɡ ɹ æ m"
+					}
+				}
+			}
+		],
+		"trigrams": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "t ɹ ˈaɪ ɡ ɹ æ m z",
+						"en-gb-x-rp": "t ɹ ˈaɪ ɡ ɹ æ m z"
+					}
+				}
+			}
+		],
 		"diphone": [
 			{
 				"pronunciation": {
@@ -776,6 +816,156 @@
 					"espeak": {
 						"en-us": "k ˈuː d ɑː",
 						"en-gb-x-rp": "k ˈuː d ɑː"
+					}
+				}
+			}
+		],
+		"arxiv": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɑːɹ k aɪ v",
+						"en-gb-x-rp": "ˈɑːɹ k aɪ v"
+					}
+				}
+			}
+		],
+		"backpropagate": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ t",
+						"en-gb-x-rp": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ t"
+					}
+				}
+			}
+		],
+		"backpropagates": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ t s",
+						"en-gb-x-rp": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ t s"
+					}
+				}
+			}
+		],
+		"backpropagated": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ ɾ ᵻ d",
+						"en-gb-x-rp": "b ˌæ k p ɹ ˈɑː p ɐ ɡ ˌeɪ t ᵻ d"
+					}
+				}
+			}
+		],
+		"discretize": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ɪ s k ɹ ˈi t ˌaɪ z",
+						"en-gb-x-rp": "d ɪ s k ɹ ˈi t ˌaɪ ɪ z"
+					}
+				}
+			}
+		],
+		"discretized": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ɪ s k ɹ ˈi t ˌaɪ z t",
+						"en-gb-x-rp": "d ɪ s k ɹ ˈi t ˌaɪ ɪ z t"
+					}
+				}
+			}
+		],
+		"discretizing": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ˈɪ s k ɹ i t ˌaɪ z i ŋ",
+						"en-gb-x-rp": "d ˈɪ s k ɹ i t ˌaɪ ɪ z ŋ"
+					}
+				}
+			}
+		],
+		"nauseous": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "n ˈɑː ʃ ə s",
+						"en-gb-x-rp": "n ˈɔː z ɪ ə s"
+					}
+				}
+			}
+		],
+		"disambiguating": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ˌɪ s æ m b ˈɪ ɡ j uː ˌeɪ ɾ ɪ ŋ",
+						"en-gb-x-rp": "d ˌɪ s æ m b ˈɪ ɡ j uː ˌeɪ t ɪ ŋ"
+					}
+				}
+			}
+		],
+		"initiative": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ n ˈɪ ʃ ə d ˌɪ v",
+						"en-gb-x-rp": "ɪ n ˈɪ ʃ ə t ˌɪ v"
+					}
+				}
+			}
+		],
+		"distributed": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ɪ s t ɹ ˈɪ b j ˌuː ɾ ᵻ d",
+						"en-gb-x-rp": "d ɪ s t ɹ ˈɪ b j ˌuː t ɪ d"
+					}
+				}
+			}
+		],
+		"deserializes": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ɪ s ˈɪ ɹ i əl ˌaɪ z ᵻ z",
+						"en-gb-x-rp": "d ɪ s ˈiə ɹ ɪ əl ˌaɪ z ɪ z"
+					}
+				}
+			}
+		],
+		"contrastive": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ə n t ɹ ˈæ s t ˌɪ v",
+						"en-gb-x-rp": "k ɒ n t ɹ ˈɑː s t ˌɪ v"
+					}
+				}
+			}
+		],
+		"guru": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɡ ˈʊ ɹ ˌu",
+						"en-gb-x-rp": "ɡ ˈʊ ɹ ˌuː"
+					}
+				}
+			}
+		],
+		"iterable": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈɪ t ɚ ɹ ə b əl",
+						"en-gb-x-rp": "ˈɪ t ɚ ɹ ə b əl"
 					}
 				}
 			}
