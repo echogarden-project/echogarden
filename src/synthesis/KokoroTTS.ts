@@ -209,7 +209,7 @@ export class KokoroTTS {
 
 		allTokenIds.push(sentenceEndTokenId)
 
-		const maxPartLength = 510
+		const maxPartLength = 509
 
 		const parts: number[][] = []
 
