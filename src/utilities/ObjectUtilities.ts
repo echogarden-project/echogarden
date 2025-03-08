@@ -137,6 +137,13 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 			return clonedArray as any
 		}
 
+		case '[object BigUint64Array]': {
+			const clonedArray = new BigUint64Array(obj.length)
+			clonedArray.set(obj)
+
+			return clonedArray as any
+		}
+
 		case '[object Date]': {
 			return new Date(obj.valueOf()) as any
 		}
