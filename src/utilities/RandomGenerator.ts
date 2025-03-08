@@ -98,6 +98,32 @@ export abstract class RandomGenerator {
 		return distribution.length - 1
 	}
 
+	shuffleInPlace<T>(values: WritableArrayLike<T>) {
+		for (let i = 0; i < values.length; i++) {
+			const targetIndex = this.getIntInRange(i, values.length)
+
+			const value = values[i]
+			values[i] = values[targetIndex]
+			values[targetIndex] = value
+		}
+
+		return values
+	}
+
+	getShuffledIntegerRange(start: number, end: number) {
+		const rangeLength = end - start
+
+		const integerRange = new Int32Array(rangeLength)
+
+		for (let i = 0; i < rangeLength; i++) {
+			integerRange[i] = start + i
+		}
+
+		this.shuffleInPlace(integerRange)
+
+		return integerRange
+	}
+
 	abstract nextFloat(): number
 	abstract nextUint32(): number
 	abstract nextInt32(): number
@@ -133,4 +159,9 @@ export class XorShift32PRNG extends Int32RandomGenerator {
 
 		return state
 	}
+}
+
+interface WritableArrayLike<T> {
+	length: number;
+	[n: number]: T;
 }
