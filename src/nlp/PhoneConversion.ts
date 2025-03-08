@@ -266,7 +266,8 @@ export const ipaToKirshenbaum: Record<string, string> = {
 	// Near-close
 	'ɪ': 'I',
 	'ɩ': 'I',
-	'ᵻ': 'I',
+	//'ᵻ': 'I',
+	'ᵻ': 'I#', // eSpeak
 	'ʏ': 'I.',
 	'ʊ': 'U',
 	'ɷ': 'U',
@@ -305,12 +306,13 @@ export const ipaToKirshenbaum: Record<string, string> = {
 	'ä': 'a"',
 	'ɒ̈': 'A".',
 	'ɑ': 'A',
+	'ɑː': '0', // eSpeak
 	//'ɒ': 'A.', // Reference
 	'ɒ': '0', // eSpeak
 
 	// Rhotic
-	'ɚ': 'R',
-	//'ɚ': '3', // eSpeak
+	//'ɚ': 'R',
+	'ɚ': '3', // eSpeak
 	//'ɝ': 'R<umd>', // Reference
 	'ɝ': 'R', // Simplified
 
@@ -407,7 +409,8 @@ export const ipaToKirshenbaum: Record<string, string> = {
 	'ʀ': 'r"', // Reference uvl trl
 
 	// Flaps
-	'ɾ': '*',
+	//'ɾ': '*',
+	'ɾ': 't#', // eSpeak
 	'ɽ': '*.',
 	'ṛ': '*.',
 
