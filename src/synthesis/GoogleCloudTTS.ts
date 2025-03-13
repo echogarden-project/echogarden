@@ -1,131 +1,130 @@
-import { request } from "gaxios";
-import { Logger } from "../utilities/Logger.js";
-import { logToStderr } from "../utilities/Utilities.js";
-import { decodeBase64 } from "../encodings/Base64.js";
+import { request } from 'gaxios'
+import { Logger } from '../utilities/Logger.js'
+import { logToStderr } from '../utilities/Utilities.js'
+import { decodeBase64 } from '../encodings/Base64.js'
 
-const log = logToStderr;
+const log = logToStderr
 
 export async function synthesize(
-  text: string,
-  apiKey: string,
-  languageCode = "en-US",
-  voice = "en-US-Wavenet-C",
-  speakingRate = 1.0,
-  pitchDeltaSemitones = 0.0,
-  volumeGainDecibels = 0.0,
-  ssml = false,
-  audioEncoding: AudioEncoding = "MP3",
-  sampleRate = 24000
-) {
-  const logger = new Logger();
-  logger.start("Request synthesis from Google Cloud");
+	text: string,
+	apiKey: string,
+	languageCode = 'en-US',
+	voice = 'en-US-Wavenet-C',
+	speakingRate = 1.0,
+	pitchDeltaSemitones = 0.0,
+	volumeGainDecibels = 0.0,
+	ssml = false,
+	audioEncoding: AudioEncoding = 'MP3',
+	sampleRate = 24000) {
 
-  const requestBody = {
-    input: {
-      text: undefined as string | undefined,
-      ssml: undefined as string | undefined,
-    },
+	const logger = new Logger()
+	logger.start('Request synthesis from Google Cloud')
 
-    voice: {
-      languageCode,
-      name: voice,
-    },
+	const requestBody = {
+		input: {
+			text: undefined as (string | undefined),
+			ssml: undefined as (string | undefined)
+		},
 
-    audioConfig: {
-      audioEncoding,
-      speakingRate,
-      pitch: pitchDeltaSemitones,
-      volumeGainDb: volumeGainDecibels,
-      sampleRateHertz: sampleRate,
-    },
+		voice: {
+			languageCode,
+			name: voice
+		},
 
-    enableTimePointing: ["SSML_MARK"],
-  };
+		audioConfig: {
+			audioEncoding,
+			speakingRate,
+			pitch: pitchDeltaSemitones,
+			volumeGainDb: volumeGainDecibels,
+			sampleRateHertz: sampleRate
+		},
 
-  if (ssml) {
-    requestBody.input.ssml = text;
-  } else {
-    requestBody.input.text = text;
-  }
+		enableTimePointing: ['SSML_MARK']
+	}
 
-  const response = await request<any>({
-    method: "POST",
+	if (ssml) {
+		requestBody.input.ssml = text
+	} else {
+		requestBody.input.text = text
+	}
 
-    url: `https://texttospeech.googleapis.com/v1beta1/text:synthesize`,
+	const response = await request<any>({
+		method: 'POST',
 
-    params: {
-      key: apiKey,
-    },
+		url: `https://texttospeech.googleapis.com/v1beta1/text:synthesize`,
 
-    headers: {
-      "User-Agent": "",
-    },
+		params: {
+			'key': apiKey
+		},
 
-    data: requestBody,
+		headers: {
+			'User-Agent': ''
+		},
 
-    responseType: "json",
-  });
+		data: requestBody,
 
-  logger.start("Parse result");
+		responseType: 'json'
+	})
 
-  const result = parseResponseBody(response.data);
+	logger.start('Parse result')
 
-  logger.end();
+	const result = parseResponseBody(response.data)
 
-  return result;
+	logger.end()
+
+	return result
 }
 
 function parseResponseBody(responseBody: any) {
-  const audioData = decodeBase64(responseBody.audioContent);
-  const timepoints: timePoint[] = responseBody.timepoints;
+	const audioData = decodeBase64(responseBody.audioContent)
+	const timepoints: timePoint[] = responseBody.timepoints
 
-  return { audioData, timepoints };
+	return { audioData, timepoints }
 }
 
 // Voices with audio samples: https://cloud.google.com/text-to-speech/docs/voices
 export async function getVoiceList(apiKey: string) {
-  const requestURL = `https://texttospeech.googleapis.com/v1beta1/voices`;
+	const requestURL = `https://texttospeech.googleapis.com/v1beta1/voices`
 
-  const response = await request<any>({
-    method: "GET",
+	const response = await request<any>({
+		method: 'GET',
 
-    url: requestURL,
+		url: requestURL,
 
-    params: {
-      key: apiKey,
-    },
+		params: {
+			'key': apiKey
+		},
 
-    headers: {
-      "User-Agent": "",
-    },
+		headers: {
+			'User-Agent': ''
+		},
 
-    responseType: "json",
-  });
+		responseType: 'json'
+	})
 
-  const responseData = response.data;
+	const responseData = response.data
 
-  const voices: GoogleCloudVoice[] = responseData.voices;
+	const voices: GoogleCloudVoice[] = responseData.voices
 
-  return voices;
+	return voices
 }
 
 export type GoogleCloudVoice = {
-  name: string;
-  languageCodes: string[];
-  ssmlGender: "MALE" | "FEMALE";
-  naturalSampleRateHertz: number;
-};
+	name: string
+	languageCodes: string[]
+	ssmlGender: 'MALE' | 'FEMALE'
+	naturalSampleRateHertz: number
+}
 
-export type AudioEncoding =
-  | "AUDIO_ENCODING_UNSPECIFIED"
+export type AudioEncoding = "AUDIO_ENCODING_UNSPECIFIED"
   | "LINEAR16"
   | "MP3"
   | "OGG_OPUS"
   | "MULAW"
   | "ALAW"
-  | "PCM";
+  | "PCM"
 
 export type timePoint = {
-  markName: string;
-  timeSeconds: number;
-};
+	markName: string,
+	timeSeconds: number
+}
