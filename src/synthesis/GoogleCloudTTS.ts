@@ -116,13 +116,7 @@ export type GoogleCloudVoice = {
 	naturalSampleRateHertz: number
 }
 
-export type AudioEncoding = "AUDIO_ENCODING_UNSPECIFIED"
-  | "LINEAR16"
-  | "MP3"
-  | "OGG_OPUS"
-  | "MULAW"
-  | "ALAW"
-  | "PCM"
+export type AudioEncoding = 'LINEAR16' | 'MP3' | 'OGG_OPUS' | 'MULAW' | 'ALAW' | 'PCM'
 
 export type timePoint = {
 	markName: string,
