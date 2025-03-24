@@ -55,6 +55,9 @@ declare module '@echogarden/speex-resampler-wasm'
 declare module '@echogarden/speex-resampler-wasm/simd'
 declare module '@echogarden/vosk'
 
+/*
+// Not needed anymore in `onnxruntime-node` 1.21.0:
+
 declare module 'onnxruntime-node' {
 	// From index.d.ts
 	export * from 'onnxruntime-common'
@@ -109,3 +112,4 @@ declare module 'onnxruntime-node' {
 	// From version.d.ts
 	export const version = '1.20.0'
 }
+*/
