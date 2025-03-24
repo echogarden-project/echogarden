@@ -701,8 +701,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { audioData, timepoints } = await GoogleCloudTTS.synthesize(text, apiKey, language, voice, speed, pitchDeltaSemitones, 0, inputIsSSML)
-			const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData)
+			const { rawAudio, timepoints } = await GoogleCloudTTS.synthesize(text, apiKey, language, voice, speed, pitchDeltaSemitones, 0, inputIsSSML)
 
 			synthesizedAudio = rawAudio
 

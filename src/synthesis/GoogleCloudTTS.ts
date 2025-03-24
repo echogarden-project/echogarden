@@ -2,6 +2,7 @@ import { request } from 'gaxios'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { decodeBase64 } from '../encodings/Base64.js'
+import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
 const log = logToStderr
 
@@ -14,7 +15,7 @@ export async function synthesize(
 	pitchDeltaSemitones = 0.0,
 	volumeGainDecibels = 0.0,
 	ssml = false,
-	audioEncoding: AudioEncoding = 'MP3_64_KBPS',
+	audioEncoding: AudioEncoding = 'MP3',
 	sampleRate = 24000) {
 
 	const logger = new Logger()
@@ -70,9 +71,14 @@ export async function synthesize(
 
 	const result = parseResponseBody(response.data)
 
+	logger.start('Decode to raw audio')
+
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(result.audioData)
+	const timepoints = result.timepoints
+
 	logger.end()
 
-	return result
+	return { rawAudio, timepoints }
 }
 
 function parseResponseBody(responseBody: any) {
@@ -116,7 +122,13 @@ export type GoogleCloudVoice = {
 	naturalSampleRateHertz: number
 }
 
-export type AudioEncoding = 'LINEAR16' | 'MP3' | 'MP3_64_KBPS' | 'OGG_OPUS' | 'MULAW' | 'ALAW'
+export type AudioEncoding =
+	'AUDIO_ENCODING_UNSPECIFIED' |
+	'LINEAR16' |
+	'MP3' |
+	'OGG_OPUS' |
+	'MULAW' |
+	'ALAW'
 
 export type timePoint = {
 	markName: string,
