@@ -1698,19 +1698,25 @@ async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isola
 		{
 			const isolatedOutputFilePath = prefixIsolated ? `${pathWithoutExtension}.isolated.${fileExtension}` : outputFilename
 
-			const fileSaver = getFileSaver(isolatedOutputFilePath, allowOverwrite)
-
-			await fileSaver(isolatedRawAudio, [], '')
+			await saveAudioWithBitrate(isolatedRawAudio, isolatedOutputFilePath, fileExtension, 64)
 		}
 
 		{
 			const backgroundOutputFilePath = `${pathWithoutExtension}.background.${fileExtension}`
 
-			const fileSaver = getFileSaver(backgroundOutputFilePath, allowOverwrite)
-
-			await fileSaver(backgroundRawAudio, [], '')
+			await saveAudioWithBitrate(backgroundRawAudio, backgroundOutputFilePath, fileExtension, 128)
 		}
 	}
+}
+
+async function saveAudioWithBitrate(rawAudio: RawAudio, filepath: string, fileExtension: string, bitrate: number) {
+	const ffmpegOptions = getDefaultFFMpegOptionsForSpeech(fileExtension, bitrate)
+	ffmpegOptions.filename = filepath
+
+	const fileDir = parsePath(filepath).dir || './'
+
+	await ensureDir(fileDir)
+	await encodeFromChannels(rawAudio, ffmpegOptions)
 }
 
 async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptionsMap: Map<string, string>, optionsRoot: K, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>): Promise<APIOptions[K]> {
