@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "2.4.0",
+	"version": "2.5.0",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -52,8 +52,8 @@
 		"echogarden": "./dist/cli/CLILauncher.js"
 	},
 	"dependencies": {
-		"@aws-sdk/client-polly": "^3.772.0",
-		"@aws-sdk/client-transcribe-streaming": "^3.772.0",
+		"@aws-sdk/client-polly": "^3.777.0",
+		"@aws-sdk/client-transcribe-streaming": "^3.777.0",
 		"@echogarden/audio-io": "^0.3.0",
 		"@echogarden/espeak-ng-emscripten": "^0.3.3",
 		"@echogarden/fasttext-wasm": "^0.1.0",
@@ -85,7 +85,7 @@
 		"microsoft-cognitiveservices-speech-sdk": "^1.43.0",
 		"msgpack-lite": "^0.1.26",
 		"onnxruntime-node": "^1.21.0",
-		"openai": "^4.89.0",
+		"openai": "^4.90.0",
 		"sam-js": "^0.3.1",
 		"strip-ansi": "^7.1.0",
 		"tar": "^7.4.3",
@@ -112,7 +112,7 @@
 		"@types/graceful-fs": "^4.1.9",
 		"@types/jsdom": "^21.1.7",
 		"@types/msgpack-lite": "^0.1.11",
-		"@types/node": "^22.13.13",
+		"@types/node": "^22.13.14",
 		"@types/tar": "^6.1.13",
 		"@types/ws": "^8.18.0",
 		"ts-json-schema-generator": "^2.3.0",
