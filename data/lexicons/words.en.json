@@ -950,6 +950,16 @@
 				}
 			}
 		],
+		"deserialized": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "d ɪ s ˈɪ ɹ i əl ˌaɪ z d",
+						"en-gb-x-rp": "d ɪ s ˈiə ɹ ɪ əl ˌaɪ d"
+					}
+				}
+			}
+		],
 		"deserializes": [
 			{
 				"pronunciation": {
@@ -1196,6 +1206,16 @@
 					"espeak": {
 						"en-us": "k ˈɑː p i d",
 						"en-gb-x-rp": "k ˈɒ p i d"
+					}
+				}
+			}
+		],
+		"parameterized": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ɚ ɹ ˈæ m ɪ t ɚ aɪ z t",
+						"en-gb-x-rp": "p ə ɹ ˈæ m ɪ t ɐ ɹ aɪ z t"
 					}
 				}
 			}
