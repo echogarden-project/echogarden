@@ -101,7 +101,8 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `openAICloud.apiKey`: API key (required)
 * `openAICloud.organization`: organization identifier. Optional
 * `openAICloud.baseURL`: override the default base URL for the API. Optional
-* `openAICloud.model`: model to use. Can be either `tts-1` or `tts-1-hd`. Defaults to `tts-1`
+* `openAICloud.model`: model to use. Can be either `tts-1`, `tts-1-hd` or `gpt-4o-mini-tts`. Defaults to `tts-1`
+* `openAICloud.instructions`: instructions for model. Only works with `gpt-4o-mini-tts`. Optional
 * `openAICloud.timeout`: request timeout. Optional
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
 
@@ -213,7 +214,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **OpenAI Cloud**:
 * `openAICloud.apiKey`: API key (required)
-* `openAICloud.model`: model to use. When using the default provider (OpenAI), can only be `whisper-1`. For a custom provider, like Groq, see its documentation
+* `openAICloud.model`: model to use. When using the default provider (OpenAI), can be `whisper-1`, `gpt-4o-mini-transcribe` or `gpt-4o-transcribe`. For a custom provider, like Groq, see its documentation
 * `openAICloud.organization`: organization identifier. Optional
 * `openAICloud.baseURL`: override the default endpoint used by the API. For example, set `https://api.groq.com/openai/v1` to use Groq's OpenAI-compatible API instead of the default one. Optional
 * `openAICloud.temperature`: temperature. Choosing `0` uses a dynamic temperature approach. Defaults to `0`
