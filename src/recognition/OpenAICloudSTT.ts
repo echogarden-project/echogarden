@@ -35,6 +35,14 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 
 	logger.start(options.baseURL ? `Send request to ${options.baseURL}` : 'Send request to OpenAI Cloud API')
 
+	let responseFormat: 'verbose_json' | 'json'
+
+	if (options.model === 'gpt-4o-mini-transcribe' || options.model === 'gpt-4o-transcribe') {
+		responseFormat = 'json'
+	} else {
+		responseFormat = 'verbose_json'
+	}
+
 	let response: VerboseResponse
 
 	if (task == 'transcribe') {
@@ -46,7 +54,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			model: options.model,
 			language: languageCode,
 			prompt: options.prompt,
-			response_format: 'verbose_json',
+			response_format: responseFormat,
 			temperature: options.temperature,
 			timestamp_granularities,
 		}) as any as VerboseResponse
@@ -55,7 +63,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			file: virtualFileStream,
 			model: options.model,
 			prompt: options.prompt,
-			response_format: 'verbose_json',
+			response_format: responseFormat,
 			temperature: options.temperature,
 		}) as any as VerboseResponse
 	} else {
@@ -64,7 +72,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 
 	const transcript = response.text.trim()
 
-	let timeline: Timeline
+	let timeline: Timeline | undefined
 
 	if (response.words) {
 		timeline = response.words.map<TimelineEntry>(entry => ({
@@ -73,7 +81,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			startTime: entry.start,
 			endTime: entry.end
 		}))
-	} else {
+	} else if (response.segments) {
 		const segmentTimeline = response.segments.map<TimelineEntry>(entry => ({
 			type: 'segment',
 			text: entry.text,
@@ -129,7 +137,7 @@ interface VerboseResponse {
 type Task = 'transcribe' | 'translate'
 
 export interface OpenAICloudSTTOptions {
-	model?: 'whisper-1' | string
+	model?: 'whisper-1' | 'gpt-4o-mini-transcribe' | 'gpt-4o-transcribe' | string
 
 	apiKey?: string
 	organization?: string
