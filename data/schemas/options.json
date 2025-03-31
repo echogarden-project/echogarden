@@ -1381,8 +1381,12 @@
           "type": "string",
           "enum": [
             "tts-1",
-            "tts-1-hd"
+            "tts-1-hd",
+            "gpt-4o-mini-tts"
           ]
+        },
+        "instructions": {
+          "type": "string"
         },
         "timeout": {
           "type": "number"
