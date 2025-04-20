@@ -288,8 +288,9 @@ export const ipaToKirshenbaum: Record<string, string> = {
 	// Open-mid:
 	'ɛ': 'E',
 	'œ': 'W',
-	//'ɜ': '3', // eSpeak
-	'ɜ': 'V"',
+	'ɜ': '3', // eSpeak
+	'ɜː': '3:',
+	//'ɜ': 'V"',
 	'ɞ': 'O"',
 	'ʌ': 'V',
 	'ɔ': 'O',
