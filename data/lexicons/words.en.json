@@ -1220,6 +1220,246 @@
 				}
 			}
 		],
+		"multimodal": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˌʌ l t i m ˈoʊ d əl",
+						"en-gb-x-rp": "m ˌʌ l t i m ˈəʊ d əl"
+					}
+				}
+			}
+		],
+		"multisensory": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˌʌ l t i s ˈɛ n s ɚ ɹ i",
+						"en-gb-x-rp": "m ˌʌ l t i s ˈɛ n s ə ɹ ɪ"
+					}
+				}
+			}
+		],
+		"multimedia": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˌʌ l t i m ˈiː d iː ə",
+						"en-gb-x-rp": "m ˌʌ l t i m ˈiː d iː ɐ"
+					}
+				}
+			}
+		],
+		"era": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈe ɹ ə",
+						"en-gb-x-rp": "ˈiə ɹ ɐ"
+					}
+				}
+			}
+		],
+		"behemoth": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "b ɪ h ˈiː m ɑː θ",
+						"en-gb-x-rp": "b ɪ h ˈiː m ɒ θ"
+					}
+				}
+			}
+		],
+		"pretrained": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "p ɹ ˈi t ɹ ˌeɪ n d",
+						"en-gb-x-rp": "p ɹ ˈi t ɹ ˌeɪ n d"
+					}
+				}
+			}
+		],
+		"embodiment": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɛ m b ˈɑː d i m ə n t",
+						"en-gb-x-rp": "ɪ m b ˈɒ d i m ə n t"
+					}
+				}
+			}
+		],
+		"uber": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈuː b ɚ",
+						"en-gb-x-rp": "ˈuː b ɐ"
+					}
+				}
+			}
+		],
+		"rebook": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ i b ˈʊ k",
+						"en-gb-x-rp": "ɹ i b ˈʊ k"
+					}
+				}
+			}
+		],
+		"asynchronous": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈeɪ s ˌɪ ŋ k ɹ ə n ə s",
+						"en-gb-x-rp": "ˈeɪ s ˌɪ ŋ k ɹ ə n ə s"
+					}
+				}
+			}
+		],
+		"async": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ˈeɪ s ˌɪ ŋ k",
+						"en-gb-x-rp": "ˈeɪ s ˌɪ ŋ k"
+					}
+				}
+			}
+		],
+		"rewritten": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ i ɹ ˈɪ ʔ n",
+						"en-gb-x-rp": "ɹ i ɹ ˈɪ ʔ n"
+					}
+				}
+			}
+		],
+		"copies": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ˈɑː p i z",
+						"en-gb-x-rp": "k ˈɒ p i z"
+					}
+				}
+			}
+		],
+		"transaction": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "t ɹ æ n z ˈæ k ʃ ə n",
+						"en-gb-x-rp": "t ɹ æ n z ˈæ k ʃ ə n"
+					}
+				}
+			}
+		],
+		"transactions": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "t ɹ æ n z ˈæ k ʃ ə n z",
+						"en-gb-x-rp": "t ɹ æ n z ˈæ k ʃ ə n z"
+					}
+				}
+			}
+		],
+		"transactional": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "t ɹ æ n z ˈæ k ʃ ə n əl",
+						"en-gb-x-rp": "t ɹ æ n z ˈæ k ʃ ə n əl"
+					}
+				}
+			}
+		],
+		"environment": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ n v ˈaɪ ɹ ə m ə n t",
+						"en-gb-x-rp": "ɪ n v ˈaɪ ɹ ə m ə n t"
+					}
+				}
+			}
+		],
+		"environmental": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɪ n v ˈaɪ ɹ ə m ə n t əl",
+						"en-gb-x-rp": "ɪ n v ˈaɪ ɹ ə m ə n t əl"
+					}
+				}
+			}
+		],
+		"auxiliary": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɑː ɡ z ˈɪ l i eɹ i",
+						"en-gb-x-rp": "ɔː ɡ z ˈɪ l i əɹ i"
+					}
+				}
+			}
+		],
+		"stylesheet": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s t ˈaɪ l ʃ ˌiː t",
+						"en-gb-x-rp": " s t ˈaɪ l ʃ ˌiː t"
+					}
+				}
+			}
+		],
+		"stylesheets": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "s t ˈaɪ l ʃ ˌiː t s",
+						"en-gb-x-rp": " s t ˈaɪ l ʃ ˌiː t s"
+					}
+				}
+			}
+		],
+		"favicon": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "f ˌæ v ˈaɪ k ɑː n",
+						"en-gb-x-rp": " f ˌæ v ˈaɪ k ɑː n"
+					}
+				}
+			}
+		],
+		"favicons": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "f ˌæ v ˈaɪ k ɑː n z",
+						"en-gb-x-rp": "f ˌæ v ˈaɪ k ɑː n z"
+					}
+				}
+			}
+		],
+		"researcher": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ i s ˈɜː r tʃ ɚ",
+						"en-gb-x-rp": "ɹ ɪ s ˈɜː tʃ ɐ ɹ"
+					}
+				}
+			}
+		],
 		"aka [disabled]": [
 			{
 				"pronunciation": {
