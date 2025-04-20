@@ -5,7 +5,7 @@ export function ipaPhoneToKirshenbaum(ipaPhone: string) {
 		const convertedChar = ipaToKirshenbaum[char]
 
 		if (convertedChar == undefined) {
-			throw new Error(`Couldn't convert IPA character '${char}' (part of phone '${ipaPhone}' the Kirshenbaum notation`)
+			throw new Error(`Couldn't convert IPA character '${char}' (part of phone '${ipaPhone}') to the Kirshenbaum notation`)
 		}
 
 		result += convertedChar || '_'
