@@ -40,30 +40,45 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	let words = await splitToWords(text, language)
 
 	// Merge repeating non-words to a single word to work around eSpeak bug
-	const wordsWithMerges: string[] = []
+	{
+		const wordsWithMerges: string[] = []
 
-	for (let i = 0; i < words.length; i++) {
-		const currentWord = words[i]
-		const previousWord = words[i - 1]
+		for (let i = 0; i < words.length; i++) {
+			const currentWord = words[i]
+			const previousWord = words[i - 1]
 
-		if (
-			i > 0 &&
-			currentWord === previousWord &&
-			!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
-			!wordCharacterPattern.test(currentWord)) {
+			if (
+				i > 0 &&
+				currentWord === previousWord &&
+				!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
+				!wordCharacterPattern.test(currentWord)) {
 
-			wordsWithMerges[wordsWithMerges.length - 1] += currentWord
-		} else {
-			wordsWithMerges.push(currentWord)
+				wordsWithMerges[wordsWithMerges.length - 1] += currentWord
+			} else {
+				wordsWithMerges.push(currentWord)
+			}
+		}
+
+		words = wordsWithMerges
+	}
+
+	// Remove words containing only whitespace
+	const nonWhitespaceWords: string[] = []
+	const nonWhitespaceWordsOriginalIndex: number[] = []
+
+	{
+		for (let i = 0; i < words.length; i++) {
+			const word = words[i]
+			const wordIsWhitespace = word.trim().length === 0
+
+			if (!wordIsWhitespace) {
+				nonWhitespaceWords.push(word)
+				nonWhitespaceWordsOriginalIndex.push(i)
+			}
 		}
 	}
 
-	words = wordsWithMerges
-
-	// Trim words and remove words containing only whitespace
-	words = words.map(word => word.trim()).filter(word => word !== '')
-
-	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, language)
+	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, nonWhitespaceWords, nonWhitespaceWordsOriginalIndex, language)
 
 	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
 

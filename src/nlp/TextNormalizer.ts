@@ -1,11 +1,16 @@
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { substituteCharactersUsingLookup } from '../utilities/StringUtilities.js'
 
-export function getNormalizedFragmentsForSpeech(words: string[], language: string) {
+export function getNormalizedFragmentsForSpeech(
+	words: string[],
+	nonWhitespaceWords: string[],
+	nonWhitespaceWordOriginalIndex: number[],
+	language: string) {
+
 	language = getShortLanguageCode(language)
 
 	if (language != 'en') {
-		return { normalizedFragments: [...words], referenceFragments: [...words] }
+		return { normalizedFragments: [...nonWhitespaceWords], referenceFragments: [...nonWhitespaceWords] }
 	}
 
 	const numberPattern = /^[0-9][0-9\,\.]*$/
@@ -41,73 +46,79 @@ export function getNormalizedFragmentsForSpeech(words: string[], language: strin
 	const normalizedFragments: string[] = []
 	const referenceFragments: string[] = []
 
-	for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-		const word = words[wordIndex]
+	for (let wordIndex = 0; wordIndex < nonWhitespaceWords.length; wordIndex++) {
+		const word = nonWhitespaceWords[wordIndex]
 		const lowerCaseWord = word.toLowerCase()
 
-		const nextWords = words.slice(wordIndex + 1)
-		const nextWord = nextWords[0]
+		const nextNonWhitespaceWords = nonWhitespaceWords.slice(wordIndex + 1)
+		const nextNonWhitespaceWord = nextNonWhitespaceWords[0]
+
+		const originalWordIndex = nonWhitespaceWordOriginalIndex[wordIndex]
+		const isFollowedByWhitespace = words[originalWordIndex + 1]?.trim().length === 0
 
 		if ( // Normalize a four digit year pattern, e.g. 'in 1995'.
 			wordsPrecedingAYear.includes(lowerCaseWord) &&
-			fourDigitYearPattern.test(nextWord)) {
+			isFollowedByWhitespace &&
+			fourDigitYearPattern.test(nextNonWhitespaceWord)) {
 
-			const normalizedString = normalizeFourDigitYearString(nextWord)
+			const normalizedString = normalizeFourDigitYearString(nextNonWhitespaceWord)
 
 			normalizedFragments.push(word)
 			referenceFragments.push(word)
 
 			normalizedFragments.push(normalizedString)
-			referenceFragments.push(nextWord)
+			referenceFragments.push(nextNonWhitespaceWord)
 
 			wordIndex += 1
 		} else if ( // Normalize a four digit decade pattern, e.g. 'the 1980s'.
 			wordsPrecedingADecade.includes(lowerCaseWord) &&
-			fourDigitDecadePattern.test(nextWord)) {
+			isFollowedByWhitespace &&
+			fourDigitDecadePattern.test(nextNonWhitespaceWord)) {
 
-			const normalizedString = normalizeFourDigitDecadeString(nextWord)
+			const normalizedString = normalizeFourDigitDecadeString(nextNonWhitespaceWord)
 
 			normalizedFragments.push(word)
 			referenceFragments.push(word)
 
 			normalizedFragments.push(normalizedString)
-			referenceFragments.push(nextWord)
+			referenceFragments.push(nextNonWhitespaceWord)
 
 			wordIndex += 1
-		} else if ( // Normalize a year range pattern, e.g. '1835-1896'
-			fourDigitYearRangePattern.test(words.slice(wordIndex, wordIndex + 3).join(''))) {
+		} else if ( // Normalize a year range pattern, e.g. '1835-1896', ensure there are no spaces between words
+			fourDigitYearRangePattern.test(words.slice(originalWordIndex, originalWordIndex + 3).join(''))) {
 
-			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex]))
-			referenceFragments.push(words[wordIndex])
+			normalizedFragments.push(normalizeFourDigitYearString(nonWhitespaceWords[wordIndex]))
+			referenceFragments.push(nonWhitespaceWords[wordIndex])
 
 			normalizedFragments.push('to')
-			referenceFragments.push(words[wordIndex + 1])
+			referenceFragments.push(nonWhitespaceWords[wordIndex + 1])
 
-			normalizedFragments.push(normalizeFourDigitYearString(words[wordIndex + 2]))
-			referenceFragments.push(words[wordIndex + 2])
+			normalizedFragments.push(normalizeFourDigitYearString(nonWhitespaceWords[wordIndex + 2]))
+			referenceFragments.push(nonWhitespaceWords[wordIndex + 2])
 
 			wordIndex += 2
 		} else if ( // Normalize a currency pattern, e.g. '$53.1 million', '€3.53'
 			symbolsPrecedingACurrency.includes(lowerCaseWord) &&
-			numberPattern.test(nextWord)) {
+			!isFollowedByWhitespace &&
+			numberPattern.test(nextNonWhitespaceWord)) {
 
 			let currencyWord = symbolsPrecedingACurrencyAsWords[symbolsPrecedingACurrency.indexOf(lowerCaseWord)]
 
-			if (wordsSucceedingACurrency.includes(nextWords[1].toLowerCase())) {
-				const normalizedString = `${nextWord} ${nextWords[1]} ${currencyWord}`
+			if (wordsSucceedingACurrency.includes(nextNonWhitespaceWords[1]?.toLowerCase())) {
+				const normalizedString = `${nextNonWhitespaceWord} ${nextNonWhitespaceWords[1]} ${currencyWord}`
 
 				normalizedFragments.push(normalizedString)
 
-				const referenceString = `${word}${nextWord} ${nextWords[1]}`
+				const referenceString = `${word}${nextNonWhitespaceWord} ${nextNonWhitespaceWords[1]}`
 				referenceFragments.push(referenceString)
 
 				wordIndex += 2
 			} else {
-				const normalizedString = `${nextWord} ${currencyWord}`
+				const normalizedString = `${nextNonWhitespaceWord} ${currencyWord}`
 
 				normalizedFragments.push(normalizedString)
 
-				const referenceString = `${word}${nextWord}`
+				const referenceString = `${word}${nextNonWhitespaceWord}`
 				referenceFragments.push(referenceString)
 
 				wordIndex += 1
