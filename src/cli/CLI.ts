@@ -1710,13 +1710,19 @@ async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isola
 }
 
 async function saveAudioWithBitrate(rawAudio: RawAudio, filepath: string, fileExtension: string, bitrate: number) {
-	const ffmpegOptions = getDefaultFFMpegOptionsForSpeech(fileExtension, bitrate)
-	ffmpegOptions.filename = filepath
-
 	const fileDir = parsePath(filepath).dir || './'
 
-	await ensureDir(fileDir)
-	await encodeFromChannels(rawAudio, ffmpegOptions)
+	if (fileExtension == 'wav') {
+		await ensureDir(fileDir)
+
+		await writeFileSafe(filepath, encodeRawAudioToWave(rawAudio))
+	} else {
+		const ffmpegOptions = getDefaultFFMpegOptionsForSpeech(fileExtension, bitrate)
+		ffmpegOptions.filename = filepath
+
+		await ensureDir(fileDir)
+		await encodeFromChannels(rawAudio, ffmpegOptions)
+	}
 }
 
 async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptionsMap: Map<string, string>, optionsRoot: K, additionalOptionsSchema?: Map<string, SchemaTypeDefinition>): Promise<APIOptions[K]> {

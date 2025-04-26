@@ -214,38 +214,42 @@ async function getFFMpegExecutablePath() {
 export function getDefaultFFMpegOptionsForSpeech(fileExtension: string, customBitrate?: number) {
 	let ffmpegOptions: FFMpegOutputOptions
 
-	if (fileExtension == 'mp3') {
+	if (fileExtension === 'mp3') {
 		ffmpegOptions = {
 			format: 'mp3',
 			codec: 'libmp3lame',
 			bitrate: 64,
 			customOptions: []
 		}
-	} else if (fileExtension == 'opus') {
+	} else if (fileExtension === 'opus') {
 		ffmpegOptions = {
 			format: 'ogg',
 			codec: 'libopus',
 			bitrate: 48,
 			customOptions: []
 		}
-	} else if (fileExtension == 'm4a') {
+	} else if (fileExtension === 'm4a') {
 		ffmpegOptions = {
 			format: 'mp4',
 			codec: 'aac',
 			bitrate: 48,
 			customOptions: ['-profile:a', 'aac_low', '-movflags', 'frag_keyframe+empty_moov']
 		}
-	} else if (fileExtension == 'ogg') {
+	} else if (fileExtension === 'ogg') {
 		ffmpegOptions = {
 			format: 'ogg',
 			codec: 'libvorbis',
 			bitrate: 48,
 			customOptions: []
 		}
-	} else if (fileExtension == 'flac') {
+	} else if (fileExtension === 'flac') {
 		ffmpegOptions = {
 			format: 'flac',
 			customOptions: ['-compression_level', '6']
+		}
+	} else if (fileExtension === 'wav') {
+		ffmpegOptions = {
+			format: 'wav'
 		}
 	} else {
 		throw new Error(`Unsupported codec extension: '${fileExtension}'`)
