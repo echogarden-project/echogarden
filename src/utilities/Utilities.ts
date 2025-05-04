@@ -511,3 +511,67 @@ export function encodeHTMLAngleBrackets(text: string) {
 		.replaceAll('>', '&gt;')
 		.replaceAll('&', '&amp;')
 }
+
+export function getTopKIndexes(values: ArrayLike<number>, topCount: number, sort = true) {
+	if (topCount < 1) {
+		throw new Error(`Top count must be at least 1`)
+	}
+
+	const topKIndexes = new Uint32Array(Math.min(topCount, values.length))
+
+	// Initialize top k indexes with the first k elements
+	// (or less, if value list is shorter)
+	for (let i = 0; i < topKIndexes.length; i++) {
+		topKIndexes[i] = i
+	}
+
+	// Return if value list is shorter or equal in length to topCount
+	if (values.length <= topCount) {
+		return topKIndexes
+	}
+
+	////
+
+	let positionOfMinimum = -1
+	let valueOfMinimum = -Infinity
+
+	// Method to scan the top-k array and update the latest minimum value position and value
+	function updateMinimum() {
+		positionOfMinimum = 0
+		valueOfMinimum = values[topKIndexes[0]]
+
+		for (let i = 1; i < topKIndexes.length; i++) {
+			const value = values[topKIndexes[i]]
+
+			if (value < valueOfMinimum) {
+				positionOfMinimum = i
+				valueOfMinimum = value
+			}
+		}
+	}
+
+	updateMinimum()
+
+	// Add remaining elements to the list, if needed
+	for (let insertedElementIndex = topCount; insertedElementIndex < values.length; insertedElementIndex++) {
+		const insertedElementValue = values[insertedElementIndex]
+
+		// If the inserted element's value is lesser or equal to the value
+		// of the smallest value on the list, skip it
+		if (insertedElementValue <= valueOfMinimum) {
+			continue
+		}
+
+		// Replace the minimum element with the inserted element
+		topKIndexes[positionOfMinimum] = insertedElementIndex
+
+		// Update the position and value of the minimum element
+		updateMinimum()
+	}
+
+	if (sort) {
+		topKIndexes.sort((a, b) => values[b] - values[a])
+	}
+
+	return topKIndexes
+}

@@ -2,8 +2,8 @@ import type * as Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
-import { clip, concatFloat32Arrays, getIntegerRange, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, stdDeviationOfVector, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
+import { clip, getIntegerRange, getTopKIndexes, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -1019,36 +1019,37 @@ export class Whisper {
 			}
 
 			// Find top candidates
-			const sortedNonTimestampLogitsWithIndexes =
-				Array.from(nonTimestampTokenLogits).map((logit, index) => ({ token: index, logit }))
+			const sortedTopCandidateTokens = getTopKIndexes(nonTimestampTokenLogits, options.topCandidateCount!, true)
 
-			sortedNonTimestampLogitsWithIndexes.sort((a, b) => b.logit - a.logit)
+			let topCandidates = Array.from(sortedTopCandidateTokens).map(token => {
+				const logit = nonTimestampTokenLogits[token]
 
-			let topCandidates = sortedNonTimestampLogitsWithIndexes.slice(0, options.topCandidateCount!)
-				.map(entry => ({
-					token: entry.token,
-					logit: entry.logit,
-					text: this.tokenToText(entry.token, true)
-				}))
+				return {
+					token,
+					logit,
+					text: this.tokenToText(token, true)
+				}
+			})
 
 			// Apply repetition suppression if enabled
 			if (options.suppressRepetition) {
-				// Using some hardcoded constants, for now
+				// Using some hardcoded constants, for now:
 				const tokenWindowSize = 30
 				const thresholdMatchLength = 4
-				const thresholdCycleRepetition = 3
+				const thresholdCycleRepetitionCount = 3
 
 				const filteredCandidates: typeof topCandidates = []
 
 				for (const candidate of topCandidates) {
-					const lastDecodedTextTokens = decodedTokens
-						.filter(token => this.isTextToken(token))
+					const decodedTextTokens = decodedTokens.filter(token => this.isTextToken(token))
+
+					const lastDecodedTextTokens = decodedTextTokens
+						.slice(Math.max(decodedTextTokens.length - tokenWindowSize, 0))
 						.reverse()
-						.slice(0, tokenWindowSize)
 
-					const { longestMatch, longestCycleRepetition } = getTokenRepetitionScore([candidate.token, ...lastDecodedTextTokens])
+					const { longestMatchLength, longestCycleRepetitionCount } = getTokenRepetitionScore([candidate.token, ...lastDecodedTextTokens])
 
-					if (longestMatch >= thresholdMatchLength || longestCycleRepetition >= thresholdCycleRepetition) {
+					if (longestMatchLength >= thresholdMatchLength || longestCycleRepetitionCount >= thresholdCycleRepetitionCount) {
 						continue
 					}
 

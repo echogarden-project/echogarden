@@ -148,24 +148,24 @@ export function getTokenRepetitionScore(tokens: string[] | number[]) {
 		matchLengthForCycleLength.push(score)
 	}
 
-	let longestMatch = -Infinity
-	let longestCycleRepetition = -Infinity
+	let longestMatchLength = -Infinity
+	let longestCycleRepetitionCount = -Infinity
 
 	for (let i = 1; i <= matchLengthForCycleLength.length; i++) {
 		const matchLength = matchLengthForCycleLength[i]
 
-		if (matchLength > longestMatch) {
-			longestMatch = matchLength
+		if (matchLength > longestMatchLength) {
+			longestMatchLength = matchLength
 		}
 
 		const cycleCount = (matchLength / i) + 1
 
-		if (cycleCount > longestCycleRepetition) {
-			longestCycleRepetition = cycleCount
+		if (cycleCount > longestCycleRepetitionCount) {
+			longestCycleRepetitionCount = cycleCount
 		}
 	}
 
-	return { longestMatch, longestCycleRepetition }
+	return { longestMatchLength, longestCycleRepetitionCount }
 }
 
 export async function convertHtmlToText(html: string) {
