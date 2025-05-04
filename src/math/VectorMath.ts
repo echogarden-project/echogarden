@@ -727,6 +727,8 @@ export function sigmoid(x: number) {
 }
 
 export function softmax(logits: ArrayLike<number>, temperature = 1.0) {
+	temperature = Math.max(temperature, 0.00001)
+
 	const logitCount = logits.length
 
 	if (logitCount === 0) {
@@ -743,23 +745,23 @@ export function softmax(logits: ArrayLike<number>, temperature = 1.0) {
 		}
 	}
 
-	const temperatureReciprocal = 1 / (temperature + 1e-40)
+	const temperatureReciprocal = 1 / temperature
 
 	const results = new Float32Array(logitCount)
 
-	let sumOfExponentiatedValues = 0.0
+	let sumOfExponentiatedLogits = 0.0
 
 	for (let i = 0; i < logitCount; i++) {
-		const value = logits[i]
+		const logit = logits[i]
 
-		const eToValue = Math.exp((value - maxValue) * temperatureReciprocal)
+		const eToLogit = Math.exp((logit - maxValue) * temperatureReciprocal)
 
-		sumOfExponentiatedValues += eToValue
+		sumOfExponentiatedLogits += eToLogit
 
-		results[i] = eToValue
+		results[i] = eToLogit
 	}
 
-	const sumOfExponentiatedValuesReciprocal = 1 / (sumOfExponentiatedValues + 1e-40)
+	const sumOfExponentiatedValuesReciprocal = 1 / (sumOfExponentiatedLogits + 1e-20)
 
 	for (let i = 0; i < logitCount; i++) {
 		results[i] *= sumOfExponentiatedValuesReciprocal
