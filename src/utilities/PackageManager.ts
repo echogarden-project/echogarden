@@ -197,9 +197,10 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'whisper.cpp-large-v3-turbo-q5_0': '20241003',
 
 	// whisper.cpp binaries
-	'whisper.cpp-binaries-linux-x64-cpu-latest': '20241010',
-	'whisper.cpp-binaries-windows-x64-cpu-latest': '20241010',
-	'whisper.cpp-binaries-windows-x64-cublas-12.4.0-latest': '20241010',
+	'whisper.cpp-binaries-windows-x64-cpu-latest': '20250502',
+	'whisper.cpp-binaries-windows-x64-cublas-12.4.0-latest': '20250502',
+	'whisper.cpp-binaries-linux-x64-cpu-latest': '20250502',
+	'whisper.cpp-binaries-linux-x64-cublas-12.4.0-latest': '20250502',
 
 	// E5 models
 	'xenova-multilingual-e5-small-q8': '20240504',

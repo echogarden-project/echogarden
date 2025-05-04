@@ -405,7 +405,7 @@ export type WhisperCppBuild = 'cpu' | 'cublas-12.4.0' | 'custom'
 
 export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 	if (buildKind === 'custom') {
-		throw new Error(`A 'custom' build kind requires providing a custom path to the whisper.cpp binary in the 'executablePath' option.`)
+		throw new Error(`A 'custom' build kind requires providing a custom path to the 'whisper-cli' executable in the 'executablePath' option.`)
 	}
 
 	const platform = process.platform
@@ -416,8 +416,10 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 	if (buildKind.startsWith('cublas-')) {
 		if (platform === 'win32' && arch === 'x64') {
 			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-latest`
+		} else if (platform === 'linux' && arch === 'x64') {
+			packageName = `whisper.cpp-binaries-linux-x64-${buildKind}-latest`
 		} else {
-			throw new Error(`whisper.cpp GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
+			throw new Error(`whisper.cpp GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64 and Linux x64. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
 	} else if (buildKind === 'cpu') {
 		if (platform === 'win32' && arch === 'x64') {
@@ -433,7 +435,7 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 
 	const packagePath = await loadPackage(packageName)
 
-	let filename = 'main'
+	let filename = 'whisper-cli' // used to be called 'main' but 'main' is now deprecated
 
 	if (platform === 'win32') {
 		filename += '.exe'
