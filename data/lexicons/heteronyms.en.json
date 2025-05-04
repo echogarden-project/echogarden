@@ -59,7 +59,7 @@
 				],
 
 				"notPrecededBy": [
-					"the", "a", "some", "at", "be", "were", "was", "are", "our", "of", "its", "my", "your", "this", "been", "wrapped", "mysterious", "nice", "cute", "great", "awesome"
+					"the", "a", "some", "at", "be", "were", "was", "are", "our", "of", "its", "my", "your", "this", "been", "wrapped", "mysterious", "nice", "cute", "great", "awesome", "already"
 				],
 
 				"followedBy": [
@@ -264,7 +264,7 @@
 				],
 
 				"precededBy": [
-					"he", "she", "it", "who", "now", "currently", "still", "everybody", "everyone"
+					"he", "she", "it", "who", "that", "now", "currently", "still", "everybody", "everyone"
 				],
 
 				"notPrecededBy": [
@@ -1404,7 +1404,7 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "p ˈɜː f ɛ k t",
+						"en-us": "p ˈɚ f ɛ k t",
 						"en-gb-x-rp": "p ˈɜː f ɛ k t"
 					}
 				},
@@ -1784,7 +1784,7 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ɹ i s ˈɜː r tʃ",
+						"en-us": "ɹ i s ˈɜː ɹ tʃ",
 						"en-gb-x-rp": "ɹ ɪ s ˈɜː tʃ"
 					}
 				},
@@ -1814,7 +1814,7 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ɹ ˈi s ɜː r tʃ",
+						"en-us": "ɹ ˈi s ɜː ɹ tʃ",
 						"en-gb-x-rp": "ɹ ɪ s ˈɜː tʃ"
 					}
 				},
@@ -2171,6 +2171,40 @@
 					}
 				},
 				"example": "The plant extracts the water."
+			}
+		],
+		"mismatch": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ˈɪ s m æ tʃ",
+						"en-gb-x-rp": "m ˈɪ s m æ tʃ"
+					}
+				},
+				"pos": [
+					"NN"
+				],
+				"precededBy": [
+					"the", "this", "our", "a", "another", "no"
+				],
+				"notPrecededBy": [
+					"to", "i", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't", "not"
+				],
+				"followedBy": [
+				],
+				"notFollowedBy": [
+					"to"
+				],
+				"example": "There is no mismatch."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "m ɪ s m ˈæ tʃ",
+						"en-gb-x-rp": "m ɪ s m ˈæ tʃ"
+					}
+				},
+				"example": "It will not mismatch it."
 			}
 		],
 		"segment": [],
