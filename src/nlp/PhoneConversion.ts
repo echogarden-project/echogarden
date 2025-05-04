@@ -1,14 +1,26 @@
 export function ipaPhoneToKirshenbaum(ipaPhone: string) {
 	let result = ''
 
-	for (const char of ipaPhone) {
-		const convertedChar = ipaToKirshenbaum[char]
+	if (ipaPhone[0] === 'ˈ' || ipaPhone[0] === 'ˌ') {
+		result += ipaToKirshenbaum[ipaPhone[0]]
 
-		if (convertedChar == undefined) {
-			throw new Error(`Couldn't convert IPA character '${char}' (part of phone '${ipaPhone}') to the Kirshenbaum notation`)
+		ipaPhone = ipaPhone.substring(1)
+	}
+
+	const convertedFullPhone = ipaToKirshenbaum[ipaPhone]
+
+	if (convertedFullPhone) {
+		result += convertedFullPhone
+	} else {
+		for (const char of ipaPhone) {
+			const convertedChar = ipaToKirshenbaum[char]
+
+			if (convertedChar === undefined) {
+				throw new Error(`Couldn't convert IPA character '${char}' (part of phone '${ipaPhone}') to the Kirshenbaum notation`)
+			}
+
+			result += convertedChar ?? '_'
 		}
-
-		result += convertedChar || '_'
 	}
 
 	return result
@@ -252,6 +264,8 @@ const ipaToTimit: { [p: string]: string[] | undefined } = {
 	'ɾ': ['dx'],
 }
 
+// Kirshenbaum is an ASCII encoding of IPA
+// The variant used by eSpeak is used here, and has many differences to standard Kirshenbaum
 export const ipaToKirshenbaum: Record<string, string> = {
 	//// Vowels
 
