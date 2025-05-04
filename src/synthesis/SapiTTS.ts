@@ -1,7 +1,6 @@
 import { SynthesisVoice } from '../api/API.js'
-import { decodeToChannels } from '../audio/AudioBufferConversion.js'
+import { decodeToChannels, SampleFormat } from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { SampleFormat } from '../codecs/WaveCodec.js'
 import { getShortLanguageCode, lcidToIsoLanguageCode } from '../utilities/Locale.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'

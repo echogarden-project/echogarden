@@ -1,5 +1,5 @@
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
-import { SampleFormat, encodeWave, decodeWave, BitDepth } from '../codecs/WaveCodec.js'
+import { SampleFormat, BitDepth, encodeWaveFromFloat32Channels, decodeWaveToFloat32Channels } from '@echogarden/wave-codec'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
@@ -8,11 +8,13 @@ import { concatFloat32Arrays } from '../utilities/Utilities.js'
 // Wave encoding and decoding
 ////////////////////////////////////////////////////////////////////////////////////////////////
 export function encodeRawAudioToWave(rawAudio: RawAudio, bitDepth: BitDepth = 16, sampleFormat: SampleFormat = SampleFormat.PCM, speakerPositionMask = 0) {
-	return encodeWave(rawAudio, bitDepth, sampleFormat, speakerPositionMask)
+	return encodeWaveFromFloat32Channels(rawAudio.audioChannels, rawAudio.sampleRate, bitDepth, sampleFormat, speakerPositionMask)
 }
 
 export function decodeWaveToRawAudio(waveFileBuffer: Uint8Array, ignoreTruncatedChunks = true, ignoreOverflowingDataChunks = true) {
-	return decodeWave(waveFileBuffer, ignoreTruncatedChunks, ignoreOverflowingDataChunks)
+	const rawAudio = decodeWaveToFloat32Channels(waveFileBuffer, ignoreTruncatedChunks, ignoreOverflowingDataChunks)
+
+	return { rawAudio }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "2.6.0",
+	"version": "2.7.0",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -67,8 +67,8 @@
 		"@echogarden/speex-resampler-wasm": "^0.3.0",
 		"@echogarden/svoxpico-wasm": "^0.2.0",
 		"@echogarden/transformers-nodejs-lite": "^2.17.1-lite.3",
+		"@echogarden/wave-codec": "^0.3.1",
 		"@mozilla/readability": "^0.6.0",
-		"alawmulaw": "^6.0.0",
 		"chalk": "^5.4.1",
 		"cldr-segmentation": "^2.2.1",
 		"command-exists": "^1.2.9",

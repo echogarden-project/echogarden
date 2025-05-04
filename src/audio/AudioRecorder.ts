@@ -6,8 +6,8 @@ import * as AudioBufferConversion from './AudioBufferConversion.js'
 import { Timer } from '../utilities/Timer.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { SampleFormat } from '../codecs/WaveCodec.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
+import { SampleFormat } from './AudioBufferConversion.js'
 
 const log = logToStderr
 

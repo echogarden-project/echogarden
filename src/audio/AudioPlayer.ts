@@ -2,7 +2,7 @@ import { parentPort } from 'node:worker_threads'
 
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 
-import { RawAudio, encodeRawAudioToWave, fadeAudioInOut, getRawAudioDuration, sliceAudioChannels, sliceRawAudioByTime } from './AudioUtilities.js'
+import { RawAudio, encodeRawAudioToWave, fadeAudioInOut, getRawAudioDuration, sliceAudioChannels } from './AudioUtilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
 import { Timer } from '../utilities/Timer.js'

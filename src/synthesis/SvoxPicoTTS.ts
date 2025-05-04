@@ -1,6 +1,5 @@
 import { SynthesisVoice } from '../api/API.js'
-import { decodeToChannels } from '../audio/AudioBufferConversion.js'
-import { SampleFormat } from '../codecs/WaveCodec.js'
+import { decodeToChannels, SampleFormat } from '../audio/AudioBufferConversion.js'
 import { bandwidthToQFactor } from '../dsp/BiquadFilter.js'
 import { Logger } from '../utilities/Logger.js'
 import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
