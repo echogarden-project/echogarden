@@ -30,10 +30,14 @@ export function tryGetLexiconSubstitution(sentenceWords: string[], wordIndex: nu
 		return undefined
 	}
 
-	const lexiconEntry = lexiconForLanguage[word]
+	let lexiconEntry = lexiconForLanguage[word]
 
 	if (!lexiconEntry) {
 		return undefined
+	}
+
+	if (!Array.isArray(lexiconEntry)) {
+		lexiconEntry = [lexiconEntry]
 	}
 
 	for (let i = 0; i < lexiconEntry.length; i++) {
@@ -100,7 +104,7 @@ export type Lexicon = {
 }
 
 export type LexiconForLanguage = {
-	[word: string]: LexiconEntry[]
+	[word: string]: LexiconEntry | LexiconEntry[]
 }
 
 export type LexiconEntry = {

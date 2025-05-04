@@ -79,10 +79,14 @@ export function tryMatchInLexicon(term: CompromiseParsedTerm, lexicon: Lexicon, 
 	const termText = term.text
 	const lowerCaseTermText = termText.toLocaleLowerCase()
 
-	const entry = lexiconForLanguage[lowerCaseTermText]
+	let entry = lexiconForLanguage[lowerCaseTermText]
 
 	if (!entry) {
 		return undefined
+	}
+
+	if (!Array.isArray(entry)) {
+		entry = [entry]
 	}
 
 	for (const substitutionEntry of entry) {
