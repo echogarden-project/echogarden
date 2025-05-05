@@ -49,7 +49,7 @@ export class ChunkedAsciiDecoder {
 	private readonly textDecoder = new TextDecoder('windows-1252')
 
 	writeChunk(chunk: Uint8Array) {
-		const decodedChunk = this.textDecoder.decode(chunk)
+		const decodedChunk = this.textDecoder.decode(chunk, { stream: true })
 
 		this.str += decodedChunk
 	}

@@ -33,7 +33,7 @@ export class ChunkedUtf8Decoder {
 	private readonly textDecoder = new TextDecoder('utf-8')
 
 	writeChunk(chunk: Uint8Array) {
-		const decodedChunk = this.textDecoder.decode(chunk)
+		const decodedChunk = this.textDecoder.decode(chunk, { stream: true })
 
 		this.str += decodedChunk
 	}

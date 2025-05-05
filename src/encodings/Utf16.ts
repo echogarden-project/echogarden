@@ -41,7 +41,7 @@ export class ChunkedUtf16Decoder {
 	private readonly textDecoder = new TextDecoder('utf-16le')
 
 	writeChunk(chunk: Uint16Array) {
-		const decodedChunk = this.textDecoder.decode(chunk)
+		const decodedChunk = this.textDecoder.decode(chunk, { stream: true })
 
 		this.str += decodedChunk
 	}
