@@ -48,7 +48,7 @@ export async function isolate(input: AudioSourceParam, options: SourceSeparation
 			// Release memory for the converted input audio since it's not needed anymore
 			inputRawAudioAs44100Stereo = undefined
 
-			await logger.startAsync(`Convert isolated audio to back original sample rate (${inputRawAudio.sampleRate} Hz) and channel count (${inputRawAudio.audioChannels.length})`)
+			await logger.startAsync(`Convert isolated audio back to original sample rate (${inputRawAudio.sampleRate} Hz) and channel count (${inputRawAudio.audioChannels.length})`)
 			isolatedRawAudio = await ensureRawAudio(isolatedRawAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length)
 
 			await logger.startAsync(`Subtract from original waveform to extract background audio`)
