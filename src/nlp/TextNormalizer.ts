@@ -253,7 +253,6 @@ const precedingCurrencyPattern = [
 
 const precedingCurrencyPatternRegExp = buildRegExp(precedingCurrencyPattern)
 
-
 const followingCurrencyPattern = [
 	inputStart,
 	arabicNumeralPattern,
@@ -270,5 +269,5 @@ const fourDigitYearPatternRegExp = buildRegExp(fourDigitYearPattern)
 const fourDigitDecadePattern = [inputStart, repeated(3, arabicNumeralPattern), '0s', inputEnd]
 const fourDigitDecadePatternRegExp = buildRegExp(fourDigitDecadePattern)
 
-const fourDigitYearRangePattern = [inputStart, repeated(4, arabicNumeralPattern), '-', repeated(4, arabicNumeralPattern), inputEnd]
+const fourDigitYearRangePattern = [inputStart, repeated(4, arabicNumeralPattern), anyOf('-', '–'), repeated(4, arabicNumeralPattern), inputEnd]
 const fourDigitYearRangePatternRegExp = buildRegExp(fourDigitYearRangePattern)
