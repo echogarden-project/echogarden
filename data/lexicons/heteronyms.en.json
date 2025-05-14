@@ -147,7 +147,7 @@
 				],
 
 				"followedBy": [
-					"the", "a", "an", "their", "it", "this", "them", "his", "our", "your", "its", "these", "all", "him", "her", "my", "any", "those", "some", "authorization", "one", "more", "social", "public", "hand", "force", "every", "up", "technology", "data", "other"
+					"the", "a", "an", "their", "it", "this", "them", "his", "our", "your", "its", "these", "all", "him", "her", "my", "any", "those", "some", "authorization", "one", "more", "social", "public", "hand", "force", "every", "up", "technology", "data", "other","many"
 				],
 
 				"notFollowedBy": [
@@ -272,7 +272,7 @@
 				],
 
 				"followedBy": [
-					"a", "an", "here", "there"
+					"a", "an", "here", "there", "happily", "vigorously", "gracefully", "up"
 				],
 
 				"notFollowedBy": [
@@ -2243,6 +2243,10 @@
 		"estimate": [],
 		"update": [],
 		"updates": [],
+		"exploit": [],
+		"exploits": [],
+		"mislead": [],
+		"analyses": [],
 
 		"row [disabled]": [
 			{
