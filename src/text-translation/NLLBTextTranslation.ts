@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { TranslationPair } from '../api/TextTranslation.js'
-import { splitToSentences } from '../nlp/Segmentation.js'
+import { parseText } from '../nlp/Segmentation.js'
 import { Logger } from '../utilities/Logger.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 
@@ -30,19 +30,21 @@ export async function translateText(sourceText: string, sourceLanguage: string, 
 		tgt_lang: 'eng_Latn'
 	}
 
-	const sentences = splitToSentences(sourceText, sourceLanguage)
+	const segmentedText = await parseText(sourceText, sourceLanguage)
+
+	const sentences = segmentedText.sentences
 
 	logger.end()
 
 	const translationPairs: TranslationPair[] = []
 
 	for (let i = 0; i < sentences.length; i++) {
-		const sentence = sentences[i]
+		const sentenceText = sentences[i].text
 
-		logger.logTitledMessage(`Translate sentence ${i + 1}/${sentences.length}`, `"${sentence.trim()}"`, chalk.magentaBright)
+		logger.logTitledMessage(`Translate sentence ${i + 1}/${sentences.length}`, `"${sentenceText.trim()}"`, chalk.magentaBright)
 
 		logger.start(`Tokenize sentence`)
-		const inputs = (tokenizer as any)._build_translation_inputs(sentence, {
+		const inputs = (tokenizer as any)._build_translation_inputs(sentenceText, {
 			padding: true,
 			truncation: true,
 		}, config)
@@ -67,7 +69,7 @@ export async function translateText(sourceText: string, sourceLanguage: string, 
 			.trim()
 
 		translationPairs.push({
-			sourceText: sentence,
+			sourceText: sentenceText,
 			translatedText
 		})
 

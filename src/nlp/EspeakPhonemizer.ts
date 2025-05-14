@@ -57,7 +57,7 @@ export async function phonemizeText(text: string, voice: string, substitutionMap
 			.replaceAll('«', ', ')
 			.replaceAll('»', ', ')
 
-	const segmentedText = await Segmentation.parse(text, voice)
+	const segmentedText = await Segmentation.parseTextAndConvertToFragmentObjects(text, voice)
 	const preparedPhrases: string[] = []
 	const phraseBreakers: string[] = []
 

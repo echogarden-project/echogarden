@@ -5,7 +5,7 @@ import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { decodeBase64 } from '../encodings/Base64.js'
-import { isWordOrSymbolWord, splitToWords } from '../nlp/Segmentation.js'
+import { splitToWords } from '../nlp/Segmentation.js'
 import { Timeline } from '../utilities/Timeline.js'
 
 const log = logToStderr
@@ -79,24 +79,25 @@ export async function synthesize(text: string, voiceId: string, language: string
 		logger.start('Create timeline from returned character timings')
 
 		const referenceText = characters.join('')
-		const words = (await splitToWords(referenceText, language)).filter(w => isWordOrSymbolWord(w))
+		const wordSequence = await splitToWords(referenceText, language)
 
 		timeline = []
 
-		let offset = 0
+		for (const wordEntry of wordSequence.entries) {
+			const wordText = wordEntry.text
 
-		for (const word of words) {
-			const wordStartIndex = referenceText.indexOf(word, offset)
-			const wordEndIndex = wordStartIndex + word.length
+			const wordStartOffset = wordEntry.startOffset
+			const wordEndOffset = wordEntry.endOffset
+
+			const startTime = characterStartTimes[wordStartOffset]
+			const endTime = characterEndTimes[wordEndOffset] ?? characterEndTimes[wordEndOffset - 1]
 
 			timeline.push({
 				type: 'word',
-				text: word,
-				startTime: characterStartTimes[wordStartIndex],
-				endTime: characterEndTimes[wordEndIndex] ?? characterEndTimes[wordEndIndex - 1]
+				text: wordText,
+				startTime,
+				endTime,
 			})
-
-			offset = wordEndIndex
 		}
 	}
 

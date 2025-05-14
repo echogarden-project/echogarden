@@ -5,7 +5,7 @@ import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
-import { splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
+import { splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
@@ -37,7 +37,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	fragments = []
 	preprocessedFragments = []
 
-	let words = await splitToWords(text, language)
+	let words = (await splitToWords(text, language)).wordArray
 
 	// Merge repeating non-words to a single word to work around eSpeak bug
 	{
@@ -51,7 +51,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 				i > 0 &&
 				currentWord === previousWord &&
 				!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
-				!wordCharacterPattern.test(currentWord)) {
+				!wordCharacterRegExp.test(currentWord)) {
 
 				wordsWithMerges[wordsWithMerges.length - 1] += currentWord
 			} else {

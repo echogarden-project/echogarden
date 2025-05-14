@@ -6,7 +6,7 @@ import { clip, sha256AsHex, stringifyAndFormatJson, logToStderr, yieldToEventLoo
 import { RawAudio, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, trimAudioEnd, trimAudioStart, attenuateIfClippingInPlace, normalizeAudioLevelInPlace } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import { isWordOrSymbolWord, splitToParagraphs, splitToSentences } from '../nlp/Segmentation.js'
+import { isWordOrSymbolWord, parseText, splitToParagraphs } from '../nlp/Segmentation.js'
 import { type RubberbandOptions } from '../dsp/Rubberband.js'
 import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 
@@ -116,9 +116,9 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	let timeOffset = 0
 
 	for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
-		const segmentText = segments[segmentIndex].trim()
+		const segmentText = segments[segmentIndex]
 
-		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: '${segmentText}'`)
+		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: '${segmentText.trim()}'`)
 
 		const segmentStartTime = timeOffset
 
@@ -132,9 +132,9 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 		let sentences: string[]
 
-		if ((options.splitToSentences || options.engine == 'vits') && !options.ssml) {
-			sentences = splitToSentences(segmentText, options.language!)
-			sentences = sentences.filter(sentence => sentence.trim() != '')
+		if ((options.splitToSentences || options.engine === 'vits' || options.engine === 'kokoro') && !options.ssml) {
+			const parsedText = await parseText(segmentText, options.language!)
+			sentences = parsedText.sentences.map(sentenceEntry => sentenceEntry.text)
 
 			if (sentences.length == 0) {
 				sentences = ['']
@@ -156,7 +156,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 			const sentenceText = sentences[sentenceIndex].trim()
 
-			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: "${sentenceText}"`)
+			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: "${sentenceText.trim()}"`)
 
 			const sentenceStartTime = timeOffset
 

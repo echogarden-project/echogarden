@@ -9,7 +9,7 @@ import { Timer } from '../utilities/Timer.js'
 import { clip, getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Utilities.js'
 import { encodeToAudioBuffer, float32ToInt16Pcm, interleaveChannels } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { Timeline, addWordTextOffsetsToTimeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimelineInPlace } from '../utilities/Timeline.js'
 import { readAndParseJsonFile, readFileAsUtf8, remove, writeFile } from '../utilities/FileSystem.js'
 import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
@@ -38,7 +38,7 @@ export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline
 
 	wordTimeline = deepClone(wordTimeline)
 
-	addWordTextOffsetsToTimeline(wordTimeline, transcript)
+	addWordTextOffsetsToTimelineInPlace(wordTimeline, transcript)
 
 	let timelineEntryIndex = 0
 	let transcriptOffset = 0

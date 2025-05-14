@@ -1,6 +1,6 @@
 import { request } from "gaxios"
 import { Logger } from "../utilities/Logger.js"
-import { splitToSentences } from "../nlp/Segmentation.js"
+import { parseText } from "../nlp/Segmentation.js"
 import { TranslationPair } from "../api/TextTranslation.js"
 import { getChromeOnWindowsHeaders } from "../utilities/BrowserRequestHeaders.js"
 
@@ -9,7 +9,8 @@ export async function translateText(text: string, sourceLanguage: string, target
 
 	logger.start(`Prepare request`)
 
-	const textSentences = splitToSentences(text, sourceLanguage)
+	const segmentedText = await parseText(text, sourceLanguage)
+	const sentences = segmentedText.sentences
 
 	const requestBodyObject = {
 		jsonrpc: '2.0',
@@ -20,7 +21,7 @@ export async function translateText(text: string, sourceLanguage: string, target
 					kind: 'default',
 					sentences: [
 						{
-							text: textSentences[0],
+							text: sentences[0].text,
 							id: 1,
 							prefix: '',
 						}

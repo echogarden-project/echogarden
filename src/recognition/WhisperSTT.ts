@@ -18,7 +18,7 @@ import chalk from 'chalk'
 import { XorShift32PRNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
-import { isPunctuation, isWhitespace, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
+import { isPunctuation, isWhitespace, splitToWords } from '../nlp/Segmentation.js'
 import { medianOf5Filter } from '../math/MedianFilter.js'
 import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
 import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
@@ -528,25 +528,11 @@ export class Whisper {
 
 		const targetLanguage = task === 'transcribe' ? sourceLanguage : 'en'
 
-		const shouldSplitToSentences = false
 
 		let simplifiedTranscript = ''
 
-		if (shouldSplitToSentences) {
-			const sentences = splitToSentences(transcript, targetLanguage)
-
-			for (const sentence of sentences) {
-				let sentenceWords = await splitToWords(sentence, targetLanguage)
-				sentenceWords = sentenceWords.filter(word => isWord(word))
-
-				simplifiedTranscript += sentenceWords.join(' ')
-				simplifiedTranscript += ' '
-			}
-		} else {
-			let words = await splitToWords(transcript, targetLanguage)
-
-			words = words.map(word => word.trim())
-			words = words.filter(word => isWord(word))
+		{
+			const words = (await splitToWords(transcript, targetLanguage)).nonPunctuationWords
 
 			simplifiedTranscript = words.join(' ')
 		}

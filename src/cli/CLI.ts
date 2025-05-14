@@ -10,10 +10,10 @@ import { SubtitlesConfig, subtitlesToText, timelineToSubtitles } from '../subtit
 import { Logger, resetActiveLogger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/FFMpegTranscoder.js'
-import { splitToParagraphs, splitToWords, wordCharacterPattern } from '../nlp/Segmentation.js'
+import { splitToParagraphs, splitToWords } from '../nlp/Segmentation.js'
 import { playAudioSamplesWithKeyboardControls, playAudioWithWordTimeline } from '../audio/AudioPlayer.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimeline, roundTimelineProperties } from '../utilities/Timeline.js'
+import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToTimelineInPlace, roundTimelineProperties } from '../utilities/Timeline.js'
 import { ensureDir, existsSync, readAndParseJsonFile, readdir, readFileAsUtf8, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
@@ -509,7 +509,7 @@ export async function speak(operationData: CLIOperationData) {
 	const { audio: synthesizedAudio, timeline } = await API.synthesize(textSegments, options, onSegment, undefined)
 
 	if (plainText) {
-		addWordTextOffsetsToTimeline(timeline, plainText)
+		addWordTextOffsetsToTimelineInPlace(timeline, plainText)
 	}
 
 	if (outputFilenames.length > 0) {
@@ -1884,7 +1884,7 @@ async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutput
 async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean) {
 	const digitCount = Math.max((total + 1).toString().length, 2)
 
-	const segmentWords = (await splitToWords(text, language)).filter(text => wordCharacterPattern.test(text))
+	const segmentWords = (await splitToWords(text, language)).nonPunctuationWords
 
 	const segmentJoinedWords = segmentWords.join(' ').trim()
 

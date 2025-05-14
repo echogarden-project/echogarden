@@ -1,4 +1,4 @@
-import { splitToParagraphs, wordCharacterPattern } from '../nlp/Segmentation.js'
+import { splitToParagraphs, wordCharacterRegExp } from '../nlp/Segmentation.js'
 import { Logger } from './Logger.js'
 
 export async function parseWikipediaArticle(articleName: string, language: string) {
@@ -20,7 +20,7 @@ export async function parseWikipediaArticle(articleName: string, language: strin
 	for (const section of sections) {
 		const sectionTitle = section.title()
 
-		if (wordCharacterPattern.test(sectionTitle)) {
+		if (wordCharacterRegExp.test(sectionTitle)) {
 			sectionsText.push(sectionTitle)
 		}
 
@@ -29,7 +29,7 @@ export async function parseWikipediaArticle(articleName: string, language: strin
 		for (const paragraph of sectionParagraphs) {
 			const paragraphText = paragraph
 
-			if (wordCharacterPattern.test(paragraphText)) {
+			if (wordCharacterRegExp.test(paragraphText)) {
 				sectionsText.push(paragraphText)
 			}
 		}

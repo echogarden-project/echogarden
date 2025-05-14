@@ -4,7 +4,7 @@ import { SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { Logger } from '../utilities/Logger.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import * as API from './API.js'
 
 export async function alignTimelineTranslation(inputTimeline: Timeline, translatedTranscript: string, options: TimelineTranslationAlignmentOptions): Promise<TimelineTranslationAlignmentResult> {
@@ -95,7 +95,7 @@ export async function alignTimelineTranslation(inputTimeline: Timeline, translat
 
 	logger.start(`Postprocess timeline`)
 
-	addWordTextOffsetsToTimeline(mappedWordTimeline, translatedTranscript)
+	addWordTextOffsetsToTimelineInPlace(mappedWordTimeline, translatedTranscript)
 
 	const { segmentTimeline: mappedTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedWordTimeline, translatedTranscript, targetLanguage)
 

@@ -4,7 +4,7 @@ import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { EngineMetadata } from './Common.js'
@@ -201,7 +201,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 	}
 
 	if (wordTimeline) {
-		addWordTextOffsetsToTimeline(wordTimeline, transcript)
+		addWordTextOffsetsToTimelineInPlace(wordTimeline, transcript)
 	}
 
 	if (!segmentTimeline) {

@@ -1,24 +1,8 @@
-declare module 'moving-median'
-
 declare module 'html-to-text' {
 	export function htmlToText(html: string, options: {
 		wordwrap: boolean | number
 		selectors?: any[]
 	})
-}
-
-declare module 'cldr-segmentation' {
-	export function sentenceSplit(text: string, suppressions: any)
-	export function wordSplit(text: string, suppressions: any)
-	export const suppressions: Record<string, Suppressions>
-
-	export class Suppressions {
-		constructor(forwardTrie: any, backwardTrie: any, list: string)
-
-		merge(other: Suppressions)
-
-		static create(list: string[]): Suppressions
-	}
 }
 
 declare module 'winax'

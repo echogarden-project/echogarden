@@ -3,7 +3,7 @@ import { Logger } from '../utilities/Logger.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { cosineDistance } from '../math/VectorMath.js'
-import { isPunctuation, isWord, splitToSentences, splitToWords } from '../nlp/Segmentation.js'
+import { isPunctuation, isWord, parseText } from '../nlp/Segmentation.js'
 import { Timeline, extractEntries } from '../utilities/Timeline.js'
 
 export async function alignTimelineToTextSemantically(timeline: Timeline, text: string, textLangCode: string) {
@@ -26,13 +26,12 @@ export async function alignTimelineToTextSemantically(timeline: Timeline, text: 
 
 	const timelineWordEntriesFiltered = timelineWordEntryGroups.flat()
 
-	const textSentences = splitToSentences(text, textLangCode)
+	const segmentedText = await parseText(text, textLangCode)
 
 	const textWordGroups: string[][] = []
 
-	for (const sentenceText of textSentences) {
-		let wordGroup = await splitToWords(sentenceText, textLangCode)
-		wordGroup = wordGroup.filter(word => isWord(word))
+	for (const sentenceEntry of segmentedText.sentences) {
+		const wordGroup = sentenceEntry.words.nonPunctuationWords
 
 		textWordGroups.push(wordGroup)
 	}

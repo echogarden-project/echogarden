@@ -5,7 +5,7 @@ import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace,
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
-import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import chalk from 'chalk'
@@ -124,7 +124,7 @@ export async function alignTranslation(input: AudioSourceParam, translatedTransc
 	}
 
 	// Add text offsets
-	addWordTextOffsetsToTimeline(mappedTimeline, translatedTranscript)
+	addWordTextOffsetsToTimelineInPlace(mappedTimeline, translatedTranscript)
 
 	// Make segment timeline
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, translatedTranscript, sourceLanguage, options.plainText?.paragraphBreaks, options.plainText?.whitespace)

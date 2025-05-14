@@ -1,5 +1,5 @@
 import { indexOfMax } from '../math/VectorMath.js'
-import { wordCharacterPattern } from '../nlp/Segmentation.js'
+import { wordCharacterRegExp } from '../nlp/Segmentation.js'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { Timeline } from '../utilities/Timeline.js'
@@ -182,7 +182,7 @@ export class SileroSTT {
 		for (let i = 0; i < words.length; i++) {
 			const text = words[i]
 
-			if (!wordCharacterPattern.test(text)) {
+			if (!wordCharacterRegExp.test(text)) {
 				continue
 			}
 

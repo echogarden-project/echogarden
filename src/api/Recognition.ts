@@ -5,7 +5,7 @@ import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace,
 import { Logger } from '../utilities/Logger.js'
 
 import * as API from './API.js'
-import { Timeline, addWordTextOffsetsToTimeline, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
+import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, parseLangIdentifier } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
@@ -312,7 +312,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 	}
 
 	// Add text offsets
-	addWordTextOffsetsToTimeline(timeline, transcript)
+	addWordTextOffsetsToTimelineInPlace(timeline, transcript)
 
 	// Make segment timeline
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(timeline, transcript, languageCode, 'single', 'preserve')
