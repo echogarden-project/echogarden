@@ -108,9 +108,6 @@ export class KokoroTTS {
 		const {
 			referenceSynthesizedAudio,
 			referenceTimeline,
-			fragments,
-			phonemizedFragmentsSubstitutions,
-			phonemizedSentence
 		} = await Espeak.preprocessAndSynthesize(sentenceText, voiceLanguage, espeakOptions, lexicons)
 
 		logger.end()
@@ -132,13 +129,28 @@ export class KokoroTTS {
 
 		const allTokenIds: number[] = []
 
-		for (let phraseIndex = 0; phraseIndex < phonemizedSentence.length; phraseIndex++) {
-			const phrase = phonemizedSentence[phraseIndex]
+		for (let clauseIndex = 0; clauseIndex < referenceTimeline.length; clauseIndex++) {
+			const clauseEntry = referenceTimeline[clauseIndex]
 
-			for (let wordIndex = 0; wordIndex < phrase.length; wordIndex++) {
-				const word = phrase[wordIndex]
+			if (!clauseEntry.timeline) {
+				continue
+			}
 
-				for (const phoneme of word) {
+			const wordTimelineForClause = clauseEntry.timeline
+
+			for (let wordIndex = 0; wordIndex < wordTimelineForClause.length; wordIndex++) {
+				const wordEntry = wordTimelineForClause[wordIndex]
+				const wordText = wordEntry.text
+
+				if (!wordEntry.timeline) {
+					continue
+				}
+
+				const tokenTimelineForWord = wordEntry.timeline
+				const phonemeTimelineForWord = tokenTimelineForWord.flatMap(tokenEntry => tokenEntry.timeline ?? [])
+
+				for (const phonemeEntry of phonemeTimelineForWord) {
+					const phoneme = phonemeEntry.text
 					let processedPhoneme = phoneme
 
 					if (voicePrimaryLanguageShort === 'en') {
@@ -179,7 +191,7 @@ export class KokoroTTS {
 
 						if (false) {
 							// Workaround a word having only 'I' not being pronounced at some cases
-							if (processedPhoneme === 'I' && word.length === 1) {
+							if (processedPhoneme === 'I' && wordText.length === 1) {
 								processedPhoneme = 'aɪ'
 								//processedPhoneme = 'ˌI'
 							}
@@ -196,10 +208,10 @@ export class KokoroTTS {
 					}
 				}
 
-				if (wordIndex < phrase.length - 1) {
+				if (wordIndex < wordTimelineForClause.length - 1) {
 					allTokenIds.push(wordBreakTokenId)
 				} else {
-					if (phraseIndex < phonemizedSentence.length - 1) {
+					if (clauseIndex < referenceTimeline.length - 1) {
 						allTokenIds.push(phraseBreakTokenId)
 						allTokenIds.push(wordBreakTokenId)
 					}
@@ -209,7 +221,7 @@ export class KokoroTTS {
 
 		allTokenIds.push(sentenceEndTokenId)
 
-		const maxPartLength = 509
+		const maxPartLength = 500
 
 		const parts: number[][] = []
 
