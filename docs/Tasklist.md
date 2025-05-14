@@ -7,7 +7,6 @@
 * IPA -> Kirshenbaum translation is still not completely similar to what is output by eSpeak. Also, in rare situations, it outputs characters that are not accepted by eSpeak and eSpeak errors. Investigate when that happens and how to improve on this
 
 ### Subtitles
-* Phrase splitting may split on number separators like the `,` in `100,000`. The new segmentation library would resolve that
 
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
@@ -78,7 +77,6 @@
 
 ### API
 * Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
-* See whether it's possible to detect and include / remove Emoji characters in timelines
 * Add support for phrases in timelines
 * Accept voice list caching options in `SynthesisOptions`
 
@@ -93,7 +91,6 @@
 
 ### Subtitles
 * Split long words if needed
-* Clauses shouldn't be split in the middle of numbers, like the `,` in `123,456`
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
 * Add more clause separators, for even more special cases
@@ -104,7 +101,6 @@
 * Option to disable alignment (only for some engines). Alternative: use a low granularity DTW setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech
-* Ensure abbreviations like "Ph.d" or similar names are segmented and read correctly (does `cldr` treat it as a word? Maybe eSpeak doesn't recognize it as a word). "C#" and ".NET" as well
 * Find a way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
@@ -120,7 +116,7 @@
 ### Synthesis / preprocessing
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`, `August 21, 2023`)
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules
-* Add support for multiple words in `precededBy` and `succeededBy`
+* Add support for multiple consecutive words in `precededBy` and `followedBy` conditions
 * Support substituting to graphemes in lexicons, not only phonemes
 * Cache lexicons to avoid parsing the JSON each time it is loaded (this may not be needed for if the file is relatively small)
 * Is it possible to pre-phonemize common words like "the" or is it a bad idea / not necessary?
@@ -159,7 +155,6 @@
 
 ### Source separation / MDX-NET
 * Option to customize overlap
-* Add more models
 
 ### Server
 * Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
