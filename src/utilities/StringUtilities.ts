@@ -52,7 +52,7 @@ export function formatListWithQuotedElements(strings: string[], quoteSymbol = `'
 
 export function getUTF32Chars(str: string) {
 	const utf32chars: string[] = []
-	const mapping: number[] = []
+	const utf16To32Mapping: number[] = []
 
 	let utf32Index = 0
 
@@ -60,15 +60,15 @@ export function getUTF32Chars(str: string) {
 		utf32chars.push(utf32char)
 
 		for (let i = 0; i < utf32char.length; i++) {
-			mapping.push(utf32Index)
+			utf16To32Mapping.push(utf32Index)
 		}
 
 		utf32Index += 1
 	}
 
-	mapping.push(utf32Index)
+	utf16To32Mapping.push(utf32Index)
 
-	return { utf32chars, mapping }
+	return { utf32chars, utf16To32Mapping }
 }
 
 export function containsInvalidCodepoint(str: string) {
@@ -81,10 +81,9 @@ export function containsInvalidCodepoint(str: string) {
 	return false
 }
 
-
 export function splitAndPreserveSeparators(text: string, separatorRegex: RegExp): string[] {
 	if (!separatorRegex.flags.includes('g')) {
-		throw new Error('RegExp must be global')
+		throw new Error('Separator regular expression must have a global flag')
 	}
 
 	// Use the match method to find all matches for the separators
