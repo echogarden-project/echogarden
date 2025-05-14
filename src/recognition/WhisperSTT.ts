@@ -18,7 +18,7 @@ import chalk from 'chalk'
 import { XorShift32PRNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
-import { isPunctuation, isWhitespace, splitToWords } from '../nlp/Segmentation.js'
+import { includesPunctuation, isWhitespace, splitToWords } from '../nlp/Segmentation.js'
 import { medianOf5Filter } from '../math/MedianFilter.js'
 import { getDeflateCompressionMetricsForString } from '../utilities/Compression.js'
 import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
@@ -1239,7 +1239,7 @@ export class Whisper {
 				return false
 			}
 
-			return isWhitespace(char) || isPunctuation(char)
+			return isWhitespace(char) || includesPunctuation(char)
 		}
 
 		function startsWithSeparatorCharacter(text: string) {
