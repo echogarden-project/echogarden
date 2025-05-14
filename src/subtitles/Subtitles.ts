@@ -6,7 +6,8 @@ import { charactersToWriteAhead } from '../audio/AudioPlayer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { readFileAsUtf8 } from '../utilities/FileSystem.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
-import { formatHMS, formatMS, startsWithAnyOf } from '../utilities/StringUtilities.js'
+import { formatHMS, formatMS } from '../utilities/StringUtilities.js'
+import { anyOf, buildRegExp, capture, digit, inputStart, matches, notUnicodeProperty, oneOrMore, zeroOrMore } from 'regexp-composer'
 
 export async function subtitlesFileToText(filename: string) {
 	return subtitlesToText(await readFileAsUtf8(filename))
@@ -257,14 +258,12 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 			const lineLengthWithNextWord = nextWordExtendedEndOffset - lineStartOffset
 			const wordsRemaining = wordTimeline.length - wordIndex - 1
 
-			const phraseSeparators = [',', '，', '、', ';', ':', '),', '",', '”,', '.', '".', '”.', '."', '.”', '。']
-
 			const lineLengthWithNextWordExceedsMaxLineWidth = lineLengthWithNextWord >= maxLineWidth
 			const lineLengthExceedsHalfMaxLineWidth = lineLength >= maxLineWidth / 2
 
 			const wordsRemainingAreEqualOrLessToMinimumWordsInLine = wordsRemaining <= config.minWordsInLine!
 			const remainingTextExceedsMaxLineWidth = entryText.length - lineStartOffset > maxLineWidth
-			const followingSubstringIsPhraseSeparator = startsWithAnyOf(entryText.substring(wordEndOffset), phraseSeparators)
+			const followingSubstringIsPhraseSeparator = phraseSeparatorRegExp.test(entryText.substring(wordEndOffset))
 
 			const shouldAddNewLine =
 				isLastWord ||
@@ -434,8 +433,7 @@ function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesC
 }
 
 export function tryParseTimeRangePatternWithHours(line: string) {
-	const timeRangePatternWithHours = /^(\d+)\:(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)\:(\d+)[\.,](\d+)/
-	const match = timeRangePatternWithHours.exec(line)
+	const match = timeRangeWithHoursRegExp.exec(line)
 
 	if (!match) {
 		return { startTime: -1, endTime: -1, succeeded: false }
@@ -458,8 +456,7 @@ export function tryParseTimeRangePatternWithHours(line: string) {
 }
 
 export function tryParseTimeRangePatternWithoutHours(line: string) {
-	const timeRangePatternWithHours = /^(\d+)\:(\d+)[\.,](\d+)[ ]*-->[ ]*(\d+)\:(\d+)[\.,](\d+)/
-	const match = timeRangePatternWithHours.exec(line)
+	const match = timeRangeWithoutHoursRegExp.exec(line)
 
 	if (!match) {
 		return { startTime: -1, endTime: -1, succeeded: false }
@@ -514,6 +511,70 @@ function cueObjectToText(cue: Cue, cueIndex: number, config: SubtitlesConfig) {
 	return outText
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Patterns
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+const timeRangeWithHoursRegExp = buildRegExp([
+	inputStart,
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+
+	anyOf('.', ','),
+	capture(oneOrMore(digit)),
+
+	zeroOrMore(' '),
+	'-->',
+	zeroOrMore(' '),
+
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+
+	anyOf('.', ','),
+	capture(oneOrMore(digit)),
+])
+
+const timeRangeWithoutHoursRegExp = buildRegExp([
+	inputStart,
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+
+	anyOf('.', ','),
+	capture(oneOrMore(digit)),
+
+	zeroOrMore(' '),
+	'-->',
+	zeroOrMore(' '),
+
+	capture(oneOrMore(digit)),
+	':',
+	capture(oneOrMore(digit)),
+
+	anyOf('.', ','),
+	capture(oneOrMore(digit)),
+])
+
+const phraseSeparatorCharacters = [',', '，', '、', ';', ':', '),', '",', '”,']
+
+const phraseSeparatorRegExp = buildRegExp(
+	matches([
+		inputStart,
+		anyOf(...phraseSeparatorCharacters)
+	], {
+		ifPrecededBy: notUnicodeProperty('Decimal_Number'),
+		ifFollowedBy: notUnicodeProperty('Decimal_Number'),
+	})
+)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 export type Cue = {
 	lines: string[]
 	startTime: number
