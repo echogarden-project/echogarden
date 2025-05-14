@@ -15,7 +15,7 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 
 // Incrementally generate short-term Fourier transform frames (real-valued)
 export async function* stftrGenerator(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
-	if (fftOrder % 2 != 0 || windowSize % 2 != 0) {
+	if (fftOrder % 2 !== 0 || windowSize % 2 !== 0) {
 		throw new Error('FFT order and window size must be multiples of 2')
 	}
 
@@ -73,7 +73,7 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 // Compute short-term inverse Fourier transform (real-valued)
 export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType, expectedOutputLength?: number) {
-	if (fftOrder % 2 != 0 || windowSize % 2 != 0) {
+	if (fftOrder % 2 !== 0 || windowSize % 2 !== 0) {
 		throw new Error('FFT order and window size must multiples of 2')
 	}
 
