@@ -1,5 +1,5 @@
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let sonicInstance: any
 
@@ -10,13 +10,13 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const inputSampleCount = rawAudio.audioChannels[0].length
 
 	const m = await getSonicInstance()
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const streamPtr = m._sonicCreateStream(sampleRate, channelCount)
 	m._sonicSetSpeed(streamPtr, speed)
 	m._sonicSetPitch(streamPtr, pitchScale)
 
-	const inputSamplesRef = wasmMemory.allocFloat32Array(inputSampleCount)
+	const inputSamplesRef = wasmHeap.allocFloat32Array(inputSampleCount)
 	inputSamplesRef.view.set(inputSamples)
 
 	const writeSuccess = m._sonicWriteFloatToStream(streamPtr, inputSamplesRef.address, inputSampleCount)
@@ -33,9 +33,9 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 
 	const samplesAvailable = m._sonicSamplesAvailable(streamPtr)
 
-	const outputSamplesRef = wasmMemory.allocFloat32Array(samplesAvailable)
+	const outputSamplesRef = wasmHeap.allocFloat32Array(samplesAvailable)
 
-	const samplesRead = m._sonicReadFloatFromStream(streamPtr, outputSamplesRef.address, outputSamplesRef.length)
+	const samplesRead = m._sonicReadFloatFromStream(streamPtr, outputSamplesRef.address, outputSamplesRef.allocatedByteCount)
 
 	const outputSamples = outputSamplesRef.view.slice(0, samplesRead)
 
@@ -43,7 +43,7 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 
 	m._sonicDestroyStream(streamPtr)
 
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	return resultAudio
 }

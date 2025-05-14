@@ -1,7 +1,6 @@
 import { concatFloat32Arrays, logToStderr, formatObjectToString } from '../utilities/Utilities.js'
 import { int16PcmToFloat32 } from '../audio/AudioBufferConversion.js'
 import { Logger } from '../utilities/Logger.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
@@ -11,6 +10,8 @@ import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { escapeHtml } from '../encodings/HtmlEscape.js'
+
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 const log = logToStderr
 
@@ -515,12 +516,12 @@ export async function textToPhonemes(text: string, voice: string, useIPA = true)
 	const { instance, module } = await getEspeakInstance()
 	const textPtr = instance.convert_to_phonemes(text, useIPA)
 
-	const wasmMemory = new WasmMemoryManager(module)
+	const wasmHeap = wrapEmscriptenModuleHeap(module)
 
-	const resultRef = wasmMemory.wrapNullTerminatedUtf8String(textPtr.ptr)
-	const result = resultRef.getValue()
+	const resultRef = wasmHeap.wrapNullTerminatedUtf8String(textPtr.ptr)
+	const result = resultRef.value
 
-	wasmMemory.freeAll()
+	resultRef.free()
 
 	return result
 }

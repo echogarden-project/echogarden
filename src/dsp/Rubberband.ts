@@ -1,7 +1,7 @@
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
-import { Float32ArrayRef, WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { Float32ArrayRef, wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let rubberbandInstance: any
 
@@ -14,7 +14,7 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const sampleRate = rawAudio.sampleRate
 
 	const m = await getRubberbandInstance()
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const optionFlags = rubberBandOptionsToFlags(options)
 
@@ -25,11 +25,11 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const samplesRequired = m._rubberband_get_samples_required(statePtr)
 	const bufferSize = Math.min(samplesRequired, sampleCount)
 
-	const bufferChannelPtrsRef = wasmMemory.allocUint32Array(bufferSize)
+	const bufferChannelPtrsRef = wasmHeap.allocUint32Array(bufferSize)
 	const bufferChannelRefs: Float32ArrayRef[] = []
 
 	for (let i = 0; i < channelCount; i++) {
-		const bufferChannelRef = wasmMemory.allocFloat32Array(bufferSize)
+		const bufferChannelRef = wasmHeap.allocFloat32Array(bufferSize)
 		bufferChannelPtrsRef.view[i] = bufferChannelRef.address
 
 		bufferChannelRefs.push(bufferChannelRef)
@@ -102,7 +102,7 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	}
 
 	m._rubberband_delete(statePtr)
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	const outputAudioChannels = outputAudioChannelChunks.map(chunks => concatFloat32Arrays(chunks))
 	const outputRawAudio: RawAudio = { audioChannels: outputAudioChannels, sampleRate }

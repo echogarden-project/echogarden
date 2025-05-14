@@ -1,6 +1,6 @@
 import { ComplexNumber } from '../math/VectorMath.js'
 import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { createWasmHeapManager } from 'wasm-heap-manager'
 
 // Compute short-term Fourier transform (real-valued)
 export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
@@ -35,17 +35,19 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 	const windowWeights = getWindowWeights(windowType, windowSize)
 
 	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
-	const wasmMemory = new WasmMemoryManager(m, {
-		wasmAlloc: m._pffft_aligned_malloc,
-		wasmFree: m._pffft_aligned_free
-	})
+
+	const wasmHeap = createWasmHeapManager(
+		() => m.HEAPU8.buffer,
+		m._pffft_aligned_malloc,
+		m._pffft_aligned_free,
+	)
 
 	const statePtr = m._pffft_new_setup(fftOrder, 0)
 
 	const sampleCount = samples.length
-	const frameBufferRef = wasmMemory.allocFloat32Array(fftOrder)
-	const binsBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
-	const workBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
+	const frameBufferRef = wasmHeap.allocFloat32Array(fftOrder)
+	const binsBufferRef = wasmHeap.allocFloat32Array(fftOrder * 2)
+	const workBufferRef = wasmHeap.allocFloat32Array(fftOrder * 2)
 
 	for (let offset = 0; offset < sampleCount; offset += hopSize) {
 		const windowSamples = samples.subarray(offset, offset + windowSize)
@@ -68,7 +70,7 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 
 	m._pffft_destroy_setup(statePtr)
 
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 }
 
 // Compute short-term inverse Fourier transform (real-valued)
@@ -101,16 +103,17 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
 
-	const wasmMemory = new WasmMemoryManager(m, {
-		wasmAlloc: m._pffft_aligned_malloc,
-		wasmFree: m._pffft_aligned_free
-	})
+	const wasmHeap = createWasmHeapManager(
+		() => m.HEAPU8.buffer,
+		m._pffft_aligned_malloc,
+		m._pffft_aligned_free,
+	)
 
 	const statePtr = m._pffft_new_setup(fftOrder, 0)
 
-	const frameBufferRef = wasmMemory.allocFloat32Array(fftOrder)
-	const binsRef = wasmMemory.allocFloat32Array(fftOrder * 2)
-	const workBufferRef = wasmMemory.allocFloat32Array(fftOrder * 2)
+	const frameBufferRef = wasmHeap.allocFloat32Array(fftOrder)
+	const binsRef = wasmHeap.allocFloat32Array(fftOrder * 2)
+	const workBufferRef = wasmHeap.allocFloat32Array(fftOrder * 2)
 
 	const sumOfSquaredWeightsForSample = new Float32Array(outSampleCount)
 
@@ -140,7 +143,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 	}
 
 	m._pffft_destroy_setup(statePtr)
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	// Divide each output sample by the sum of squared weights
 	for (let i = 0; i < outSamples.length; i++) {

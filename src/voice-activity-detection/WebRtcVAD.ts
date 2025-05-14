@@ -1,6 +1,7 @@
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 export async function detectVoiceActivity(rawAudio: RawAudio, frameDuration: 10 | 20 | 30 = 10, mode: 0 | 1 | 2 | 3 = 0) {
 	if (rawAudio.sampleRate != 16000) {
@@ -15,7 +16,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, frameDuration: 10 
 export async function fvad(samples: Int16Array, sampleRate: number, frameDuration: 10 | 20 | 30, mode: 0 | 1 | 2 | 3) {
 	const m = await getFvadInstance()
 
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const fvad_new = m._fvad_new
 	const fvad_free = m._fvad_free
@@ -39,7 +40,7 @@ export async function fvad(samples: Int16Array, sampleRate: number, frameDuratio
 	}
 
 	const frameSampleCount = Math.floor(sampleRate * (frameDuration / 1000))
-	const frameSamplesRef = wasmMemory.allocInt16Array(frameSampleCount)
+	const frameSamplesRef = wasmHeap.allocInt16Array(frameSampleCount)
 
 	const result = []
 
@@ -59,7 +60,7 @@ export async function fvad(samples: Int16Array, sampleRate: number, frameDuratio
 	}
 
 	fvad_free(instancePtr)
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	return result
 }

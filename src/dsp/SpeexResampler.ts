@@ -1,6 +1,6 @@
 import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
 import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let speexResamplerInstance: any
 
@@ -23,17 +23,17 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 	}
 
 	const m = await getSpeexResamplerInstance()
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	function speexResultCodeToString(resultCode: number) {
 		const errorStrPtr = m._speex_resampler_strerror(resultCode)
-		const errorStrRef = wasmMemory.wrapUint8Array(errorStrPtr, 1024)
-		const message = errorStrRef.readAsNullTerminatedUtf8String()
+		const messageRef = wasmHeap.wrapNullTerminatedUtf8String(errorStrPtr)
+		const message = messageRef.value
 
 		return message
 	}
 
-	const initErrRef = wasmMemory.allocInt32()
+	const initErrRef = wasmHeap.allocInt32()
 	const resamplerStateAddress = m._speex_resampler_init(channelCount, inSampleRate, outSampleRate, quality, initErrRef.address)
 	let resultCode = initErrRef.value
 
@@ -46,11 +46,11 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 
 	const maxChunkSize = 2 ** 20
 
-	const inputChunkSampleCountRef = wasmMemory.allocInt32()
-	const outputChunkSampleCountRef = wasmMemory.allocInt32()
+	const inputChunkSampleCountRef = wasmHeap.allocInt32()
+	const outputChunkSampleCountRef = wasmHeap.allocInt32()
 
-	const inputChunkSamplesRef = wasmMemory.allocFloat32Array(maxChunkSize * 2)
-	const outputChunkSamplesRef = wasmMemory.allocFloat32Array(Math.floor(maxChunkSize * sampleRateRatio) * 2)
+	const inputChunkSamplesRef = wasmHeap.allocFloat32Array(maxChunkSize * 2)
+	const outputChunkSamplesRef = wasmHeap.allocFloat32Array(Math.floor(maxChunkSize * sampleRateRatio) * 2)
 
 	const resampledAudioChunksForChannels: Float32Array[][] = []
 
@@ -65,7 +65,7 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 			const inputPaddingSize = isLastChunk ? inputLatency : 0
 			const maxSamplesToRead = Math.min(maxChunkSize, totalSampleCount - readOffset) + inputPaddingSize
 
-			const maxSamplesToWrite = outputChunkSamplesRef.length
+			const maxSamplesToWrite = outputChunkSamplesRef.elementCount
 
 			const inputChunkSamplesForChannel = rawAudio.audioChannels[channelIndex].slice(readOffset, readOffset + maxSamplesToRead)
 
@@ -91,7 +91,7 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 	}
 
 	m._speex_resampler_destroy(resamplerStateAddress)
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	const resampledAudio: RawAudio = {
 		audioChannels: [],

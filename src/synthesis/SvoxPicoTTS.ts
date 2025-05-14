@@ -2,10 +2,11 @@ import { SynthesisVoice } from '../api/API.js'
 import { decodeToChannels, SampleFormat } from '../audio/AudioBufferConversion.js'
 import { bandwidthToQFactor } from '../dsp/BiquadFilter.js'
 import { Logger } from '../utilities/Logger.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { readFileAsBinary } from '../utilities/FileSystem.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
+
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let svoxPicoInstance: any
 
@@ -17,7 +18,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 
 	logger.start('Initialize pico engine')
 
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const pico_initialize = m._pico_initialize
 	const picoext_setTraceLevel = m._picoext_setTraceLevel
@@ -37,11 +38,11 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	const pico_unloadResource = m._pico_unloadResource
 
 	const picoMemSize = 2500000
-	const picoMemAreaRef = wasmMemory.allocUint8Array(picoMemSize)
+	const picoMemAreaRef = wasmHeap.allocUint8Array(picoMemSize)
 
-	const systemPtrRef = wasmMemory.allocPointer()
+	const systemPtrRef = wasmHeap.allocPointer32()
 
-	let resultCode = pico_initialize(picoMemAreaRef.address, picoMemAreaRef.length, systemPtrRef.address)
+	let resultCode = pico_initialize(picoMemAreaRef.address, picoMemAreaRef.allocatedByteCount, systemPtrRef.address)
 	const systemPtr = systemPtrRef.value
 
 	throwErrorIfFailed(resultCode, 'Failed Pico initialization.')
@@ -54,8 +55,8 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 		const fileData = await readFileAsBinary(localFilePath)
 		m.FS.writeFile(virtualFilePath, fileData)
 
-		const virtualFilePathRef = wasmMemory.allocNullTerminatedUtf8String(virtualFilePath)
-		const resourcePtrRef = wasmMemory.allocPointer()
+		const virtualFilePathRef = wasmHeap.allocNullTerminatedUtf8String(virtualFilePath)
+		const resourcePtrRef = wasmHeap.allocPointer32()
 
 		resultCode = pico_loadResource(systemPtr, virtualFilePathRef.address, resourcePtrRef.address)
 		const resourcePtr = resourcePtrRef.value
@@ -69,12 +70,12 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	const { resourcePtr: signalGenerationResourcePtr, resourcePtrRef: signalGenerationResourcePtrRef } = await loadResource(signalGenerationFilePath)
 
 	function getResourceName(resourcePtr: number) {
-		const resourceNameRef = wasmMemory.allocUint8Array(32)
+		const resourceNameRef = wasmHeap.allocNullTerminatedUtf8String(32)
 		resultCode = pico_getResourceName(systemPtr, resourcePtr, resourceNameRef.address)
 
 		throwErrorIfFailed(resultCode, `Failed getting Pico resource name.`)
 
-		const resourceName = resourceNameRef.readAsNullTerminatedUtf8String()
+		const resourceName = resourceNameRef.value
 
 		return { resourceName, resourceNameRef }
 	}
@@ -82,7 +83,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	const { resourceName: textAnalysisResourceName, resourceNameRef: textAnalysisResourceNameRef } = getResourceName(textAnalysisResourcePtr)
 	const { resourceName: signalGenerationResourceName, resourceNameRef: signalGenerationResourceNameRef } = getResourceName(signalGenerationResourcePtr)
 
-	const voiceNameRef = wasmMemory.allocNullTerminatedUtf8String('PicoVoice')
+	const voiceNameRef = wasmHeap.allocNullTerminatedUtf8String('PicoVoice')
 
 	resultCode = pico_createVoiceDefinition(systemPtr, voiceNameRef.address)
 
@@ -95,7 +96,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 	addResourceToVoiceDefinition(textAnalysisResourceNameRef.address)
 	addResourceToVoiceDefinition(signalGenerationResourceNameRef.address)
 
-	const enginePtrRef = wasmMemory.allocPointer()
+	const enginePtrRef = wasmHeap.allocPointer32()
 	resultCode = pico_newEngine(systemPtr, voiceNameRef.address, enginePtrRef.address)
 
 	throwErrorIfFailed(resultCode, `Failed creating new engine.`)
@@ -104,15 +105,17 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 
 	logger.start('Synthesize with pico')
 
-	const textRef = wasmMemory.allocNullTerminatedUtf8String(text)
+	const textRef = wasmHeap.allocNullTerminatedUtf8String(text)
 
-	const bytesWrittenRef = wasmMemory.allocInt32()
+	const bytesWrittenRef = wasmHeap.allocInt32()
 
 	const audioParts: Uint8Array[] = []
 
-	for (let textByteOffset = 0; textByteOffset < textRef.length;) {
+	const textRefEncodedByteCountIncludingTerminator = textRef.encodedByteCount + 1
+
+	for (let textByteOffset = 0; textByteOffset < textRefEncodedByteCountIncludingTerminator;) {
 		bytesWrittenRef.value = 0
-		resultCode = pico_putTextUtf8(enginePtr, textRef.address + textByteOffset, textRef.length - textByteOffset, bytesWrittenRef.address)
+		resultCode = pico_putTextUtf8(enginePtr, textRef.address + textByteOffset, textRefEncodedByteCountIncludingTerminator - textByteOffset, bytesWrittenRef.address)
 		const bytesWritten = bytesWrittenRef.value
 
 		throwErrorIfFailed(resultCode, `Failed writing text to engine.`)
@@ -129,13 +132,13 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 		const outBuffers: Uint8Array[] = []
 
 		const outBufferLength = 16384
-		const outBufferRef = wasmMemory.allocUint8Array(outBufferLength)
+		const outBufferRef = wasmHeap.allocUint8Array(outBufferLength)
 
-		const outByteCountRef = wasmMemory.allocInt16()
-		const outDataTypeRef = wasmMemory.allocInt16()
+		const outByteCountRef = wasmHeap.allocInt16()
+		const outDataTypeRef = wasmHeap.allocInt16()
 
 		while (true) {
-			resultCode = pico_getData(enginePtr, outBufferRef.address, outBufferRef.length, outByteCountRef.address, outDataTypeRef.address)
+			resultCode = pico_getData(enginePtr, outBufferRef.address, outBufferRef.allocatedByteCount, outByteCountRef.address, outDataTypeRef.address)
 
 			throwErrorIfFailed(resultCode, `Failed getting audio data from engine.`, [200, 201])
 
@@ -147,7 +150,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 			}
 
 			if (outByteCount > 0) {
-				outBuffers.push(outBufferRef.slice(0, outByteCount) as Uint8Array)
+				outBuffers.push(outBufferRef.view.slice(0, outByteCount))
 			}
 		}
 
@@ -179,7 +182,7 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 
 		pico_terminate(systemPtrRef.address)
 
-		wasmMemory.freeAll()
+		wasmHeap.freeAll()
 	}
 
 	function throwErrorIfFailed(resultCode: number, title: string, successCodes = [0]) {
@@ -187,9 +190,9 @@ export async function synthesize(text: string, textAnalysisFilePath: string, sig
 			return
 		}
 
-		const picoErrorMessageRef = wasmMemory.allocUint8Array(200)
+		const picoErrorMessageRef = wasmHeap.allocNullTerminatedUtf8String(200)
 		pico_getSystemStatusMessage(systemPtr, resultCode, picoErrorMessageRef)
-		const picoErrorMessage = picoErrorMessageRef.readAsNullTerminatedUtf8String()
+		const picoErrorMessage = picoErrorMessageRef.value
 
 		dispose()
 		throw new Error(`${title} ${picoErrorMessage}`)

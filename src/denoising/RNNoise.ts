@@ -1,6 +1,6 @@
 import { float32ToInt16Pcm } from '../audio/AudioBufferConversion.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
-import { WasmMemoryManager } from '../utilities/WasmMemoryManager.js'
+import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
 
@@ -24,15 +24,15 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 	const m = await getRnnoiseInstance()
 
 	logger.start('Process with RNNoise')
-	const wasmMemory = new WasmMemoryManager(m)
+	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const stateSize = m._rnnoise_get_size()
 	const frameSize = m._rnnoise_get_frame_size()
 
 	const denoiseState = m._rnnoise_create(0)
 
-	const inputRef = wasmMemory.allocFloat32Array(frameSize)
-	const outputRef = wasmMemory.allocFloat32Array(frameSize)
+	const inputRef = wasmHeap.allocFloat32Array(frameSize)
+	const outputRef = wasmHeap.allocFloat32Array(frameSize)
 
 	const floatSamples = rawAudio.audioChannels[0]
 	const int16Samples = float32ToInt16Pcm(floatSamples)
@@ -70,7 +70,7 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 	outputNewFrame(outputRef.view.slice(), lastFrameVadProbability)
 
 	m._rnnoise_destroy(denoiseState)
-	wasmMemory.freeAll()
+	wasmHeap.freeAll()
 
 	const int16DenoisedSamplesAsFloats = concatFloat32Arrays(processedFrames)
 
