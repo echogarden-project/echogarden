@@ -1,5 +1,6 @@
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { substituteCharactersUsingLookup } from '../utilities/StringUtilities.js'
+import { anyOf, buildRegExp, charRange, inputEnd, inputStart, repeated, zeroOrMore } from 'regexp-composer'
 
 export function getNormalizedFragmentsForSpeech(
 	words: string[],
@@ -12,36 +13,6 @@ export function getNormalizedFragmentsForSpeech(
 	if (language != 'en') {
 		return { normalizedFragments: [...nonWhitespaceWords], referenceFragments: [...nonWhitespaceWords] }
 	}
-
-	const numberPattern = /^[0-9][0-9\,\.]*$/
-
-	const fourDigitYearPattern = /^[0-9][0-9][0-9][0-9]$/
-	const fourDigitDecadePattern = /^[0-9][0-9][0-9]0s$/
-
-	const fourDigitYearRangePattern = /^[0-9][0-9][0-9][0-9][\-\–][0-9][0-9][0-9][0-9]$/
-
-	const wordsPrecedingAYear = [
-		'in', 'the', 'a', 'to', 'of', 'since', 'from', 'between', 'by', 'until', 'around', 'before', 'after',
-		'his', 'her', 'year', 'years', 'during', 'copyright', '©', 'early', 'mid', 'late',
-		'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
-		'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
-	]
-
-	const wordsPrecedingADecade = [
-		'the', 'in', 'early', 'mid', 'late', 'a'
-	]
-
-	const symbolsPrecedingACurrency = [
-		'$', '€', '£', '¥'
-	]
-
-	const symbolsPrecedingACurrencyAsWords = [
-		'dollars', 'euros', 'pounds', 'yen'
-	]
-
-	const wordsSucceedingACurrency = [
-		'million', 'billion', 'trillion'
-	]
 
 	const normalizedFragments: string[] = []
 	const referenceFragments: string[] = []
@@ -56,10 +27,11 @@ export function getNormalizedFragmentsForSpeech(
 		const originalWordIndex = nonWhitespaceWordOriginalIndex[wordIndex]
 		const isFollowedByWhitespace = words[originalWordIndex + 1]?.trim().length === 0
 
-		if ( // Normalize a four digit year pattern, e.g. 'in 1995'.
-			wordsPrecedingAYear.includes(lowerCaseWord) &&
+		if (wordsPrecedingAYear.includes(lowerCaseWord) &&
 			isFollowedByWhitespace &&
-			fourDigitYearPattern.test(nextNonWhitespaceWord)) {
+			fourDigitYearPatternRegExp.test(nextNonWhitespaceWord)) {
+
+ 			// Normalize a four digit year pattern, e.g. 'in 1995'.
 
 			const normalizedString = normalizeFourDigitYearString(nextNonWhitespaceWord)
 
@@ -70,10 +42,12 @@ export function getNormalizedFragmentsForSpeech(
 			referenceFragments.push(nextNonWhitespaceWord)
 
 			wordIndex += 1
-		} else if ( // Normalize a four digit decade pattern, e.g. 'the 1980s'.
+		} else if (
 			wordsPrecedingADecade.includes(lowerCaseWord) &&
 			isFollowedByWhitespace &&
-			fourDigitDecadePattern.test(nextNonWhitespaceWord)) {
+			fourDigitDecadePatternRegExp.test(nextNonWhitespaceWord)) {
+
+ 			// Normalize a four digit decade pattern, e.g. 'the 1980s'.
 
 			const normalizedString = normalizeFourDigitDecadeString(nextNonWhitespaceWord)
 
@@ -84,9 +58,8 @@ export function getNormalizedFragmentsForSpeech(
 			referenceFragments.push(nextNonWhitespaceWord)
 
 			wordIndex += 1
-		} else if ( // Normalize a year range pattern, e.g. '1835-1896', ensure there are no spaces between words
-			fourDigitYearRangePattern.test(words.slice(originalWordIndex, originalWordIndex + 3).join(''))) {
-
+		} else if (fourDigitYearRangePatternRegExp.test(words.slice(originalWordIndex, originalWordIndex + 3).join(''))) {
+			// Normalize a year range pattern, e.g. '1835-1896', ensure there are no spaces between words
 			normalizedFragments.push(normalizeFourDigitYearString(nonWhitespaceWords[wordIndex]))
 			referenceFragments.push(nonWhitespaceWords[wordIndex])
 
@@ -97,32 +70,37 @@ export function getNormalizedFragmentsForSpeech(
 			referenceFragments.push(nonWhitespaceWords[wordIndex + 2])
 
 			wordIndex += 2
-		} else if ( // Normalize a currency pattern, e.g. '$53.1 million', '€3.53'
-			symbolsPrecedingACurrency.includes(lowerCaseWord) &&
-			!isFollowedByWhitespace &&
-			numberPattern.test(nextNonWhitespaceWord)) {
+		} else if (precedingCurrencyPatternRegExp.test(lowerCaseWord)) {
+			// Normalize a currency pattern with preceding currency symbol, e.g. '€3.53', '$53.1 million',
 
-			let currencyWord = symbolsPrecedingACurrencyAsWords[symbolsPrecedingACurrency.indexOf(lowerCaseWord)]
+			const currencyWord = currencySymbolsAsWords[currencySymbols.indexOf(lowerCaseWord[0])]
 
-			if (wordsSucceedingACurrency.includes(nextNonWhitespaceWords[1]?.toLowerCase())) {
-				const normalizedString = `${nextNonWhitespaceWord} ${nextNonWhitespaceWords[1]} ${currencyWord}`
+			if (wordsFollowingACurrency.includes(nextNonWhitespaceWord?.toLowerCase())) {
+				const normalizedString = `${word.substring(1)} ${nextNonWhitespaceWord} ${currencyWord}`
 
 				normalizedFragments.push(normalizedString)
 
-				const referenceString = `${word}${nextNonWhitespaceWord} ${nextNonWhitespaceWords[1]}`
-				referenceFragments.push(referenceString)
-
-				wordIndex += 2
-			} else {
-				const normalizedString = `${nextNonWhitespaceWord} ${currencyWord}`
-
-				normalizedFragments.push(normalizedString)
-
-				const referenceString = `${word}${nextNonWhitespaceWord}`
+				const referenceString = `${word} ${nextNonWhitespaceWord}`
 				referenceFragments.push(referenceString)
 
 				wordIndex += 1
+			} else {
+				const normalizedString = `${word.substring(1)} ${currencyWord}`
+
+				normalizedFragments.push(normalizedString)
+
+				const referenceString = word
+				referenceFragments.push(referenceString)
 			}
+		} else if (followingCurrencyPatternRegExp.test(lowerCaseWord)) {
+			const currencyWord = currencySymbolsAsWords[currencySymbols.indexOf(lowerCaseWord[lowerCaseWord.length - 1])]
+
+			const normalizedString = `${word.substring(0, word.length - 1)} ${currencyWord}`
+
+			normalizedFragments.push(normalizedString)
+
+			const referenceString = word
+			referenceFragments.push(referenceString)
 		} else {
 			normalizedFragments.push(word)
 			referenceFragments.push(word)
@@ -156,7 +134,7 @@ export function normalizeFourDigitDecadeString(decadeString: string) {
 	let normalizedString: string
 
 	const isBeforeSecondMillenium = firstTwoDigitsValue < 10
-	const isMilleniumDecade =  firstTwoDigitsValue % 10 == 0 && secondTwoDigitsValue == 0
+	const isMilleniumDecade = firstTwoDigitsValue % 10 == 0 && secondTwoDigitsValue == 0
 
 	if (!isBeforeSecondMillenium && !isMilleniumDecade) {
 		if (secondTwoDigitsValue != 0) {
@@ -229,3 +207,68 @@ export const punctuationSubstitutionLookup: Record<string, string> = {
 	'！': `!`,
 	'¡': `!`,
 }
+
+const wordsPrecedingAYear = [
+	'in', 'the', 'a', 'to', 'of', 'since', 'from', 'between', 'by', 'until', 'around', 'before', 'after',
+	'his', 'her', 'year', 'years', 'during', 'copyright', '©', 'early', 'mid', 'late',
+	'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+	'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+	'winter', 'spring', 'summer', 'fall', 'autumn'
+]
+
+const wordsPrecedingADecade = [
+	'the', 'in', 'early', 'mid', 'late', 'a'
+]
+
+const currencySymbols = [
+	'$', '¥', '€', '£', '₩', '₭', '₽', '₫', '฿', '¢', '₮', '؋', '₦', '₱', '₴', '₪'
+]
+
+const currencySymbolsAsWords = [
+	'dollars', 'yen', 'euros', 'pounds', 'won', 'kip', 'rubles', 'dong', 'baht', 'cents', 'tögrög', 'afghanis', 'naira', 'pesos', 'hryvnia', 'shekels'
+]
+
+const wordsFollowingACurrency = [
+	'million', 'billion', 'trillion'
+]
+
+const arabicNumeralPattern = charRange('0', '9')
+
+const numberPattern = [
+	inputStart,
+	arabicNumeralPattern,
+	zeroOrMore(anyOf(arabicNumeralPattern, ',', '.')),
+	inputEnd
+]
+
+const numberPatternRegExp = buildRegExp(numberPattern)
+
+const precedingCurrencyPattern = [
+	inputStart,
+	anyOf(...currencySymbols),
+	arabicNumeralPattern,
+	zeroOrMore(anyOf(arabicNumeralPattern, ',', '.')),
+	inputEnd
+]
+
+const precedingCurrencyPatternRegExp = buildRegExp(precedingCurrencyPattern)
+
+
+const followingCurrencyPattern = [
+	inputStart,
+	arabicNumeralPattern,
+	zeroOrMore(anyOf(arabicNumeralPattern, ',', '.')),
+	anyOf(...currencySymbols),
+	inputEnd
+]
+
+const followingCurrencyPatternRegExp = buildRegExp(followingCurrencyPattern)
+
+const fourDigitYearPattern = [inputStart, repeated(4, arabicNumeralPattern), inputEnd]
+const fourDigitYearPatternRegExp = buildRegExp(fourDigitYearPattern)
+
+const fourDigitDecadePattern = [inputStart, repeated(3, arabicNumeralPattern), '0s', inputEnd]
+const fourDigitDecadePatternRegExp = buildRegExp(fourDigitDecadePattern)
+
+const fourDigitYearRangePattern = [inputStart, repeated(4, arabicNumeralPattern), '-', repeated(4, arabicNumeralPattern), inputEnd]
+const fourDigitYearRangePatternRegExp = buildRegExp(fourDigitYearRangePattern)
