@@ -3,7 +3,7 @@ import { Logger } from '../utilities/Logger.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { cosineDistance } from '../math/VectorMath.js'
-import { isPunctuation, isWord, parseText } from '../nlp/Segmentation.js'
+import { includesPunctuation, isWord, parseText } from '../nlp/Segmentation.js'
 import { Timeline, extractEntries } from '../utilities/Timeline.js'
 
 export async function alignTimelineToTextSemantically(timeline: Timeline, text: string, textLangCode: string) {
@@ -196,8 +196,8 @@ export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wo
 
 	// Align
 	function costFunction(a: TokenEmbeddingData, b: TokenEmbeddingData) {
-		const aIsPunctuation = isPunctuation(a.text)
-		const bIsPunctuation = isPunctuation(b.text)
+		const aIsPunctuation = includesPunctuation(a.text)
+		const bIsPunctuation = includesPunctuation(b.text)
 
 		if (aIsPunctuation === bIsPunctuation) {
 			return cosineDistance(a.embeddingVector, b.embeddingVector)

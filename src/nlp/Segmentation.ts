@@ -10,6 +10,7 @@ import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
 const log = logToStderr
 
 export const wordCharacterRegExp = /[\p{Letter}\p{Number}]/u
+export const emojiCharacterRegExp = /[\p{Emoji}]/u
 export const punctuationRegExp = /[\p{Punctuation}]/u
 
 export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
@@ -19,7 +20,7 @@ export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%'
 // Predicates
 ///////////////////////////////////////////////////////////////////////////////////////////////
 export function isWordOrSymbolWord(str: string) {
-	return isWord(str) || symbolWords.includes(str)
+	return isWord(str) || includesEmoji(str) || symbolWords.includes(str)
 }
 
 export function isSymbolWord(str: string) {
@@ -30,8 +31,12 @@ export function isWord(str: string) {
 	return wordCharacterRegExp.test(str.trim())
 }
 
-export function isPunctuation(str: string) {
+export function includesPunctuation(str: string) {
 	return punctuationRegExp.test(str.trim())
+}
+
+export function includesEmoji(str: string) {
+	return emojiCharacterRegExp.test(str.trim())
 }
 
 export function isWhitespace(str: string) {
