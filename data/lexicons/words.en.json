@@ -683,8 +683,8 @@
 		"cuda": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "k ˈu d ɑ",
-					"en-gb-x-rp": "k ˈu d ɑ"
+					"en-us": "k ˈu d ɑː",
+					"en-gb-x-rp": "k ˈu d ɑː"
 				}
 			}
 		},
@@ -1229,6 +1229,14 @@
 				"espeak": {
 					"en-us": "ˈɛ n i t ˌaɪ m",
 					"en-gb-x-rp": "ˈɛ n i t ˌaɪ m"
+				}
+			}
+		},
+		"constructs": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n s t ɹ ˈʌ k t s",
+					"en-gb-x-rp": "k ə n s t ɹ ˈʌ k t s"
 				}
 			}
 		},
