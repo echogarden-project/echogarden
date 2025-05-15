@@ -1676,8 +1676,14 @@ export class Whisper {
 			return ''
 		}
 
+		const decodedBytes = this.tiktoken!.decode(new Uint32Array(tokens))
+
+		const textDecoder = new TextDecoder()
+
+		const decodedString = textDecoder.decode(decodedBytes)
+
 		try {
-			return decodeUtf8(this.tiktoken!.decode(new Uint32Array(tokens)))
+			return decodedString
 		} catch {
 			return '[TOKENIZER_FAILED]'
 		}
