@@ -141,8 +141,8 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffs
 			const sentenceTimelineEntry: TimelineEntry = {
 				type: 'sentence',
 				text: sentenceEntry.text,
-				startTime: wordTimeline[0].startTime,
-				endTime: wordTimeline[wordTimeline.length - 1].endTime,
+				startTime: wordTimeline[0]?.startTime,
+				endTime: wordTimeline[wordTimeline.length - 1]?.endTime,
 
 				timeline: wordTimeline,
 			}
@@ -153,8 +153,8 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffs
 		const segmentTimelineEntry: TimelineEntry = {
 			type: 'segment',
 			text: paragraph,
-			startTime: sentenceTimeline[0].startTime,
-			endTime: sentenceTimeline[sentenceTimeline.length - 1].endTime,
+			startTime: sentenceTimeline[0]?.startTime,
+			endTime: sentenceTimeline[sentenceTimeline.length - 1]?.endTime,
 
 			timeline: sentenceTimeline,
 		}
@@ -171,6 +171,8 @@ export function addWordTextOffsetsToTimelineInPlace(timeline: Timeline, text: st
 	let currentOffset = 0
 
 	function processTimeline(timeline: Timeline) {
+		let lastEndOffset = 0
+
 		for (const entry of timeline) {
 			if (entry.type === 'word') {
 				let word = entry.text
@@ -200,11 +202,15 @@ export function addWordTextOffsetsToTimelineInPlace(timeline: Timeline, text: st
 					endOffset = currentOffset
 				}
 
-				entry.startOffsetUtf16 = startOffset
-				entry.endOffsetUtf16 = endOffset
+				entry.startOffsetUtf16 = startOffset ?? lastEndOffset
+				entry.endOffsetUtf16 = endOffset ?? lastEndOffset
 
-				entry.startOffsetUtf32 = startOffset !== undefined ? utf16To32Mapping[startOffset] : undefined
-				entry.endOffsetUtf32 = endOffset !== undefined ? utf16To32Mapping[endOffset] : undefined
+				entry.startOffsetUtf32 = utf16To32Mapping[entry.startOffsetUtf16]
+				entry.endOffsetUtf32 = utf16To32Mapping[entry.endOffsetUtf16]
+
+				if (endOffset !== undefined) {
+					lastEndOffset = endOffset
+				}
 			} else if (entry.timeline) {
 				processTimeline(entry.timeline)
 			}
