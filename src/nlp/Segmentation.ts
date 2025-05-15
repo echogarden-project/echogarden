@@ -24,23 +24,23 @@ export function isWordOrSymbolWord(str: string) {
 }
 
 export function isSymbolWord(str: string) {
-	return symbolWords.includes(str.trim())
+	return symbolWords.includes(str?.trim())
 }
 
 export function isWord(str: string) {
-	return wordCharacterRegExp.test(str.trim())
+	return wordCharacterRegExp.test(str?.trim())
 }
 
 export function includesPunctuation(str: string) {
-	return punctuationRegExp.test(str.trim())
+	return punctuationRegExp.test(str?.trim())
 }
 
 export function includesEmoji(str: string) {
-	return emojiCharacterRegExp.test(str.trim())
+	return emojiCharacterRegExp.test(str?.trim())
 }
 
 export function isWhitespace(str: string) {
-	return str.trim().length === 0
+	return str?.trim().length === 0
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
