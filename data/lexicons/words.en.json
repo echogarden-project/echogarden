@@ -1671,6 +1671,30 @@
 					"en-gb-x-rp": "ˈɛ n t ə p ɹ aɪ z ɪ z"
 				}
 			}
+		},
+		"fourier": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "f ˈɔː ɹ i eɪ",
+					"en-gb-x-rp": "f ˈɔː ɹ i eɪ"
+				}
+			}
+		},
+		"compaq": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈə m p æ k",
+					"en-gb-x-rp": "k ˈə m p æ k"
+				}
+			}
+		},
+		"nomenclature": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈoʊ m ɛ n k l ˌeɪ tʃ ɚ",
+					"en-gb-x-rp": "n ə m ˈɛ ŋ k l ə tʃ ɐ"
+				}
+			}
 		}
 	}
 }
