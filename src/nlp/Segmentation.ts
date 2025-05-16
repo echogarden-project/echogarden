@@ -14,7 +14,7 @@ export const emojiCharacterRegExp = /[\p{Emoji}]/u
 export const punctuationRegExp = /[\p{Punctuation}]/u
 
 export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
-export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '=', '¼', '½', '¾']
+export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '×', '=', '¼', '½', '¾']
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Predicates
