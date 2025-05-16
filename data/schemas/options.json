@@ -659,7 +659,9 @@
       "enum": [
         "cpu",
         "dml",
-        "cuda"
+        "cuda",
+        "coreml",
+        "webgpu"
       ]
     },
     "WhisperVADOptions": {
