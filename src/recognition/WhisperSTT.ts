@@ -24,7 +24,6 @@ import { getDeflateCompressionMetricsForString } from '../utilities/Compression.
 import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor, OnnxExecutionProvider, OnnxLikeFloat32Tensor } from '../utilities/OnnxUtilities.js'
 import { murmurHash3_int32Input } from '../utilities/Hashing.js'
 import { containsInvalidCodepoint, getTokenRepetitionScore } from '../utilities/StringUtilities.js'
-import { decodeUtf8 } from '../encodings/Utf8.js'
 import { joinPath } from '../utilities/PathUtilities.js'
 
 export async function recognize(
