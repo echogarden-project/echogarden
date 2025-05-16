@@ -377,6 +377,11 @@ export class Whisper {
 			options.timestampAccuracy = this.defaultTimestampAccuracy
 		}
 
+		if (options.maxTokensPerPart! > largestMaximumTokensPerPart) {
+			//throw new Error(`The number of tokens per part cannot be greater than ${largestMaximumTokensPerPart}`)
+			options.maxTokensPerPart = largestMaximumTokensPerPart
+		}
+
 		const audioSamples = rawAudio.audioChannels[0]
 		const sampleRate = rawAudio.sampleRate
 		const prompt = options.prompt
@@ -416,7 +421,11 @@ export class Whisper {
 			let initialTokens: number[] = []
 
 			if (isFirstPart && prompt) {
-				const promptTokens = this.textToTokens(prompt)
+				let promptTokens = this.textToTokens(prompt)
+
+				if (promptTokens.length > largestMaximumTokensPerPart) {
+					promptTokens = promptTokens.slice(promptTokens.length - largestMaximumTokensPerPart)
+				}
 
 				initialTokens = [this.tokenConfig.startOfPromptToken, ...promptTokens]
 			} else if (options.autoPromptParts && previousPartTextTokens.length > 0) {
@@ -424,6 +433,8 @@ export class Whisper {
 			}
 
 			initialTokens = [...initialTokens, ...this.getTextStartTokens(language, task, !decodeTimestampTokens)]
+
+			//logger.log(`Initial tokens count: ${initialTokens.length}`)
 
 			logger.end()
 
@@ -523,6 +534,11 @@ export class Whisper {
 
 		if (!whisperAlignmentOptions.timestampAccuracy) {
 			whisperAlignmentOptions.timestampAccuracy = this.defaultTimestampAccuracy
+		}
+
+		if (whisperAlignmentOptions.maxTokensPerPart! > largestMaximumTokensPerPart) {
+			//throw new Error(`The number of tokens per part cannot be greater than ${largestMaximumTokensPerPart}`)
+			whisperAlignmentOptions.maxTokensPerPart = largestMaximumTokensPerPart
 		}
 
 		const targetLanguage = task === 'transcribe' ? sourceLanguage : 'en'
@@ -794,8 +810,10 @@ export class Whisper {
 			decodedTokensCrossAttentionQKs.push(crossAttentionQKs)
 		}
 
+		const maxTokensPerPart = Math.min(options.maxTokensPerPart!, largestMaximumTokensPerPart)
+
 		// Start decoding loop
-		for (let decodedTokenCount = 0; decodedTokenCount < options.maxTokensPerPart!; decodedTokenCount++) {
+		for (let decodedTokenCount = 0; decodedTokenCount < maxTokensPerPart; decodedTokenCount++) {
 			const isInitialState = decodedTokens.length === initialTokens.length
 			const atLeastOneTextTokenDecoded = decodedTokens.slice(initialTokens.length).some(token => this.isTextToken(token))
 
@@ -2523,6 +2541,8 @@ export interface WhisperOptions {
 	seed?: number
 }
 
+const largestMaximumTokensPerPart = 220
+
 export const defaultWhisperOptions: WhisperOptions = {
 	model: undefined,
 	temperature: 0.1,
@@ -2530,7 +2550,7 @@ export const defaultWhisperOptions: WhisperOptions = {
 	topCandidateCount: 5,
 	punctuationThreshold: 0.2,
 	autoPromptParts: true,
-	maxTokensPerPart: 250,
+	maxTokensPerPart: largestMaximumTokensPerPart,
 	suppressRepetition: true,
 	repetitionThreshold: 2.4,
 	decodeTimestampTokens: true,
@@ -2556,7 +2576,7 @@ export interface WhisperAlignmentOptions {
 export const defaultWhisperAlignmentOptions: WhisperAlignmentOptions = {
 	model: undefined,
 	endTokenThreshold: 0.9,
-	maxTokensPerPart: 250,
+	maxTokensPerPart: largestMaximumTokensPerPart,
 	timestampAccuracy: undefined,
 
 	encoderProvider: undefined,
