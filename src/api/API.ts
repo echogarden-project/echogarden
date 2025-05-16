@@ -30,3 +30,7 @@ export * from '../server/Server.js'
 export * from '../server/Client.js'
 
 export { timelineToSubtitles, subtitlesToTimeline } from '../subtitles/Subtitles.js'
+
+export { type RawAudio, type AudioEncoding, type AudioSourceParam } from '../audio/AudioUtilities.js'
+
+export { type Timeline, type TimelineEntryType, type TimelineEntry } from '../utilities/Timeline.js'
