@@ -59,6 +59,8 @@ export async function recognize(
 				}
 			}
 
+			logger.end()
+
 			executablePath = await loadExecutablePackage(buildKind)
 		}
 
