@@ -2026,39 +2026,39 @@
 			{
 				"pronunciation": {
 					"espeak": {
-						"en-us": "ɹ ᵻ f j ˈu z",
-						"en-gb-x-rp": "ɹ ᵻ f j ˈuː z"
-					}
-				},
-				"pos": [
-					"VB"
-				],
-
-				"precededBy": [
-					"to", "i", "me", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't"
-				],
-
-				"notPrecededBy": [
-					"the"
-				],
-
-				"followedBy": [
-					"to"
-				],
-
-				"notFollowedBy": [
-				],
-
-				"example": "I must refuse."
-			},
-			{
-				"pronunciation": {
-					"espeak": {
 						"en-us": "ɹ ˈɛ f j uː s",
 						"en-gb-x-rp": "ɹ ˈɛ f j uː s"
 					}
 				},
+				"pos": [
+					"NN"
+				],
+
+				"precededBy": [
+					"a", "the", "more", "every", "each"
+				],
+
+				"notPrecededBy": [
+					"to", "i", "me", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't"
+				],
+
+				"followedBy": [
+				],
+
+				"notFollowedBy": [
+					"to"
+				],
+
 				"example": "We separate refuse from recyclables."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "ɹ ᵻ f j ˈu z",
+						"en-gb-x-rp": "ɹ ᵻ f j ˈuː z"
+					}
+				},
+				"example": "I must refuse."
 			}
 		],
 		"import": [

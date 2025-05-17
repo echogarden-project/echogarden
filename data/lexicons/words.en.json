@@ -1703,6 +1703,46 @@
 					"en-gb-x-rp": "n ə m ˈɛ ŋ k l ə tʃ ɐ"
 				}
 			}
+		},
+		"axes": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈæ k s i z",
+					"en-gb-x-rp": "ˈæ k s i z"
+				}
+			}
+		},
+		"preloaded": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ i l ˈoʊ d ᵻ d",
+					"en-gb-x-rp": "p ɹ i l ˈoʊ d ᵻ d"
+				}
+			}
+		},
+		"absorbed": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ə b z ˈɔːɹ b d",
+					"en-gb-x-rp": "ə b z ˈɔː b d"
+				}
+			}
+		},
+		"disparate": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˈɪ s p ɹ ə t",
+					"en-gb-x-rp": "d ˈɪ s p ɹ ə t"
+				}
+			}
+		},
+		"qwen": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k w ˈɛ n",
+					"en-gb-x-rp": "k w ˈɛ n"
+				}
+			}
 		}
 	}
 }
