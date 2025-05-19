@@ -1,8 +1,5 @@
 import { logToStderr, roundToDigits } from './Utilities.js'
 
-declare const chrome: any
-declare const process: any
-
 export class Timer {
 	startTime = 0
 
@@ -46,50 +43,37 @@ export class Timer {
 	}
 
 	static get currentTime(): number {
-		if (!this.timestampFunc) {
-			this.createGlobalTimestampFunction()
+		if (!this.getTimestamp) {
+			this.createTimestampFunction()
 		}
 
-		return this.timestampFunc()
+		return this.getTimestamp()
 	}
 
 	static get microsecondTimestamp(): number {
 		return Math.floor(Timer.currentTime * 1000)
 	}
 
-	private static createGlobalTimestampFunction() {
+	private static createTimestampFunction() {
 		if (typeof process === 'object' && typeof process.hrtime === 'function') {
 			let baseTimestamp = 0
 
-			this.timestampFunc = () => {
-				const nodeTimeStamp = process.hrtime()
-				const millisecondTime = (nodeTimeStamp[0] * 1000) + (nodeTimeStamp[1] / 1000000)
+			this.getTimestamp = () => {
+				const nodeTimeNanoSeconds = process.hrtime.bigint()
+				const nodeTimeMilliseconds = Number(nodeTimeNanoSeconds) / 1_000_000
 
-				return baseTimestamp + millisecondTime
+				return baseTimestamp + nodeTimeMilliseconds
 			}
 
-			baseTimestamp = Date.now() - this.timestampFunc()
-		}
-		else if (typeof chrome === 'object' && chrome.Interval) {
-			const baseTimestamp = Date.now()
-
-			const chromeIntervalObject = new chrome.Interval()
-			chromeIntervalObject.start()
-
-			this.timestampFunc = () => baseTimestamp + chromeIntervalObject.microseconds() / 1000
-		}
-		else if (typeof performance === 'object' && performance.now) {
+			baseTimestamp = Date.now() - this.getTimestamp()
+		} else if (typeof performance === 'object' && performance.now) {
 			const baseTimestamp = Date.now() - performance.now()
 
-			this.timestampFunc = () => baseTimestamp + performance.now()
-		}
-		else if (Date.now) {
-			this.timestampFunc = () => Date.now()
-		}
-		else {
-			this.timestampFunc = () => (new Date()).getTime()
+			this.getTimestamp = () => baseTimestamp + performance.now()
+		} else {
+			this.getTimestamp = () => Date.now()
 		}
 	}
 
-	private static timestampFunc: () => number
+	private static getTimestamp: () => number
 }
