@@ -10,11 +10,14 @@ import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
 const log = logToStderr
 
 export const wordCharacterRegExp = /[\p{Letter}\p{Number}]/u
-export const emojiCharacterRegExp = /[\p{Emoji}]/u
+
+// See: https://mathiasbynens.be/notes/es-unicode-property-escapes
+export const emojiSequenceRegExp = /\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/u
+
 export const punctuationRegExp = /[\p{Punctuation}]/u
 
 export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
-export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '*', '×', '=', '¼', '½', '¾']
+export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '¼', '½', '¾']
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Predicates
@@ -36,7 +39,7 @@ export function includesPunctuation(str: string) {
 }
 
 export function includesEmoji(str: string) {
-	return emojiCharacterRegExp.test(str?.trim())
+	return emojiSequenceRegExp.test(str?.trim())
 }
 
 export function isWhitespace(str: string) {
