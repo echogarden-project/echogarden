@@ -8,6 +8,7 @@ import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
 import { TypedArray, TypedArrayConstructor } from '../typings/TypedArray.js'
 import { encodeHex } from '../encodings/Hex.js'
+import { Timer } from './Timer.js'
 
 const log = logToStderr
 
@@ -123,9 +124,19 @@ export function roundToDigits(val: number, digits = 3) {
 	return Math.round(val * multiplier) / multiplier
 }
 
-export function delay(timeMs: number) {
-	return new Promise((resolve) => {
-		setTimeout(resolve, timeMs)
+export function sleep(timeMs: number) {
+	const timer = new Timer()
+
+	return new Promise<void>((resolve) => {
+		const tickCallback = () => {
+			if (timer.elapsedTime < timeMs) {
+				setImmediate(tickCallback)
+			} else {
+				resolve()
+			}
+		}
+
+		setImmediate(tickCallback)
 	})
 }
 
@@ -440,7 +451,7 @@ export async function runOperationWithRetries<R>(
 			logger.log('', 'error')
 			logger.logTitledMessage(`${operationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, chalk.redBright, 'error')
 
-			await delay(delayBetweenRetries)
+			await sleep(delayBetweenRetries)
 
 			logger.log(``, 'warning')
 			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, chalk.yellowBright, 'warning')
