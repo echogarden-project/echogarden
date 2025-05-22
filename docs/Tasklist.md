@@ -76,7 +76,8 @@
 * `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
 
 ### API
-* Validate timelines to ensure timestamps are always increasing: no negative timestamps or timestamps over the duration of the audio. No sentences without words, etc. and correct if needed
+* Allow callers from API to cancel a task via `AbortController` and `AbortSignal`
+* Validate timelines to ensure timestamps are always increasing: no undefined timestamps, no negative timestamps, out-of-order timestamps, or timestamps over the duration of the audio. No sentences without words, etc. Missing or incorrect word offsets, etc.
 * Add support for phrases in timelines
 * Accept voice list caching options in `SynthesisOptions`
 
@@ -100,7 +101,7 @@
 ### Synthesis
 * Option to disable alignment (only for some engines). Alternative: use a low granularity DTW setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
-* An isolated dash " - " can be converted to a " , " to ensure there's a break in the speech
+* An isolated dash " - " can maybe be converted to a " , " to ensure there's a break in the speech
 * Find a way to manually reset voice list cache
 * When synthesized text isn't pre-split to sentences, apply sentence splits by using the existing method to convert the output of word timelines to sentence/segment timelines
 * Some `sapi` voices and `msspeech` languages output phones that are converted to Microsoft alphabet, not IPA symbols. Try to see if these can be translated to IPA
@@ -126,10 +127,14 @@
 * Option to add POS tags to timeline, if available
 
 ### Synthesis / VITS
-* Allow limiting how many models are cached in memory
+* Allow limiting how many models are cached in memory.
+* Ensure that caching behaves correctly when the same model is used with different execution providers
 * Custom model paths (decide how to implement)
 * Pull voice list from JSON file, or based on URL? Is that a good idea?
 * Add speaker names to voice list somehow
+
+### Synthesis / Kokoro
+* Ensure that caching behaves correctly when the same model is used with different execution providers
 
 ### Synthesis / Azure Cognitive Services
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
@@ -139,8 +144,8 @@
 
 ### Recognition / Whisper
 * Whisper's Chinese and Japanese output can be split into words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no punctuation characters to aid on guessing word boundaries
-* Cache last model (if enough memory is available)
-* The segment output can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
+* Cache last model (if enough memory is available). Ensure that caching works when switching between  different execution providers
+* Whisper timestamp tokens can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
 * Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment

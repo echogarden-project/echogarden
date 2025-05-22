@@ -18,8 +18,6 @@
 * `sonic`: [Apache License 2.0](https://github.com/waywardgeek/sonic/blob/master/LICENSE)
 * `speex-resampler`: [BSD-3-Clause](https://github.com/xiph/speexdsp/blob/master/COPYING)
 * `rubberband`: [GNU GPL v2](https://github.com/breakfastquay/rubberband/blob/default/COPYING)
-* `compromise`: [MIT License](https://github.com/spencermountain/compromise/blob/master/LICENSE)
-* `cldr-segmentation`: [MIT License](https://github.com/camertron/cldr-segmentation.js/blob/master/LICENSE)
 * `jieba-wasm`: [MIT License](https://github.com/fengkx/jieba-wasm/blob/master/LICENSE)
 * `kuromoji`: [Apache License 2.0](https://github.com/takuyaa/kuromoji.js/blob/master/LICENSE-2.0.txt)
 * `tiktoken`: [MIT License](https://github.com/openai/tiktoken/blob/main/LICENSE)
