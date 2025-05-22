@@ -345,7 +345,11 @@ export function medianOfVector(vector: ArrayLike<number>) {
 		throw new Error('Vector is empty')
 	}
 
-	return vector[Math.floor(vector.length / 2)]
+	const sortedArray = Array.from(vector).sort((a, b) => a - b)
+
+	const median = sortedArray[Math.floor(sortedArray.length / 2)]
+
+	return median
 }
 
 export function stdDeviationOfVector(vector: ArrayLike<number>, kind: 'population' | 'sample' = 'population', mean?: number) {
