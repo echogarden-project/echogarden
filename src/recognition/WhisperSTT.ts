@@ -3,7 +3,7 @@ import type * as Onnx from 'onnxruntime-node'
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
 import { clip, getIntegerRange, getTopKIndexes, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logOfVector, logSumExp, meanOfVector, softmax, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianOfVector, softmax, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -11,7 +11,7 @@ import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { AlignmentPath } from '../alignment/SpeechAlignment.js'
 import { getRawAudioDuration, RawAudio, sliceRawAudio } from '../audio/AudioUtilities.js'
 import { readFileAsUtf8 } from '../utilities/FileSystem.js'
-import type { LanguageDetectionResults } from '../api/API.js'
+import { logLevelGreaterOrEqualTo, type LanguageDetectionResults } from '../api/API.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import chalk from 'chalk'
@@ -25,6 +25,7 @@ import { dmlProviderAvailable, getOnnxSessionOptions, makeOnnxLikeFloat32Tensor,
 import { murmurHash3_int32Input } from '../utilities/Hashing.js'
 import { containsInvalidCodepoint, getTokenRepetitionScore } from '../utilities/StringUtilities.js'
 import { joinPath } from '../utilities/PathUtilities.js'
+import { Timer } from '../utilities/Timer.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
@@ -36,7 +37,7 @@ export async function recognize(
 
 	options = extendDeep(defaultWhisperOptions, options)
 
-	if (sourceRawAudio.sampleRate != 16000) {
+	if (sourceRawAudio.sampleRate !== 16000) {
 		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
@@ -46,7 +47,7 @@ export async function recognize(
 		throw new Error(`The language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
-	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
+	if (isEnglishOnlyModel(modelName) && sourceLanguage !== 'en') {
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
@@ -60,7 +61,7 @@ export async function recognize(
 
 	// Workaround issue with large-v3-turbo that produces invalid results when a prompt is passed to it.
 	// Always disable autoprompting for that model.
-	if (options.autoPromptParts && modelName == 'large-v3-turbo') {
+	if (options.autoPromptParts && modelName === 'large-v3-turbo') {
 		options.autoPromptParts = false
 	}
 
@@ -96,7 +97,7 @@ export async function align(
 
 	options = extendDeep(defaultWhisperAlignmentOptions, options)
 
-	if (sourceRawAudio.sampleRate != 16000) {
+	if (sourceRawAudio.sampleRate !== 16000) {
 		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
@@ -106,7 +107,7 @@ export async function align(
 		throw new Error(`The language ${formatLanguageCodeWithName(sourceLanguage)} is not supported by the Whisper engine.`)
 	}
 
-	if (isEnglishOnlyModel(modelName) && sourceLanguage != 'en') {
+	if (isEnglishOnlyModel(modelName) && sourceLanguage !== 'en') {
 		throw new Error(`The model '${modelName}' can only be used with English inputs. However, the given source language was ${languageCodeToName(sourceLanguage)}.`)
 	}
 
@@ -139,7 +140,7 @@ export async function alignEnglishTranslation(
 
 	options = extendDeep(defaultWhisperAlignmentOptions, options)
 
-	if (sourceRawAudio.sampleRate != 16000) {
+	if (sourceRawAudio.sampleRate !== 16000) {
 		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
@@ -184,7 +185,7 @@ export async function detectLanguage(
 
 	options = extendDeep(defaultWhisperLanguageDetectionOptions, options)
 
-	if (sourceRawAudio.sampleRate != 16000) {
+	if (sourceRawAudio.sampleRate !== 16000) {
 		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
@@ -232,7 +233,7 @@ export async function detectVoiceActivity(
 
 	options = extendDeep(defaultWhisperVADOptions, options)
 
-	if (sourceRawAudio.sampleRate != 16000) {
+	if (sourceRawAudio.sampleRate !== 16000) {
 		throw new Error('Source audio must have a sample rate of 16000 Hz')
 	}
 
@@ -441,7 +442,11 @@ export class Whisper {
 			let {
 				decodedTokens: partTokens,
 				decodedTokensConfidence: partTokensConfidence,
-				decodedTokensCrossAttentionQKs: partCrossAttentionQKs,
+				decodedTokensCrossAttentionQKs: partTokensCrossAttentionQKs,
+
+				decodedTokensDecodingTime: partTokensDecodingTime,
+				decodedTokensInferenceTime: partTokensInferenceTime,
+				decodedTokensOverheadTime: partTokensOverheadTime,
 			} = await this.decodeTokens(
 				audioPartFeatures,
 				initialTokens,
@@ -470,19 +475,19 @@ export class Whisper {
 
 			await logger.startAsync(`Extract timeline for part (timestamp accuracy: ${options.timestampAccuracy!})`)
 
-			if (partTokens.length != partCrossAttentionQKs.length) {
-				throw new Error('Unexpected: partTokens.length != partCrossAttentionQKs.length')
+			if (partTokens.length !== partTokensCrossAttentionQKs.length) {
+				throw new Error('Unexpected: partTokens.length !== partCrossAttentionQKs.length')
 			}
 
 			// Prepare tokens
 			partTokens = partTokens.slice(initialTokens.length)
 			partTokensConfidence = partTokensConfidence.slice(initialTokens.length)
-			partCrossAttentionQKs = partCrossAttentionQKs.slice(initialTokens.length)
+			partTokensCrossAttentionQKs = partTokensCrossAttentionQKs.slice(initialTokens.length)
 
 			// Find alignment path
 			let alignmentHeads: number[] | undefined
 
-			if (options.timestampAccuracy === 'medium' || options.model == 'large-v3-turbo') {
+			if (options.timestampAccuracy === 'medium' || options.model === 'large-v3-turbo') {
 				alignmentHeads = this.alignmentHeadIndexes
 			} else if (options.timestampAccuracy === 'high') {
 				alignmentHeads = undefined
@@ -490,7 +495,7 @@ export class Whisper {
 				throw new Error(`Unsupported timestamp accuracy '${options.timestampAccuracy}', can only be 'medium' or 'high'.`)
 			}
 
-			const alignmentPath = await this.findAlignmentPathFromQKs(partCrossAttentionQKs, partTokens, 0, segmentFrameCount, alignmentHeads)
+			const alignmentPath = await this.findAlignmentPathFromQKs(partTokensCrossAttentionQKs, partTokens, 0, segmentFrameCount, alignmentHeads)
 
 			// Generate timeline from alignment path
 			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, partTokensConfidence)
@@ -514,6 +519,15 @@ export class Whisper {
 			audioOffset = audioEndOffset
 
 			logger.end()
+
+			if (logLevelGreaterOrEqualTo('trace')) {
+				const promptDecodingTime = partTokensDecodingTime[0]
+				const medianTokenDecodingTime = medianOfVector(partTokensDecodingTime.slice(1))
+				const medianTokenInferenceTime = medianOfVector(partTokensInferenceTime.slice(1))
+				const medianOverheadTime = medianOfVector(partTokensOverheadTime.slice(1))
+
+				logger.log(`${chalk.blueBright('Context')}: ${initialTokens.length + partTokens.length} tokens (${initialTokens.length} prompt, ${partTokens.length} decoded)\n${chalk.blueBright('Prompt decode time')}: ${promptDecodingTime.toFixed(1)}ms\n${chalk.blueBright('Median token decode time')}: ${medianTokenDecodingTime.toFixed(1)}ms (${medianTokenInferenceTime.toFixed(1)}ms inference, ${medianOverheadTime.toFixed(2)}ms overhead)`, 'trace')
+			}
 		}
 
 		// Convert token timeline to word timeline
@@ -812,8 +826,17 @@ export class Whisper {
 
 		const maxTokensPerPart = Math.min(options.maxTokensPerPart!, largestMaximumTokensPerPart)
 
+		let decodedTokensInferenceTime: number[] = []
+		let decodedTokensDecodingTime: number[] = []
+
+		const tokenDecodingTimeTimer = new Timer()
+
 		// Start decoding loop
 		for (let decodedTokenCount = 0; decodedTokenCount < maxTokensPerPart; decodedTokenCount++) {
+			if (decodedTokenCount > 0) {
+				decodedTokensDecodingTime.push(tokenDecodingTimeTimer.getElapsedTimeAndRestart())
+			}
+
 			const isInitialState = decodedTokens.length === initialTokens.length
 			const atLeastOneTextTokenDecoded = decodedTokens.slice(initialTokens.length).some(token => this.isTextToken(token))
 
@@ -847,8 +870,12 @@ export class Whisper {
 				offset: offsetTensor
 			}
 
-			// Run decoder model
+			//// Infer with ONNX decoder model
+			const tokenInferenceTimeTimer = new Timer()
+
 			const decoderOutputs = await this.textDecoder!.run(decoderInputs)
+
+			decodedTokensInferenceTime.push(tokenInferenceTimeTimer.elapsedTime)
 
 			// Extract decoder model results
 			const logitsBuffer = decoderOutputs['logits'].data as Float32Array
@@ -1142,6 +1169,10 @@ export class Whisper {
 			await yieldToEventLoop()
 		}
 
+		if (decodedTokensDecodingTime.length === decodedTokensInferenceTime.length - 1) {
+			decodedTokensDecodingTime.push(tokenDecodingTimeTimer.getElapsedTimeAndRestart())
+		}
+
 		// If at least two timestamp tokens were decoded and it's not the final part,
 		// truncate up to the last timestamp token
 		if (timestampTokenSeenCount >= 2 && !isFinalPart) {
@@ -1151,7 +1182,12 @@ export class Whisper {
 			decodedTokensTimestampLogits = decodedTokensTimestampLogits.slice(0, sliceEndTokenIndex)
 			decodedTokensCrossAttentionQKs = decodedTokensCrossAttentionQKs.slice(0, sliceEndTokenIndex)
 			decodedTokensConfidence = decodedTokensConfidence.slice(0, sliceEndTokenIndex)
+
+			decodedTokensDecodingTime = decodedTokensDecodingTime.slice(0, sliceEndTokenIndex)
+			decodedTokensInferenceTime = decodedTokensInferenceTime.slice(0, sliceEndTokenIndex)
 		}
+
+		const decodedTokensOverheadTime = decodedTokensDecodingTime.map((time, index) => time - decodedTokensInferenceTime[index])
 
 		logger.write('\n')
 		logger.end()
@@ -1162,6 +1198,10 @@ export class Whisper {
 			decodedTokensTimestampLogits,
 			decodedTokensConfidence,
 			decodedTokensCrossAttentionQKs,
+
+			decodedTokensDecodingTime,
+			decodedTokensInferenceTime,
+			decodedTokensOverheadTime,
 		}
 	}
 
@@ -1186,7 +1226,7 @@ export class Whisper {
 		const maxAudioSamples = sampleRate * 30
 		const maxAudioFrames = 3000
 
-		if (sampleRate != 16000) {
+		if (sampleRate !== 16000) {
 			throw new Error('Audio must have a sample rate of 16000 Hz')
 		}
 
@@ -1267,7 +1307,7 @@ export class Whisper {
 			return isSeparatorCharacter(text[text.length - 1])
 		}
 
-		if (language != 'zh' && language != 'ja') {
+		if (language !== 'zh' && language !== 'ja') {
 			tokenTimeline = tokenTimeline.filter(entry => this.isTextToken(entry.id!))
 		}
 
@@ -1282,7 +1322,7 @@ export class Whisper {
 			const text = entry.text
 			const previousEntryText = previousEntry?.text
 
-			if (groups.length == 0 ||
+			if (groups.length === 0 ||
 				text === '' ||
 				startsWithSeparatorCharacter(text) ||
 				(previousEntryText != null && endsWithSeparatorCharacter(previousEntryText))) {
@@ -1346,14 +1386,14 @@ export class Whisper {
 	}
 
 	async getTokenTimelineFromAlignmentPath(alignmentPath: AlignmentPath, tokens: number[], startTimeOffset: number, endTimeOffset: number, tokensConfidence?: number[], correctionAmount = 0.0) {
-		if (alignmentPath.length == 0) {
+		if (alignmentPath.length === 0) {
 			return []
 		}
 
 		const tokenTimeline: Timeline = []
 
 		for (let pathIndex = 0; pathIndex < alignmentPath.length; pathIndex++) {
-			if (pathIndex != 0 && alignmentPath[pathIndex].source == alignmentPath[pathIndex - 1].source) {
+			if (pathIndex !== 0 && alignmentPath[pathIndex].source === alignmentPath[pathIndex - 1].source) {
 				continue
 			}
 
@@ -1604,7 +1644,7 @@ export class Whisper {
 
 		const onnxSessionOptions = getOnnxSessionOptions({ executionProviders: this.encoderExecutionProviders })
 
-		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${ onnxSessionOptions.executionProviders!.join(', ') }` : `default`
+		const onnxProvidersString = onnxSessionOptions.executionProviders!.length > 0 ? `${onnxSessionOptions.executionProviders!.join(', ')}` : `default`
 
 		await logger.startAsync(`Create encoder inference session for model '${this.modelName}' (ONNX provider: ${onnxProvidersString})`)
 
@@ -1642,15 +1682,15 @@ export class Whisper {
 	getKvDimensions(groupCount: number, length: number) {
 		const modelName = this.modelName
 
-		if (modelName == 'tiny' || modelName == 'tiny.en') {
+		if (modelName === 'tiny' || modelName === 'tiny.en') {
 			return [8, groupCount, length, 384]
-		} else if (modelName == 'base' || modelName == 'base.en') {
+		} else if (modelName === 'base' || modelName === 'base.en') {
 			return [12, groupCount, length, 512]
-		} else if (modelName == 'small' || modelName == 'small.en') {
+		} else if (modelName === 'small' || modelName === 'small.en') {
 			return [24, groupCount, length, 768]
-		} else if (modelName == 'medium' || modelName == 'medium.en') {
+		} else if (modelName === 'medium' || modelName === 'medium.en') {
 			return [48, groupCount, length, 1024]
-		} else if (modelName == 'large-v1' || modelName == 'large-v2' || modelName == 'large-v3' || modelName == 'large-v3-turbo') {
+		} else if (modelName === 'large-v1' || modelName === 'large-v2' || modelName === 'large-v3' || modelName === 'large-v3-turbo') {
 			return [64, groupCount, length, 1280]
 		} else {
 			throw new Error(`Unsupported model: ${modelName}`)
@@ -1664,7 +1704,7 @@ export class Whisper {
 
 		if (this.isMultiligualModel) {
 			const languageToken = this.tokenConfig.languageTokensStart + languageIdLookup[language]
-			const taskToken = task == 'translate' ? this.tokenConfig.translateTaskToken : this.tokenConfig.transcribeTaskToken
+			const taskToken = task === 'translate' ? this.tokenConfig.translateTaskToken : this.tokenConfig.transcribeTaskToken
 
 			tokens = [startOfTextToken, languageToken, taskToken]
 		} else {
@@ -1900,7 +1940,7 @@ export async function loadPackagesAndGetPaths(modelName: WhisperModelName | unde
 		if (languageCode) {
 			const shortLanguageCode = getShortLanguageCode(languageCode)
 
-			modelName = shortLanguageCode == 'en' ? 'tiny.en' : 'tiny'
+			modelName = shortLanguageCode === 'en' ? 'tiny.en' : 'tiny'
 		} else {
 			modelName = 'tiny'
 		}
@@ -1918,7 +1958,7 @@ export async function loadPackagesAndGetPaths(modelName: WhisperModelName | unde
 }
 
 export function normalizeWhisperModelName(modelName: WhisperModelName, languageCode: string | undefined): WhisperModelName {
-	if (languageCode != 'en' && modelName.endsWith('.en')) {
+	if (languageCode !== 'en' && modelName.endsWith('.en')) {
 		const originalModelName = modelName
 		modelName = modelName.slice(0, modelName.length - 3) as WhisperModelName
 
