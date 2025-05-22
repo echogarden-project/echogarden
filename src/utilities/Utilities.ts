@@ -130,13 +130,15 @@ export function sleep(timeMs: number) {
 	return new Promise<void>((resolve) => {
 		const tickCallback = () => {
 			if (timer.elapsedTime < timeMs) {
-				setImmediate(tickCallback)
+				//setImmediate(tickCallback)
+				setTimeout(tickCallback, 0)
 			} else {
 				resolve()
 			}
 		}
 
-		setImmediate(tickCallback)
+		//setImmediate(tickCallback)
+		setTimeout(tickCallback, 0)
 	})
 }
 
