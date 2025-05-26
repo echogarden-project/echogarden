@@ -1,3 +1,7 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
@@ -5,14 +9,12 @@ import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace,
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { WhisperPartCallback, type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
-import { EngineMetadata } from './Common.js'
+import { type EngineMetadata } from './Common.js'
 import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
-import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
-import * as API from './API.js'
 import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
 import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 
@@ -21,7 +23,7 @@ const log = logToStderr
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Speech translation
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions): Promise<SpeechTranslationResult> {
+export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions, onPart?: WhisperPartCallback): Promise<SpeechTranslationResult> {
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -122,7 +124,15 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(sourceRawAudio, modelName, modelDir, 'translate', sourceLanguage, whisperOptions))
+			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(
+				sourceRawAudio,
+				modelName,
+				modelDir,
+				'translate',
+				sourceLanguage,
+				whisperOptions,
+				onPart,
+			))
 
 			break
 		}

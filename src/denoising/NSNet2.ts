@@ -58,8 +58,8 @@ export class NSNet2 {
 		logger.start('Compute STFT frames')
 		const stftrFrames = await stftr(rawAudio.audioChannels[0], fftSize, fftSize, fftHopSize, 'hann')
 
-		logger.start('Compute log-power spectogram')
-		let logPowerSpectogram: Float32Array[] = []
+		logger.start('Compute log-power spectrogram')
+		let logPowerSpectrogram: Float32Array[] = []
 
 		{
 			for (const frame of stftrFrames) {
@@ -79,19 +79,19 @@ export class NSNet2 {
 					logPowerSpectrum[writeOffset++] = logPowerValue
 				}
 
-				logPowerSpectogram.push(logPowerSpectrum)
+				logPowerSpectrogram.push(logPowerSpectrum)
 			}
 		}
 
-		logger.start('Process log-power spectogram using ONNX model')
+		logger.start('Process log-power spectrogram using ONNX model')
 
-		const frameCount = logPowerSpectogram.length
+		const frameCount = logPowerSpectrogram.length
 		let flattenedOutputTensor: Float32Array
 
 		{
 			const Onnx = await import('onnxruntime-node')
 
-			const flattenedFeatures = concatFloat32Arrays(logPowerSpectogram)
+			const flattenedFeatures = concatFloat32Arrays(logPowerSpectrogram)
 
 			const inputTensor = new Onnx.Tensor('float32', flattenedFeatures, [1, frameCount, fftRealBinCount])
 			const inputs = { input: inputTensor }
@@ -126,8 +126,8 @@ export class NSNet2 {
 			}
 		}
 
-		// Allow logPowerSpectogram to be garbage collected
-		logPowerSpectogram = undefined as any
+		// Allow logPowerSpectrogram to be garbage collected
+		logPowerSpectrogram = undefined as any
 
 		logger.start('Reconstruct filtered signal using inverse STFT')
 		const filteredSignal = await stiftr(stftrFrames, fftSize, fftSize, fftHopSize, 'hann')

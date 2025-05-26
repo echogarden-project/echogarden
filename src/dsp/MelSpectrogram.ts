@@ -2,7 +2,7 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import * as FFT from './FFT.js'
 
-export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number, windowType: FFT.WindowType = 'hann') {
+export async function computeMelSpectrogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number, windowType: FFT.WindowType = 'hann') {
 	const logger = new Logger()
 
 	logger.start('Compute mel filterbank')
@@ -18,25 +18,25 @@ export async function computeMelSpectogram(rawAudio: RawAudio, fftOrder: number,
 
 	logger.end()
 
-	return computeMelSpectogramUsingFilterbanks(rawAudio, fftOrder, windowSize, hopLength, melFilterbanks, windowType)
+	return computeMelSpectrogramUsingFilterbanks(rawAudio, fftOrder, windowSize, hopLength, melFilterbanks, windowType)
 }
 
-export async function computeMelSpectogramUsingFilterbanks(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbanks: Filterbank[], windowType: FFT.WindowType = 'hann') {
+export async function computeMelSpectrogramUsingFilterbanks(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbanks: Filterbank[], windowType: FFT.WindowType = 'hann') {
 	const logger = new Logger()
 
 	logger.start('Compute short-time FFTs')
 	const audioSamples = rawAudio.audioChannels[0]
 	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, windowType)
 
-	logger.start('Convert FFT frames to a mel spectogram')
-	const melSpectogram = fftFramesToMelSpectogram(fftFrames, filterbanks)
+	logger.start('Convert FFT frames to a mel spectrogram')
+	const melSpectrogram = fftFramesToMelSpectrogram(fftFrames, filterbanks)
 
 	logger.end()
 
-	return { melSpectogram, fftFrames }
+	return { melSpectrogram, fftFrames }
 }
 
-export function fftFramesToMelSpectogram(fftFrames: Float32Array[], melFilterbanks: Filterbank[]) {
+export function fftFramesToMelSpectrogram(fftFrames: Float32Array[], melFilterbanks: Filterbank[]) {
 	return fftFrames.map(fftFrame => {
 		const powerSpectrum = FFT.fftFrameToPowerSpectrum(fftFrame)
 		return powerSpectrumToMelSpectrum(powerSpectrum, melFilterbanks)

@@ -168,7 +168,7 @@ export function getBinFrequencies(binCount: number, maxFrequency: number) {
 }
 
 // Convert an array of raw FFT frames to a power spectrum
-export function fftFramesToPowerSpectogram(fftFrames: Float32Array[]) {
+export function fftFramesToPowerSpectrogram(fftFrames: Float32Array[]) {
 	return fftFrames.map(fftFrame => fftFrameToPowerSpectrum(fftFrame))
 }
 

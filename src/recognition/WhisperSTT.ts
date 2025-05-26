@@ -1,7 +1,8 @@
+import chalk from 'chalk'
 import type * as Onnx from 'onnxruntime-node'
 
 import { Logger } from '../utilities/Logger.js'
-import { computeMelSpectogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectogram.js'
+import { computeMelSpectrogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectrogram.js'
 import { clip, getIntegerRange, getTopKIndexes, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
 import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianOfVector, softmax, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
 
@@ -14,7 +15,6 @@ import { readFileAsUtf8 } from '../utilities/FileSystem.js'
 import { logLevelGreaterOrEqualTo, type LanguageDetectionResults } from '../api/API.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
-import chalk from 'chalk'
 import { XorShift32PRNG } from '../utilities/RandomGenerator.js'
 import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
 import { type Tiktoken } from 'tiktoken/lite'
@@ -33,7 +33,8 @@ export async function recognize(
 	modelDir: string,
 	task: WhisperTask,
 	sourceLanguage: string,
-	options: WhisperOptions) {
+	options: WhisperOptions,
+	onPart?: WhisperPartCallback) {
 
 	options = extendDeep(defaultWhisperOptions, options)
 
@@ -82,7 +83,7 @@ export async function recognize(
 		decoderProviders,
 		seed)
 
-	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options)
+	const result = await whisper.recognize(sourceRawAudio, task, sourceLanguage, options, undefined, onPart)
 
 	return result
 }
@@ -366,6 +367,7 @@ export class Whisper {
 		language: string,
 		options: WhisperOptions,
 		logitFilter?: WhisperLogitFilter,
+		onPart?: WhisperPartCallback,
 	) {
 		await this.initializeIfNeeded()
 
@@ -499,6 +501,13 @@ export class Whisper {
 
 			// Generate timeline from alignment path
 			const partTimeline = await this.getTokenTimelineFromAlignmentPath(alignmentPath, partTokens, segmentStartTime, segmentEndTime, partTokensConfidence)
+
+			if (onPart) {
+				const partWordTimeline = this.tokenTimelineToWordTimeline(partTimeline, language)
+				const partTranscript = this.tokensToText(partTokens)
+
+				onPart(partTranscript, partTimeline, partWordTimeline)
+			}
 
 			// Add tokens to output
 			allDecodedTokens.push(...partTokens)
@@ -1234,8 +1243,8 @@ export class Whisper {
 			throw new Error(`Audio part is longer than 30 seconds`)
 		}
 
-		// Compute a mel spectogram
-		await logger.startAsync('Extract mel spectogram from audio part')
+		// Compute a mel spectrogram
+		await logger.startAsync('Extract mel spectrogram from audio part')
 
 		// Pad audio samples to ensure that have a duration of 30 seconds
 		const paddedAudioSamples = new Float32Array(maxAudioSamples)
@@ -1243,16 +1252,16 @@ export class Whisper {
 
 		const rawAudioPart: RawAudio = { audioChannels: [paddedAudioSamples], sampleRate }
 
-		const { melSpectogram } = await computeMelSpectogramUsingFilterbanks(rawAudioPart, fftOrder, fftWindowSize, fftHopLength, filterbanks)
+		const { melSpectrogram } = await computeMelSpectrogramUsingFilterbanks(rawAudioPart, fftOrder, fftWindowSize, fftHopLength, filterbanks)
 
-		await logger.startAsync('Normalize mel spectogram')
+		await logger.startAsync('Normalize mel spectrogram')
 
-		const logMelSpectogram = melSpectogram.map(spectrum => spectrum.map(mel => Math.log10(Math.max(mel, 1e-10))))
+		const logMelSpectrogram = melSpectrogram.map(spectrum => spectrum.map(mel => Math.log10(Math.max(mel, 1e-10))))
 
 		// Find maximum log mel value in the spectrum
 		let maxLogMel = -Infinity
 
-		for (const spectrum of logMelSpectogram) {
+		for (const spectrum of logMelSpectrogram) {
 			for (const mel of spectrum) {
 				if (mel > maxLogMel) {
 					maxLogMel = mel
@@ -1260,23 +1269,23 @@ export class Whisper {
 			}
 		}
 
-		// Normalize log mel spectogram (based on Python reference code)
-		const normalizedLogMelSpectogram = logMelSpectogram.map(spectrum => spectrum.map(
+		// Normalize log mel spectrogram (based on Python reference code)
+		const normalizedLogMelSpectrogram = logMelSpectrogram.map(spectrum => spectrum.map(
 			logMel => (Math.max(logMel, maxLogMel - 8) + 4) / 4))
 
-		// Flatten the normalized log mel spectogram
-		const flattenedNormalizedLogMelSpectogram = new Float32Array(maxAudioFrames * filterbankCount)
+		// Flatten the normalized log mel spectrogram
+		const flattenedNormalizedLogMelSpectrogram = new Float32Array(maxAudioFrames * filterbankCount)
 
 		for (let i = 0; i < filterbankCount; i++) {
 			for (let j = 0; j < maxAudioFrames; j++) {
-				flattenedNormalizedLogMelSpectogram[(i * maxAudioFrames) + j] = normalizedLogMelSpectogram[j][i]
+				flattenedNormalizedLogMelSpectrogram[(i * maxAudioFrames) + j] = normalizedLogMelSpectrogram[j][i]
 			}
 		}
 
 		// Run the encoder model
-		await logger.startAsync('Encode mel spectogram with Whisper encoder model')
+		await logger.startAsync('Encode mel spectrogram with Whisper encoder model')
 
-		const inputTensor = new Onnx.Tensor('float32', flattenedNormalizedLogMelSpectogram, [1, filterbankCount, maxAudioFrames])
+		const inputTensor = new Onnx.Tensor('float32', flattenedNormalizedLogMelSpectrogram, [1, filterbankCount, maxAudioFrames])
 
 		const encoderInputs = { mel: inputTensor }
 
@@ -2653,4 +2662,6 @@ export const defaultWhisperVADOptions: WhisperVADOptions = {
 	decoderProvider: undefined,
 }
 
-type WhisperTimestampAccuracy = 'medium' | 'high'
+export type WhisperTimestampAccuracy = 'medium' | 'high'
+
+export type WhisperPartCallback = (partTranscript: string, partTokenTimeline: Timeline, partWordTimeline: Timeline) => void

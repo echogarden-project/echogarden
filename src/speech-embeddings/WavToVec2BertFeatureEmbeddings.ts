@@ -2,7 +2,7 @@ import type * as Onnx from 'onnxruntime-node'
 import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js';
 
 import { RawAudio } from "../audio/AudioUtilities.js";
-import { computeMelSpectogram } from "../dsp/MelSpectogram.js";
+import { computeMelSpectrogram } from "../dsp/MelSpectrogram.js";
 import { Logger } from '../utilities/Logger.js';
 import { concatFloat32Arrays, splitFloat32Array } from '../utilities/Utilities.js';
 import { applyEmphasis } from '../dsp/MFCC.js';
@@ -31,7 +31,7 @@ export class Wav2Vec2BertFeatureEmbeddings {
 
 		rawAudio.audioChannels[0] = applyEmphasis(rawAudio.audioChannels[0], 0.97)
 
-		const { melSpectogram } = await computeMelSpectogram(
+		const { melSpectrogram } = await computeMelSpectrogram(
 			rawAudio,
 			512,
 			400,
@@ -42,8 +42,8 @@ export class Wav2Vec2BertFeatureEmbeddings {
 			'povey')
 
 		// Ensure even length
-		if (melSpectogram.length % 2 != 0) {
-			melSpectogram.push(new Float32Array(80))
+		if (melSpectrogram.length % 2 != 0) {
+			melSpectrogram.push(new Float32Array(80))
 		}
 
 		// Normalize filterbanks
@@ -51,24 +51,24 @@ export class Wav2Vec2BertFeatureEmbeddings {
 			let sum = 0
 			let sumOfSquares = 0
 
-			for (let i = 0; i < melSpectogram.length; i++) {
-				const value = melSpectogram[i][filterbankIndex]
+			for (let i = 0; i < melSpectrogram.length; i++) {
+				const value = melSpectrogram[i][filterbankIndex]
 
 				sum += value
 				sumOfSquares += value ** 2
 			}
 
-			const mean = sum / melSpectogram.length
-			const normalizationFactor = 1 / (Math.sqrt(sumOfSquares / melSpectogram.length) + 1e-40)
+			const mean = sum / melSpectrogram.length
+			const normalizationFactor = 1 / (Math.sqrt(sumOfSquares / melSpectrogram.length) + 1e-40)
 
-			for (let i = 0; i < melSpectogram.length; i++) {
-				melSpectogram[i][filterbankIndex] -= mean
-				melSpectogram[i][filterbankIndex] *= normalizationFactor
+			for (let i = 0; i < melSpectrogram.length; i++) {
+				melSpectrogram[i][filterbankIndex] -= mean
+				melSpectrogram[i][filterbankIndex] *= normalizationFactor
 			}
 		}
 
 		// Flatten
-		const flattenedMelSpectogram = concatFloat32Arrays(melSpectogram)
+		const flattenedMelSpectrogram = concatFloat32Arrays(melSpectrogram)
 
 		// Initialize session
 		await this.initializeSessionIfNeeded()
@@ -77,9 +77,9 @@ export class Wav2Vec2BertFeatureEmbeddings {
 
 		const Onnx = await import('onnxruntime-node')
 
-		const inputTensor = new Onnx.Tensor('float32', flattenedMelSpectogram, [1, melSpectogram.length / 2, 80 * 2])
+		const inputTensor = new Onnx.Tensor('float32', flattenedMelSpectrogram, [1, melSpectrogram.length / 2, 80 * 2])
 
-		const attentionMask = new Int32Array(melSpectogram.length / 2).fill(1)
+		const attentionMask = new Int32Array(melSpectrogram.length / 2).fill(1)
 		const attentionMaskTensor = new Onnx.Tensor('int32', attentionMask, [1, attentionMask.length])
 
 		// Run inference

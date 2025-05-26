@@ -1,26 +1,28 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, parseLangIdentifier } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
-import chalk from 'chalk'
 
-import { type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperPartCallback, type WhisperOptions } from '../recognition/WhisperSTT.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
 import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
 import { type SileroRecognitionOptions } from '../recognition/SileroSTT.js'
 import { type DeepgramSTTOptions } from '../recognition/DeepgramSTT.js'
-import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
+import { type OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
 const log = logToStderr
 
-export async function recognize(input: AudioSourceParam, options: RecognitionOptions): Promise<RecognitionResult> {
+export async function recognize(input: AudioSourceParam, options: RecognitionOptions, onPart?: WhisperPartCallback): Promise<RecognitionResult> {
 	const logger = new Logger()
 
 	const startTimestamp = logger.getTimestamp()
@@ -110,7 +112,8 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 				modelDir,
 				'transcribe',
 				shortLanguageCode,
-				whisperOptions
+				whisperOptions,
+				onPart,
 			))
 
 			break
@@ -318,7 +321,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(timeline, transcript, languageCode, 'single', 'preserve')
 
 	logger.end()
-	logger.logDuration('Total recognition time', startTimestamp, chalk.magentaBright)
+	logger.logDuration('\nTotal recognition time', startTimestamp, chalk.magentaBright)
 
 	return {
 		transcript,

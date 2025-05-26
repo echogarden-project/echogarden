@@ -1,7 +1,7 @@
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { resampleAudioSpeex } from './SpeexResampler.js'
-import { computeMelSpectogram } from './MelSpectogram.js'
+import { computeMelSpectrogram } from './MelSpectrogram.js'
 import { RawAudio, powerToDecibels } from '../audio/AudioUtilities.js'
 import { normalizeVectors } from '../math/VectorMath.js'
 
@@ -41,11 +41,11 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 		resampledAudio.audioChannels[0] = applyEmphasis(resampledAudio.audioChannels[0], emphasisFactor)
 	}
 
-	logger.start('Compute Mel spectogram')
-	const { melSpectogram } = await computeMelSpectogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
+	logger.start('Compute Mel spectrogram')
+	const { melSpectrogram } = await computeMelSpectrogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
 
-	logger.start('Extract MFCCs from Mel spectogram')
-	let mfccs = melSpectogramToMFCCs(melSpectogram, featureCount)
+	logger.start('Extract MFCCs from Mel spectrogram')
+	let mfccs = melSpectrogramToMFCCs(melSpectrogram, featureCount)
 
 	if (options.normalize!) {
 		logger.start('Normalize MFCCs')
@@ -72,11 +72,11 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	return mfccs
 }
 
-export function melSpectogramToMFCCs(melSpectogram: ArrayLike<number>[], mfccFeatureCount: number) {
-	const melBandCount = melSpectogram[0].length
+export function melSpectrogramToMFCCs(melSpectrogram: ArrayLike<number>[], mfccFeatureCount: number) {
+	const melBandCount = melSpectrogram[0].length
 	const dctMatrix = createDCTType2CoefficientMatrix(mfccFeatureCount, melBandCount)
 
-	const mfccs = melSpectogram.map(frame => melSpectrumToMFCC(frame, mfccFeatureCount, dctMatrix))
+	const mfccs = melSpectrogram.map(frame => melSpectrumToMFCC(frame, mfccFeatureCount, dctMatrix))
 
 	return mfccs
 }
