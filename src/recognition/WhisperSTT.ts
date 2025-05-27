@@ -1254,38 +1254,37 @@ export class Whisper {
 
 		const { melSpectrogram } = await computeMelSpectrogramUsingFilterbanks(rawAudioPart, fftOrder, fftWindowSize, fftHopLength, filterbanks)
 
-		await logger.startAsync('Normalize mel spectrogram')
+		await logger.startAsync('Process Mel spectrogram')
 
-		const logMelSpectrogram = melSpectrogram.map(spectrum => spectrum.map(mel => Math.log10(Math.max(mel, 1e-10))))
+		// Flatten, transpose, apply logarithm and normalize Mel spectrogram
+		const flattenedLogMelSpectrogram = new Float32Array(maxAudioFrames * filterbankCount)
 
-		// Find maximum log mel value in the spectrum
 		let maxLogMel = -Infinity
-
-		for (const spectrum of logMelSpectrogram) {
-			for (const mel of spectrum) {
-				if (mel > maxLogMel) {
-					maxLogMel = mel
-				}
-			}
-		}
-
-		// Normalize log mel spectrogram (based on Python reference code)
-		const normalizedLogMelSpectrogram = logMelSpectrogram.map(spectrum => spectrum.map(
-			logMel => (Math.max(logMel, maxLogMel - 8) + 4) / 4))
-
-		// Flatten the normalized log mel spectrogram
-		const flattenedNormalizedLogMelSpectrogram = new Float32Array(maxAudioFrames * filterbankCount)
 
 		for (let i = 0; i < filterbankCount; i++) {
 			for (let j = 0; j < maxAudioFrames; j++) {
-				flattenedNormalizedLogMelSpectrogram[(i * maxAudioFrames) + j] = normalizedLogMelSpectrogram[j][i]
+				const mel = melSpectrogram[j][i]
+				const logMel = Math.log10(Math.max(mel, 1e-10))
+
+				if (logMel > maxLogMel) {
+					maxLogMel = logMel
+				}
+
+				flattenedLogMelSpectrogram[(i * maxAudioFrames) + j] = logMel
 			}
+		}
+
+		for (let i = 0; i < flattenedLogMelSpectrogram.length; i++) {
+			const logMel = flattenedLogMelSpectrogram[i]
+			const normalizedLogMel = (Math.max(logMel, maxLogMel - 8) + 4) / 4
+
+			flattenedLogMelSpectrogram[i] = normalizedLogMel
 		}
 
 		// Run the encoder model
 		await logger.startAsync('Encode mel spectrogram with Whisper encoder model')
 
-		const inputTensor = new Onnx.Tensor('float32', flattenedNormalizedLogMelSpectrogram, [1, filterbankCount, maxAudioFrames])
+		const inputTensor = new Onnx.Tensor('float32', flattenedLogMelSpectrogram, [1, filterbankCount, maxAudioFrames])
 
 		const encoderInputs = { mel: inputTensor }
 
@@ -2013,7 +2012,20 @@ export type WhisperTokenData = {
 
 export type WhisperLogitFilter = (logits: number[], decodedTokens: number[], isFirstPart: boolean, isFinalPart: boolean) => number[]
 
-export type WhisperModelName = 'tiny' | 'tiny.en' | 'base' | 'base.en' | 'small' | 'small.en' | 'medium' | 'medium.en' | 'large-v1' | 'large-v2' | 'large-v3' | 'large-v3-turbo'
+export type WhisperModelName =
+	'tiny' |
+	'tiny.en' |
+	'base' |
+	'base.en' |
+	'small' |
+	'small.en' |
+	'medium' |
+	'medium.en' |
+	'large-v1' |
+	'large-v2' |
+	'large-v3' |
+	'large-v3-turbo'
+
 export type WhisperTask = 'transcribe' | 'translate' | 'detect-language'
 
 export const modelNameToPackageName: { [modelName in WhisperModelName]: string } = {
@@ -2133,17 +2145,18 @@ const languageIdLookup: { [s: string]: number } = {
 	'ba': 96,
 	'jw': 97,
 	'su': 98,
+	//'yue': 99
 }
 
 const alignmentHeadsIndexes: { [name in WhisperModelName]: number[] } = {
-	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22,],
 	'tiny': [14, 18, 20, 21, 22, 23,],
-	'base.en': [27, 39, 41, 45, 47,],
+	'tiny.en': [6, 12, 17, 18, 19, 20, 21, 22,],
 	'base': [25, 34, 35, 39, 41, 42, 44, 46,],
-	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136,],
+	'base.en': [27, 39, 41, 45, 47,],
 	'small': [63, 69, 96, 100, 103, 104, 108, 115, 117, 125,],
-	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348,],
+	'small.en': [78, 84, 87, 92, 98, 101, 103, 108, 112, 116, 118, 120, 121, 122, 123, 126, 131, 134, 136,],
 	'medium': [223, 244, 255, 257, 320, 372,],
+	'medium.en': [180, 225, 236, 238, 244, 256, 260, 265, 284, 286, 295, 298, 303, 320, 323, 329, 334, 348,],
 	'large-v1': [199, 222, 224, 237, 447, 451, 457, 462, 475,],
 	'large-v2': [212, 277, 331, 332, 333, 355, 356, 364, 371, 379, 391, 422, 423, 443, 449, 452, 465, 467, 473, 505, 521, 532, 555,],
 	'large-v3': [140, 217, 258, 272, 321, 354, 391, 424, 481, 506,],

@@ -1,6 +1,6 @@
 import type * as Onnx from 'onnxruntime-node'
 import { getEmptyRawAudio, RawAudio } from '../audio/AudioUtilities.js'
-import { getWindowWeights, stftrGenerator, stiftr, WindowType } from '../dsp/FFT.js'
+import { getWindowWeights, createStftrGenerator, stiftr, WindowType } from '../dsp/FFT.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { OnnxExecutionProvider, dmlProviderAvailable, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
@@ -74,8 +74,8 @@ export class MDXNet {
 		const fftSizeReciprocal = 1 / fftSize
 
 		// Initialize generators for STFT frames for each channel
-		const fftFramesLeftGenerator = stftrGenerator(rawAudio.audioChannels[0], fftSize, fftWindowSize, fftHopSize, fftWindowType)
-		const fftFramesRightGenerator = stftrGenerator(rawAudio.audioChannels[1], fftSize, fftWindowSize, fftHopSize, fftWindowType)
+		const fftFramesLeftGenerator = await createStftrGenerator(rawAudio.audioChannels[0], fftSize, fftWindowSize, fftHopSize, fftWindowType)
+		const fftFramesRightGenerator = await createStftrGenerator(rawAudio.audioChannels[1], fftSize, fftWindowSize, fftHopSize, fftWindowType)
 
 		// Initial windowed lists to store recently computed STFT frames
 		const fftFramesLeftWindowedList = new WindowedList<Float32Array>(segmentSize)
@@ -95,13 +95,13 @@ export class MDXNet {
 			}
 
 			while (fftFramesLeftWindowedList.endOffset < segmentEndFrameOffset) {
-				const nextLeftFrameResult = await fftFramesLeftGenerator.next()
+				const nextLeftFrameResult = fftFramesLeftGenerator.next()
 
 				if (nextLeftFrameResult.done) {
 					break
 				}
 
-				const nextRightFrameResult = await fftFramesRightGenerator.next()
+				const nextRightFrameResult = fftFramesRightGenerator.next()
 
 				if (nextRightFrameResult.done) {
 					break

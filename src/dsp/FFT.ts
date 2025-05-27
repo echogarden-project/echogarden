@@ -6,7 +6,9 @@ import { createWasmHeapManager } from 'wasm-heap-manager'
 export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
 	const frames: Float32Array[] = []
 
-	for await (const frame of stftrGenerator(samples, fftOrder, windowSize, hopSize, windowType)) {
+	const stftrGenerator = await createStftrGenerator(samples, fftOrder, windowSize, hopSize, windowType)
+
+	for (const frame of stftrGenerator) {
 		frames.push(frame)
 	}
 
@@ -14,7 +16,7 @@ export async function stftr(samples: Float32Array, fftOrder: number, windowSize:
 }
 
 // Incrementally generate short-term Fourier transform frames (real-valued)
-export async function* stftrGenerator(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
+export async function createStftrGenerator(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
 	if (fftOrder % 2 !== 0 || windowSize % 2 !== 0) {
 		throw new Error('FFT order and window size must be multiples of 2')
 	}
@@ -49,28 +51,32 @@ export async function* stftrGenerator(samples: Float32Array, fftOrder: number, w
 	const binsBufferRef = wasmHeap.allocFloat32Array(fftOrder * 2)
 	const workBufferRef = wasmHeap.allocFloat32Array(fftOrder * 2)
 
-	for (let offset = 0; offset < sampleCount; offset += hopSize) {
-		const windowSamples = samples.subarray(offset, offset + windowSize)
-		frameBufferRef.clear()
+	function* stftrGenerator() {
+		for (let offset = 0; offset < sampleCount; offset += hopSize) {
+			const windowSamples = samples.subarray(offset, offset + windowSize)
+			frameBufferRef.clear()
 
-		const frameBufferView = frameBufferRef.view
+			const frameBufferView = frameBufferRef.view
 
-		for (let i = 0; i < windowSamples.length; i++) {
-			frameBufferView[i] = windowSamples[i] * windowWeights[i]
+			for (let i = 0; i < windowSamples.length; i++) {
+				frameBufferView[i] = windowSamples[i] * windowWeights[i]
+			}
+
+			binsBufferRef.clear()
+
+			m._pffft_transform_ordered(statePtr, frameBufferRef.address, binsBufferRef.address, workBufferRef.address, 0)
+
+			const bins = binsBufferRef.view.slice(0, fftOrder + 2)
+
+			yield bins
 		}
 
-		binsBufferRef.clear()
+		m._pffft_destroy_setup(statePtr)
 
-		m._pffft_transform_ordered(statePtr, frameBufferRef.address, binsBufferRef.address, workBufferRef.address, 0)
-
-		const bins = binsBufferRef.view.slice(0, fftOrder + 2)
-
-		yield bins
+		wasmHeap.freeAll()
 	}
 
-	m._pffft_destroy_setup(statePtr)
-
-	wasmHeap.freeAll()
+	return stftrGenerator()
 }
 
 // Compute short-term inverse Fourier transform (real-valued)

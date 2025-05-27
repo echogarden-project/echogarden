@@ -28,7 +28,7 @@ export async function computeMelSpectrogramUsingFilterbanks(rawAudio: RawAudio, 
 	const audioSamples = rawAudio.audioChannels[0]
 	const fftFrames = await FFT.stftr(audioSamples, fftOrder, windowSize, hopLength, windowType)
 
-	logger.start('Convert FFT frames to a mel spectrogram')
+	logger.start('Convert FFT frames to Mel spectrogram')
 	const melSpectrogram = fftFramesToMelSpectrogram(fftFrames, filterbanks)
 
 	logger.end()
@@ -39,6 +39,7 @@ export async function computeMelSpectrogramUsingFilterbanks(rawAudio: RawAudio, 
 export function fftFramesToMelSpectrogram(fftFrames: Float32Array[], melFilterbanks: Filterbank[]) {
 	return fftFrames.map(fftFrame => {
 		const powerSpectrum = FFT.fftFrameToPowerSpectrum(fftFrame)
+
 		return powerSpectrumToMelSpectrum(powerSpectrum, melFilterbanks)
 	})
 }
