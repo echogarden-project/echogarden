@@ -1243,8 +1243,8 @@ export class Whisper {
 			throw new Error(`Audio part is longer than 30 seconds`)
 		}
 
-		// Compute a mel spectrogram
-		await logger.startAsync('Extract mel spectrogram from audio part')
+		// Compute Mel spectrogram
+		await logger.startAsync('Extract Mel spectrogram from audio part')
 
 		// Pad audio samples to ensure that have a duration of 30 seconds
 		const paddedAudioSamples = new Float32Array(maxAudioSamples)
@@ -1282,7 +1282,7 @@ export class Whisper {
 		}
 
 		// Run the encoder model
-		await logger.startAsync('Encode mel spectrogram with Whisper encoder model')
+		await logger.startAsync('Encode Mel spectrogram with Whisper encoder model')
 
 		const inputTensor = new Onnx.Tensor('float32', flattenedLogMelSpectrogram, [1, filterbankCount, maxAudioFrames])
 

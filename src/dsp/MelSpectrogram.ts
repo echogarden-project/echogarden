@@ -5,7 +5,7 @@ import * as FFT from './FFT.js'
 export async function computeMelSpectrogram(rawAudio: RawAudio, fftOrder: number, windowSize: number, hopLength: number, filterbankCount: number, lowerFrequencyHz: number, upperFrequencyHz: number, windowType: FFT.WindowType = 'hann') {
 	const logger = new Logger()
 
-	logger.start('Compute mel filterbank')
+	logger.start('Compute Mel filterbank')
 	const binCount = (fftOrder / 2) + 2
 	const nyquistFrequency = rawAudio.sampleRate / 2
 	const binFrequencies = FFT.getBinFrequencies(binCount, nyquistFrequency)
