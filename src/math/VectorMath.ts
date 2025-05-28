@@ -643,7 +643,7 @@ export function sumVector(vector: ArrayLike<number>) {
 	return result
 }
 
-export function sumOfSquaresForVector(vector: ArrayLike<number>) {
+export function sumOfSquaresOfVector(vector: ArrayLike<number>) {
 	const elementCount = vector.length
 
 	let result = 0.0
@@ -653,6 +653,22 @@ export function sumOfSquaresForVector(vector: ArrayLike<number>) {
 	}
 
 	return result
+}
+
+export function sumAndSumOfSquaresOfVector(vector: ArrayLike<number>) {
+	const elementCount = vector.length
+
+	let sum = 0.0
+	let sumOfSquares = 0.0
+
+	for (let i = 0; i < elementCount; i++) {
+		const value = vector[i]
+
+		sum += value
+		sumOfSquares += value ** 2
+	}
+
+	return { sum, sumOfSquares }
 }
 
 export function dotProduct(vector1: ArrayLike<number>, vector2: ArrayLike<number>) {

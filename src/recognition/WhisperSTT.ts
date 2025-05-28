@@ -4,7 +4,7 @@ import type * as Onnx from 'onnxruntime-node'
 import { Logger } from '../utilities/Logger.js'
 import { computeMelSpectrogramUsingFilterbanks, Filterbank } from '../dsp/MelSpectrogram.js'
 import { clip, getIntegerRange, getTopKIndexes, splitFloat32Array, yieldToEventLoop } from '../utilities/Utilities.js'
-import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianOfVector, softmax, sumOfSquaresForVector, sumVector } from '../math/VectorMath.js'
+import { indexOfMax, logOfVector, logSumExp, meanOfVector, medianOfVector, softmax, sumAndSumOfSquaresOfVector, sumOfSquaresOfVector, sumVector } from '../math/VectorMath.js'
 
 import { alignDTWWindowed } from '../alignment/DTWSequenceAlignmentWindowed.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
@@ -1243,7 +1243,6 @@ export class Whisper {
 			throw new Error(`Audio part is longer than 30 seconds`)
 		}
 
-		// Compute Mel spectrogram
 		await logger.startAsync('Extract Mel spectrogram from audio part')
 
 		// Pad audio samples to ensure that have a duration of 30 seconds
@@ -1252,11 +1251,12 @@ export class Whisper {
 
 		const rawAudioPart: RawAudio = { audioChannels: [paddedAudioSamples], sampleRate }
 
+		// Compute Mel spectrogram
 		const { melSpectrogram } = await computeMelSpectrogramUsingFilterbanks(rawAudioPart, fftOrder, fftWindowSize, fftHopLength, filterbanks)
 
+		// Flatten, transpose, apply logarithm and normalize Mel spectrogram
 		await logger.startAsync('Process Mel spectrogram')
 
-		// Flatten, transpose, apply logarithm and normalize Mel spectrogram
 		const flattenedLogMelSpectrogram = new Float32Array(maxAudioFrames * filterbankCount)
 
 		let maxLogMel = -Infinity
@@ -1496,8 +1496,10 @@ export class Whisper {
 				let countOfAllWeightsForHead = 0
 
 				for (const tokenFrames of head) {
-					sumOfAllWeightsForHead += sumVector(tokenFrames)
-					sumOfAllSquaredWeightsForHead += sumOfSquaresForVector(tokenFrames)
+					const { sum, sumOfSquares } = sumAndSumOfSquaresOfVector(tokenFrames)
+
+					sumOfAllWeightsForHead += sum
+					sumOfAllSquaredWeightsForHead += sumOfSquares
 					countOfAllWeightsForHead += tokenFrames.length
 				}
 
