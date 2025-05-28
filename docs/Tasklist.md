@@ -8,6 +8,8 @@
 
 ### Subtitles
 
+* Option to disable single sentence per cue
+
 ### Browser extension
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
 * If a request is made and the server takes too much time to respond, the service worker may sleep and the request never canceled
@@ -127,6 +129,7 @@
 * Option to add POS tags to timeline, if available
 
 ### Synthesis / VITS
+* Consider adding `⦁︎` (when surrounded by whitespace) as phrase separator
 * Allow limiting how many models are cached in memory.
 * Ensure that caching behaves correctly when the same model is used with different execution providers
 * Custom model paths (decide how to implement)
@@ -134,6 +137,7 @@
 * Add speaker names to voice list somehow
 
 ### Synthesis / Kokoro
+* Consider adding `⦁︎` (when surrounded by whitespace) as phrase separator
 * Ensure that caching behaves correctly when the same model is used with different execution providers
 
 ### Synthesis / Azure Cognitive Services
@@ -157,6 +161,7 @@
 ### Alignment / DTW-RA
 
 ### Alignment / Whisper
+* Show same token stats as recognition now does on `trace` mode
 
 ### Source separation / MDX-NET
 * Option to customize overlap
@@ -216,6 +221,9 @@
 * `stdin` input support
 * `stdout` output support
 * Markdown file as text input?
+
+### OpenAI compatible local server
+* `echogarden serve` would serve a OpenAI-compatible server for all speech recognition, speech translation and speech synthesis engines
 
 ### Web
 * Web based frontend UI to the server
