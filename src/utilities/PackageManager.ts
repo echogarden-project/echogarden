@@ -148,7 +148,7 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	// FFMpeg binaries
 	'ffmpeg-6.0-win32-x64': '20240316',
 	'ffmpeg-6.0-win32-ia32': '20240316',
-	'ffmpeg-6.1-win32-arm64': '20241122',
+	'ffmpeg-6.1-win32-arm64': '20250819',
 	'ffmpeg-6.0-darwin-x64': '20240316',
 	'ffmpeg-6.0-darwin-arm64': '20240316',
 	'ffmpeg-6.0-linux-x64': '20240316',
