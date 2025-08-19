@@ -53,9 +53,8 @@ export async function synthesize(
 				const buffers: Uint8Array[] = []
 
 				while (true) {
-
 					const buffer = new Uint8Array(bufferSize)
-					const amountRead = await audioOutputStream.read(buffer)
+					const amountRead = await audioOutputStream.read(buffer.buffer)
 
 					if (amountRead == 0) {
 						audioOutputStream.close()

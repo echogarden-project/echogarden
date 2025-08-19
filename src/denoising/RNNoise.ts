@@ -47,7 +47,7 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 	}
 
 	for (let readOffset = 0; readOffset < int16Samples.length; readOffset += frameSize) {
-		let frame = int16SamplesAsFloats.subarray(readOffset, readOffset + frameSize)
+		let frame: Float32Array<ArrayBufferLike> = int16SamplesAsFloats.subarray(readOffset, readOffset + frameSize)
 
 		if (frame.length < frameSize) {
 			frame = concatFloat32Arrays([frame, new Float32Array(frameSize - frame.length)])

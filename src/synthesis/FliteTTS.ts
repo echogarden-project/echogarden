@@ -116,7 +116,8 @@ async function getModuleObject() {
 	if (!fliteModuleObject) {
 		const fliteWasiPath = await resolveModuleMainPath('@echogarden/flite-wasi')
 
-		fliteModuleObject = await WebAssembly.compile(await readFileAsBinary(fliteWasiPath))
+		const wasiFileContent = await readFileAsBinary(fliteWasiPath) as Uint8Array<ArrayBuffer>
+		fliteModuleObject = await WebAssembly.compile(wasiFileContent)
 	}
 
 	return fliteModuleObject

@@ -45,7 +45,7 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	const { melSpectrogram } = await computeMelSpectrogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
 
 	logger.start('Extract MFCCs from Mel spectrogram')
-	let mfccs = melSpectrogramToMFCCs(melSpectrogram, featureCount)
+	let mfccs: Float32Array<ArrayBufferLike>[] = melSpectrogramToMFCCs(melSpectrogram, featureCount)
 
 	if (options.normalize!) {
 		logger.start('Normalize MFCCs')

@@ -46,7 +46,7 @@ async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, s
 
 		const inputStream = SpeechSDK.AudioInputStream.createPushStream(audioFormat)
 
-		inputStream.write(encodedAudio)
+		inputStream.write(encodedAudio.buffer as ArrayBuffer)
 		inputStream.close()
 
 		const audioConfig = SpeechSDK.AudioConfig.fromStreamInput(inputStream)
