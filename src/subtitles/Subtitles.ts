@@ -174,7 +174,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 
 	// Generate one or more cues from each segment or sentence in the timeline.
 	for (let entry of timeline) {
-		if (entry.type == 'segment' && entry.timeline?.[0].type == 'sentence') {
+		if (entry.type == 'segment' && entry.timeline?.[0]?.type == 'sentence') {
 			if (config.mode == 'segment') {
 				// If the mode is 'segment', flatten all sentences to a single word timeline
 				entry.timeline = entry.timeline!.flatMap(t => t.timeline!)
