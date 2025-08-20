@@ -99,9 +99,9 @@ export async function splitToWords(text: string, langCode: string): Promise<Text
 		for (const wordText of wordArray) {
 			const startOffset = offset
 			const endOffset = startOffset + wordText.length
-			const isNonPunctuation = isWordOrSymbolWord(wordText)
+			const isPunctuation = !isWordOrSymbolWord(wordText)
 
-			wordSequence.addWord(wordText, startOffset, isNonPunctuation)
+			wordSequence.addWord(wordText, startOffset, isPunctuation)
 
 			offset = endOffset
 		}
