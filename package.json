@@ -1,6 +1,6 @@
 {
 	"name": "echogarden",
-	"version": "2.9.1",
+	"version": "2.9.2",
 	"description": "An easy-to-use speech toolset. Includes tools for synthesis, recognition, alignment, speech translation, language detection, source separation and more.",
 	"author": "Rotem Dan",
 	"license": "GPL-3.0",
@@ -55,7 +55,7 @@
 		"@aws-sdk/client-polly": "~3.817.0",
 		"@aws-sdk/client-transcribe-streaming": "~3.817.0",
 		"@echogarden/audio-io": "~0.4.2",
-		"@echogarden/espeak-ng-emscripten": "~0.3.3",
+		"@echogarden/espeak-ng-emscripten": "~0.3.5",
 		"@echogarden/fasttext-wasm": "~0.1.0",
 		"@echogarden/flite-wasi": "~0.1.1",
 		"@echogarden/fvad-wasm": "~0.2.0",
