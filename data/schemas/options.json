@@ -1174,11 +1174,7 @@
           "type": "boolean"
         },
         "timestampAccuracy": {
-          "type": "string",
-          "enum": [
-            "medium",
-            "high"
-          ]
+          "$ref": "#/definitions/WhisperTimestampAccuracy"
         },
         "encoderProvider": {
           "$ref": "#/definitions/OnnxExecutionProvider"
@@ -1191,6 +1187,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "WhisperTimestampAccuracy": {
+      "type": "string",
+      "enum": [
+        "medium",
+        "high"
+      ]
     },
     "SileroRecognitionOptions": {
       "type": "object",
@@ -1265,11 +1268,7 @@
           "type": "number"
         },
         "timestampAccuracy": {
-          "type": "string",
-          "enum": [
-            "medium",
-            "high"
-          ]
+          "$ref": "#/definitions/WhisperTimestampAccuracy"
         },
         "encoderProvider": {
           "$ref": "#/definitions/OnnxExecutionProvider"

@@ -140,7 +140,7 @@ export const defaultTranscriptAndTranslationAlignmentOptions: TranscriptAndTrans
 
 	plainText: {
 		paragraphBreaks: 'double',
-		whitespace: 'collapse'
+		whitespace: 'preserve'
 	},
 
 	subtitles: {

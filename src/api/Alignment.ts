@@ -441,7 +441,7 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 
 	plainText: {
 		paragraphBreaks: 'double',
-		whitespace: 'collapse'
+		whitespace: 'preserve'
 	},
 
 	subtitles: {

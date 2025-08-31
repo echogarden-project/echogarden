@@ -1265,7 +1265,7 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 	plainText: {
 		paragraphBreaks: 'double',
-		whitespace: 'collapse'
+		whitespace: 'preserve'
 	},
 
 	alignment: {

@@ -199,7 +199,7 @@ export const defaultTranslationAlignmentOptions: TranslationAlignmentOptions = {
 
 	plainText: {
 		paragraphBreaks: 'double',
-		whitespace: 'collapse'
+		whitespace: 'preserve'
 	},
 
 	subtitles: {

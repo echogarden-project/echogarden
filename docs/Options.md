@@ -30,7 +30,7 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 
 **Plain text processing**:
 * `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
-* `plainText.whitespace`: determines how to process whitespace within paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
+* `plainText.whitespace`: determines how to process whitespace within paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `preserve`
 
 **Post-processing**:
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `true`
@@ -244,7 +244,7 @@ Applies to CLI operation: `align`, API method: `align`
 
 **Plain text processing**:
 * `plainText.paragraphBreaks`: split transcript to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
-* `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `collapse`
+* `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `preserve`
 
 **DTW**:
 * `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['xx-low','medium']`. Auto-selected by default.
