@@ -63,7 +63,7 @@ export function roundTimelineProperties(targetTimeline: Timeline, decimalDigits 
 	return roundedTimeline
 }
 
-export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffsets: Timeline, transcript: string, language: string, paragraphBreaks: ParagraphBreakType = 'double', whitespace: WhitespaceProcessing = 'collapse') {
+export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffsets: Timeline, transcript: string, language: string, paragraphBreaks: ParagraphBreakType = 'double', whitespace: WhitespaceProcessing = 'preserve') {
 	const wordSequence = new WordSequence()
 
 	for (const wordEntry of wordTimelineWithOffsets) {
@@ -79,52 +79,19 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffs
 
 	const segmentedWordSequence = await segmentWordSequence(wordSequenceWithPunctuation)
 
-	const paragraphs = splitToParagraphs(transcript, paragraphBreaks, 'preserve')
-
-	const sentenceIndexesForParagraph = paragraphs.map(_ => [] as number[])
-
-	{
-		let sentenceIndex = 0
-		let charOffset = 0
-
-		for (let paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex++) {
-			const paragraph = paragraphs[paragraphIndex]
-
-			const paragraphStartOffset = charOffset
-			const paragraphEndOffset = paragraphStartOffset + paragraph.length
-
-			while (sentenceIndex < segmentedWordSequence.sentences.length) {
-				const sentenceEntry = segmentedWordSequence.sentences[sentenceIndex]
-				const sentenceStartOffset = sentenceEntry.charRange.start
-				const sentenceEndOffset = sentenceEntry.charRange.end
-
-				if (sentenceStartOffset < paragraphEndOffset) {
-					sentenceIndexesForParagraph[paragraphIndex].push(sentenceIndex)
-					sentenceIndex++
-				} else {
-					break
-				}
-			}
-
-			if (sentenceIndex === segmentedWordSequence.sentences.length) {
-				break
-			}
-
-			charOffset += paragraph.length
-		}
-	}
+	const segmentSentenceRanges = segmentedWordSequence.segmentSentenceRanges
 
 	const segmentTimeline: Timeline = []
 	let wordIndex = 0
 
-	for (let paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex++) {
-		const paragraph = paragraphs[paragraphIndex]
-		const sentencesIndexes = sentenceIndexesForParagraph[paragraphIndex]
-		const sentenceEntries = sentencesIndexes.map(index => segmentedWordSequence.sentences[index])
+	let lastKnownTimestamp = wordTimelineWithOffsets?.[0].startTime ?? 0
 
-		const sentenceTimeline: Timeline = []
+	let segmentText = ''
+	let sentenceTimeline: Timeline = []
 
-		for (const sentenceEntry of sentenceEntries) {
+	for (const segmentSentenceRange of segmentSentenceRanges) {
+		for (let sentenceIndex = segmentSentenceRange.start; sentenceIndex < segmentSentenceRange.end; sentenceIndex++) {
+			const sentenceEntry = segmentedWordSequence.sentences[sentenceIndex]
 			const wordTimeline: Timeline = []
 
 			for (const _ of sentenceEntry.words.entries) {
@@ -134,33 +101,46 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffs
 					const wordTimelineEntry = wordTimelineWithOffsets[originalWordIndex]
 
 					wordTimeline.push(wordTimelineEntry)
+
+					lastKnownTimestamp = wordTimelineEntry.endTime ?? lastKnownTimestamp
 				}
 
 				wordIndex += 1
 			}
 
+			const sentenceText = sentenceEntry.text
+
 			const sentenceTimelineEntry: TimelineEntry = {
 				type: 'sentence',
-				text: sentenceEntry.text,
-				startTime: wordTimeline[0]?.startTime,
-				endTime: wordTimeline[wordTimeline.length - 1]?.endTime,
+				text: sentenceText,
+				startTime: wordTimeline[0]?.startTime ?? lastKnownTimestamp,
+				endTime: wordTimeline[wordTimeline.length - 1]?.endTime ?? lastKnownTimestamp,
 
 				timeline: wordTimeline,
 			}
 
 			sentenceTimeline.push(sentenceTimelineEntry)
+			segmentText += sentenceText
 		}
 
-		const segmentTimelineEntry: TimelineEntry = {
-			type: 'segment',
-			text: applyWhitespaceProcessing(paragraph, whitespace),
-			startTime: sentenceTimeline[0]?.startTime,
-			endTime: sentenceTimeline[sentenceTimeline.length - 1]?.endTime,
+		if (paragraphBreaks === 'single' ||
+			segmentSentenceRange.end === segmentedWordSequence.sentences.length ||
+			/\r?\n\r?\n$/.test(segmentText)) {
 
-			timeline: sentenceTimeline,
+			const segmentTimelineEntry: TimelineEntry = {
+				type: 'segment',
+				text: applyWhitespaceProcessing(segmentText, whitespace),
+				startTime: sentenceTimeline[0]?.startTime ?? lastKnownTimestamp,
+				endTime: sentenceTimeline[sentenceTimeline.length - 1]?.endTime ?? lastKnownTimestamp,
+
+				timeline: sentenceTimeline,
+			}
+
+			segmentTimeline.push(segmentTimelineEntry)
+
+			segmentText = ''
+			sentenceTimeline = []
 		}
-
-		segmentTimeline.push(segmentTimelineEntry)
 	}
 
 	return { segmentTimeline }
