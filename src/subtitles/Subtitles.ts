@@ -149,12 +149,12 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 
 // Generates subtitle cues from timeline. Ensures each segment or sentence starts in a new cue.
 function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: SubtitlesConfig) {
-	if (timeline.length == 0) {
+	if (timeline.length === 0) {
 		return []
 	}
 
 	// If the given timeline is a word timeline, wrap it with a segment and call again
-	if (timeline[0].type == 'word') {
+	if (timeline[0].type === 'word') {
 		const wordTimeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
 
 		const text = wordTimeline.map(entry => entry.text).join(' ')
@@ -174,8 +174,12 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 
 	// Generate one or more cues from each segment or sentence in the timeline.
 	for (let entry of timeline) {
-		if (entry.type == 'segment' && entry.timeline?.[0]?.type == 'sentence') {
-			if (config.mode == 'segment') {
+		if (!entry.timeline || entry.timeline.length === 0) {
+			continue
+		}
+
+		if (entry.type === 'segment' && entry.timeline?.[0]?.type === 'sentence') {
+			if (config.mode === 'segment') {
 				// If the mode is 'segment', flatten all sentences to a single word timeline
 				entry.timeline = entry.timeline!.flatMap(t => t.timeline!)
 			} else {
