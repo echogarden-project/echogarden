@@ -154,7 +154,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 				throw new Error('Canceled')
 			}
 
-			const sentenceText = sentences[sentenceIndex].trim()
+			const sentenceText = sentences[sentenceIndex]
 
 			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: "${sentenceText.trim()}"`)
 
