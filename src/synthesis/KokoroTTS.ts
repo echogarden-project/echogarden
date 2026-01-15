@@ -745,6 +745,33 @@ export const voiceList: SynthesisVoice[] = [
 		gender: 'male',
 	},
 
+	// Japanese (Japan) voices
+	{
+		name: 'Alpha',
+		languages: ['ja-JP', 'ja'],
+		gender: 'female',
+	},
+	{
+		name: 'Gongitsune',
+		languages: ['ja-JP', 'ja'],
+		gender: 'female',
+	},
+	{
+		name: 'Nezumi',
+		languages: ['ja-JP', 'ja'],
+		gender: 'female',
+	},
+	{
+		name: 'Tebukuro',
+		languages: ['ja-JP', 'ja'],
+		gender: 'female',
+	},
+	{
+		name: 'Kumo',
+		languages: ['ja-JP', 'ja'],
+		gender: 'male',
+	},
+
 	// Chinese (China) voices
 	{
 		name: 'Xiaobei',
