@@ -23,6 +23,7 @@ import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { type OpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
 import { type ElevenLabsTTSOptions } from '../synthesis/ElevenLabsTTS.js'
 import { type DeepgramTTSOptions } from '../synthesis/DeepgramTTS.js'
+import { type MiniMaxCloudTTSOptions } from '../synthesis/MiniMaxCloudTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
@@ -861,6 +862,33 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			break
 		}
 
+		case 'minimax-cloud': {
+			if (inputIsSSML) {
+				throw new Error(`The MiniMax Cloud engine doesn't support SSML inputs`)
+			}
+
+			const MiniMaxCloudTTS = await import('../synthesis/MiniMaxCloudTTS.js')
+
+			const engineOptions = options.miniMaxCloud!
+
+			const apiKey = engineOptions.apiKey || process.env['MINIMAX_API_KEY']
+
+			if (!apiKey) {
+				throw new Error(`No MiniMax API key provided. Set miniMaxCloud.apiKey option or MINIMAX_API_KEY environment variable.`)
+			}
+
+			logger.end()
+
+			const { rawAudio: miniMaxRawAudio } = await MiniMaxCloudTTS.synthesize(text, voice, speed, { ...engineOptions, apiKey })
+
+			synthesizedAudio = miniMaxRawAudio
+
+			shouldPostprocessSpeed = false
+			shouldPostprocessPitch = true
+
+			break
+		}
+
 		case 'google-translate': {
 			if (inputIsSSML) {
 				throw new Error(`The Google Translate engine doesn't support SSML inputs`)
@@ -1098,7 +1126,7 @@ export type SynthesisEngine =
 	'vits' | 'kokoro' | 'pico' | 'flite' | 'gnuspeech' |
 	'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' |
 	'google-cloud' | 'microsoft-azure' | 'amazon-polly' |
-	'openai-cloud' | 'elevenlabs' | 'deepgram' |
+	'openai-cloud' | 'elevenlabs' | 'deepgram' | 'minimax-cloud' |
 	'google-translate' | 'microsoft-edge' | 'streamlabs-polly'
 
 export type TimePitchShiftingMethod = 'sonic' | 'rubberband'
@@ -1228,6 +1256,8 @@ export interface SynthesisOptions {
 	elevenLabs?: ElevenLabsTTSOptions,
 
 	deepgram?: DeepgramTTSOptions
+
+	miniMaxCloud?: MiniMaxCloudTTSOptions
 
 	googleTranslate?: {
 		tld?: string
@@ -1373,6 +1403,9 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 	},
 
 	deepgram: {
+	},
+
+	miniMaxCloud: {
 	},
 
 	googleTranslate: {
@@ -1644,6 +1677,14 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 				const DeepgramTTS = await import('../synthesis/DeepgramTTS.js')
 
 				voiceList = DeepgramTTS.voiceList
+
+				break
+			}
+
+			case 'minimax-cloud': {
+				const MiniMaxCloudTTS = await import('../synthesis/MiniMaxCloudTTS.js')
+
+				voiceList = MiniMaxCloudTTS.voiceList
 
 				break
 			}
@@ -1940,6 +1981,12 @@ export const synthesisEngines: EngineMetadata[] = [
 		id: 'deepgram',
 		name: 'Deepgram',
 		description: 'A generative AI text-to-speech cloud service.',
+		type: 'cloud'
+	},
+	{
+		id: 'minimax-cloud',
+		name: 'MiniMax Cloud',
+		description: 'MiniMax cloud text-to-speech service (speech-2.8-hd / speech-2.8-turbo models).',
 		type: 'cloud'
 	},
 	{

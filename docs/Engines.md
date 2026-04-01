@@ -37,6 +37,7 @@ These are commercial services that require a subscription and an API key to use:
 * [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`)
 * [ElevenLabs](https://elevenlabs.io/) (`elevenlabs`)
 * [Deepgram](https://deepgram.com/) (`deepgram`)
+* [MiniMax](https://www.minimax.io/) (`minimax-cloud`): cloud text-to-speech service with high-quality `speech-2.8-hd` and `speech-2.8-turbo` models. Requires a `MINIMAX_API_KEY` environment variable or the `miniMaxCloud.apiKey` option. Offers 12 English and bilingual voices
 
 **Cloud services (unofficial)**:
 
