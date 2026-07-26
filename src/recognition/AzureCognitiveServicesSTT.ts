@@ -3,13 +3,14 @@ import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk'
 import { RawAudio, encodeRawAudioToWave } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
 
-export async function recognize(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw) {
-	const logger = new Logger()
+export async function recognize(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw, callbacks: RecognitionCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start('Request recognition from Azure Cognitive Services')
 
-	const result = await requestRecognition(rawAudio, subscriptionKey, serviceRegion, languageCode)
+	const result = await requestRecognition(rawAudio, subscriptionKey, serviceRegion, languageCode, undefined, callbacks)
 
 	logger.start('Process result')
 
@@ -38,7 +39,7 @@ export async function recognize(rawAudio: RawAudio, subscriptionKey: string, ser
 	return { transcript, timeline }
 }
 
-async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw) {
+async function requestRecognition(rawAudio: RawAudio, subscriptionKey: string, serviceRegion: string, languageCode: string, profanity: SpeechSDK.ProfanityOption = SpeechSDK.ProfanityOption.Raw, callbacks: RecognitionCallbacks) {
 	const encodedAudio = encodeRawAudioToWave(rawAudio)
 
 	return new Promise<SpeechSDK.SpeechRecognitionResult>((resolve, reject) => {

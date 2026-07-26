@@ -9,54 +9,59 @@ import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace,
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
-import { WhisperPartCallback, type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperOptions, type WhisperPartCallback, type WhisperTokenCallback  } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type EngineMetadata } from './Common.js'
 import { type SpeechLanguageDetectionOptions, detectSpeechLanguage } from './API.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
 import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
-import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type WhisperCppCliOptions } from '../recognition/WhisperCppCliSTT.js'
 
 const log = logToStderr
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Speech translation
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions, onPart?: WhisperPartCallback): Promise<SpeechTranslationResult> {
-	const logger = new Logger()
+export async function translateSpeech(input: AudioSourceParam, options: SpeechTranslationOptions, callbacks?: SpeechTranslationCallbacks): Promise<SpeechTranslationResult> {
+	options = extendDeep(defaultSpeechTranslationOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
-	options = extendDeep(defaultSpeechTranslationOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	let sourceRawAudio: RawAudio
 	let isolatedRawAudio: RawAudio | undefined
 	let backgroundRawAudio: RawAudio | undefined
 
 	if (options.isolate) {
-		logger.log(``)
-		logger.end();
+		logger.logTitledMessage(`Isolate vocals`, '');
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(
+			inputRawAudio,
+			options.sourceSeparation!,
+			{ ...callbacks, logLevel: logger.logLevel }))
 
 		logger.end()
-		logger.log(``)
 
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1, callbacks)
 	} else {
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 	}
 
 	let sourceUncropTimeline: Timeline | undefined
 
 	if (options.crop) {
 		logger.start('Crop using voice activity detection');
-		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(
+			sourceRawAudio,
+			options.vad!,
+			{ ...callbacks, logLevel: 'warning' }))
 
 		logger.end()
 	}
@@ -75,7 +80,11 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(options.sourceLanguage))
 	} else {
 		logger.start('No source language specified. Detect speech language')
-		const { detectedLanguage } = await detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
+		const { detectedLanguage } = await detectSpeechLanguage(
+			sourceRawAudio,
+			options.languageDetection!,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+		)
 
 		options.sourceLanguage = detectedLanguage
 
@@ -102,70 +111,87 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 	switch (engine) {
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperOptions = options.whisper!
+			const whisperOptions: WhisperOptions =  extendDeep(WhisperSTT.defaultWhisperOptions, options.whisper!)
 
 			const shortSourceLanguageCode = getShortLanguageCode(sourceLanguage)
 			const shortTargetLanguageCode = getShortLanguageCode(targetLanguage)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortSourceLanguageCode)
-
 			if (shortTargetLanguageCode != 'en') {
 				throw new Error('Whisper translation only supports English as target language')
-			}
-
-			if (modelName.endsWith('.en')) {
-				throw new Error('Whisper translation tasks are only possible with a multilingual model')
 			}
 
 			if (shortSourceLanguageCode == 'en' && shortTargetLanguageCode == 'en') {
 				throw new Error('Both translation source and target languages are English')
 			}
 
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperOptions.model,
+				shortSourceLanguageCode,
+				callbacks,
+			)
+
+			const { libPath } = await WhisperSTT.loadLibraryPackages(
+				whisperOptions.enableGPU,
+				callbacks,
+			)
+
+			if (modelId.endsWith('.en')) {
+				throw new Error(`Whisper translation task is not supported with model '${modelId}', since it's not multilingual model.`)
+			}
+
 			logger.end();
 
 			({ transcript, timeline: wordTimeline } = await WhisperSTT.recognize(
 				sourceRawAudio,
-				modelName,
-				modelDir,
+				modelId,
+				modelPath,
+				libPath,
 				'translate',
 				sourceLanguage,
 				whisperOptions,
-				onPart,
+				callbacks,
 			))
 
 			break
 		}
 
 		case 'whisper.cpp': {
-			const WhisperCppSTT = await import('../recognition/WhisperCppSTT.js')
+			const WhisperCppCliSTT = await import('../recognition/WhisperCppCliSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperCppOptions = options.whisperCpp!
+			const whisperCppCliOptions = options.whisperCpp!
 
 			const shortSourceLanguageCode = getShortLanguageCode(sourceLanguage)
 			const shortTargetLanguageCode = getShortLanguageCode(targetLanguage)
 
 			logger.end()
 
-			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, shortSourceLanguageCode)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperCppCliOptions.model,
+				shortSourceLanguageCode,
+				callbacks,
+			)
 
 			if (shortTargetLanguageCode != 'en') {
 				throw new Error('Whisper.cpp translation only supports English as target language')
 			}
 
-			if (modelName.endsWith('.en')) {
+			if (modelId.endsWith('.en')) {
 				throw new Error('Whisper.cpp translation tasks are only possible with a multilingual model')
 			}
 
 			logger.end();
 
-			({ transcript, timeline: wordTimeline } = await WhisperCppSTT.recognize(
+			({ transcript, timeline: wordTimeline } = await WhisperCppCliSTT.recognize(
 				sourceRawAudio,
 				'translate',
 				shortSourceLanguageCode,
-				modelName,
+				modelId,
 				modelPath,
-				whisperCppOptions,
+				whisperCppCliOptions,
+				callbacks,
 			))
 
 			break
@@ -189,7 +215,13 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 
 			logger.end();
 
-			({ transcript, timeline: segmentTimeline } = await OpenAICloudSTT.recognize(sourceRawAudio, shortSourceLanguageCode, openAICloudSTTOptions, 'translate'))
+			({ transcript, timeline: segmentTimeline } = await OpenAICloudSTT.recognize(
+				sourceRawAudio,
+				shortSourceLanguageCode,
+				openAICloudSTTOptions,
+				'translate',
+				callbacks,
+			))
 
 			break
 		}
@@ -219,7 +251,7 @@ export async function translateSpeech(input: AudioSourceParam, options: SpeechTr
 	}
 
 	logger.log('')
-	logger.logDuration(`Total speech translation time`, startTimestamp, chalk.magentaBright)
+	logger.logDuration(`Total speech translation time`, startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		transcript,
@@ -250,7 +282,7 @@ export interface SpeechTranslationResult {
 
 export type SpeechTranslationEngine = 'whisper' | 'whisper.cpp' | 'openai-cloud'
 
-export interface SpeechTranslationOptions {
+export interface SpeechTranslationOptions extends API.OperationOptions {
 	engine?: SpeechTranslationEngine
 
 	sourceLanguage?: string
@@ -261,11 +293,11 @@ export interface SpeechTranslationOptions {
 
 	languageDetection?: SpeechLanguageDetectionOptions
 	subtitles?: SubtitlesConfig
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 	sourceSeparation?: API.SourceSeparationOptions
 
 	whisper?: WhisperOptions
-	whisperCpp?: WhisperCppOptions
+	whisperCpp?: WhisperCppCliOptions
 	openAICloud?: OpenAICloudSTTOptions
 }
 
@@ -297,6 +329,11 @@ export const defaultSpeechTranslationOptions: SpeechTranslationOptions = {
 	},
 }
 
+export interface SpeechTranslationCallbacks extends API.OperationCallbacks {
+	onPart?: WhisperPartCallback
+	onToken?: WhisperTokenCallback
+}
+
 export const speechTranslationEngines: EngineMetadata[] = [
 	{
 		id: 'whisper',
@@ -306,7 +343,7 @@ export const speechTranslationEngines: EngineMetadata[] = [
 	},
 	{
 		id: 'whisper.cpp',
-		name: 'OpenAI Whisper (C++ port)',
+		name: 'OpenAI Whisper (C++ port) CLI',
 		description: `Uses Whisper's speech translation capability to produce an English transcript from speech in a different language.`,
 		type: 'local'
 	},

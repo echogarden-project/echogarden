@@ -7,7 +7,7 @@ import { ParsedConfigFile, parseConfigFile, parseJSONConfigFile } from './CLICon
 import chalk from 'chalk'
 import { RawAudio, applyGainDecibels, encodeRawAudioToWave, getEmptyRawAudio, getRawAudioDuration, normalizeAudioLevel, sliceRawAudioByTime } from '../audio/AudioUtilities.js'
 import { SubtitlesConfig, subtitlesToText, timelineToSubtitles } from '../subtitles/Subtitles.js'
-import { Logger, resetActiveLogger } from '../utilities/Logger.js'
+import { Logger } from '../utilities/Logger.js'
 import { isMainThread, parentPort } from 'node:worker_threads'
 import { encodeFromChannels, getDefaultFFMpegOptionsForSpeech } from '../codecs/FFMpegTranscoder.js'
 import { splitToParagraphs, splitToWords } from '../nlp/Segmentation.js'
@@ -17,7 +17,7 @@ import { Timeline, TimelineEntry, addTimeOffsetToTimeline, addWordTextOffsetsToT
 import { ensureDir, existsSync, readAndParseJsonFile, readdir, readFileAsUtf8, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
 import { APIOptions } from '../api/APIOptions.js'
-import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
+import { ensureAndGetPackagesDir, getVersionTagFromPackageName, loadPackage, LoadPackageCallbacks, resolveVersionTagForUnversionedPackageName } from '../utilities/PackageManager.js'
 import { removePackage } from '../utilities/PackageManager.js'
 import { appName } from '../api/Common.js'
 import { ServerOptions, startServer } from '../server/Server.js'
@@ -25,8 +25,6 @@ import { OpenPromise } from '../utilities/OpenPromise.js'
 import { getDirName, getFileNameWithoutExtension, getLowercaseFileExtension, joinPath, parsePath, resolveToModuleRootDir } from '../utilities/PathUtilities.js'
 import { CLIOptions, CLIOptionsKeys } from './CLIOptions.js'
 import { convertHtmlToText, formatIntegerWithLeadingZeros, formatListWithQuotedElements } from '../utilities/StringUtilities.js'
-
-//const log = logToStderr
 
 async function startIfInWorkerThread() {
 	if (isMainThread || !parentPort) {
@@ -67,7 +65,7 @@ type CLIOperationData = {
 }
 
 export async function start(processArgs: string[]) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const operationData: CLIOperationData = {
 		operation: '',
@@ -80,10 +78,6 @@ export async function start(processArgs: string[]) {
 	}
 
 	try {
-		const packageData = await readAndParseJsonFile(resolveToModuleRootDir('package.json'))
-
-		logger.log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
-
 		const operation = processArgs[0]
 
 		if (!operation || operation == 'help') {
@@ -110,10 +104,13 @@ export async function start(processArgs: string[]) {
 		if (!parsedArgumentsLookup.has('config')) {
 			const defaultConfigFile = `./${appName}.config`
 			const defaultJsonConfigFile = defaultConfigFile + '.json'
+			const defaultJson5ConfigFile = defaultConfigFile + '.json5'
 
 			if (existsSync(defaultConfigFile)) {
 				parsedArgumentsLookup.set('config', defaultConfigFile)
 			} else if (existsSync(defaultJsonConfigFile)) {
+				parsedArgumentsLookup.set('config', defaultJsonConfigFile)
+			} else if (existsSync(defaultJson5ConfigFile)) {
 				parsedArgumentsLookup.set('config', defaultJsonConfigFile)
 			}
 		}
@@ -126,10 +123,10 @@ export async function start(processArgs: string[]) {
 
 			if (configFilePath.endsWith('.config')) {
 				parsedConfigFile = await parseConfigFile(configFilePath)
-			} else if (configFilePath.endsWith('.config.json')) {
+			} else if (configFilePath.endsWith('.config.json') || configFilePath.endsWith('.config.json5')) {
 				parsedConfigFile = await parseJSONConfigFile(configFilePath)
 			} else {
-				throw new Error(`Specified config file '${configFilePath}' doesn't have a supported extension. Should be either '.config' or '.config.json'`)
+				throw new Error(`Specified config file '${configFilePath}' doesn't have a supported extension. Should be either '.config', '.config.json', or '.config.json5'`)
 			}
 
 			let sectionName = operation
@@ -177,9 +174,8 @@ export async function start(processArgs: string[]) {
 		operationData.cliOptions = await optionsLookupToTypedObject(cliOptionsLookup, 'CLIOptions')
 		operationData.operationOptionsLookup = operationsOptionsLookup
 	} catch (e: any) {
-		resetActiveLogger()
-
-		logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
+		logger.logTitledMessage(`Error`, e.message, 'error')
+		
 		process.exit(1)
 	}
 
@@ -194,12 +190,10 @@ export async function start(processArgs: string[]) {
 	try {
 		await startWithArgs(operationData)
 	} catch (e: any) {
-		resetActiveLogger()
-
 		if (debugMode) {
 			logger.log(e, 'error')
 		} else {
-			logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
+			logger.logTitledMessage(`Error`, e.message, 'error')
 		}
 
 		process.exit(1)
@@ -259,7 +253,10 @@ const help = [
 ]
 
 async function startWithArgs(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
+
+	const packageData = await readAndParseJsonFile(resolveToModuleRootDir('package.json'))
+	logger.log(chalk.magentaBright(`Echogarden v${packageData.version}\n`))
 
 	switch (operationData.operation) {
 		case 'speak':
@@ -366,14 +363,18 @@ async function startWithArgs(operationData: CLIOperationData) {
 		}
 
 		default: {
-			logger.logTitledMessage(`Unknown operation`, operationData.operation, chalk.redBright, 'error')
+			logger.logTitledMessage(`Unknown operation`, operationData.operation, 'error')
 			process.exit(1)
 		}
 	}
 }
 
 export async function speak(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
+
+	const callbacks: API.SynthesisCallbacks = {
+		logLevel: logger.logLevel
+	}
 
 	const { operationArgs, operation, operationOptionsLookup, cliOptions } = operationData
 
@@ -464,7 +465,7 @@ export async function speak(operationData: CLIOperationData) {
 		}
 
 		const { fetchDocumentText } = await import('../utilities/WebReader.js')
-		const textContent = await fetchDocumentText(url)
+		const textContent = await fetchDocumentText(url, { logLevel: API.getGlobalLogLevel() })
 
 		textSegments = splitToParagraphs(textContent, 'single', 'preserve')
 	} else if (operation == 'speak-wikipedia') {
@@ -472,22 +473,24 @@ export async function speak(operationData: CLIOperationData) {
 			throw new Error(`speak-wikipedia doesn't provide SSML inputs`)
 		}
 
-		const { parseWikipediaArticle } = await import('../utilities/WikipediaReader.js')
+		const { fetchAndParseWikipediaArticle } = await import('../utilities/WikipediaReader.js')
 		if (!options.language) {
 			options.language = 'en'
 		}
 
-		textSegments = await parseWikipediaArticle(mainArg, getShortLanguageCode(options.language))
+		await logger.startAsync(`Fetching Wikipedia article '${mainArg}'`)
+		textSegments = await fetchAndParseWikipediaArticle(mainArg, getShortLanguageCode(options.language), callbacks)
+		logger.end()
 	} else {
 		throw new Error(`Invalid operation specified: '${operation}'`)
 	}
 
-	async function onSegment(segmentData: API.SynthesisSegmentEventData) {
+	async function onSegment(segmentData: API.SynthesisSegmentCallbackData) {
 		if (includesPlaceholderPattern) {
 			logger.start('Write output files for segment')
 		}
 
-		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio as RawAudio, segmentData.timeline, segmentData.transcript, segmentData.language, allowOverwrite)
+		await writeOutputFilesForSegment(outputFilenames, segmentData.index, segmentData.total, segmentData.audio as RawAudio, segmentData.timeline, segmentData.transcript, segmentData.language, allowOverwrite, callbacks)
 
 		logger.end()
 
@@ -506,7 +509,8 @@ export async function speak(operationData: CLIOperationData) {
 		options.outputAudioFormat!.codec = undefined
 	}
 
-	const { audio: synthesizedAudio, timeline } = await API.synthesize(textSegments, options, onSegment, undefined)
+	const { audio: synthesizedAudio, timeline } =
+		await API.synthesize(textSegments, options, { ...callbacks, onSegment })
 
 	if (plainText) {
 		addWordTextOffsetsToTimelineInPlace(timeline, plainText)
@@ -521,7 +525,7 @@ export async function speak(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 		await fileSaver(synthesizedAudio as RawAudio, timeline, textSegments.join('\n\n'), options.subtitles)
 	}
 
@@ -529,7 +533,7 @@ export async function speak(operationData: CLIOperationData) {
 }
 
 export async function transcribe(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -553,7 +557,20 @@ export async function transcribe(operationData: CLIOperationData) {
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { transcript, timeline, wordTimeline, language, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.recognize(sourceFilename, options)
+	const callbacks: API.RecognitionCallbacks = { logLevel: logger.logLevel }
+
+	const {
+		transcript,
+		timeline,
+		wordTimeline,
+		language,
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio } = await API.recognize(
+			sourceFilename,
+			options,
+			callbacks,
+		)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -564,11 +581,11 @@ export async function transcribe(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true, callbacks)
 	}
 
 	logger.end()
@@ -589,7 +606,7 @@ export async function transcribe(operationData: CLIOperationData) {
 }
 
 export async function align(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -637,7 +654,23 @@ export async function align(operationData: CLIOperationData) {
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
-	const { timeline, wordTimeline, transcript, language, inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.align(audioFilename, text, options)
+	const callbacks: API.AlignmentCallbacks = {
+		logLevel: logger.logLevel
+	}
+
+	const {
+		timeline,
+		wordTimeline,
+		transcript,
+		language,
+		inputRawAudio,
+		isolatedRawAudio,
+		backgroundRawAudio } = await API.align(
+			audioFilename,
+			text,
+			options,
+			callbacks,
+		)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -649,7 +682,7 @@ export async function align(operationData: CLIOperationData) {
 			const segmentAudio = sliceRawAudioByTime(inputRawAudio, segmentEntry.startTime, segmentEntry.endTime)
 			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
 
-			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite)
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, language, allowOverwrite, callbacks)
 		}
 	}
 
@@ -658,11 +691,11 @@ export async function align(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true, callbacks)
 	}
 
 	logger.end()
@@ -683,7 +716,7 @@ export async function align(operationData: CLIOperationData) {
 }
 
 export async function alignTranslation(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -732,6 +765,10 @@ export async function alignTranslation(operationData: CLIOperationData) {
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
+	const callbacks: API.TranslationAlignmentCallbacks = {
+		logLevel: logger.logLevel
+	}
+
 	const {
 		timeline,
 		wordTimeline,
@@ -740,7 +777,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 		targetLanguage,
 		inputRawAudio,
 		isolatedRawAudio,
-		backgroundRawAudio } = await API.alignTranslation(audioFilename, text, options)
+		backgroundRawAudio } = await API.alignTranslation(audioFilename, text, options, callbacks)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -752,7 +789,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 			const segmentAudio = sliceRawAudioByTime(inputRawAudio, segmentEntry.startTime, segmentEntry.endTime)
 			const sentenceTimeline = addTimeOffsetToTimeline(segmentEntry.timeline!, -segmentEntry.startTime)
 
-			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, targetLanguage, allowOverwrite)
+			await writeOutputFilesForSegment(outputFilenames, segmentIndex, timeline.length, segmentAudio, sentenceTimeline, segmentEntry.text, targetLanguage, allowOverwrite, callbacks)
 		}
 	}
 
@@ -761,11 +798,11 @@ export async function alignTranslation(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, translatedTranscript, options.subtitles)
 
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true, callbacks)
 	}
 
 	logger.end()
@@ -786,7 +823,7 @@ export async function alignTranslation(operationData: CLIOperationData) {
 }
 
 export async function alignTranscriptAndTranslation(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -865,6 +902,10 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 	const { includesPlaceholderPattern } = await checkOutputFilenames(outputFilenames, true, true, true)
 
+	const callbacks: API.TranscriptAndTranslationAlignmentCallbacks = {
+		logLevel: logger.logLevel
+	}
+
 	const {
 		timeline,
 		wordTimeline,
@@ -877,7 +918,13 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 
 		inputRawAudio,
 		isolatedRawAudio,
-		backgroundRawAudio } = await API.alignTranscriptAndTranslation(audioFilename, transcript, translatedTranscript, options)
+		backgroundRawAudio } = await API.alignTranscriptAndTranslation(
+			audioFilename,
+			transcript,
+			translatedTranscript,
+			options,
+			callbacks
+		)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -888,11 +935,11 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true, callbacks)
 
 		const fileExtension = getLowercaseFileExtension(outputFilename)
 
@@ -900,7 +947,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 			const pathWithoutExtension = outputFilename.substring(0, outputFilename.lastIndexOf('.'))
 			const translatedOutputPath = `${pathWithoutExtension}.translated.${fileExtension}`
 
-			const translatedFileSaver = getFileSaver(translatedOutputPath, allowOverwrite)
+			const translatedFileSaver = getFileSaver(translatedOutputPath, allowOverwrite, callbacks)
 			await translatedFileSaver(inputRawAudio, translatedTimeline, translatedTranscript, options.subtitles)
 		}
 	}
@@ -923,7 +970,7 @@ export async function alignTranscriptAndTranslation(operationData: CLIOperationD
 }
 
 export async function alignTimelineTranslation(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -971,11 +1018,20 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 
 	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'TimelineTranslationAlignmentOptions')
 
+	const callbacks: API.TimelineTranslationAlignmentCallbacks = {
+		logLevel: logger.logLevel
+	}
+
 	const {
 		timeline: translationTimeline,
 		wordTimeline: translationWordTimeline,
 		rawAudio
-	} = await API.alignTimelineTranslation(timeline, translationText, options)
+	} = await API.alignTimelineTranslation(
+		timeline,
+		translationText,
+		options,
+		callbacks,
+	)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -988,7 +1044,7 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(getEmptyRawAudio(1, 16000), translationTimeline, translationText, options.subtitles)
 	}
@@ -1009,7 +1065,7 @@ export async function alignTimelineTranslation(operationData: CLIOperationData) 
 }
 
 export async function translateText(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1045,6 +1101,10 @@ export async function translateText(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, false, true, true)
 
+	const callbacks: API.TextTranslationCallbacks = {
+		logLevel: logger.logLevel
+	}
+
 	const {
 		text,
 		translatedText,
@@ -1053,7 +1113,7 @@ export async function translateText(operationData: CLIOperationData) {
 
 		sourceLanguage,
 		targetLanguage,
-	} = await API.translateText(inputText, options)
+	} = await API.translateText(inputText, options, callbacks)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -1063,7 +1123,7 @@ export async function translateText(operationData: CLIOperationData) {
 				continue
 			}
 
-			const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+			const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 			await fileSaver(getEmptyRawAudio(1, 16000), translationPairs as any as Timeline, translatedText, undefined)
 		}
@@ -1076,7 +1136,7 @@ export async function translateText(operationData: CLIOperationData) {
 }
 
 export async function translateSpeech(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1101,6 +1161,10 @@ export async function translateSpeech(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
+	const callbacks: API.SpeechTranslationCallbacks = {
+		logLevel: logger.logLevel
+	}
+
 	const {
 		transcript,
 
@@ -1113,7 +1177,7 @@ export async function translateSpeech(operationData: CLIOperationData) {
 		inputRawAudio,
 		isolatedRawAudio,
 		backgroundRawAudio
-	} = await API.translateSpeech(inputFilename, options)
+	} = await API.translateSpeech(inputFilename, options, callbacks)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -1124,11 +1188,11 @@ export async function translateSpeech(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, transcript, options.subtitles)
 
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, true, callbacks)
 	}
 
 	logger.end()
@@ -1173,7 +1237,7 @@ export async function translateSpeech(operationData: CLIOperationData) {
 }
 
 export async function detectLanguage(operationData: CLIOperationData, mode: 'speech' | 'text' | 'auto') {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1211,7 +1275,15 @@ export async function detectLanguage(operationData: CLIOperationData, mode: 'spe
 			text = subtitlesToText(text)
 		}
 
-		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectTextLanguage(text, options)
+		const callbacks: API.TextLanguageDetectionCallbacks = {
+			logLevel: logger.logLevel
+		}
+
+		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectTextLanguage(
+			text,
+			options,
+			callbacks
+		)
 
 		results = detectedLanguageProbabilities
 	} else {
@@ -1224,7 +1296,15 @@ export async function detectLanguage(operationData: CLIOperationData, mode: 'spe
 
 		await checkOutputFilenames(outputFilenames, false, true, false)
 
-		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechLanguage(inputFilePath, options)
+		const callbacks: API.SpeechLanguageDetectionCallbacks = {
+			logLevel: logger.logLevel
+		}
+
+		const { detectedLanguage, detectedLanguageProbabilities } = await API.detectSpeechLanguage(
+			inputFilePath,
+			options,
+			callbacks
+		)
 
 		results = detectedLanguageProbabilities
 	}
@@ -1234,8 +1314,12 @@ export async function detectLanguage(operationData: CLIOperationData, mode: 'spe
 
 		const resultsAsText = results.map(result => `${formatLanguageCodeWithName(result.language)}: ${result.probability.toFixed(5)}`).join('\n')
 
+		const callbacks: API.OperationCallbacks = {
+			logLevel: logger.logLevel
+		}
+
 		for (const outputFilename of outputFilenames) {
-			const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+			const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 			await fileSaver(getEmptyRawAudio(0, 0), results as any, resultsAsText)
 		}
@@ -1250,7 +1334,7 @@ export async function detectLanguage(operationData: CLIOperationData, mode: 'spe
 }
 
 export async function detectVoiceActivity(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1269,13 +1353,21 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 		cliOptions.play = outputFilenames.length === 0
 	}
 
-	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'VADOptions')
+	const options = await optionsLookupToTypedObject(operationOptionsLookup, 'VoiceActivityDetectionOptions')
 
 	const allowOverwrite = getWithDefault(cliOptions.overwrite, overwriteByDefault)
 
 	await checkOutputFilenames(outputFilenames, true, true, true)
 
-	let { timeline, verboseTimeline, inputRawAudio, croppedRawAudio } = await API.detectVoiceActivity(audioFilename, options)
+	const callbacks: API.VoiceActivityDetectionCallbacks = {
+		logLevel: logger.logLevel
+	}
+
+	let { timeline, verboseTimeline, inputRawAudio, croppedRawAudio } = await API.detectVoiceActivity(
+		audioFilename,
+		options,
+		callbacks,
+	)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
@@ -1286,7 +1378,7 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 			continue
 		}
 
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(inputRawAudio, timeline, '', { maxAddedDuration: 0 })
 
@@ -1297,7 +1389,7 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 
 			const isolatedOutputFilePath = `${pathWithoutExtension}.cropped.${fileExtension}`
 
-			const fileSaver = getFileSaver(isolatedOutputFilePath, allowOverwrite)
+			const fileSaver = getFileSaver(isolatedOutputFilePath, allowOverwrite, callbacks)
 
 			await fileSaver(croppedRawAudio, [], '')
 		}
@@ -1317,7 +1409,7 @@ export async function detectVoiceActivity(operationData: CLIOperationData) {
 }
 
 export async function denoise(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1342,14 +1434,18 @@ export async function denoise(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, true, false, false)
 
-	const { denoisedAudio } = await API.denoise(audioFilename, options)
+	const callbacks: API.DenoisingCallbacks = {
+		logLevel: logger.logLevel
+	}
+
+	const { denoisedAudio } = await API.denoise(audioFilename, options, callbacks)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
 	}
 
 	for (const outputFilename of outputFilenames) {
-		const fileSaver = getFileSaver(outputFilename, allowOverwrite)
+		const fileSaver = getFileSaver(outputFilename, allowOverwrite, callbacks)
 
 		await fileSaver(denoisedAudio, [], '')
 	}
@@ -1362,7 +1458,7 @@ export async function denoise(operationData: CLIOperationData) {
 }
 
 export async function isolate(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1387,14 +1483,22 @@ export async function isolate(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, true, false, false)
 
-	const { inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.isolate(audioFilename, options)
+	const callbacks: API.SourceSeparationCallbacks = {
+		logLevel: logger.logLevel
+	}
+
+	const { inputRawAudio, isolatedRawAudio, backgroundRawAudio } = await API.isolate(
+		audioFilename,
+		options,
+		callbacks,
+	)
 
 	if (outputFilenames.length > 0) {
 		logger.start('\nWrite output files')
 	}
 
 	for (let outputFilename of outputFilenames) {
-		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, false)
+		await writeSourceSeparationOutputIfNeeded(outputFilename, isolatedRawAudio, backgroundRawAudio, allowOverwrite, false, callbacks)
 	}
 
 	logger.end()
@@ -1405,7 +1509,7 @@ export async function isolate(operationData: CLIOperationData) {
 }
 
 export async function listEngines(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs } = operationData
 
@@ -1512,10 +1616,10 @@ export async function listEngines(operationData: CLIOperationData) {
 	}
 
 	for (const [index, engine] of engines.entries()) {
-		logger.logTitledMessage('Identifier', chalk.magentaBright(engine.id), undefined, 'output')
-		logger.logTitledMessage('Name', engine.name, undefined, 'output')
-		logger.logTitledMessage('Description', engine.description, undefined, 'output')
-		logger.logTitledMessage('Type', engine.type, undefined, 'output')
+		logger.logTitledMessage('Identifier', chalk.magentaBright(engine.id), 'output')
+		logger.logTitledMessage('Name', engine.name, 'output')
+		logger.logTitledMessage('Description', engine.description, 'output')
+		logger.logTitledMessage('Type', engine.type, 'output')
 
 		if (index < engines.length - 1) {
 			logger.log('', 'output')
@@ -1524,7 +1628,7 @@ export async function listEngines(operationData: CLIOperationData) {
 }
 
 export async function listTTSVoices(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs, operationOptionsLookup, cliOptions } = operationData
 
@@ -1549,7 +1653,11 @@ export async function listTTSVoices(operationData: CLIOperationData) {
 
 	await checkOutputFilenames(outputFilenames, false, true, false)
 
-	const { voiceList } = await API.requestVoiceList(options)
+	const callbacks: API.VoiceListRequestCallbacks = {
+		logLevel: logger.logLevel
+	}
+
+	const { voiceList } = await API.requestVoiceList(options, callbacks)
 
 	const voiceListText = voiceList.map(entry => {
 		const nameText = entry.name
@@ -1571,7 +1679,7 @@ export async function listTTSVoices(operationData: CLIOperationData) {
 		logger.start('\nWrite output files')
 
 		for (const filename of outputFilenames) {
-			const fileSaver = getFileSaver(filename, allowOverwrite)
+			const fileSaver = getFileSaver(filename, allowOverwrite, callbacks)
 
 			const { default: stripAnsi } = await import('strip-ansi')
 			const voiceListTextWithoutColors = stripAnsi(voiceListText)
@@ -1586,7 +1694,11 @@ export async function listTTSVoices(operationData: CLIOperationData) {
 }
 
 export async function installPackages(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const callbacks: LoadPackageCallbacks = {
+		logLevel: API.getGlobalLogLevel()
+	}
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const { operationArgs } = operationData
 
@@ -1598,11 +1710,9 @@ export async function installPackages(operationData: CLIOperationData) {
 
 	for (const packageName of operationArgs) {
 		try {
-			await loadPackage(packageName)
+			await loadPackage(packageName, callbacks)
 		} catch (e) {
-			resetActiveLogger()
-
-			logger.logTitledMessage(`Failed installing package ${packageName}`, e, chalk.redBright, 'error')
+			logger.logTitledMessage(`Failed installing package ${packageName}`, e, 'error')
 			failedPackageNames.push(packageName)
 		}
 	}
@@ -1617,7 +1727,7 @@ export async function installPackages(operationData: CLIOperationData) {
 }
 
 export async function uninstallPackages(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const { operationArgs } = operationData
 
@@ -1631,9 +1741,7 @@ export async function uninstallPackages(operationData: CLIOperationData) {
 		try {
 			await removePackage(packageName)
 		} catch (e) {
-			resetActiveLogger()
-
-			logger.logTitledMessage(`Failed uninstalling package ${packageName}`, e, chalk.redBright, 'error')
+			logger.logTitledMessage(`Failed uninstalling package ${packageName}`, e, 'error')
 			failedPackageNames.push(packageName)
 		}
 	}
@@ -1644,7 +1752,7 @@ export async function uninstallPackages(operationData: CLIOperationData) {
 }
 
 export async function listPackages(operationData: CLIOperationData) {
-	const logger = new Logger()
+	const logger = new Logger(API.getGlobalLogLevel())
 
 	const packagesDir = await ensureAndGetPackagesDir()
 
@@ -1688,7 +1796,7 @@ export async function serve(operationData: CLIOperationData) {
 	await startServer(options, onServerStarted)
 }
 
-async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isolatedRawAudio: RawAudio | undefined, backgroundRawAudio: RawAudio | undefined, allowOverwrite: boolean, prefixIsolated: boolean) {
+async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isolatedRawAudio: RawAudio | undefined, backgroundRawAudio: RawAudio | undefined, allowOverwrite: boolean, prefixIsolated: boolean, callbacks: API.OperationCallbacks) {
 	// Write source separation output if needed
 	const fileExtension = getLowercaseFileExtension(outputFilename)
 
@@ -1698,18 +1806,18 @@ async function writeSourceSeparationOutputIfNeeded(outputFilename: string, isola
 		{
 			const isolatedOutputFilePath = prefixIsolated ? `${pathWithoutExtension}.isolated.${fileExtension}` : outputFilename
 
-			await saveAudioWithBitrate(isolatedRawAudio, isolatedOutputFilePath, fileExtension, 64)
+			await saveAudioWithBitrate(isolatedRawAudio, isolatedOutputFilePath, fileExtension, 64, callbacks)
 		}
 
 		{
 			const backgroundOutputFilePath = `${pathWithoutExtension}.background.${fileExtension}`
 
-			await saveAudioWithBitrate(backgroundRawAudio, backgroundOutputFilePath, fileExtension, 128)
+			await saveAudioWithBitrate(backgroundRawAudio, backgroundOutputFilePath, fileExtension, 128, callbacks)
 		}
 	}
 }
 
-async function saveAudioWithBitrate(rawAudio: RawAudio, filepath: string, fileExtension: string, bitrate: number) {
+async function saveAudioWithBitrate(rawAudio: RawAudio, filepath: string, fileExtension: string, bitrate: number, callbacks: API.OperationCallbacks) {
 	const fileDir = parsePath(filepath).dir || './'
 
 	if (fileExtension == 'wav') {
@@ -1721,7 +1829,7 @@ async function saveAudioWithBitrate(rawAudio: RawAudio, filepath: string, fileEx
 		ffmpegOptions.filename = filepath
 
 		await ensureDir(fileDir)
-		await encodeFromChannels(rawAudio, ffmpegOptions)
+		await encodeFromChannels(rawAudio, ffmpegOptions, callbacks)
 	}
 }
 
@@ -1798,12 +1906,12 @@ async function optionsLookupToTypedObject<K extends keyof APIOptions>(cliOptions
 			throw new Error(`The property '${key}' is not a Boolean, and cannot be negated using the 'not-' prefix.`)
 		} else if (optionType == 'array' || optionType == 'object') {
 			try {
-				parsedValue = await parseJson(value, true)
+				parsedValue = parseJson(value, true)
 			} catch (e) {
 				parsedValue = value
 			}
 		} else if (optionIsUnion) {
-			const { parsedValue: json5ParsedValue, jsonType } = await parseJSONAndGetType(value, true)
+			const { parsedValue: json5ParsedValue, jsonType } = parseJSONAndGetType(value, true)
 
 			if (jsonType === 'number' || jsonType === 'boolean' || jsonType === 'array' || jsonType === 'object') {
 				parsedValue = json5ParsedValue
@@ -1881,7 +1989,7 @@ async function checkOutputFilenames(outputFilenames: string[], acceptMediaOutput
 	return { includesPlaceholderPattern }
 }
 
-async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean) {
+async function writeOutputFilesForSegment(outputFilenames: string[], index: number, total: number, audio: RawAudio, timeline: Timeline, text: string, language: string, allowOverwrite: boolean, callbacks: API.OperationCallbacks) {
 	const digitCount = Math.max((total + 1).toString().length, 2)
 
 	const segmentWords = (await splitToWords(text, language)).nonPunctuationWords
@@ -1907,14 +2015,14 @@ async function writeOutputFilesForSegment(outputFilenames: string[], index: numb
 		const fileExtension = getLowercaseFileExtension(outputFilename)
 		const segmentFilename = joinPath(fileDir, `${formatIntegerWithLeadingZeros(index + 1, digitCount)} - ${initialText}.${fileExtension}`)
 
-		const fileSaver = getFileSaver(segmentFilename, allowOverwrite)
+		const fileSaver = getFileSaver(segmentFilename, allowOverwrite, callbacks)
 		await fileSaver(audio, timeline, text)
 	}
 }
 
 type FileSaver = (audio: RawAudio, timeline: Timeline, text: string, subtitlesConfig?: SubtitlesConfig) => Promise<void>
 
-function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSaver {
+function getFileSaver(outputFilePath: string, allowOverwrite: boolean, callbacks: API.OperationCallbacks): FileSaver {
 	const parsedPath = parsePath(outputFilePath)
 
 	const fileDir = parsedPath.dir || './'
@@ -1945,7 +2053,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 			await ensureDir(fileDir)
 
 			const roundedTimeline = roundTimelineProperties(timeline)
-			return writeFileSafe(outputFilePath, await stringifyAndFormatJson(roundedTimeline))
+			return writeFileSafe(outputFilePath, stringifyAndFormatJson(roundedTimeline))
 		}
 	} else if (fileExtension == 'srt') {
 		fileSaver = async (audio, timeline, text, subtitlesConfig) => {
@@ -1993,7 +2101,7 @@ function getFileSaver(outputFilePath: string, allowOverwrite: boolean): FileSave
 
 			await ensureDir(fileDir)
 
-			await encodeFromChannels(audio, ffmpegOptions)
+			await encodeFromChannels(audio, ffmpegOptions, callbacks)
 
 			return
 		}

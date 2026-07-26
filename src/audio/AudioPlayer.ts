@@ -1,35 +1,14 @@
 import { parentPort } from 'node:worker_threads'
 
-import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
+import { RawAudio, getRawAudioDuration, sliceAudioChannels } from './AudioUtilities.js'
 
-import { RawAudio, encodeRawAudioToWave, fadeAudioInOut, getRawAudioDuration, sliceAudioChannels } from './AudioUtilities.js'
-import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
-
-import { Timer } from '../utilities/Timer.js'
-import { clip, getRandomHexString, waitTimeout, writeToStderr } from '../utilities/Utilities.js'
-import { encodeToAudioBuffer, float32ToInt16Pcm, interleaveChannels } from './AudioBufferConversion.js'
+import { clip, writeToStderr } from '../utilities/Utilities.js'
+import { float32ToInt16Pcm, interleaveChannels } from './AudioBufferConversion.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { Timeline, addWordTextOffsetsToTimelineInPlace } from '../utilities/Timeline.js'
-import { readAndParseJsonFile, readFileAsUtf8, remove, writeFile } from '../utilities/FileSystem.js'
-import { tryResolvingSoxPath } from './SoxPath.js'
 import { SignalChannel } from '../utilities/SignalChannel.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
-import { appName } from '../api/Common.js'
-import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
 import { type AudioOutput } from '@echogarden/audio-io'
-
-export async function playAudioFileWithTimelineFile(audioFilename: string, timelineFileName: string, transcriptFileName?: string, player?: AudioPlayerID) {
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioFilename, 48000, 1)
-
-	const timeline = await readAndParseJsonFile(timelineFileName)
-
-	let transcript: string | undefined
-	if (transcriptFileName) {
-		transcript = await readFileAsUtf8(transcriptFileName)
-	}
-
-	await playAudioWithWordTimeline(rawAudio, timeline, transcript, player)
-}
 
 export async function playAudioWithWordTimeline(rawAudio: RawAudio, wordTimeline: Timeline, transcript?: string, player?: AudioPlayerID) {
 	if (!transcript) {
@@ -163,8 +142,6 @@ export function playAudioSamples(rawAudio: RawAudio, onTimePosition?: (timePosit
 
 	if (player === 'audio-io') {
 		return playAudioSamples_AudioIO(rawAudio, onTimePosition, signalChannel)
-	} else if (player === 'sox') {
-		return playAudioSamples_Sox(rawAudio, onTimePosition, signalChannel)
 	} else {
 		throw new Error(`Unsupported audio player ID: ${player}`)
 	}
@@ -252,211 +229,6 @@ export async function playAudioSamples_AudioIO(rawAudio: RawAudio, onTimePositio
 	return openPromise.promise
 }
 
-export function playAudioSamples_Sox(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, signalChannel?: SignalChannel, microFadeInOut = true) {
-	return new Promise<void>(async (resolve, reject) => {
-		if (microFadeInOut) {
-			rawAudio = fadeAudioInOut(rawAudio, 0.0025)
-		}
-
-		let playerProcessClosed = false
-
-		const channelCount = rawAudio.audioChannels.length
-		const audioDuration = getRawAudioDuration(rawAudio)
-
-		const playerSpawnedOpenPromise = new OpenPromise<null>()
-
-		const soxPath = await tryResolvingSoxPath()
-
-		if (!soxPath) {
-			throw new Error(`Couldn't find or install the SoX utility. Please install the SoX utility on your system path to enable audio playback.`)
-		}
-
-		let aborted = false
-
-		let streamToStdin = true
-
-		if (process.platform == 'darwin') {
-			streamToStdin = false
-		}
-
-		let tempFilePath: string | undefined
-		let audioBuffer: Uint8Array | undefined
-
-		async function cleanup() {
-			if (tempFilePath) {
-				await remove(tempFilePath)
-			}
-		}
-
-		let playerProcess: ChildProcessWithoutNullStreams
-
-		if (streamToStdin) {
-			audioBuffer = encodeToAudioBuffer(rawAudio.audioChannels)
-
-			playerProcess = spawn(
-				soxPath,
-				['-t', 'raw', '-r', `${rawAudio.sampleRate}`, '-e', 'signed', '-b', '16', '-c', channelCount.toString(), '-', '-d'],
-				{}
-			)
-		} else {
-			tempFilePath = joinPath(getAppTempDir(appName), `${getRandomHexString(16)}.wav`)
-			const waveFileBuffer = encodeRawAudioToWave(rawAudio)
-			await writeFile(tempFilePath, waveFileBuffer)
-
-			playerProcess = spawn(
-				soxPath,
-				[tempFilePath, '-d'],
-				{}
-			)
-		}
-
-		if (signalChannel) {
-			signalChannel.on('abort', () => {
-				aborted = true
-				playerProcess.kill('SIGKILL')
-			})
-		}
-
-		// Required to work around SoX bug:
-		playerProcess.stderr.on('data', (data) => {
-			//writeToStderr(data.toString('utf-8'))
-		})
-
-		playerProcess.stdout.on('data', (data) => {
-			//writeToStderr(data.toString('utf-8'))
-		})
-
-		playerProcess.once('spawn', () => {
-			if (audioBuffer != undefined) {
-				playerProcess.stdin!.write(audioBuffer)
-				playerProcess.stdin!.end()
-				playerProcess.stdin!.on('error', () => { })
-			}
-
-			playerSpawnedOpenPromise.resolve(null)
-		})
-
-		playerProcess.once('error', async (e) => {
-			await cleanup()
-			playerProcessClosed = true
-
-			reject(e)
-		})
-
-		playerProcess.once('close', async () => {
-			await cleanup()
-			playerProcessClosed = true
-
-			resolve()
-		})
-
-		await playerSpawnedOpenPromise.promise
-
-		const timer = new Timer()
-
-		while (!playerProcessClosed && !aborted) {
-			const elapsedTime = timer.elapsedTimeSeconds
-
-			if (onTimePosition) {
-				onTimePosition(elapsedTime)
-			}
-
-			if (playerProcessClosed || elapsedTime >= audioDuration) {
-				if (onTimePosition) {
-					onTimePosition(audioDuration)
-				}
-
-				return
-			}
-
-			await waitTimeout(20)
-		}
-	})
-}
-
-/*
-export function playAudioSamples_Speaker(rawAudio: RawAudio, onTimePosition?: (timePosition: number) => void, microFadeInOut = true) {
-	return new Promise<void>(async (resolve, reject) => {
-		if (microFadeInOut) {
-			rawAudio = fadeAudioInOut(rawAudio, 0.0025)
-		}
-
-		const channelCount = rawAudio.audioChannels.length
-		let audioData = encodeToAudioBuffer(rawAudio.audioChannels)
-
-		const { default: Speaker } = await import('speaker')
-
-		const speaker = new Speaker({
-			channels: rawAudio.audioChannels.length,
-			bitDepth: 16,
-			sampleRate: rawAudio.sampleRate,
-		})
-
-		speaker.on('error', (e: any) => {
-			reject(e)
-		})
-
-		const bytesPerSecond = rawAudio.sampleRate * 2 * channelCount
-
-		const byteCountToDuration = (byteCount: number) => {
-			return byteCount / bytesPerSecond
-		}
-
-		const audioDuration = byteCountToDuration(audioData.length)
-
-		let mpg123AudioBufferSize: number
-		let mpg123AudioBufferDuration: number
-
-		if (process.platform == 'win32') {
-			mpg123AudioBufferSize = 65536
-			mpg123AudioBufferDuration = byteCountToDuration(mpg123AudioBufferSize)
-		} else {
-			mpg123AudioBufferDuration = 0.5
-			mpg123AudioBufferSize = bytesPerSecond * mpg123AudioBufferDuration
-		}
-
-		audioData = concatUint8Arrays([audioData, new Uint8Array(mpg123AudioBufferSize)])
-
-		const maxChunkSize = mpg123AudioBufferSize
-
-		const writeAheadDuration = 0.5
-
-		const timer = new Timer()
-		let readOffset = 0
-		let targetTimePosition = 0
-
-		while (true) {
-			const elapsedTime = timer.elapsedTimeSeconds
-
-			if (onTimePosition) {
-				onTimePosition(elapsedTime)
-			}
-
-			if (readOffset < audioData.length) {
-				const targetWriteTime = targetTimePosition - writeAheadDuration
-
-				if (elapsedTime >= targetWriteTime) {
-					const chunk = audioData.subarray(readOffset, readOffset + maxChunkSize)
-
-					speaker.write(chunk)
-
-					readOffset += chunk.length
-					targetTimePosition += byteCountToDuration(chunk.length)
-				}
-			}
-
-			if (elapsedTime >= audioDuration) {
-				//speaker.close(false)
-				resolve()
-				return
-			}
-
-			await waitTimeout(20)
-		}
-	})
-}
-*/
-
 export const charactersToWriteAhead = [
 	',', '.', '，', '、', '：', '；',
 	'。', ':', ';', '?', '？', '!', '！',
@@ -464,4 +236,4 @@ export const charactersToWriteAhead = [
 	'-', '—', '»', '،', '؟'
 ]
 
-export type AudioPlayerID = 'audio-io' | 'sox'
+export type AudioPlayerID = 'audio-io'

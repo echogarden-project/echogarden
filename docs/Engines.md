@@ -16,7 +16,6 @@
 **Offline, Windows only**:
 
 * [SAPI](https://en.wikipedia.org/wiki/Microsoft_Speech_API) (`sapi`): Microsoft Speech API. Supports the system's language voices, as well as legacy voices produced by third-party vendors, like Ivona, NeoSpeech, Acapela, Cepstral, CereProc, Nuance, AT&T, Loquendo, ScanSoft and others (note that only 64-bit SAPI voices are supported, which makes it incompatible with a significant portion of older voices)
-
 * [Microsoft Speech Platform](https://www.microsoft.com/en-us/download/details.aspx?id=27225) (`msspeech`): Microsoft Server Speech API. Requires [installing a runtime (2.6MB)](https://www.microsoft.com/en-us/download/details.aspx?id=27225). Supports 28 dialects, which can be individually downloaded via [freely available installers](https://www.microsoft.com/en-us/download/details.aspx?id=27224), or, for convenience, bundled as [a single 358MB zip file](https://drive.google.com/u/0/uc?id=1uQdFNxLzUxpaEwVVKhMawys8cIh3F21T&export=download). Has voices for English (US, UK, AU, CA), Spanish (ES, MX), Portuguese (BR, PT), German, French (FR, CA), Italian, Norwegian, Dutch, Russian, Swedish, Danish, Catalan, Finnish, Japanese, Korean and Chinese (ZH, HK, TW). All voices are female
 
 **Note**: both these engines require manually installing the [`winax` npm package](https://www.npmjs.com/package/winax) by running `npm install winax -g`.
@@ -44,15 +43,13 @@ These cloud-based engines connect to public cloud APIs that are not officially p
 
 * Google Translate (`google-translate`): used by the [Google Translate web UI](https://translate.google.com/) to speak written text in any one of its supported languages. Offers a single voice for each language (usually female)
 * Microsoft Edge (`microsoft-edge`): subset of the Azure Cognitive Services cloud TTS API used by the Microsoft Edge browser as part of its support for the [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) and its [Read Aloud](https://www.microsoft.com/en-us/edge/features/read-aloud?form=MT00D8) feature. Using this engine requires a special token, which should be passed via the `microsoftEdge.trustedClientToken` option
-* Streamlabs Polly (`streamlabs-polly`): a public REST API by Streamlabs, primarily intended for generating speech for TTS donations. It includes a few English (US, UK, AU, IN) voices, which are similar to some of the non-neural (Ivona-based) voices offered by Amazon Polly (**Note**: as of April 2024, the public Streamlabs Polly REST API doesn't seem to be accessible anymore)
 
 ## Speech-to-text
 
 **Offline**:
-* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high-accuracy transformer-based speech recognition architecture. TypeScript implementation, with inference done via the [ONNX runtime](https://onnxruntime.ai/). Supports [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages). There are several models of different sizes, some are multilingual, and some are English only: `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large-v3-turbo`. **Note**: Unquantized large models are not currently supported by `onnxruntime-node` due to model size restrictions
-* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): a C++ port of the Whisper architecture by Georgi Gerganov. Supports all Whisper models, including several quantized ones (see full model list in the [options reference](docs/Options.md)). Has various builds, including CUDA and OpenCL for GPU support
-* [Vosk](https://github.com/alphacep/vosk-api) (`vosk`): models available for 25+ languages. **Note**: the Vosk package is not included in the default installation, but you can add support for it using `npm install @echogarden/vosk -g`. Then, you'll need to manually [download a model](https://alphacephei.com/vosk/models) and specify its directory path via the `vosk.modelPath` option
-* [Silero](https://github.com/snakers4/silero-models) (`silero`): models available for English, Spanish, German and Ukrainian. For [non-commercial use only](https://github.com/snakers4/silero-models/blob/master/LICENSE)
+
+* [OpenAI Whisper](https://github.com/openai/whisper) (`whisper`): high-accuracy transformer-based speech recognition architecture. TypeScript implementation. Since `v3.0.0`, it internally uses a minimal NAPI binding to a small set of `whisper.cpp` operations via its C API (before `v3.0.0` it used a much slower ONNX-based implementation)
+* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): uses the CLI (command line interface) of `whisper.cpp`, a C++ port of the Whisper architecture by Georgi Gerganov
 
 **Cloud services**:
 
@@ -75,10 +72,12 @@ These engines' goal is to match (or "align") a given spoken recording with a giv
 ## Speech-to-text translation
 
 **Offline**:
+
 * [Whisper](https://github.com/openai/whisper) (`whisper`): the Whisper model can recognize speech in any one of its supported languages and output a transcript directly translated to English. Other languages are not supported as targets
-* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): supports translation to English
+* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) (`whisper.cpp`): uses `whisper.cpp` CLI. Supports translation to English only
 
 **Cloud services**:
+
 * [OpenAI Cloud Platform](https://platform.openai.com/) (`openai-cloud`): runs the `large-v2` Whisper model on the cloud. Only supports English as target
 
 ## Text-to-text translation
@@ -121,10 +120,12 @@ Another use case it to take a timeline produced as part of synthesized or recogn
 ## Language detection
 
 **Spoken language detection**:
+
 * [Whisper](https://github.com/openai/whisper) (`whisper`): uses the language token produced by the `whisper` speech recognition model to generate a set of probabilities for the [98 languages](https://platform.openai.com/docs/guides/speech-to-text/supported-languages) it has been trained on
 * [Silero Language Classifier](https://github.com/snakers4/silero-vad/wiki/Other-Models) (`silero`): a speech language classification model by Silero
 
 **Text language detection**:
+
 * [TinyLD](https://www.npmjs.com/package/tinyld) (`tinyld`): a simple language detection library
 * [FastText](https://github.com/facebookresearch/fastText) (`fasttext`): a library for word representations and sentence classification by Facebook research
 

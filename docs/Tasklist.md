@@ -127,6 +127,7 @@
 * Add SAPI pronunciation to lexicons (you already have the pronunciations for `en_US` and `en_GB`)
 * Try to use entity recognition to detect years, dates, currencies etc., which would disambiguate cases where it is not clear, like "in 1993" in "She was born in 1993" and "It searched in 1993 websites"
 * Option to add POS tags to timeline, if available
+* `≈` symbol as a word character
 
 ### Synthesis / VITS
 * Consider adding `⦁︎` (when surrounded by whitespace) as phrase separator
@@ -144,6 +145,7 @@
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
 
 ### Recognition
+* Add token UTF-8 bytes in token entries on timeline. Some tokens are only a part of a codepoint, so this will allow to know exactly what they contain - the string representation is would be a Unicode error symbol in that case
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 
 ### Recognition / Whisper
@@ -244,7 +246,6 @@
 * Live input / microphone recognition
 * Implement beam search for Whisper decoder
 * Implement beam search for Silero decoder
-* Live Vosk alternatives events
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment

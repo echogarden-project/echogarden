@@ -1,24 +1,22 @@
 import type * as Onnx from 'onnxruntime-node'
 import { getEmptyRawAudio, RawAudio } from '../audio/AudioUtilities.js'
 import { getWindowWeights, createStftrGenerator, stiftr, WindowType } from '../dsp/FFT.js'
-import { logToStderr } from '../utilities/Utilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { OnnxExecutionProvider, dmlProviderAvailable, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 import chalk from 'chalk'
 import { WindowedList } from '../data-structures/WindowedList.js'
-import { logLevelGreaterOrEqualTo } from '../api/API.js'
-
-const log = logToStderr
+import { SourceSeparationCallbacks } from '../api/API.js'
 
 export async function isolate(
 	rawAudio: RawAudio,
 	modelFilePath: string,
 	modelProfile: MDXNetModelProfile,
-	options: MDXNetOptions) {
+	options: MDXNetOptions,
+	callbacks: SourceSeparationCallbacks) {
 
 	const model = new MDXNet(modelFilePath, modelProfile, options)
 
-	return model.processAudio(rawAudio)
+	return model.processAudio(rawAudio, callbacks)
 }
 
 export class MDXNet {
@@ -31,7 +29,7 @@ export class MDXNet {
 		public readonly options: MDXNetOptions) {
 	}
 
-	async processAudio(rawAudio: RawAudio) {
+	async processAudio(rawAudio: RawAudio, callbacks: SourceSeparationCallbacks) {
 		if (rawAudio.audioChannels.length !== 2) {
 			throw new Error(`Input audio must be stereo`)
 		}
@@ -44,9 +42,8 @@ export class MDXNet {
 			return getEmptyRawAudio(rawAudio.audioChannels.length, rawAudio.sampleRate)
 		}
 
-		const enableTraceLogging = logLevelGreaterOrEqualTo('trace')
-
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
+		const enableTraceLogging = logger.logLevelGreaterOrEqualTo('trace')
 
 		await logger.startAsync(`Initialize session for MDX-NET model '${this.options.model!}'`)
 
@@ -84,6 +81,8 @@ export class MDXNet {
 		const audioForSegments: Float32Array[][] = []
 
 		for (let segmentStartFrameOffset = 0; ; segmentStartFrameOffset += segmentHopSize) {
+			callbacks.abortSignal?.throwIfAborted()
+
 			const segmentEndFrameOffset = segmentStartFrameOffset + segmentSize
 
 			const timePosition = segmentStartFrameOffset * (fftHopSize / sampleRate)
@@ -224,6 +223,12 @@ export class MDXNet {
 			}
 
 			audioForSegments.push(outputAudioChannels)
+
+			if (callbacks.onSegment) {
+				const rawAudio: RawAudio = { audioChannels: outputAudioChannels, sampleRate }
+
+				await callbacks.onSegment(timePosition, rawAudio)
+			}
 
 			if (isLastSegment) {
 				break

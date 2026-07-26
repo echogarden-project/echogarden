@@ -1,22 +1,23 @@
-import { GaxiosResponse, request } from 'gaxios'
-import { SynthesisVoice } from '../api/API.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/API.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { EasierHttpRequestError, requestHttp } from 'easier-http-request'
 
 const log = logToStderr
 
-export async function synthesize(text: string, modelId: string, options: DeepgramTTSOptions) {
-	const logger = new Logger()
+export async function synthesize(text: string, modelId: string, options: DeepgramTTSOptions, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Request synthesis from Deepgram')
 
 	options = extendDeep(defaultDeepgramTTSOptions, options)
 
-	let response: GaxiosResponse<any>
+	let responseBody: ArrayBuffer
 
 	try {
-		response = await request<any>({
+		const response = await requestHttp({
 			url: `https://api.deepgram.com/v1/speak`,
 
 			params: {
@@ -32,21 +33,21 @@ export async function synthesize(text: string, modelId: string, options: Deepgra
 				'Authorization': `Token ${options.apiKey}`,
 			},
 
-			data: {
+			body: {
 				text,
 			},
 
-			responseType: 'arraybuffer'
+			abortSignal: callbacks?.abortSignal,
 		})
+
+		responseBody = await response.arrayBuffer()
 	} catch (e: any) {
-		const response = e.response
+		if (e instanceof EasierHttpRequestError) {
+			logger.log(`Request failed with status code ${e.statusCode}: ${e.statusText}.`)
 
-		if (response) {
-			logger.log(`Request failed with status code ${response.status}`)
-
-			if (response.data) {
+			if (e.errorBody) {
 				logger.log(`Server responded with:`)
-				logger.log(response.data)
+				logger.log(e.errorBody)
 			}
 		}
 
@@ -54,7 +55,12 @@ export async function synthesize(text: string, modelId: string, options: Deepgra
 	}
 
 	logger.start('Decode synthesized audio')
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(new Uint8Array(response.data))
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(
+		new Uint8Array(responseBody),
+		undefined,
+		undefined,
+		{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+	)
 
 	logger.end()
 

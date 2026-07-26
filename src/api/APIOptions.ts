@@ -20,7 +20,7 @@ export interface APIOptions {
 	SpeechLanguageDetectionOptions: API.SpeechLanguageDetectionOptions
 	TextLanguageDetectionOptions: API.TextLanguageDetectionOptions
 
-	VADOptions: API.VADOptions
+	VoiceActivityDetectionOptions: API.VoiceActivityDetectionOptions
 
 	DenoisingOptions: API.DenoisingOptions
 

@@ -1,3 +1,5 @@
+import { LogLevel } from '../utilities/Logger.js'
+
 export const appName = 'echogarden'
 
 export interface EngineMetadata {
@@ -14,3 +16,12 @@ export interface PlainTextOptions {
 
 export type ParagraphBreakType = 'single' | 'double'
 export type WhitespaceProcessing = 'preserve' | 'removeLineBreaks' | 'collapse'
+
+export interface OperationOptions {
+}
+
+export interface OperationCallbacks {
+	abortSignal?: AbortSignal
+	logLevel?: LogLevel
+}
+

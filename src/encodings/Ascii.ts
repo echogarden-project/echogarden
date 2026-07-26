@@ -1,4 +1,4 @@
-import { EncodeIntoResult } from "./TextEncodingsCommon.js"
+import { EncodeIntoResult } from './TextEncodingsCommon.js'
 
 export function encodeAscii(asciiString: string) {
 	const charCount = asciiString.length

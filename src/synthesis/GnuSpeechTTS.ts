@@ -1,9 +1,9 @@
 import { defaultGnuSpeechOptions, GnuSpeechOptions, synthesize as gnuSpeechSynthesize } from '@echogarden/gnuspeech-wasm'
-import { SynthesisVoice } from '../api/Synthesis.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/Synthesis.js'
 import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-export async function synthesize(text: string, options: GnuSpeechOptions) {
+export async function synthesize(text: string, options: GnuSpeechOptions, callbacks: SynthesisCallbacks) {
 	const gnuSpeechOptions = extendDeep(defaultGnuSpeechOptions, options)
 
 	const { audioData, params } = await gnuSpeechSynthesize(text, gnuSpeechOptions)

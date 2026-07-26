@@ -1,11 +1,11 @@
-import { request } from "gaxios"
-import { Logger } from "../utilities/Logger.js"
-import { parseText } from "../nlp/Segmentation.js"
-import { TranslationPair } from "../api/TextTranslation.js"
-import { getChromeOnWindowsHeaders } from "../utilities/BrowserRequestHeaders.js"
+import { Logger } from '../utilities/Logger.js'
+import { parseText } from '../nlp/Segmentation.js'
+import { TextTranslationCallbacks, TranslationPair } from '../api/TextTranslation.js'
+import { getChromeOnWindowsHeaders } from '../utilities/BrowserRequestHeaders.js'
+import { requestHttp } from 'easier-http-request'
 
-export async function translateText(text: string, sourceLanguage: string, targetLanguage: string): Promise<TranslationPair[]> {
-	const logger = new Logger()
+export async function translateText(text: string, sourceLanguage: string, targetLanguage: string, callbacks: TextTranslationCallbacks): Promise<TranslationPair[]> {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start(`Prepare request`)
 
@@ -58,7 +58,7 @@ export async function translateText(text: string, sourceLanguage: string, target
 		id: 756456347,
 	}
 
-	const response = await request<any>({
+	const response = await requestHttp({
 		method: 'POST',
 
 		url: `https://www2.deepl.com/jsonrpc`,
@@ -76,10 +76,12 @@ export async function translateText(text: string, sourceLanguage: string, target
 			'Content-Type': 'application/json',
 		},
 
-		body: JSON.stringify(requestBodyObject),
+		body: requestBodyObject,
 
-		responseType: 'json'
+		abortSignal: callbacks?.abortSignal
 	})
+
+	const responseObject = await response.json()
 
 	logger.start('Parse response')
 

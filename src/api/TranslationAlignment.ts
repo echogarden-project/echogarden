@@ -1,52 +1,56 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
 import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeIdentifierToLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
-import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
-const log = logToStderr
+export async function alignTranslation(input: AudioSourceParam, translatedTranscript: string, options: TranslationAlignmentOptions, callbacks?: TranslationAlignmentCallbacks): Promise<TranslationAlignmentResult> {
+	options = extendDeep(defaultTranslationAlignmentOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function alignTranslation(input: AudioSourceParam, translatedTranscript: string, options: TranslationAlignmentOptions): Promise<TranslationAlignmentResult> {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
-	options = extendDeep(defaultTranslationAlignmentOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	let sourceRawAudio: RawAudio
 	let isolatedRawAudio: RawAudio | undefined
 	let backgroundRawAudio: RawAudio | undefined
 
 	if (options.isolate) {
-		logger.log(``)
-		logger.end();
+		logger.logTitledMessage(`Isolate vocals`, '');
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(
+			inputRawAudio,
+			options.sourceSeparation!,
+			{ ...callbacks, logLevel: logger.logLevel }))
 
 		logger.end()
-		logger.log(``)
 
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1, callbacks)
 	} else {
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 	}
 
 	let sourceUncropTimeline: Timeline | undefined
 
 	if (options.crop) {
 		logger.start('Crop using voice activity detection');
-		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(
+			sourceRawAudio,
+			options.vad!,
+			{ ...callbacks, logLevel: 'warning' }))
 
 		logger.end()
 	}
@@ -69,7 +73,10 @@ export async function alignTranslation(input: AudioSourceParam, translatedTransc
 		logger.logTitledMessage('Source language specified', formatLanguageCodeWithName(sourceLanguage))
 	} else {
 		logger.start('No source language specified. Detect speech language')
-		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection || {})
+		const { detectedLanguage } = await API.detectSpeechLanguage(
+			sourceRawAudio,
+			options.languageDetection!,
+			{ ...callbacks, logLevel: 'warning' })
 
 		sourceLanguage = detectedLanguage
 
@@ -86,6 +93,7 @@ export async function alignTranslation(input: AudioSourceParam, translatedTransc
 	switch (options.engine) {
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
 			const shortSourceLanguageCode = getShortLanguageCode(sourceLanguage)
 			const shortTargetLanguageCode = getShortLanguageCode(targetLanguage)
@@ -98,17 +106,35 @@ export async function alignTranslation(input: AudioSourceParam, translatedTransc
 				throw new Error('Both translation source and target languages are English')
 			}
 
-			const whisperAlignmnentOptions = options.whisper!
+			const whisperAlignmnentOptions: WhisperAlignmentOptions = extendDeep(WhisperSTT.defaultWhisperAlignmentOptions, options.whisper!)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperAlignmnentOptions.model, shortSourceLanguageCode)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperAlignmnentOptions.model,
+				shortSourceLanguageCode,
+				callbacks,
+			)
+
+			const { libPath } = await WhisperSTT.loadLibraryPackages(
+				whisperAlignmnentOptions.enableGPU,
+				callbacks,
+			)
 
 			logger.end()
 
-			if (modelName.endsWith('.en')) {
+			if (modelId.endsWith('.en')) {
 				throw new Error('Whisper translation tasks are only possible with a multilingual model')
 			}
 
-			mappedTimeline = await WhisperSTT.alignEnglishTranslation(sourceRawAudio, translatedTranscript, modelName, modelDir, shortSourceLanguageCode, whisperAlignmnentOptions)
+			mappedTimeline = await WhisperSTT.alignEnglishTranslation(
+				sourceRawAudio,
+				translatedTranscript,
+				modelId,
+				modelPath,
+				libPath,
+				shortSourceLanguageCode,
+				whisperAlignmnentOptions,
+				callbacks
+			)
 
 			break
 		}
@@ -130,7 +156,7 @@ export async function alignTranslation(input: AudioSourceParam, translatedTransc
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, translatedTranscript, sourceLanguage, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
 	logger.end()
-	logger.logDuration(`Total translation alignment time`, startTimestamp, chalk.magentaBright)
+	logger.logDuration(`Total translation alignment time`, startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		timeline: segmentTimeline,
@@ -161,7 +187,7 @@ export interface TranslationAlignmentResult {
 
 export type TranslationAlignmentEngine = 'whisper'
 
-export interface TranslationAlignmentOptions {
+export interface TranslationAlignmentOptions extends API.OperationOptions {
 	engine?: TranslationAlignmentEngine
 
 	sourceLanguage?: string
@@ -173,7 +199,7 @@ export interface TranslationAlignmentOptions {
 
 	languageDetection?: API.SpeechLanguageDetectionOptions
 
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 
 	plainText?: API.PlainTextOptions
 
@@ -214,6 +240,9 @@ export const defaultTranslationAlignmentOptions: TranslationAlignmentOptions = {
 
 	whisper: {
 	}
+}
+
+export interface TranslationAlignmentCallbacks extends API.OperationCallbacks {
 }
 
 export const translationAlignmentEngines: API.EngineMetadata[] = [

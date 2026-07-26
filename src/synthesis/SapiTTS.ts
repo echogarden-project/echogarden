@@ -1,4 +1,4 @@
-import { SynthesisVoice } from '../api/API.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/API.js'
 import { decodeToChannels, SampleFormat } from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { getShortLanguageCode, lcidToIsoLanguageCode } from '../utilities/Locale.js'
@@ -8,9 +8,9 @@ import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
-export function synthesize(text: string, voiceName: string, rate = 0, useSpeechPlatform = false) {
+export function synthesize(text: string, voiceName: string, rate = 0, useSpeechPlatform = false, callbacks: SynthesisCallbacks) {
 	return new Promise<{ rawAudio: RawAudio, timeline: Timeline }>(async (resolve, reject) => {
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
 		logger.start('Initialize winax module')
 
 		const { default: WinAX } = await import('winax')

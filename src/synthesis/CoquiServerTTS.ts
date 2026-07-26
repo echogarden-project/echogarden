@@ -1,14 +1,14 @@
-import { request } from 'gaxios'
+import { SynthesisCallbacks } from '../api/API.js'
 import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
+import { requestHttp } from 'easier-http-request'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
-const log = logToStderr
 
-export async function synthesize(text: string, speakerId: string | null, serverURL = 'http://[::1]:5002') {
-	const logger = new Logger()
+export async function synthesize(text: string, speakerId: string | null, serverURL = 'http://[::1]:5002', callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Request synthesis from Coqui Server')
 
-	const response = await request<Uint8Array>({
+	const response = await requestHttp({
 		url: `${serverURL}/api/tts`,
 
 		params: {
@@ -16,10 +16,11 @@ export async function synthesize(text: string, speakerId: string | null, serverU
 			'speaker_id': speakerId
 		},
 
-		responseType: 'arraybuffer'
+		abortSignal: callbacks?.abortSignal
 	})
 
-	const waveData = new Uint8Array(response.data)
+	const responseBody = await response.arrayBuffer()
+	const waveData = new Uint8Array(responseBody)
 
 	const { rawAudio } = decodeWaveToRawAudio(waveData)
 

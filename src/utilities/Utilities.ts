@@ -8,7 +8,8 @@ import { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { inspect } from 'node:util'
 import { TypedArray, TypedArrayConstructor } from '../typings/TypedArray.js'
 import { encodeHex } from '../encodings/Hex.js'
-import { Timer } from './Timer.js'
+import { OperationCallbacks } from '../api/Common.js'
+import { parseJSON5, stringifyJSON5 } from 'quick-json5'
 
 const log = logToStderr
 
@@ -125,20 +126,8 @@ export function roundToDigits(val: number, digits = 3) {
 }
 
 export function sleep(timeMs: number) {
-	const timer = new Timer()
-
 	return new Promise<void>((resolve) => {
-		const tickCallback = () => {
-			if (timer.elapsedTime < timeMs) {
-				//setImmediate(tickCallback)
-				setTimeout(tickCallback, 0)
-			} else {
-				resolve()
-			}
-		}
-
-		//setImmediate(tickCallback)
-		setTimeout(tickCallback, 0)
+		setTimeout(resolve, timeMs)
 	})
 }
 
@@ -156,25 +145,19 @@ export function printMatrix(matrix: Float32Array[]) {
 	}
 }
 
-export async function parseJson(jsonText: string, useJson5 = false) {
+export function parseJson(jsonText: string, useJson5 = false) {
 	if (useJson5) {
-		const json5Module = await import('json5')
-		const JSON5 = json5Module.default ?? json5Module
-
-		return JSON5.parse(jsonText)
+		return parseJSON5(jsonText)
 	} else {
 		return JSON.parse(jsonText)
 	}
 }
 
-export async function stringifyAndFormatJson(obj: any, useJson5 = false) {
+export function stringifyAndFormatJson(obj: any, useJson5 = false) {
 	let textContent: string
 
 	if (useJson5) {
-		const json5Module = await import('json5')
-		const JSON5 = json5Module.default ?? json5Module
-
-		textContent = JSON5.stringify(obj, undefined, 4)
+		textContent = stringifyJSON5(obj, undefined, 4)
 	} else {
 		textContent = JSON.stringify(obj, undefined, 4)
 	}
@@ -182,11 +165,11 @@ export async function stringifyAndFormatJson(obj: any, useJson5 = false) {
 	return textContent
 }
 
-export async function parseJSONAndGetType(str: string, useJson5 = false) {
+export function parseJSONAndGetType(str: string, useJson5 = false) {
 	let parsedValue: any = undefined
 
 	try {
-		parsedValue = await parseJson(str, useJson5)
+		parsedValue = parseJson(str, useJson5)
 	} catch (e) {
 	}
 
@@ -211,7 +194,6 @@ export async function parseJSONAndGetType(str: string, useJson5 = false) {
 		jsonType
 	}
 }
-
 
 export function secondsToHMS(totalSeconds: number) {
 	let remainingSeconds = totalSeconds
@@ -430,12 +412,13 @@ export async function resolveModuleScriptPath(moduleName: string) {
 
 export async function runOperationWithRetries<R>(
 	operationFunc: () => Promise<R>,
-	logger: Logger,
 	operationName = 'Operation',
+	callbacks: OperationCallbacks,
 	delayBetweenRetries = 2000,
-	maxRetries = 200) {
+	maxRetries = 200,
+	errorFilter?: (e: any) => boolean) {
 
-	const { default: chalk } = await import('chalk')
+	const logger = new Logger(callbacks.logLevel)
 
 	for (let retryIndex = 1; retryIndex <= maxRetries; retryIndex++) {
 		try {
@@ -443,25 +426,19 @@ export async function runOperationWithRetries<R>(
 
 			return result
 		} catch (e: any) {
-			const { shouldCancelCurrentTask } = await import('../server/Worker.js')
-
-			if (shouldCancelCurrentTask()) {
-				throw new Error('Canceled')
+			if (errorFilter && errorFilter(e) === false) {
+				throw e
 			}
 
-			logger.setAsActiveLogger()
-
-			logger.logTitledMessage(`Error`, e.message, chalk.redBright, 'error')
+			logger.logTitledMessage(`Error`, e.message, 'error')
 			logger.log('', 'error')
-			logger.logTitledMessage(`${operationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, chalk.redBright, 'error')
+			logger.logTitledMessage(`${operationName} failed`, `Trying again in ${delayBetweenRetries}ms..`, 'error')
 
 			await sleep(delayBetweenRetries)
 
 			logger.log(``, 'warning')
-			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, chalk.yellowBright, 'warning')
+			logger.logTitledMessage(`Starting retry attempt`, `${retryIndex} / ${maxRetries}`, 'warning')
 			logger.log(``, 'warning')
-
-			logger.unsetAsActiveLogger()
 		}
 	}
 
@@ -589,4 +566,44 @@ export function getTopKIndexes(values: ArrayLike<number>, topCount: number, sort
 	}
 
 	return topKIndexes
+}
+
+export function isValidHttpUrl(urlString: string): boolean {
+	if (typeof urlString !== 'string' || urlString.trim() === '') {
+		return false
+	}
+
+	try {
+		const url = new URL(urlString)
+
+		const allowedProtocols = ['http:', 'https:']
+
+		if (!allowedProtocols.includes(url.protocol)) {
+			return false;
+		}
+
+		if (!url.hostname) {
+			return false
+		}
+
+		return true
+	} catch (error) {
+		return false
+	}
+}
+
+export function throwIfAborted(abortSignal?: AbortSignal, cleanupFunction?: Function) {
+	if (!abortSignal) {
+		return
+	}
+
+	try {
+		abortSignal.throwIfAborted()
+	} catch (error) {
+		if (cleanupFunction) {
+			cleanupFunction()
+		}
+
+		throw error
+	}
 }

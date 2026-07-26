@@ -1,97 +1,114 @@
-import chalk from 'chalk'
+import chalk, { ChalkInstance } from 'chalk'
 import { Timer } from './Timer.js'
 import { logToStderr, writeToStderr, yieldToEventLoop } from './Utilities.js'
-import { LogLevel, logLevelGreaterOrEqualTo, logLevelSmallerThan } from '../api/GlobalOptions.js'
-
-let currentActiveLogger: Logger | null = null
 
 export class Logger {
 	private timer = new Timer()
-	active = false
+	private started = false
+
+	constructor(
+		public readonly logLevel: LogLevel = 'warning',
+		public readonly timingMinimumLogLevel: LogLevel = 'info') {
+	}
 
 	start(title: string, titleColor = chalk.cyanBright) {
 		this.startAsync(title, false, titleColor)
 	}
 
 	async startAsync(title: string, yieldBeforeStart = true, titleColor = chalk.cyanBright) {
-		if (currentActiveLogger != null && currentActiveLogger != this) {
-			return
-		}
-
 		this.end()
 
 		if (yieldBeforeStart) {
 			await yieldToEventLoop()
 		}
 
-		if (logLevelGreaterOrEqualTo('info')) {
+		if (this.logLevelGreaterOrEqualTo(this.timingMinimumLogLevel)) {
 			writeToStderr(`${titleColor(title)}.. `)
 		}
 
-		this.setAsActiveLogger()
-
+		this.started = true
 		this.timer.restart()
 	}
 
-	setAsActiveLogger() {
-		this.active = true
-		currentActiveLogger = this
-	}
-
-	unsetAsActiveLogger() {
-		this.active = false
-		currentActiveLogger = null
-	}
-
 	end() {
-		if (this.active && currentActiveLogger == this) {
-			const elapsedTime = this.timer.elapsedTime
-
-			if (logLevelGreaterOrEqualTo('info')) {
-				writeToStderr(`${elapsedTime.toFixed(1)}ms\n`)
-			}
-
-			currentActiveLogger = null
+		if (!this.started) {
+			return
 		}
 
-		this.active = false
+		this.started = false
+
+		if (this.logLevelGreaterOrEqualTo(this.timingMinimumLogLevel)) {
+			const elapsedTime = this.timer.elapsedTime
+
+			writeToStderr(`${elapsedTime.toFixed(1)}ms\n`)
+		}
 	}
 
-	logDuration(message: any, startTime: number, titleColor = chalk.cyanBright, logLevel: LogLevel = 'info') {
+	logDuration(message: any, startTime: number, logLevel: LogLevel = 'info', titleColor?: ChalkInstance) {
 		const duration = Timer.currentTime - startTime
 
-		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`, logLevel)
+		titleColor = titleColor ?? Logger.getDefaultTitleColorForLogLevel(logLevel)
+
+		this.log(`${titleColor(message)}: ${duration.toFixed(1)}ms`)
 	}
 
-	logTitledMessage(title: string, content: any, titleColor = chalk.cyanBright, logLevel: LogLevel = 'info') {
+	logTitledMessage(title: string, content: any, logLevel: LogLevel = 'info', titleColor?: ChalkInstance) {
+		titleColor = titleColor ?? Logger.getDefaultTitleColorForLogLevel(logLevel)
+
 		this.log(`${titleColor(title)}: ${content}`, logLevel)
 	}
 
 	log(message: any, logLevel: LogLevel = 'info') {
-		if (logLevelSmallerThan(logLevel)) {
+		if (this.logLevelSmallerThan(logLevel)) {
 			return
 		}
 
-		if (currentActiveLogger == this || currentActiveLogger == null) {
-			logToStderr(message)
-		}
+		logToStderr(message)
 	}
 
 	write(message: any, logLevel: LogLevel = 'info') {
-		if (logLevelSmallerThan(logLevel)) {
+		if (this.logLevelSmallerThan(logLevel)) {
 			return
 		}
 
-		if (currentActiveLogger == this || currentActiveLogger == null) {
-			writeToStderr(message)
-		}
+		writeToStderr(message)
 	}
 
 	getTimestamp() {
 		return Timer.currentTime
 	}
+
+	logLevelGreaterOrEqualTo(comparedLogLevel: LogLevel) {
+		return logLevelGreaterOrEqualTo(this.logLevel, comparedLogLevel)
+	}
+
+	logLevelSmallerThan(comparedLogLevel: LogLevel) {
+		return logLevelSmallerThan(this.logLevel, comparedLogLevel)
+	}
+
+	static getDefaultTitleColorForLogLevel(logLevel: LogLevel): ChalkInstance {
+		if (logLevel === 'error') {
+			return chalk.redBright
+		} else if (logLevel === 'warning') {
+			return chalk.yellow
+		} else {
+			return chalk.cyanBright
+		}
+	}
 }
 
-export function resetActiveLogger() {
-	currentActiveLogger = null
+export function logLevelGreaterOrEqualTo(logLevel: LogLevel, comparedLogLevel: LogLevel) {
+	return !logLevelSmallerThan(logLevel, comparedLogLevel)
 }
+
+export function logLevelSmallerThan(logLevel: LogLevel, comparedLogLevel: LogLevel) {
+	return logLevelToNumber(logLevel) < logLevelToNumber(comparedLogLevel)
+}
+
+export function logLevelToNumber(logLevel: LogLevel) {
+	return logLevels.indexOf(logLevel)
+}
+
+export const logLevels = ['silent', 'output', 'error', 'warning', 'info', 'trace'] as const
+
+export type LogLevel = typeof logLevels[number]

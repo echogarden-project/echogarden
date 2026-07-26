@@ -38,8 +38,8 @@
         "TextLanguageDetectionOptions": {
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
-        "VADOptions": {
-          "$ref": "#/definitions/VADOptions"
+        "VoiceActivityDetectionOptions": {
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "DenoisingOptions": {
           "$ref": "#/definitions/DenoisingOptions"
@@ -69,7 +69,7 @@
         "TextTranslationOptions",
         "SpeechLanguageDetectionOptions",
         "TextLanguageDetectionOptions",
-        "VADOptions",
+        "VoiceActivityDetectionOptions",
         "DenoisingOptions",
         "SourceSeparationOptions",
         "ServerOptions",
@@ -398,10 +398,6 @@
             }
           },
           "additionalProperties": false
-        },
-        "streamlabsPolly": {
-          "type": "object",
-          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -426,8 +422,7 @@
         "elevenlabs",
         "deepgram",
         "google-translate",
-        "microsoft-edge",
-        "streamlabs-polly"
+        "microsoft-edge"
       ]
     },
     "VoiceGender": {
@@ -490,7 +485,7 @@
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "plainText": {
           "$ref": "#/definitions/PlainTextOptions"
@@ -556,7 +551,6 @@
       "enum": [
         "dtw",
         "dtw-ra",
-        "dtw-ea",
         "whisper"
       ]
     },
@@ -582,11 +576,11 @@
         "fasttext"
       ]
     },
-    "VADOptions": {
+    "VoiceActivityDetectionOptions": {
       "type": "object",
       "properties": {
         "engine": {
-          "$ref": "#/definitions/VADEngine"
+          "$ref": "#/definitions/VoiceActivityDetectionEngine"
         },
         "activityThreshold": {
           "type": "number"
@@ -635,16 +629,13 @@
           "type": "object",
           "additionalProperties": false
         },
-        "whisper": {
-          "$ref": "#/definitions/WhisperVADOptions"
-        },
         "adaptiveGate": {
           "$ref": "#/definitions/AdaptiveGateVADOptions"
         }
       },
       "additionalProperties": false
     },
-    "VADEngine": {
+    "VoiceActivityDetectionEngine": {
       "type": "string",
       "enum": [
         "webrtc",
@@ -662,41 +653,6 @@
         "cuda",
         "coreml",
         "webgpu"
-      ]
-    },
-    "WhisperVADOptions": {
-      "type": "object",
-      "properties": {
-        "model": {
-          "$ref": "#/definitions/WhisperModelName"
-        },
-        "temperature": {
-          "type": "number"
-        },
-        "encoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        },
-        "decoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        }
-      },
-      "additionalProperties": false
-    },
-    "WhisperModelName": {
-      "type": "string",
-      "enum": [
-        "tiny",
-        "tiny.en",
-        "base",
-        "base.en",
-        "small",
-        "small.en",
-        "medium",
-        "medium.en",
-        "large-v1",
-        "large-v2",
-        "large-v3",
-        "large-v3-turbo"
       ]
     },
     "AdaptiveGateVADOptions": {
@@ -843,7 +799,7 @@
           "$ref": "#/definitions/SubtitlesConfig"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "sourceSeparation": {
           "$ref": "#/definitions/SourceSeparationOptions"
@@ -852,19 +808,7 @@
           "$ref": "#/definitions/WhisperOptions"
         },
         "whisperCpp": {
-          "$ref": "#/definitions/WhisperCppOptions"
-        },
-        "vosk": {
-          "type": "object",
-          "properties": {
-            "modelPath": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
-        },
-        "silero": {
-          "$ref": "#/definitions/SileroRecognitionOptions"
+          "$ref": "#/definitions/WhisperCppCliOptions"
         },
         "googleCloud": {
           "type": "object",
@@ -931,8 +875,6 @@
       "enum": [
         "whisper",
         "whisper.cpp",
-        "vosk",
-        "silero",
         "google-cloud",
         "microsoft-azure",
         "amazon-transcribe",
@@ -962,10 +904,10 @@
           "$ref": "#/definitions/WhisperLanguageDetectionOptions"
         },
         "whisperCpp": {
-          "$ref": "#/definitions/WhisperCppOptions"
+          "$ref": "#/definitions/WhisperCppCliOptions"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         }
       },
       "additionalProperties": false
@@ -991,34 +933,76 @@
       "type": "object",
       "properties": {
         "model": {
-          "$ref": "#/definitions/WhisperModelName"
-        },
-        "temperature": {
-          "type": "number"
-        },
-        "encoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        },
-        "decoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        }
-      },
-      "additionalProperties": false
-    },
-    "WhisperCppOptions": {
-      "type": "object",
-      "properties": {
-        "build": {
-          "$ref": "#/definitions/WhisperCppBuild"
-        },
-        "executablePath": {
-          "type": "string"
+          "$ref": "#/definitions/WhisperQuantizedModelId"
         },
         "enableGPU": {
           "type": "boolean"
         },
+        "threadCount": {
+          "type": "number"
+        },
+        "gpuDeviceIndex": {
+          "type": "number"
+        },
+        "temperature": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WhisperQuantizedModelId": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "tiny-q5_1",
+        "tiny-q8_0",
+        "tiny.en",
+        "tiny.en-q5_1",
+        "tiny.en-q8_0",
+        "base",
+        "base-q5_1",
+        "base-q8_0",
+        "base.en",
+        "base.en-q5_1",
+        "base.en-q8_0",
+        "small",
+        "small-q5_1",
+        "small-q8_0",
+        "small.en",
+        "small.en-q5_1",
+        "small.en-q8_0",
+        "medium",
+        "medium-q5_0",
+        "medium-q8_0",
+        "medium.en",
+        "medium.en-q5_0",
+        "medium.en-q8_0",
+        "large",
+        "large-v1",
+        "large-v2",
+        "large-v2-q5_0",
+        "large-v2-q8_0",
+        "large-v3",
+        "large-v3-q5_0",
+        "large-v3-turbo",
+        "large-v3-turbo-q5_0",
+        "large-v3-turbo-q8_0"
+      ]
+    },
+    "WhisperCppCliOptions": {
+      "type": "object",
+      "properties": {
+        "build": {
+          "$ref": "#/definitions/WhisperCppCliBuild"
+        },
+        "executablePath": {
+          "type": "string"
+        },
         "model": {
-          "$ref": "#/definitions/WhisperCppModelId"
+          "$ref": "#/definitions/WhisperQuantizedModelId"
+        },
+        "enableGPU": {
+          "type": "boolean"
         },
         "threadCount": {
           "type": "number"
@@ -1056,42 +1040,12 @@
       },
       "additionalProperties": false
     },
-    "WhisperCppBuild": {
+    "WhisperCppCliBuild": {
       "type": "string",
       "enum": [
         "cpu",
         "cublas-12.4.0",
         "custom"
-      ]
-    },
-    "WhisperCppModelId": {
-      "type": "string",
-      "enum": [
-        "tiny",
-        "tiny-q5_1",
-        "tiny.en",
-        "tiny.en-q5_1",
-        "tiny.en-q8_0",
-        "base",
-        "base-q5_1",
-        "base.en",
-        "base.en-q5_1",
-        "small",
-        "small-q5_1",
-        "small.en",
-        "small.en-q5_1",
-        "medium",
-        "medium-q5_0",
-        "medium.en",
-        "medium.en-q5_0",
-        "large",
-        "large-v1",
-        "large-v2",
-        "large-v2-q5_0",
-        "large-v3",
-        "large-v3-q5_0",
-        "large-v3-turbo",
-        "large-v3-turbo-q5_0"
       ]
     },
     "SourceSeparationOptions": {
@@ -1138,7 +1092,16 @@
       "type": "object",
       "properties": {
         "model": {
-          "$ref": "#/definitions/WhisperModelName"
+          "$ref": "#/definitions/WhisperQuantizedModelId"
+        },
+        "enableGPU": {
+          "type": "boolean"
+        },
+        "threadCount": {
+          "type": "number"
+        },
+        "gpuDeviceIndex": {
+          "type": "number"
         },
         "temperature": {
           "type": "number"
@@ -1176,12 +1139,6 @@
         "timestampAccuracy": {
           "$ref": "#/definitions/WhisperTimestampAccuracy"
         },
-        "encoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        },
-        "decoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        },
         "seed": {
           "type": "number"
         }
@@ -1194,18 +1151,6 @@
         "medium",
         "high"
       ]
-    },
-    "SileroRecognitionOptions": {
-      "type": "object",
-      "properties": {
-        "modelPath": {
-          "type": "string"
-        },
-        "provider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        }
-      },
-      "additionalProperties": false
     },
     "OpenAICloudSTTOptions": {
       "type": "object",
@@ -1259,7 +1204,16 @@
       "type": "object",
       "properties": {
         "model": {
-          "$ref": "#/definitions/WhisperModelName"
+          "$ref": "#/definitions/WhisperQuantizedModelId"
+        },
+        "enableGPU": {
+          "type": "boolean"
+        },
+        "threadCount": {
+          "type": "number"
+        },
+        "gpuDeviceIndex": {
+          "type": "number"
         },
         "endTokenThreshold": {
           "type": "number"
@@ -1269,12 +1223,6 @@
         },
         "timestampAccuracy": {
           "$ref": "#/definitions/WhisperTimestampAccuracy"
-        },
-        "encoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
-        },
-        "decoderProvider": {
-          "$ref": "#/definitions/OnnxExecutionProvider"
         }
       },
       "additionalProperties": false
@@ -1755,10 +1703,6 @@
           },
           "additionalProperties": false
         },
-        "streamlabsPolly": {
-          "type": "object",
-          "additionalProperties": false
-        },
         "cache": {
           "type": "object",
           "properties": {
@@ -1796,7 +1740,7 @@
           "$ref": "#/definitions/SpeechLanguageDetectionOptions"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "plainText": {
           "$ref": "#/definitions/PlainTextOptions"
@@ -1845,7 +1789,7 @@
           "$ref": "#/definitions/TextLanguageDetectionOptions"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "plainText": {
           "$ref": "#/definitions/PlainTextOptions"
@@ -2030,7 +1974,7 @@
           "$ref": "#/definitions/SubtitlesConfig"
         },
         "vad": {
-          "$ref": "#/definitions/VADOptions"
+          "$ref": "#/definitions/VoiceActivityDetectionOptions"
         },
         "sourceSeparation": {
           "$ref": "#/definitions/SourceSeparationOptions"
@@ -2039,7 +1983,7 @@
           "$ref": "#/definitions/WhisperOptions"
         },
         "whisperCpp": {
-          "$ref": "#/definitions/WhisperCppOptions"
+          "$ref": "#/definitions/WhisperCppCliOptions"
         },
         "openAICloud": {
           "$ref": "#/definitions/OpenAICloudSTTOptions"
@@ -2207,9 +2151,6 @@
         "ffmpegPath": {
           "type": "string"
         },
-        "soxPath": {
-          "type": "string"
-        },
         "packageBaseURL": {
           "type": "string"
         },
@@ -2253,10 +2194,7 @@
     },
     "AudioPlayerID": {
       "type": "string",
-      "enum": [
-        "audio-io",
-        "sox"
-      ]
+      "const": "audio-io"
     }
   }
 }

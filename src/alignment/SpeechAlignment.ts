@@ -1,30 +1,29 @@
-import { clip, splitFloat32Array } from '../utilities/Utilities.js'
+import chalk from 'chalk'
 
 import * as API from '../api/API.js'
+
+import { clip } from '../utilities/Utilities.js'
 
 import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from '../dsp/MFCC.js'
 import { alignMFCC_DTW, getCostMatrixMemorySizeMB } from './DTWMfccSequenceAlignment.js'
 import { Logger } from '../utilities/Logger.js'
 import { addTimeOffsetToTimeline, Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { concatAudioSegments, downmixToMonoAndNormalize, getEmptyRawAudio, getEndingSilentSampleCount, getRawAudioDuration, getStartingSilentSampleCount, RawAudio } from '../audio/AudioUtilities.js'
-import chalk from 'chalk'
 import { synthesize } from '../api/API.js'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { deepClone } from '../utilities/ObjectUtilities.js'
-import { cosineDistance, euclideanDistance, zeroIfNaN } from '../math/VectorMath.js'
+import { zeroIfNaN } from '../math/VectorMath.js'
 import { EspeakEvent, EspeakOptions } from '../synthesis/EspeakTTS.js'
-import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
-import { loadPackage } from '../utilities/PackageManager.js'
-import { joinPath } from '../utilities/PathUtilities.js'
 
 export async function alignUsingDtw(
 	sourceRawAudio: RawAudio,
 	referenceRawAudio: RawAudio,
 	referenceTimeline: Timeline,
 	granularities: DtwGranularity[],
-	windowDurations: number[]) {
+	windowDurations: number[],
+	callbacks: API.AlignmentCallbacks) {
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	if (windowDurations.length == 0) {
 		throw new Error(`Window durations array has length 0.`)
@@ -44,7 +43,7 @@ export async function alignUsingDtw(
 		const granularity = granularities[passIndex]
 		const windowDuration = windowDurations[passIndex]
 
-		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `granularity: ${granularity}, max window duration: ${windowDuration}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%)`, chalk.magentaBright)
+		logger.logTitledMessage(`\nStarting alignment pass ${passIndex + 1}/${windowDurations.length}`, `granularity: ${granularity}, max window duration: ${windowDuration}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%)`, 'info', chalk.magentaBright)
 
 		const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity), zeroFirstCoefficient: true }) as MfccOptions
 
@@ -52,11 +51,20 @@ export async function alignUsingDtw(
 
 		// Compute reference MFCCs
 		logger.start('Compute reference MFCC features')
-		const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions)
+		const referenceMfccs = await computeMFCCs(
+			referenceRawAudio,
+			mfccOptions,
+			{ ...callbacks, logLevel: 'warning' }
+		)
 
 		// Compute source MFCCs
 		logger.start('Compute source MFCC features')
-		const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
+		const sourceMfccs = await computeMFCCs(
+			sourceRawAudio,
+			mfccOptions,
+			{ ...callbacks, logLevel: 'warning' }
+		)
+		
 		logger.end()
 
 		// Compute path
@@ -66,7 +74,7 @@ export async function alignUsingDtw(
 			const minRecommendedWindowDuration = 0.2 * rawAudioDuration
 
 			if (windowDuration < minRecommendedWindowDuration) {
-				logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%), which is less than 20% of the source audio duration (audio duration is ${rawAudioDuration.toFixed(1)}s and a 20% window would be ${(rawAudioDuration * 0.2).toFixed(1)}s). This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, chalk.yellowBright, 'warning')
+				logger.logTitledMessage('Warning', `Maximum DTW window duration is set to ${windowDuration.toFixed(1)}s (${(windowDuration / rawAudioDuration * 100).toFixed(1)}%), which is less than 20% of the source audio duration (audio duration is ${rawAudioDuration.toFixed(1)}s and a 20% window would be ${(rawAudioDuration * 0.2).toFixed(1)}s). This may lead to suboptimal results in some cases. Consider increasing window duration if needed.`, 'warning', chalk.yellowBright)
 			}
 		}
 
@@ -115,9 +123,10 @@ export async function alignUsingDtwWithRecognition(
 	granularities: DtwGranularity[],
 	windowDurations: number[],
 	espeakOptions: EspeakOptions,
-	phoneAlignmentMethod: API.PhoneAlignmentMethod = 'interpolation') {
+	phoneAlignmentMethod: API.PhoneAlignmentMethod = 'interpolation',
+	callbacks: API.AlignmentCallbacks) {
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	if (recognitionTimeline.length == 0) {
 		const sourceDuration = getRawAudioDuration(sourceRawAudio)
@@ -145,7 +154,11 @@ export async function alignUsingDtwWithRecognition(
 	const {
 		rawAudio: synthesizedRecognizedTranscriptRawAudio,
 		timeline: synthesizedRecognitionTimeline
-	} = await createAlignmentReferenceUsingEspeakForFragments(recognizedWords, espeakOptions)
+	} = await createAlignmentReferenceUsingEspeakForFragments(
+		recognizedWords,
+		espeakOptions,
+		{ ...callbacks, logLevel: 'warning' }
+	)
 
 	let recognitionTimelineWithPhones: Timeline
 
@@ -167,7 +180,8 @@ export async function alignUsingDtwWithRecognition(
 			recognitionTimeline,
 			synthesizedRecognizedTranscriptRawAudio,
 			synthesizedRecognitionTimeline,
-			60)
+			60,
+			callbacks)
 	} else {
 		throw new Error(`Unknown phone alignment method: ${phoneAlignmentMethod}`)
 	}
@@ -224,7 +238,8 @@ export async function alignUsingDtwWithRecognition(
 		referenceRawAudio,
 		referenceTimeline,
 		granularities,
-		windowDurations)
+		windowDurations,
+		{ ...callbacks, logLevel: 'warning' })
 
 	let currentSynthesizedToRecognizedMappingIndex = 0
 
@@ -276,117 +291,6 @@ export async function alignUsingDtwWithRecognition(
 	logger.end()
 
 	return result
-}
-
-// This is experimental code. It doesn't work well enough to be usable for anything.
-// Just testing some alternative approaches.
-export async function alignUsingDtwWithEmbeddings(
-	sourceRawAudio: RawAudio,
-	referenceRawAudio: RawAudio,
-	referenceTimeline: Timeline,
-	language: string,
-	granularities: DtwGranularity[],
-	windowDurations: number[]) {
-
-	const logger = new Logger()
-
-	if (sourceRawAudio.sampleRate != 16000) {
-		throw new Error('Source audio must have a sample rate of 16000 Hz')
-	}
-
-	if (referenceRawAudio.sampleRate != 16000) {
-		throw new Error('Reference audio must have a sample rate of 16000 Hz')
-	}
-
-	const embeddingType: 'w2v-bert-2.0' | 'whisper' = 'w2v-bert-2.0'
-
-	let sourceEmbeddings: Float32Array[]
-	let referenceEmbeddings: Float32Array[]
-	let framesPerSecond: number
-
-	if (embeddingType === 'w2v-bert-2.0') {
-		const packageName = 'w2v-bert-2.0-uint8'
-		const modelDir = await loadPackage(packageName)
-		const modelFilePath = joinPath(modelDir, `${packageName}.onnx`)
-
-		const { Wav2Vec2BertFeatureEmbeddings } = await import('../speech-embeddings/WavToVec2BertFeatureEmbeddings.js')
-
-		const wav2vecBert = new Wav2Vec2BertFeatureEmbeddings(
-			modelFilePath,
-			['cpu'],
-		)
-
-		logger.start(`Extract source audio embeddings using the W2V-BERT-2.0 model`)
-		sourceEmbeddings = await wav2vecBert.computeEmbeddings(sourceRawAudio)
-
-		logger.start(`Extract reference audio embeddings using the W2V-BERT-2.0 model`)
-		referenceEmbeddings = await wav2vecBert.computeEmbeddings(referenceRawAudio)
-
-		framesPerSecond = 1000 / 10 / 2
-	} else if (embeddingType === 'whisper') {
-		const sourceSamples = sourceRawAudio.audioChannels[0]
-		const referenceSamples = referenceRawAudio.audioChannels[0]
-
-		const WhisperSTT = await import(`../recognition/WhisperSTT.js`)
-
-		const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths('base.en', language)
-
-		const whisper = new WhisperSTT.Whisper(modelName, modelDir, ['dml', 'cpu'], ['cpu'])
-
-		async function encodeToAudioFeatures(samples: Float32Array) {
-			const featureVectors: Float32Array[] = []
-
-			for (let i = 0; i < samples.length; i += 16000 * 30) {
-				const startSampleIndex = i
-				const endSampleIndex = Math.min(samples.length, i + 16000 * 30)
-				const partSampleCount = endSampleIndex - startSampleIndex
-
-				const audioPart = samples.subarray(startSampleIndex, endSampleIndex)
-				const rawAudioForPart = { audioChannels: [audioPart], sampleRate: 16000 } as RawAudio
-
-				const resultTensor = await whisper.encodeAudio(rawAudioForPart)
-
-				const vectorLength = resultTensor.dims[2]
-
-				let featureVectorsForPart = splitFloat32Array(resultTensor.data as Float32Array, vectorLength)
-
-				featureVectorsForPart = featureVectorsForPart.slice(0, Math.floor((partSampleCount / (16000 * 30)) * 1500))
-
-				featureVectors.push(...featureVectorsForPart)
-			}
-
-			return featureVectors
-		}
-
-		logger.start(`Extract source audio embeddings using the Whisper encoder model`)
-		sourceEmbeddings = await encodeToAudioFeatures(sourceSamples)
-
-		logger.start(`Extract reference audio embeddings using the Whisper encoder model`)
-		referenceEmbeddings = await encodeToAudioFeatures(referenceSamples)
-
-		framesPerSecond = 1500 / 30
-	} else {
-		throw new Error(`Unknown embedding type: ${embeddingType}`)
-	}
-
-	logger.start(`Align source and reference audio embeddings using DTW`)
-
-	const { path: alignmentPath } = alignDTWWindowed(
-		referenceEmbeddings,
-		sourceEmbeddings,
-		cosineDistance,
-		1000 * 1000
-	)
-
-	const compactedPath = compactPath(alignmentPath)
-
-	logger.start('\nConvert path to timeline')
-
-	const mappedTimeline = referenceTimeline.map(entry => getMappedTimelineEntry(entry, sourceRawAudio, framesPerSecond, compactedPath))
-
-	logger.end()
-
-	return mappedTimeline
 }
 
 function getMappedTimelineEntry(
@@ -496,14 +400,15 @@ export async function alignPhoneTimelines(
 	sourceWordTimeline: Timeline,
 	referenceRawAudio: RawAudio,
 	referenceTimeline: Timeline,
-	windowDuration: number) {
+	windowDuration: number,
+	callbacks: API.AlignmentCallbacks) {
 
 	const mfccOptions: MfccOptions = extendDefaultMfccOptions({ zeroFirstCoefficient: true })
 
 	const framesPerSecond = 1 / mfccOptions.hopDuration!
 
-	const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions)
-	const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
+	const referenceMfccs = await computeMFCCs(referenceRawAudio, mfccOptions, { ...callbacks, logLevel: 'warning' })
+	const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions, { ...callbacks, logLevel: 'warning' })
 
 	const alignedWordTimeline: Timeline = []
 
@@ -572,13 +477,8 @@ export async function alignPhoneTimelines(
 	return alignedWordTimeline
 }
 
-export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions) {
-	const progressLogger = new Logger()
-
-	progressLogger.start("Load espeak module")
+export async function createAlignmentReferenceUsingEspeakForFragments(fragments: string[], espeakOptions: EspeakOptions, callbacks: API.SynthesisCallbacks) {
 	const Espeak = await import("../synthesis/EspeakTTS.js")
-
-	progressLogger.start("Synthesize alignment reference using eSpeak")
 
 	const result = {
 		rawAudio: getEmptyRawAudio(1, await Espeak.getSampleRate()) as RawAudio,
@@ -606,7 +506,7 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 			if (currentChunkCharacterCount >= maxCharactersInChunk || fragmentIndex === fragments.length - 1) {
 				// Process current chunk
 
-				const chunkResult = await Espeak.synthesizeFragments(currentChunk, espeakOptions)
+				const chunkResult = await Espeak.synthesizeFragments(currentChunk, espeakOptions, callbacks)
 
 				result.rawAudio = {
 					sampleRate: result.rawAudio.sampleRate,
@@ -633,22 +533,19 @@ export async function createAlignmentReferenceUsingEspeakForFragments(fragments:
 		wordEntry.timeline = wordEntry.timeline!.flatMap(tokenEntry => tokenEntry.timeline!)
 	}
 
-	progressLogger.end()
-
 	return result
 }
 
 export async function createAlignmentReferenceUsingEspeak(
 	transcript: string,
 	language: string,
-	plaintextOptions?: API.PlainTextOptions,
-	customLexiconPaths?: string[],
-	insertSeparators?: boolean,
-	useKlatt?: boolean) {
+	plaintextOptions: API.PlainTextOptions,
+	customLexiconPaths: string[],
+	insertSeparators: boolean,
+	useKlatt: boolean,
+	callbacks: API.OperationCallbacks) {
 
-	const logger = new Logger()
-
-	logger.start('Synthesize alignment reference using eSpeak')
+	const logger = new Logger(callbacks.logLevel)
 
 	const synthesisOptions: API.SynthesisOptions = {
 		engine: 'espeak',
@@ -660,14 +557,14 @@ export async function createAlignmentReferenceUsingEspeak(
 		espeak: {
 			useKlatt,
 			insertSeparators,
-		}
+		},
 	}
 
 	let {
 		audio: referenceRawAudio,
 		timeline: segmentTimeline,
-		voice: espeakVoice
-	} = await synthesize(transcript, synthesisOptions)
+		voice: espeakVoice,
+	} = await synthesize(transcript, synthesisOptions, callbacks)
 
 	const sentenceTimeline = segmentTimeline.flatMap(entry => entry.timeline!)
 	const wordTimeline = sentenceTimeline.flatMap(entry => entry.timeline!)

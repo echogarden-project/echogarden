@@ -5,9 +5,11 @@ import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { cosineDistance } from '../math/VectorMath.js'
 import { includesPunctuation, isWord, parseText } from '../nlp/Segmentation.js'
 import { Timeline, extractEntries } from '../utilities/Timeline.js'
+import { TimelineTranslationAlignmentCallbacks } from '../api/TimelineTranslationAlignment.js'
+import { OperationCallbacks } from '../api/Common.js'
 
-export async function alignTimelineToTextSemantically(timeline: Timeline, text: string, textLangCode: string) {
-	const logger = new Logger()
+export async function alignTimelineToTextSemantically(timeline: Timeline, text: string, textLangCode: string, callbacks: TimelineTranslationAlignmentCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start(`Prepare text for semantic alignment`)
 
@@ -40,7 +42,12 @@ export async function alignTimelineToTextSemantically(timeline: Timeline, text: 
 
 	logger.end()
 
-	const wordMappingEntries = await alignWordsToWordsSemantically(timelineWordGroups, textWordGroups)
+	const wordMappingEntries = await alignWordsToWordsSemantically(
+		timelineWordGroups,
+		textWordGroups,
+		undefined,
+		callbacks
+	)
 
 	logger.start(`Build timeline for translation`)
 
@@ -117,11 +124,11 @@ export async function alignTimelineToTextSemantically(timeline: Timeline, text: 
 	return resultTimeline
 }
 
-export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wordsGroups2: string[][], windowTokenCount = 20000) {
-	const logger = new Logger()
+export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wordsGroups2: string[][], windowTokenCount = 20000, callbacks: OperationCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	// Load embedding model
-	const modelPath = await loadPackage(`xenova-multilingual-e5-small-fp16`)
+	const modelPath = await loadPackage(`xenova-multilingual-e5-small-fp16`, callbacks)
 
 	const embeddingModel = new E5TextEmbedding(modelPath)
 
@@ -129,7 +136,7 @@ export async function alignWordsToWordsSemantically(wordsGroups1: string[][], wo
 	await embeddingModel.initializeIfNeeded()
 
 	async function extractEmbeddingsFromWordGroups(wordGroups: string[][]) {
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel, 'trace')
 
 		const maxTokensPerFragment = 512
 		const { Tensor } = await import('@echogarden/transformers-nodejs-lite')

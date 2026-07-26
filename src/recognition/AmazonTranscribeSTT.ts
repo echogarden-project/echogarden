@@ -4,11 +4,12 @@ import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
 
-export async function recgonize(rawAudio: RawAudio, languageCode: string, region: string, accessKeyId: string, secretAccessKey: string) {
-	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 })
+export async function recgonize(rawAudio: RawAudio, languageCode: string, region: string, accessKeyId: string, secretAccessKey: string, callbacks: RecognitionCallbacks) {
+	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 }, callbacks)
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	if (!(languageCode in LanguageCode)) {
 		let matchingLanguageCode: string | undefined = undefined

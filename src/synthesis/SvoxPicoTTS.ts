@@ -1,4 +1,4 @@
-import { SynthesisVoice } from '../api/API.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/API.js'
 import { decodeToChannels, SampleFormat } from '../audio/AudioBufferConversion.js'
 import { bandwidthToQFactor } from '../dsp/BiquadFilter.js'
 import { Logger } from '../utilities/Logger.js'
@@ -6,18 +6,17 @@ import { RawAudio } from '../audio/AudioUtilities.js'
 import { readFileAsBinary } from '../utilities/FileSystem.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
 
-import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
-
 let svoxPicoInstance: any
 
-export async function synthesize(text: string, textAnalysisFilePath: string, signalGenerationFilePath: string, postprocessOutput = true) {
-	const logger = new Logger()
+export async function synthesize(text: string, textAnalysisFilePath: string, signalGenerationFilePath: string, postprocessOutput = true, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Get pico WASM instance')
 
 	const m = await getInstance()
 
 	logger.start('Initialize pico engine')
 
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const pico_initialize = m._pico_initialize

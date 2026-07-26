@@ -1,8 +1,12 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 
-import { clip, sha256AsHex, stringifyAndFormatJson, logToStderr, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
+import { clip, sha256AsHex, stringifyAndFormatJson, yieldToEventLoop, runOperationWithRetries } from '../utilities/Utilities.js'
 import { RawAudio, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, trimAudioEnd, trimAudioStart, attenuateIfClippingInPlace, normalizeAudioLevelInPlace } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -10,14 +14,11 @@ import { isWordOrSymbolWord, parseText, splitToParagraphs } from '../nlp/Segment
 import { type RubberbandOptions } from '../dsp/Rubberband.js'
 import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 
-import * as API from './API.js'
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from '../utilities/Timeline.js'
 import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
-import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, parseLangIdentifier, normalizeIdentifierToLanguageCode } from '../utilities/Locale.js'
+import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, normalizeIdentifierToLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata, appName } from './Common.js'
-import { shouldCancelCurrentTask } from '../server/Worker.js'
-import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { type OpenAICloudTTSOptions } from '../synthesis/OpenAICloudTTS.js'
@@ -29,12 +30,10 @@ import { convertHtmlToText } from '../utilities/StringUtilities.js'
 import { joinPath, resolvePath } from '../utilities/PathUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 
-const log = logToStderr
-
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Synthesis
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function synthesize(input: string | string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
+export async function synthesize(input: string | string[], options: SynthesisOptions, callbacks?: SynthesisCallbacks): Promise<SynthesisResult> {
 	options = extendDeep(defaultSynthesisOptions, options)
 
 	let segments: string[]
@@ -49,12 +48,14 @@ export async function synthesize(input: string | string[], options: SynthesisOpt
 		segments = splitToParagraphs(input, plainTextOptions.paragraphBreaks!, plainTextOptions.whitespace!)
 	}
 
-	return synthesizeSegments(segments, options, onSegment, onSentence)
+	return synthesizeSegments(segments, options, callbacks)
 }
 
-async function synthesizeSegments(segments: string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
-	const logger = new Logger()
+async function synthesizeSegments(segments: string[], options: SynthesisOptions, callbacks?: SynthesisCallbacks): Promise<SynthesisResult> {
 	options = extendDeep(defaultSynthesisOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const totalSynthesisTimeTimer = new Timer()
 
@@ -71,7 +72,10 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 			}
 		}
 
-		const { detectedLanguage } = await API.detectTextLanguage(segmentsPlainText.join('\n\n'), options.languageDetection || {})
+		const { detectedLanguage } = await API.detectTextLanguage(
+			segmentsPlainText.join('\n\n'),
+			options.languageDetection!,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' })
 
 		options.language = detectedLanguage
 
@@ -91,7 +95,10 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 	logger.start(`Get voice list for ${options.engine}`)
 
-	const { bestMatchingVoice } = await requestVoiceList(options)
+	const { bestMatchingVoice } = await requestVoiceList(
+		options,
+		{ ...callbacks, logLevel: 'warning' }
+	)
 
 	if (!bestMatchingVoice) {
 		throw new Error('No matching voice found')
@@ -116,6 +123,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 	let timeOffset = 0
 
 	for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
+		callbacks?.abortSignal?.throwIfAborted()
+
 		const segmentText = segments[segmentIndex]
 
 		logger.log(`\n${chalk.magentaBright(`Synthesizing segment ${segmentIndex + 1}/${segments.length}`)}: '${segmentText.trim()}'`)
@@ -147,23 +156,24 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 		const sentencesTimelines: Timeline[] = []
 
 		for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
-			await yieldToEventLoop()
+			callbacks?.abortSignal?.throwIfAborted()
 
-			if (shouldCancelCurrentTask()) {
-				//log('\n\n\n\n\nCANCELED\n\n\n\n')
-				throw new Error('Canceled')
-			}
+			await yieldToEventLoop()
 
 			const sentenceText = sentences[sentenceIndex]
 
-			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: "${sentenceText.trim()}"`)
+			logger.log(`\n${chalk.magentaBright(`Synthesizing sentence ${sentenceIndex + 1}/${sentences.length}`)}: '${sentenceText.trim()}'`)
 
 			const sentenceStartTime = timeOffset
 
 			let sentenceSynthesisOptions: SynthesisOptions = { postProcessing: { normalizeAudio: false } }
 			sentenceSynthesisOptions = extendDeep(options, sentenceSynthesisOptions)
 
-			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(sentenceText, sentenceSynthesisOptions)
+			const { synthesizedAudio: sentenceRawAudio, timeline: sentenceTimeline } = await synthesizeSegment(
+				sentenceText,
+				sentenceSynthesisOptions,
+				callbacks
+			)
 
 			const endPause = sentenceIndex == sentences.length - 1 ? options.segmentEndPause! : options.sentenceEndPause!
 			sentenceRawAudio.audioChannels[0] = trimAudioEnd(sentenceRawAudio.audioChannels[0], endPause * sentenceRawAudio.sampleRate)
@@ -194,8 +204,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 			const sentenceAudio = await convertToTargetCodecIfNeeded(sentenceRawAudio)
 
-			if (onSentence) {
-				await onSentence({
+			if (callbacks?.onSentence) {
+				await callbacks.onSentence({
 					index: sentenceIndex,
 					total: sentences.length,
 					audio: sentenceAudio,
@@ -232,8 +242,8 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 		logger.end()
 
-		if (onSegment) {
-			await onSegment({
+		if (callbacks?.onSegment) {
+			await callbacks.onSegment({
 				index: segmentIndex,
 				total: segments.length,
 				audio: segmentAudio,
@@ -273,7 +283,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 				output = encodeRawAudioToWave(rawAudio)
 			} else {
 				const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech(targetCodec, options.outputAudioFormat?.bitrate)
-				output = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions)
+				output = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions, callbacks!)
 			}
 		} else {
 			output = rawAudio
@@ -286,7 +296,7 @@ async function synthesizeSegments(segments: string[], options: SynthesisOptions,
 
 	logger.end()
 
-	logger.logTitledMessage('Total synthesis time', `${totalSynthesisTimeTimer.elapsedTime.toFixed(1)}ms`, chalk.magentaBright)
+	logger.logTitledMessage('Total synthesis time', `${totalSynthesisTimeTimer.elapsedTime.toFixed(1)}ms`, 'info', chalk.magentaBright)
 
 	return {
 		audio: resultAudio,
@@ -303,8 +313,10 @@ export interface SynthesisResult {
 	voice: string
 }
 
-async function synthesizeSegment(text: string, options: SynthesisOptions) {
-	const logger = new Logger()
+async function synthesizeSegment(text: string, options: SynthesisOptions, callbacks?: SynthesisCallbacks) {
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
@@ -316,7 +328,9 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	logger.start(`Get voice list for ${engine}`)
 
-	const { bestMatchingVoice } = await requestVoiceList(options)
+	const { bestMatchingVoice } = await requestVoiceList(
+		options,
+		{ ...callbacks, logLevel: 'warning' })
 
 	if (!bestMatchingVoice) {
 		throw new Error('No matching voice found')
@@ -329,7 +343,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 	if (selectedVoice.packageName) {
 		logger.end()
 
-		voicePackagePath = await loadPackage(selectedVoice.packageName)
+		voicePackagePath = await loadPackage(selectedVoice.packageName, callbacks)
 	}
 
 	logger.start(`Initialize ${engine} module`)
@@ -403,7 +417,9 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				lengthScale,
 				speakerId ?? 0,
 				lexicons,
-				onnxExecutionProviders)
+				onnxExecutionProviders,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -429,8 +445,8 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			const modelName = kokoroOptions.model!
 			const modelPackageName = `kokoro-${modelName}`
 
-			const modelPath = await loadPackage(modelPackageName)
-			const voicesPath = await loadPackage('kokoro-82m-v1.0-voices')
+			const modelPath = await loadPackage(modelPackageName, callbacks)
+			const voicesPath = await loadPackage('kokoro-82m-v1.0-voices', callbacks)
 
 			logger.end()
 
@@ -443,7 +459,8 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 				lexicons,
 				modelPath,
 				voicesPath,
-				onnxExecutionProviders
+				onnxExecutionProviders,
+				callbacks,
 			)
 
 			synthesizedAudio = rawAudio
@@ -476,7 +493,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			const resourceFilePath = resolvePath(voicePackagePath!, textAnalysisFilename)
 			const signalGenerationFilePath = resolvePath(voicePackagePath!, signalGenerationFilename)
 
-			const { rawAudio } = await SvoxPicoTTS.synthesize(preparedText, resourceFilePath, signalGenerationFilePath)
+			const { rawAudio } = await SvoxPicoTTS.synthesize(
+				preparedText,
+				resourceFilePath,
+				signalGenerationFilePath,
+				undefined,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -492,7 +515,15 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, events } = await FliteTTS.synthesize(simplifiedText, voice, voicePackagePath, speed)
+			const { rawAudio, events } = await FliteTTS.synthesize(
+				simplifiedText,
+				voice,
+				voicePackagePath,
+				speed,
+				undefined,
+				undefined,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -508,8 +539,15 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const engineOptions = options.gnuspeech!
 
+			let defaultGnuSpeechOptions
+
+			try {
+				({ defaultGnuSpeechOptions } = await import('@echogarden/gnuspeech-wasm'))
+			} catch {
+				throw new Error(`Couldn't load the '@echogarden/gnuspeech-wasm' module. Since Echogarden v3.0.0 it is an optional dependency, due to its GPL-3 license. To enable it, you'll need to install it manually via 'npm install [-g] @echogarden/gnuspeech-wasm'.`)
+			}
+
 			const GnuSpeech = await import('../synthesis/GnuSpeechTTS.js')
-			const { defaultGnuSpeechOptions } = await import('@echogarden/gnuspeech-wasm')
 
 			const gnuSpeechOptions = extendDeep(defaultGnuSpeechOptions, engineOptions)
 
@@ -519,7 +557,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			await logger.startAsync(`Synthesize with Gnuspeech`)
 
-			const { rawAudio } = await GnuSpeech.synthesize(simplifiedText, gnuSpeechOptions)
+			const { rawAudio } = await GnuSpeech.synthesize(simplifiedText, gnuSpeechOptions, callbacks)
 
 			synthesizedAudio = rawAudio
 
@@ -556,7 +594,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			if (inputIsSSML) {
 				logger.end()
 
-				const { rawAudio } = await EspeakTTS.synthesize(text, espeakOptions)
+				const { rawAudio } = await EspeakTTS.synthesize(text, espeakOptions, callbacks)
 
 				synthesizedAudio = rawAudio
 			} else {
@@ -564,7 +602,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 				logger.end()
 
-				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(text, espeakLanguage, espeakOptions, lexicons)
+				const { referenceSynthesizedAudio, referenceTimeline } = await EspeakTTS.preprocessAndSynthesize(
+					text,
+					espeakLanguage,
+					espeakOptions,
+					lexicons,
+					callbacks,
+				)
 
 				synthesizedAudio = referenceSynthesizedAudio
 				timeline = referenceTimeline.flatMap(clause => clause.timeline!)
@@ -589,7 +633,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await SamTTS.synthesize(simplifiedText, samPitch, samSpeed, samMouth, samThroat)
+			const { rawAudio } = await SamTTS.synthesize(simplifiedText, samPitch, samSpeed, samMouth, samThroat, callbacks)
 
 			synthesizedAudio = rawAudio
 
@@ -611,7 +655,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await SapiTTS.synthesize(text, voice, sapiRate, false)
+			const { rawAudio, timeline: outTimeline } = await SapiTTS.synthesize(
+				text,
+				voice,
+				sapiRate,
+				false,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -637,7 +687,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await SapiTTS.synthesize(text, voice, sapiRate, true)
+			const { rawAudio, timeline: outTimeline } = await SapiTTS.synthesize(
+				text,
+				voice,
+				sapiRate,
+				true,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -666,7 +722,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await CoquiServerTTS.synthesize(simplifiedText, speakerId, serverUrl)
+			const { rawAudio } = await CoquiServerTTS.synthesize(
+				simplifiedText,
+				speakerId,
+				serverUrl,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -701,7 +762,19 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timepoints } = await GoogleCloudTTS.synthesize(text, apiKey, language, voice, speed, pitchDeltaSemitones, 0, inputIsSSML)
+			const { rawAudio, timepoints } = await GoogleCloudTTS.synthesize(
+				text,
+				apiKey,
+				language,
+				voice,
+				speed,
+				pitchDeltaSemitones,
+				0,
+				inputIsSSML,
+				undefined,
+				undefined,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -741,7 +814,17 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await AzureCognitiveServicesTTS.synthesize(text, subscriptionKey, serviceRegion, language, voice, inputIsSSML, ssmlPitch, ssmlRate)
+			const { rawAudio, timeline: outTimeline } = await AzureCognitiveServicesTTS.synthesize(
+				text,
+				subscriptionKey,
+				serviceRegion,
+				language,
+				voice,
+				inputIsSSML,
+				ssmlPitch,
+				ssmlRate,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -777,7 +860,18 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await AwsPollyTTS.synthesize(text, undefined, voice, region, accessKeyId, secretAccessKey, pollyEngine, inputIsSSML, lexiconNames)
+			const { rawAudio } = await AwsPollyTTS.synthesize(
+				text,
+				undefined,
+				voice,
+				region,
+				accessKeyId,
+				secretAccessKey,
+				pollyEngine,
+				inputIsSSML,
+				lexiconNames,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -798,7 +892,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end();
 
-			synthesizedAudio = await OpenAICloudTTS.synthesize(text, voice, speed, openAICloudTTSOptions)
+			synthesizedAudio = await OpenAICloudTTS.synthesize(
+				text,
+				voice,
+				speed,
+				openAICloudTTSOptions,
+				callbacks,
+			)
 
 			shouldPostprocessSpeed = false
 			shouldPostprocessPitch = true
@@ -823,7 +923,13 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio, timeline: outTimeline } = await ElevenLabsTTS.synthesize(text, voiceId, language, engineOptions)
+			const { rawAudio, timeline: outTimeline } = await ElevenLabsTTS.synthesize(
+				text,
+				voiceId,
+				language,
+				engineOptions,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 			timeline = outTimeline
@@ -851,7 +957,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			logger.end()
 
-			const { rawAudio } = await DeepgramTTS.synthesize(text, modelId, engineOptions)
+			const { rawAudio } = await DeepgramTTS.synthesize(
+				text,
+				modelId,
+				engineOptions,
+				callbacks,
+			)
 
 			synthesizedAudio = rawAudio
 
@@ -872,15 +983,28 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const { rawAudio, timeline: segmentTimeline } =
 				await runOperationWithRetries(
-					() => GoogleTranslateTTS.synthesizeLongText(text, language, options.googleTranslate?.tld, options.sentenceEndPause, options.segmentEndPause),
-					logger)
+					() => GoogleTranslateTTS.synthesizeLongText(
+						text,
+						language,
+						options.googleTranslate?.tld,
+						options.sentenceEndPause,
+						options.segmentEndPause,
+						callbacks,
+					),
+					'Google Translate TTS',
+					callbacks)
 
 			synthesizedAudio = rawAudio
 
 			logger.start(`Generate word-level timestamps by individually aligning fragments`)
 			const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language })
 
-			timeline = await API.alignSegments(synthesizedAudio, segmentTimeline, alignmentOptions)
+			timeline = await API.alignSegments(
+				synthesizedAudio,
+				segmentTimeline,
+				alignmentOptions,
+				{ ...callbacks, logLevel: 'warning' }
+			)
 
 			shouldPostprocessSpeed = true
 			shouldPostprocessPitch = true
@@ -925,35 +1049,20 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			const { rawAudio, timeline: edgeTimeline } =
 				await runOperationWithRetries(
-					() => MicrosoftEdgeTTS.synthesize(text, trustedClientToken!, voice, ssmlPitch, ssmlRate),
-					logger)
+					() => MicrosoftEdgeTTS.synthesize(
+						text,
+						trustedClientToken!,
+						voice,
+						ssmlPitch,
+						ssmlRate,
+						undefined,
+						callbacks,
+					),
+					'Microsoft Edge TTS',
+					callbacks)
 
 			synthesizedAudio = rawAudio
 			timeline = edgeTimeline
-
-			break
-		}
-
-		case 'streamlabs-polly': {
-			if (inputIsSSML) {
-				throw new Error(`The Streamlabs Polly Engine engine doesn't support SSML inputs`)
-			}
-
-			const StreamlabsPollyTTS = await import('../synthesis/StreamlabsPollyTTS.js')
-
-			logger.end()
-
-			const { rawAudio, timeline: segmentTimeline } = await StreamlabsPollyTTS.synthesizeLongText(text, voice, language, options.sentenceEndPause, options.segmentEndPause)
-
-			synthesizedAudio = rawAudio
-
-			logger.start(`Generate word-level timestamps by individually aligning fragments`)
-			const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language })
-
-			timeline = await API.alignSegments(synthesizedAudio, segmentTimeline, alignmentOptions)
-
-			shouldPostprocessSpeed = true
-			shouldPostprocessPitch = true
 
 			break
 		}
@@ -1003,7 +1112,12 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 			alignmentOptions.dtw!.windowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
 		}
 
-		const { wordTimeline } = await API.align(synthesizedAudio, plainText, alignmentOptions)
+		const { wordTimeline } = await API.align(
+			synthesizedAudio,
+			plainText,
+			alignmentOptions,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' },
+		)
 
 		timeline = wordTimeline
 
@@ -1042,7 +1156,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 			synthesizedAudio = await rubberband.stretchTimePitch(synthesizedAudio, timeStretchFactor, pitchShiftFactor, rubberbandOptions)
 		} else {
-			throw new Error(`'${timePitchShiftingMethod}' is not a valid time and pitch shifting method`)
+			throw new Error(`'${timePitchShiftingMethod}' is not a valid time and pitch shifting method.`)
 		}
 
 		if (timeStretchFactor != 1.0 && timeline) {
@@ -1056,7 +1170,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions) {
 
 	logger.end()
 
-	logger.logDuration('Part synthesis time', startTimestamp, chalk.magentaBright)
+	logger.logDuration('Part synthesis time', startTimestamp, 'info', chalk.magentaBright)
 
 	return { synthesizedAudio, timeline }
 }
@@ -1099,11 +1213,11 @@ export type SynthesisEngine =
 	'espeak' | 'sam' | 'sapi' | 'msspeech' | 'coqui-server' |
 	'google-cloud' | 'microsoft-azure' | 'amazon-polly' |
 	'openai-cloud' | 'elevenlabs' | 'deepgram' |
-	'google-translate' | 'microsoft-edge' | 'streamlabs-polly'
+	'google-translate' | 'microsoft-edge'
 
 export type TimePitchShiftingMethod = 'sonic' | 'rubberband'
 
-export interface SynthesisOptions {
+export interface SynthesisOptions extends API.OperationOptions {
 	engine?: SynthesisEngine
 
 	language?: string
@@ -1237,9 +1351,6 @@ export interface SynthesisOptions {
 		trustedClientToken?: string
 		pitchDeltaHz?: number
 	}
-
-	streamlabsPolly?: {
-	},
 }
 
 export const defaultSynthesisOptions: SynthesisOptions = {
@@ -1384,18 +1495,16 @@ export const defaultSynthesisOptions: SynthesisOptions = {
 
 		pitchDeltaHz: undefined
 	},
-
-	streamlabsPolly: {
-	},
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Voice list request
 /////////////////////////////////////////////////////////////////////////////////////////////
-export async function requestVoiceList(options: VoiceListRequestOptions): Promise<RequestVoiceListResult> {
+export async function requestVoiceList(options: VoiceListRequestOptions, callbacks?: VoiceListRequestCallbacks): Promise<RequestVoiceListResult> {
 	options = extendDeep(defaultVoiceListRequestOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const cacheOptions = options.cache!
 
@@ -1416,7 +1525,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 			case 'espeak': {
 				const EspeakTTS = await import('../synthesis/EspeakTTS.js')
 
-				const voices = await EspeakTTS.listVoices()
+				const voices = await EspeakTTS.listVoices(callbacks!)
 
 				voiceList = voices.map(voice => {
 					const languages = voice.languages.map(lang => normalizeLanguageCode(lang.name))
@@ -1531,7 +1640,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					throw new Error(`No Google Cloud API key provided`)
 				}
 
-				const voices = await GoogleCloudTTS.getVoiceList(apiKey)
+				const voices = await GoogleCloudTTS.getVoiceList(apiKey, callbacks!)
 
 				voiceList = voices.map(voice => ({
 					name: voice.name,
@@ -1591,7 +1700,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					throw new Error(`No Amazon Polly secret access key provided`)
 				}
 
-				const voices = await AwsPollyTTS.getVoiceList(region, accessKeyId, secretAccessKey)
+				const voices = await AwsPollyTTS.getVoiceList(region, accessKeyId, secretAccessKey, callbacks!)
 
 				for (const voice of voices) {
 					const languageCode = normalizeLanguageCode(voice.LanguageCode!)
@@ -1635,7 +1744,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 					throw new Error(`No ElevenLabs API key provided`)
 				}
 
-				voiceList = await ElevenLabsTTS.getVoiceList(apiKey)
+				voiceList = await ElevenLabsTTS.getVoiceList(apiKey, callbacks!)
 
 				break
 			}
@@ -1675,8 +1784,9 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 				const voices =
 					await runOperationWithRetries(
-						() => MicrosoftEdgeTTS.getVoiceList(trustedClientToken),
-						logger)
+						() => MicrosoftEdgeTTS.getVoiceList(trustedClientToken, callbacks!),
+						'Mircosoft Edge TTS voice list request',
+						callbacks!)
 
 				voiceList = voices.map((voice: any) => ({
 					name: voice.Name,
@@ -1686,19 +1796,11 @@ export async function requestVoiceList(options: VoiceListRequestOptions): Promis
 
 				break
 			}
-
-			case 'streamlabs-polly': {
-				const StreamlabsPollyTTS = await import('../synthesis/StreamlabsPollyTTS.js')
-
-				voiceList = StreamlabsPollyTTS.voiceList
-
-				break
-			}
 		}
 
 
 		if (cacheFilePath) {
-			await writeFileSafe(cacheFilePath, await stringifyAndFormatJson(voiceList))
+			await writeFileSafe(cacheFilePath, stringifyAndFormatJson(voiceList))
 		}
 
 		return voiceList
@@ -1774,6 +1876,9 @@ export interface RequestVoiceListResult {
 	bestMatchingVoice: API.SynthesisVoice
 }
 
+export interface VoiceListRequestCallbacks extends API.OperationCallbacks {
+}
+
 export async function selectBestOfflineEngineForLanguage(language: string): Promise<SynthesisEngine> {
 	language = await normalizeIdentifierToLanguageCode(language)
 
@@ -1822,7 +1927,7 @@ export const defaultVoiceListRequestOptions: VoiceListRequestOptions = {
 	},
 }
 
-export interface SynthesisSegmentEventData {
+export interface SynthesisSegmentCallbackData {
 	index: number
 	total: number
 	audio: RawAudio | Uint8Array
@@ -1832,7 +1937,12 @@ export interface SynthesisSegmentEventData {
 	peakDecibelsSoFar: number
 }
 
-export type SynthesisSegmentEvent = (data: SynthesisSegmentEventData) => Promise<void>
+export type SynthesisSegmentCallback = (data: SynthesisSegmentCallbackData) => Promise<void>
+
+export interface SynthesisCallbacks extends API.OperationCallbacks {
+	onSegment?: SynthesisSegmentCallback
+	onSentence?: SynthesisSegmentCallback
+}
 
 export interface SynthesisVoice {
 	name: string
@@ -1903,7 +2013,7 @@ export const synthesisEngines: EngineMetadata[] = [
 	{
 		id: 'coqui-server',
 		name: 'Coqui TTS',
-		description: 'A deep learning toolkit for Text-to-Speech.',
+		description: 'A client for Coqui TTS server.',
 		type: 'server'
 	},
 	{
@@ -1952,12 +2062,6 @@ export const synthesisEngines: EngineMetadata[] = [
 		id: 'microsoft-edge',
 		name: 'Microsoft Edge',
 		description: 'Unoffical text-to-speech API used by the Microsoft Edge browser.',
-		type: 'cloud'
-	},
-	{
-		id: 'streamlabs-polly',
-		name: 'Streamlabs Polly',
-		description: 'Unoffical text-to-speech API provided by Streamlabs.',
 		type: 'cloud'
 	},
 ]

@@ -1,15 +1,16 @@
-import { request } from 'gaxios'
 import WebSocket from 'ws'
 
 import * as AzureCognitiveServicesTTS from './AzureCognitiveServicesTTS.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
-import { concatUint8Arrays, getRandomHexString, logToStderr } from '../utilities/Utilities.js'
+import { concatUint8Arrays, getRandomHexString, logToStderr, sha256AsHex } from '../utilities/Utilities.js'
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 import { decodeUtf8, encodeUtf8 } from '../encodings/Utf8.js'
 import { escapeHtml } from '../encodings/HtmlEscape.js'
+import { requestHttp } from 'easier-http-request'
+import { VoiceListRequestCallbacks, SynthesisCallbacks } from '../api/API.js'
 
 const traceEnabled = false
 
@@ -21,25 +22,37 @@ export async function synthesize(
 	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)',
 	ssmlPitchString = '+0Hz',
 	ssmlRateString = '+0%',
-	ssmlVolumeString = '+0%') {
+	ssmlVolumeString = '+0%',
+	callbacks: SynthesisCallbacks) {
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Request synthesis from Microsoft Edge cloud API')
 
-	const { audioData, events } = await requestSynthesis(text, trustedClientToken, voice, ssmlPitchString, ssmlRateString, ssmlVolumeString)
-	logger.end()
+	const { audioData, events } = await requestSynthesis(
+		text,
+		trustedClientToken,
+		voice,
+		ssmlPitchString,
+		ssmlRateString,
+		ssmlVolumeString,
+		callbacks,
+	)
 
-	//logToStderr(`Audio length: ${audioData.length}`)
+	logger.end()
 
 	let rawAudio: RawAudio
 
 	try {
-		rawAudio = await FFMpegTranscoder.decodeToChannels(audioData, 24000, 1)
+		rawAudio = await FFMpegTranscoder.decodeToChannels(
+			audioData,
+			24000,
+			1,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+		)
 	} catch (e) {
 		rawAudio = getEmptyRawAudio(1, 24000)
 	}
-
-	//logToStderr(`Raw audio length: ${rawAudio.audioChannels[0].length}`)
 
 	logger.start('Convert boundary events to timeline')
 	const timeline = AzureCognitiveServicesTTS.boundaryEventsToTimeline(events, getRawAudioDuration(rawAudio))
@@ -56,7 +69,8 @@ async function requestSynthesis(
 	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AriaNeural)',
 	ssmlPitchString = '+0Hz',
 	ssmlRateString = '+0%',
-	ssmlVolumeString = '+0%') {
+	ssmlVolumeString = '+0%',
+	callbacks: SynthesisCallbacks) {
 
 	const synthesisOpenPromise = new OpenPromise<SynthesisRequestResult>()
 
@@ -95,8 +109,8 @@ async function requestSynthesis(
 	const requestId = getRandomHexString()
 
 	try {
-		webSocket = await initializeWebsocketConnection(trustedClientToken)
-	} catch(e) {
+		webSocket = await initializeWebsocketConnection(trustedClientToken, callbacks)
+	} catch (e) {
 		connectionFailed = true
 
 		throw e
@@ -212,7 +226,7 @@ async function requestSynthesis(
 
 let existingWebSocketConnection: WebSocket | undefined = undefined
 
-export async function initializeWebsocketConnection(trustedClientToken: string) {
+export async function initializeWebsocketConnection(trustedClientToken: string, callbacks: SynthesisCallbacks) {
 	const requestOpenPromise = new OpenPromise<WebSocket>()
 
 	if (existingWebSocketConnection && existingWebSocketConnection.readyState == WebSocket.OPEN) {
@@ -230,7 +244,9 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 	const requestURL = 'wss://speech.platform.bing.com/' +
 		'consumer/speech/synthesize/readaloud/edge/v1' +
 		`?TrustedClientToken=${trustedClientToken}` +
-		'&ConnectionId=' + connectionId
+		`&ConnectionId=${connectionId}` +
+		`&Sec-MS-GEC=${await getCurrentSecMsGecToken(trustedClientToken)}` +
+		`&Sec-MS-GEC-Version=1-143.0.3650.75`
 
 	log(requestURL)
 	log('')
@@ -239,9 +255,9 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 		headers: {
 			'Pragma': 'no-cache',
 			'Cache-Control': 'no-cache',
-			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44',
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0',
 			'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
-			'Accept-Encoding': 'gzip, deflate, br',
+			'Accept-Encoding': 'gzip, deflate, br, zstd',
 			'Accept-Language': 'en-US,en;q=0.9',
 		}
 	})
@@ -298,15 +314,23 @@ export async function initializeWebsocketConnection(trustedClientToken: string) 
 	webSocket.on('close', onClose)
 	webSocket.on('error', onError)
 
+	callbacks?.abortSignal?.addEventListener('abort', () => {
+		requestOpenPromise.reject(new DOMException('Microsoft Edge TTS WebSocket connection aborted by user.', 'AbortError'))
+		webSocket.terminate()
+	})
+
 	return requestOpenPromise.promise
 }
 
-export async function getVoiceList(trustedClientToken: string) {
-	const response = await request<any>({
+export async function getVoiceList(trustedClientToken: string, callbacks: VoiceListRequestCallbacks) {
+	const response = await requestHttp({
 		method: 'GET',
 
-		url: 'https://speech.platform.bing.com/consumer/speech/synthesize/' +
-			`readaloud/voices/list?trustedclienttoken=${trustedClientToken}`,
+		url: 'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list',
+
+		params: {
+			trustedclienttoken: trustedClientToken
+		},
 
 		headers: {
 			'sec-ch-ua': `" Not;A Brand";v="99", "Microsoft Edge";v="103", "Chromium";v="103"`,
@@ -322,10 +346,12 @@ export async function getVoiceList(trustedClientToken: string) {
 			'accept-language': 'en-US,en;q=0.9',
 		},
 
-		responseType: 'json'
+		abortSignal: callbacks?.abortSignal,
 	})
 
-	return response.data as any[]
+	const responseObject = await response.json()
+
+	return responseObject as any[]
 }
 
 function getTimestampString() {
@@ -390,4 +416,26 @@ function indexOfByteSubsequence(sequence: Uint8Array, subsequence: Uint8Array) {
 	}
 
 	return -1
+}
+
+async function getCurrentSecMsGecToken(trustedClientToken: string) {
+	const formatted = `${getCurrentWindowsFileTimeTicks()}${trustedClientToken}`
+
+	const hash = (await sha256AsHex(formatted)).toUpperCase()
+
+	return hash
+}
+
+function getCurrentWindowsFileTimeTicks() {
+	const winEpoch100ns = 11644473600n * 10000000n // 116444736000000000n
+	const fiveMin100ns = 300n * 10000000n // 3000000000n
+
+	const currentUnixTime = BigInt(Date.now())
+
+	// Date.now() is ms; 1 ms = 10_000 × 100ns
+	let currentWindowsFileTimeTicks = (currentUnixTime * 10000n) + winEpoch100ns
+
+	currentWindowsFileTimeTicks -= currentWindowsFileTimeTicks % fiveMin100ns
+
+	return currentWindowsFileTimeTicks
 }

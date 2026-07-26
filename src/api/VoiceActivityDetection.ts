@@ -1,33 +1,32 @@
-import { extendDeep } from '../utilities/ObjectUtilities.js'
+import chalk from 'chalk'
 
-import { logToStderr } from '../utilities/Utilities.js'
+import * as API from './API.js'
+
+import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { AudioSourceParam, RawAudio, cropToTimeline, ensureRawAudio, } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline } from '../utilities/Timeline.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata } from './Common.js'
-import chalk from 'chalk'
 import { type AdaptiveGateVADOptions } from '../voice-activity-detection/AdaptiveGateVAD.js'
-import { type WhisperVADOptions } from '../recognition/WhisperSTT.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { joinPath } from '../utilities/PathUtilities.js'
 
-const log = logToStderr
+export async function detectVoiceActivity(input: AudioSourceParam, options: VoiceActivityDetectionOptions, callbacks?: VoiceActivityDetectionCallbacks): Promise<VoiceActivityDetectionResult> {
+	options = extendDeep(defaultVoiceActivityDetectionOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function detectVoiceActivity(input: AudioSourceParam, options: VADOptions): Promise<VADResult> {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	logger.start(`Resample audio to 16kHz mono`)
-	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 
 	logger.start(`Detect voice activity with ${options.engine}`)
-
-	options = extendDeep(defaultVADOptions, options)
 
 	const activityThreshold = options.activityThreshold!
 
@@ -52,7 +51,7 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 
 			const sileroOptions = options.silero!
 
-			const modelDir = await loadPackage('silero-vad')
+			const modelDir = await loadPackage('silero-vad', callbacks)
 
 			const modelPath = joinPath(modelDir, 'silero-vad.onnx')
 			const frameDuration = sileroOptions.frameDuration!
@@ -75,11 +74,11 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 		case 'rnnoise': {
 			const RNNoise = await import('../denoising/RNNoise.js')
 
-			const audio48k = await ensureRawAudio(sourceRawAudio, 48000, 1)
+			const audio48k = await ensureRawAudio(sourceRawAudio, 48000, 1, callbacks)
 
 			const rnnoiseOptions = options.rnnoise!
 
-			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audio48k)
+			const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audio48k, callbacks)
 
 			const frameDurationSeconds = 0.01
 			const frameProbabilities = frameVadProbabilities
@@ -89,52 +88,16 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 			break
 		}
 
-		case 'whisper': {
-			const WhisperSTT = await import('../recognition/WhisperSTT.js')
-
-			const whisperVADOptions = options.whisper!
-
-			logger.end()
-
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperVADOptions.model, 'de')
-
-			logger.end();
-
-			const { partProbabilities } = await WhisperSTT.detectVoiceActivity(
-				sourceRawAudio,
-				modelName,
-				modelDir,
-				whisperVADOptions,
-			)
-
-			verboseTimeline = []
-
-			for (const entry of partProbabilities) {
-				const hasSpeech = entry.confidence! >= activityThreshold
-
-				const text = hasSpeech ? 'active' : 'inactive'
-
-				if (verboseTimeline.length === 0 || verboseTimeline[verboseTimeline.length - 1].text != text) {
-					verboseTimeline.push({
-						type: 'segment',
-						text,
-						startTime: entry.startTime,
-						endTime: entry.endTime
-					})
-				} else {
-					verboseTimeline[verboseTimeline.length - 1].endTime = entry.endTime
-				}
-			}
-
-			break
-		}
-
 		case 'adaptive-gate': {
 			const AdaptiveGateVAD = await import('../voice-activity-detection/AdaptiveGateVAD.js')
 
 			const adaptiveGateOptions = options.adaptiveGate!
 
-			verboseTimeline = await AdaptiveGateVAD.detectVoiceActivity(sourceRawAudio, adaptiveGateOptions)
+			verboseTimeline = await AdaptiveGateVAD.detectVoiceActivity(
+				sourceRawAudio,
+				adaptiveGateOptions,
+				callbacks
+			)
 
 			break
 		}
@@ -150,7 +113,7 @@ export async function detectVoiceActivity(input: AudioSourceParam, options: VADO
 
 	logger.end()
 	logger.log('')
-	logger.logDuration(`Total voice activity detection time`, startTimestamp, chalk.magentaBright)
+	logger.logDuration(`Total voice activity detection time`, startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		timeline,
@@ -280,7 +243,7 @@ interface UncropTimelineMapResult {
 	mappedEndTime: number
 }
 
-export interface VADResult {
+export interface VoiceActivityDetectionResult {
 	timeline: Timeline
 	verboseTimeline: Timeline
 
@@ -288,10 +251,10 @@ export interface VADResult {
 	croppedRawAudio: RawAudio
 }
 
-export type VADEngine = 'webrtc' | 'silero' | 'rnnoise' | 'whisper' | 'adaptive-gate'
+export type VoiceActivityDetectionEngine = 'webrtc' | 'silero' | 'rnnoise' | 'whisper' | 'adaptive-gate'
 
-export interface VADOptions {
-	engine?: VADEngine
+export interface VoiceActivityDetectionOptions extends API.OperationOptions {
+	engine?: VoiceActivityDetectionEngine
 
 	activityThreshold?: number
 
@@ -308,12 +271,10 @@ export interface VADOptions {
 	rnnoise?: {
 	}
 
-	whisper?: WhisperVADOptions
-
 	adaptiveGate?: AdaptiveGateVADOptions
 }
 
-export const defaultVADOptions: VADOptions = {
+export const defaultVoiceActivityDetectionOptions: VoiceActivityDetectionOptions = {
 	engine: 'silero',
 
 	activityThreshold: 0.5,
@@ -331,13 +292,11 @@ export const defaultVADOptions: VADOptions = {
 	rnnoise: {
 	},
 
-	whisper: {
-		model: 'tiny',
-		temperature: 1.0,
-	},
-
 	adaptiveGate: {
 	}
+}
+
+export interface VoiceActivityDetectionCallbacks extends API.OperationCallbacks {
 }
 
 export const vadEngines: EngineMetadata[] = [
@@ -357,6 +316,12 @@ export const vadEngines: EngineMetadata[] = [
 		id: 'rnnoise',
 		name: 'RNNoise',
 		description: `Uses RNNoise's internal speech probabilities as VAD metrics.`,
+		type: 'local'
+	},
+	{
+		id: 'adaptive-gate',
+		name: 'Adaptive Gate',
+		description: `Band-limited adaptive gate.`,
 		type: 'local'
 	}
 ]

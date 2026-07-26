@@ -1,7 +1,8 @@
+import { getGlobalOption } from '../api/GlobalOptions.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
-import { Float32ArrayRef, wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
+import type { Float32ArrayRef } from 'wasm-heap-manager'
 
 let rubberbandInstance: any
 
@@ -14,6 +15,8 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const sampleRate = rawAudio.sampleRate
 
 	const m = await getRubberbandInstance()
+
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const optionFlags = rubberBandOptionsToFlags(options)
@@ -112,9 +115,13 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 
 export async function getRubberbandInstance() {
 	if (!rubberbandInstance) {
-		const { default: RubberbandInitializer } = await import('@echogarden/rubberband-wasm')
+		try {
+			const { default: RubberbandInitializer } = await import('@echogarden/rubberband-wasm')
 
-		rubberbandInstance = await RubberbandInitializer()
+			rubberbandInstance = await RubberbandInitializer()
+		} catch {
+			throw new Error(`Couldn't load the '@echogarden/rubberband-wasm' module. Since Echogarden v3.0.0 it is an optional dependency, due to its GPL-2 license. To enable it, you'll need to install it manually via 'npm install [-g] @echogarden/rubberband-wasm'.`)
+		}
 	}
 
 	return rubberbandInstance

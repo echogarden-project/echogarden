@@ -1,19 +1,22 @@
 import type * as Onnx from 'onnxruntime-node'
+
 import { softmax } from '../math/VectorMath.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { readAndParseJsonFile } from '../utilities/FileSystem.js'
-import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
+import { detectSpeechLanguageByParts, SpeechLanguageDetectionCallbacks } from '../api/SpeechLanguageDetection.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { OnnxExecutionProvider, getOnnxSessionOptions } from '../utilities/OnnxUtilities.js'
 import { LanguageDetectionResults } from '../api/LanguageDetectionCommon.js'
+import { OperationCallbacks } from '../api/Common.js'
 
 export async function detectLanguage(
 	rawAudio: RawAudio,
 	modelPath: string,
 	languageDictionaryPath: string,
 	languageGroupDictionaryPath: string,
-	onnxExecutionProviders: OnnxExecutionProvider[]) {
+	onnxExecutionProviders: OnnxExecutionProvider[],
+	callbacks: SpeechLanguageDetectionCallbacks) {
 
 	const languageDetection = new SileroLanguageDetection(
 		modelPath,
@@ -22,12 +25,18 @@ export async function detectLanguage(
 		onnxExecutionProviders)
 
 	async function detectLanguageForPart(partAudio: RawAudio) {
-		const { languageResults } = await languageDetection.detectLanguage(partAudio)
+		const { languageResults } = await languageDetection.detectLanguage(partAudio, callbacks)
 
 		return languageResults
 	}
 
-	const results = await detectSpeechLanguageByParts(rawAudio, detectLanguageForPart)
+	const results = await detectSpeechLanguageByParts(
+		rawAudio,
+		detectLanguageForPart,
+		undefined,
+		undefined,
+		callbacks,
+	)
 
 	results.sort((a, b) => b.probability - a.probability)
 
@@ -47,10 +56,10 @@ export class SileroLanguageDetection {
 		public readonly onnxExecutionProviders: OnnxExecutionProvider[]) {
 	}
 
-	async detectLanguage(rawAudio: RawAudio) {
-		await this.initializeIfNeeded()
+	async detectLanguage(rawAudio: RawAudio, callbacks: SpeechLanguageDetectionCallbacks) {
+		await this.initializeIfNeeded(callbacks)
 
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
 
 		logger.start('Detect language with Silero')
 
@@ -99,12 +108,12 @@ export class SileroLanguageDetection {
 		return { languageResults, languageGroupResults }
 	}
 
-	async initializeIfNeeded() {
+	async initializeIfNeeded(callbacks: OperationCallbacks) {
 		if (this.session) {
 			return
 		}
 
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
 
 		logger.start('Initialize ONNX inference session for Silero language detection')
 

@@ -11,6 +11,7 @@ echogarden serve [options]
 ```
 
 **Options** (all optional):
+
 * `port`: Port number. Defaults to `45054`
 * `secure`: Start a secure server? Defaults to `false`
 * `certPath`: Path to a certificate file, required when `secure = true`

@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws'
 import { encode as encodeMsgPack, decode as decodeMsgPack } from 'msgpack-lite'
-import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentEvent, SynthesisResult, VoiceListRequestOptions } from '../api/Synthesis.js'
-import { SynthesisResponseMessage, SynthesisSegmentEventMessage, SynthesisSentenceEventMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage, SpeechLanguageDetectionRequestMessage, SpeechLanguageDetectionResponseMessage, TextLanguageDetectionResponseMessage, TextLanguageDetectionRequestMessage, SynthesisRequestMessage } from './Worker.js'
+import { RequestVoiceListResult, SynthesisOptions, SynthesisSegmentCallback, SynthesisResult, VoiceListRequestOptions } from '../api/Synthesis.js'
+import { SynthesisResponseMessage, SynthesisSegmentCallbackMessage, SynthesisSentenceCallbackMessage, VoiceListRequestMessage, WorkerRequestMessage, VoiceListResponseMessage, AlignmentRequestMessage, AlignmentResponseMessage, RecognitionRequestMessage, RecognitionResponseMessage, SpeechTranslationRequestMessage, SpeechTranslationResponseMessage, SpeechLanguageDetectionRequestMessage, SpeechLanguageDetectionResponseMessage, TextLanguageDetectionResponseMessage, TextLanguageDetectionRequestMessage, SynthesisRequestMessage } from './Worker.js'
 import { getRandomHexString, logToStderr } from '../utilities/Utilities.js'
 import { OpenPromise } from '../utilities/OpenPromise.js'
 import { AudioSourceParam, RawAudio } from '../audio/AudioUtilities.js'
@@ -62,7 +62,7 @@ export class Client {
 		}
 	}
 
-	async synthesize(input: string | string[], options: SynthesisOptions, onSegment?: SynthesisSegmentEvent, onSentence?: SynthesisSegmentEvent): Promise<SynthesisResult> {
+	async synthesize(input: string | string[], options: SynthesisOptions, onSegment?: SynthesisSegmentCallback, onSentence?: SynthesisSegmentCallback): Promise<SynthesisResult> {
 		const requestOpenPromise = new OpenPromise<SynthesisResult>()
 
 		const requestMessage: SynthesisRequestMessage = {
@@ -71,7 +71,7 @@ export class Client {
 			options
 		}
 
-		function onResponse(responseMessage: SynthesisResponseMessage | SynthesisSegmentEventMessage | SynthesisSentenceEventMessage) {
+		function onResponse(responseMessage: SynthesisResponseMessage | SynthesisSegmentCallbackMessage | SynthesisSentenceCallbackMessage) {
 			if (responseMessage.messageType == 'SynthesisResponse') {
 				requestOpenPromise.resolve(responseMessage)
 			} else if (responseMessage.messageType == 'SynthesisSegmentEvent' && onSegment) {

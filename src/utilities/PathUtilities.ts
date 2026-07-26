@@ -1,9 +1,9 @@
 import * as NodePath from 'node:path'
-import { fileURLToPath } from 'node:url'
+import * as NodeUrl from 'node:url'
 import * as os from 'node:os'
 
 export function getModuleRootDir() {
-	const currentScriptDir = getDirName(fileURLToPath(import.meta.url))
+	const currentScriptDir = getDirName(NodeUrl.fileURLToPath(import.meta.url))
 
 	return resolvePath(currentScriptDir, '..', '..')
 }
@@ -51,6 +51,10 @@ export function resolvePath(...paths: string[]) {
 
 export function normalizePath(path: string) {
 	return NodePath.normalize(path)
+}
+
+export function pathToFileUrl(path: string) {
+	return NodeUrl.pathToFileURL(path)
 }
 
 export function getBaseName(path: string) {

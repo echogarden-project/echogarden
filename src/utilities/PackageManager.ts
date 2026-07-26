@@ -1,11 +1,11 @@
-import { downloadAndExtractTarball } from './FileDownloader.js'
+import { downloadAndExtractTarball, FileDownloaderCallbacks } from './FileDownloader.js'
 import { getAppDataDir, ensureDir, existsSync, remove } from './FileSystem.js'
 import { appName } from '../api/Common.js'
-import { GaxiosOptions } from 'gaxios'
 import { getAppTempDir, joinPath } from './PathUtilities.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
+import { EasierHttpRequestConfig } from 'easier-http-request'
 
-export async function loadPackage(packageName: string) {
+export async function loadPackage(packageName: string, callbacks: LoadPackageCallbacks) {
 	packageName = resolveToVersionedPackageNameIfNeeded(packageName)
 
 	const packagesPath = await ensureAndGetPackagesDir()
@@ -23,16 +23,18 @@ export async function loadPackage(packageName: string) {
 	const headers = {
 	}
 
-	const options: GaxiosOptions = {
+	const config: EasierHttpRequestConfig = {
 		url: `${packageBaseURL}${packageName}.tar.gz`,
-		headers
+		headers,
+		abortSignal: callbacks?.abortSignal
 	}
 
 	await downloadAndExtractTarball(
-		options,
+		config,
 		packagesPath,
 		tempPath,
 		packageName,
+		callbacks,
 	)
 
 	return packagePath
@@ -81,8 +83,8 @@ export function resolveVersionTagForUnversionedPackageName(unversionedPackageNam
 const defaultVersionTag = '20230718'
 
 const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
-	// SOX binary
-	'sox-14.4.2-linux-minimal': '20230802',
+	// eSpeak-NG
+	'espeak-ng-emscripten': '20260722',
 
 	// VITS voices
 	'vits-de_DE-thorsten_emotional-medium': '20230808',
@@ -131,17 +133,6 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	'kokoro-82m-v1.0-quantized': '20250209',
 	'kokoro-82m-v1.0-voices': '20250209',
 
-	// Whisper (integrated engine) models
-	'whisper-tiny': '20231126',
-	'whisper-tiny.en': '20231126',
-	'whisper-base': '20231126',
-	'whisper-base.en': '20231126',
-	'whisper-small': '20231126',
-	'whisper-small.en': '20231126',
-	'whisper-medium': '20231126',
-	'whisper-medium.en': '20231126',
-	'whisper-large-v3-turbo-fp16': '20241002',
-
 	// Whisper tiktoken data
 	'whisper-tiktoken-data': '20240408',
 
@@ -169,38 +160,71 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	// whisper.cpp models
 	'whisper.cpp-tiny': '20240405',
 	'whisper.cpp-tiny-q5_1': '20240405',
+	'whisper.cpp-tiny-q8_0': '20260725',
+
 	'whisper.cpp-tiny.en': '20240405',
 	'whisper.cpp-tiny.en-q5_1': '20240405',
-	'whisper.cpp-tiny.en-q8_0': '20240405',
+	'whisper.cpp-tiny.en-q8_0': '20260725',
 
 	'whisper.cpp-base': '20240405',
 	'whisper.cpp-base-q5_1': '20240405',
+	'whisper.cpp-base-q8_0': '20260725',
+
 	'whisper.cpp-base.en': '20240405',
 	'whisper.cpp-base.en-q5_1': '20240405',
+	'whisper.cpp-base.en-q8_0': '20260725',
 
 	'whisper.cpp-small': '20240405',
 	'whisper.cpp-small-q5_1': '20240405',
+	'whisper.cpp-small-q8_0': '20260725',
+
 	'whisper.cpp-small.en': '20240405',
 	'whisper.cpp-small.en-q5_1': '20240405',
+	'whisper.cpp-small.en-q8_0': '20260725',
 
 	'whisper.cpp-medium': '20240405',
 	'whisper.cpp-medium-q5_0': '20240405',
+	'whisper.cpp-medium-q8_0': '20260725',
+
 	'whisper.cpp-medium.en': '20240405',
 	'whisper.cpp-medium.en-q5_0': '20240405',
+	'whisper.cpp-medium.en-q8_0': '20260725',
 
 	'whisper.cpp-large-v1': '20240405',
+
 	'whisper.cpp-large-v2': '20240405',
 	'whisper.cpp-large-v2-q5_0': '20240405',
+	'whisper.cpp-large-v2-q8_0': '20260725',
+
 	'whisper.cpp-large-v3': '20240405',
 	'whisper.cpp-large-v3-q5_0': '20240405',
+
 	'whisper.cpp-large-v3-turbo': '20241003',
 	'whisper.cpp-large-v3-turbo-q5_0': '20241003',
+	'whisper.cpp-large-v3-turbo-q8_0': '20260725',
 
-	// whisper.cpp binaries
-	'whisper.cpp-binaries-windows-x64-cpu-latest': '20250502',
-	'whisper.cpp-binaries-windows-x64-cublas-12.4.0-latest': '20250502',
-	'whisper.cpp-binaries-linux-x64-cpu-latest': '20250502',
-	'whisper.cpp-binaries-linux-x64-cublas-12.4.0-latest': '20250502',
+	// whisper.cpp library fork used for binding (introduced in Echogarden v3.0.0)
+	'whisper.cpp-lib-windows-x64-cpu': '20260720',
+	'whisper.cpp-lib-windows-x64-cublas-12.4.0': '20260720',
+	'whisper.cpp-lib-windows-arm64-cpu': '20260720',
+	'whisper.cpp-lib-macos-universal': '20260720',
+	'whisper.cpp-lib-macos-universal-cpu-basic': '20260720',
+	'whisper.cpp-lib-linux-x64-cpu': '20260720',
+	'whisper.cpp-lib-linux-x64-cublas-12.4.0': '20260720',
+	'whisper.cpp-lib-linux-arm64-cpu': '20260720',
+
+	// CuBLAS dynamically linked libraries Windows x64 distribution
+	'cublas-lib-12.4.0-windows-x64': '20250607',
+
+	// whisper.cpp CLI binaries
+	'whisper.cpp-binaries-windows-x64-cpu': '20260720',
+	'whisper.cpp-binaries-windows-x64-cublas-12.4.0': '20260720',
+	'whisper.cpp-binaries-windows-arm64-cpu': '20260720',
+	'whisper.cpp-binaries-macos-universal': '20260720',
+	'whisper.cpp-binaries-macos-universal-cpu-basic': '20260720',
+	'whisper.cpp-binaries-linux-x64-cpu': '20260720',
+	'whisper.cpp-binaries-linux-x64-cublas-12.4.0': '20260720',
+	'whisper.cpp-binaries-linux-arm64-cpu': '20260720',
 
 	// E5 models
 	'xenova-multilingual-e5-small-q8': '20240504',
@@ -219,4 +243,7 @@ const packageVersionTagResolutionLookup: { [packageName: string]: string } = {
 	// NSNet2 models
 	'nsnet2-20ms-baseline': '20242610',
 	'nsnet2-20ms-48k-baseline': '20242610',
+}
+
+export interface LoadPackageCallbacks extends FileDownloaderCallbacks {
 }

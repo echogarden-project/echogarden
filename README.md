@@ -51,6 +51,12 @@ ncu -g echogarden
 ```
 Then, if an updated version is available, use the command line `ncu` provides to make the update.
 
+## NPM v12+ and `postinstall` scripts
+
+For npm `v12` or later, you may need to add `--allow-scripts=onnxruntime-node,wtf_wikipedia` to the install and update commands since [npm v12+ now disables `postinstall` scripts by default](https://thehackernews.com/2026/07/npm-12-disables-install-scripts-by.html).
+
+The `postinstall` script used by `onnxruntime-node` in particular, is used to download crucial binaries on some platforms. Otherwise it may fail.
+
 ## Using the command-line interface
 
 A small sample of command lines:
@@ -90,6 +96,8 @@ Developed by Rotem Dan (IPA: /ˈʁɒːtem ˈdän/).
 
 ## License
 
-GNU General Public License v3
+All source code is licensed under the MIT license. The package, as whole, can be used under the MIT license when GPL licensed libraries, like eSpeak-NG, aren't loaded with it.
+
+Since Echogarden `v3.0.0`, GPL licensed libraries are not bundled by default, and eSpeak-NG is only downloaded when needed.
 
 Licenses for components, models and other dependencies are detailed on [this page](docs/Licenses.md).

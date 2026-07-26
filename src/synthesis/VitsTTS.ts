@@ -1,5 +1,5 @@
 import type * as Onnx from 'onnxruntime-node'
-import { SynthesisVoice } from '../api/API.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/API.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Lexicon } from '../nlp/Lexicon.js'
@@ -18,7 +18,8 @@ export async function synthesizeSentence(
 	lengthScale: number,
 	speakerId: number,
 	lexicons: Lexicon[],
-	executionProviders: OnnxExecutionProvider[]) {
+	executionProviders: OnnxExecutionProvider[],
+	callbacks: SynthesisCallbacks) {
 
 	const cacheLookupKey = modelPath
 
@@ -31,7 +32,13 @@ export async function synthesizeSentence(
 		cachedInstanceLookup.set(cacheLookupKey, vitsTTS)
 	}
 
-	const result = await vitsTTS.synthesizeSentence(text, lengthScale, speakerId, lexicons)
+	const result = await vitsTTS.synthesizeSentence(
+		text,
+		lengthScale,
+		speakerId,
+		lexicons,
+		callbacks,
+	)
 
 	return result
 }
@@ -47,8 +54,10 @@ export class VitsTTS {
 		public readonly executionProviders: OnnxExecutionProvider[]) {
 	}
 
-	async synthesizeSentence(sentence: string, lengthScale: number, speakerId = 0, lexicons?: Lexicon[]) {
-		const logger = new Logger()
+	async synthesizeSentence(sentence: string, lengthScale: number, speakerId = 0, lexicons: Lexicon[], callbacks: SynthesisCallbacks) {
+		const logger = new Logger(callbacks.logLevel)
+
+		await logger.startAsync('Initialize VITS ONNX synthesis model')
 
 		await this.initializeIfNeeded()
 
@@ -72,6 +81,7 @@ export class VitsTTS {
 		const Espeak = await import('../synthesis/EspeakTTS.js')
 
 		logger.end()
+		callbacks.abortSignal?.throwIfAborted()
 
 		const espeakOptions: EspeakOptions = {
 			...defaultEspeakOptions,
@@ -79,11 +89,23 @@ export class VitsTTS {
 			useKlatt: false
 		}
 
-		const { referenceSynthesizedAudio, referenceTimeline, fragments, phonemizedFragmentsSubstitutions, phonemizedSentence } = await Espeak.preprocessAndSynthesize(sentence, languageCode, espeakOptions, lexicons)
+		const {
+			referenceSynthesizedAudio,
+			referenceTimeline,
+			fragments,
+			phonemizedFragmentsSubstitutions,
+			phonemizedSentence
+		} = await Espeak.preprocessAndSynthesize(
+			sentence,
+			languageCode,
+			espeakOptions,
+			lexicons,
+			callbacks,
+		)
+
+		logger.end()
 
 		if (phonemizedSentence.length == 0) {
-			logger.end()
-
 			return {
 				rawAudio: getEmptyRawAudio(1, outputSampleRate),
 				timeline: [],
@@ -147,7 +169,9 @@ export class VitsTTS {
 		const bigIntIds = new BigInt64Array(ids.map(id => BigInt(id)))
 		const idLengths = new BigInt64Array([BigInt(bigIntIds.length)])
 
-		await logger.startAsync('Generate audio using synthesis model')
+		logger.end()
+		callbacks.abortSignal?.throwIfAborted()
+		await logger.startAsync('Synthesize audio using model')
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -170,6 +194,8 @@ export class VitsTTS {
 
 		const synthesizedAudio: RawAudio = { audioChannels: [modelOutputAudioSamples], sampleRate: outputSampleRate }
 
+		logger.end()
+		callbacks.abortSignal?.throwIfAborted()
 		await logger.startAsync('Align with reference synthesized audio')
 
 		const { alignUsingDtw } = await import('../alignment/SpeechAlignment.js')
@@ -177,7 +203,14 @@ export class VitsTTS {
 		const referenceWordTimeline = referenceTimeline.flatMap(phrase => phrase.timeline!)
 
 		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
-		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, ['high'], [dtwWindowDuration])
+		const mappedTimeline = await alignUsingDtw(
+			synthesizedAudio,
+			referenceSynthesizedAudio,
+			referenceWordTimeline,
+			['high'],
+			[dtwWindowDuration],
+			{ ...callbacks, logLevel: 'warning' },
+		)
 
 		logger.end()
 
@@ -188,9 +221,6 @@ export class VitsTTS {
 		if (this.session) {
 			return
 		}
-
-		const logger = new Logger()
-		await logger.startAsync('Initialize VITS ONNX synthesis model')
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -213,8 +243,6 @@ export class VitsTTS {
 		for (const key in this.metadata.phoneme_id_map) {
 			this.phonemeMap.set(key, this.metadata.phoneme_id_map[key])
 		}
-
-		logger.end()
 	}
 }
 

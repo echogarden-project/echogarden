@@ -1,18 +1,17 @@
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
-import { logToStderr } from '../utilities/Utilities.js'
 import { languageCodeToName } from '../utilities/Locale.js'
 import { LanguageDetectionResults } from './LanguageDetectionCommon.js'
 
-const log = logToStderr
-
-export async function detectTextLanguage(input: string, options: TextLanguageDetectionOptions): Promise<TextLanguageDetectionResult> {
-	const logger = new Logger()
-
+export async function detectTextLanguage(input: string, options: TextLanguageDetectionOptions, callbacks?: TextLanguageDetectionCallbacks): Promise<TextLanguageDetectionResult> {
 	options = extendDeep(defaultTextLanguageDetectionOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const defaultLanguage = options.defaultLanguage!
 	const fallbackThresholdProbability = options.fallbackThresholdProbability!
@@ -84,20 +83,19 @@ export interface LanguageDetectionGroupResultsEntry {
 
 export type TextLanguageDetectionEngine = 'tinyld' | 'fasttext'
 
-export interface TextLanguageDetectionOptions {
+export interface TextLanguageDetectionOptions extends API.OperationOptions {
 	engine?: TextLanguageDetectionEngine
 	defaultLanguage?: string
 	fallbackThresholdProbability?: number
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// Constants
-/////////////////////////////////////////////////////////////////////////////////////////////
-
 export const defaultTextLanguageDetectionOptions: TextLanguageDetectionOptions = {
 	engine: 'tinyld',
 	defaultLanguage: 'en',
 	fallbackThresholdProbability: 0.05,
+}
+
+export interface TextLanguageDetectionCallbacks extends API.OperationCallbacks {
 }
 
 export const textLanguageDetectionEngines: API.EngineMetadata[] = [

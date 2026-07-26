@@ -1,8 +1,10 @@
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+
 import { SampleFormat, BitDepth, encodeWaveFromFloat32Channels, decodeWaveToFloat32Channels } from '@echogarden/wave-codec'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { concatFloat32Arrays } from '../utilities/Utilities.js'
+import { OperationCallbacks } from '../api/Common.js'
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Wave encoding and decoding
@@ -400,7 +402,7 @@ export function getRawAudioDuration(rawAudio: RawAudio) {
 	return rawAudio.audioChannels[0].length / rawAudio.sampleRate
 }
 
-export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: number, outChannelCount?: number) {
+export async function ensureRawAudio(input: AudioSourceParam, outSampleRate: number | undefined, outChannelCount: number | undefined, callbacks: OperationCallbacks) {
 	let inputAsRawAudio: RawAudio = input as RawAudio
 
 	if (isRawAudio(input)) {
@@ -421,7 +423,12 @@ export async function ensureRawAudio(input: AudioSourceParam, outSampleRate?: nu
 	} else if (typeof input == 'string' || input instanceof Uint8Array) {
 		const inputAsStringOrUint8Array = input as string | Uint8Array
 
-		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(inputAsStringOrUint8Array, outSampleRate, outChannelCount)
+		inputAsRawAudio = await FFMpegTranscoder.decodeToChannels(
+			inputAsStringOrUint8Array,
+			outSampleRate,
+			outChannelCount,
+			callbacks,
+		)
 	} else {
 		throw new Error('Received an invalid input audio data type.')
 	}

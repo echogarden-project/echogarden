@@ -28,7 +28,7 @@ export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
 	for (let line of lines) {
 		line = line.trim()
 
-		if (line.length == 0) {
+		if (line.length === 0) {
 			isWithinCue = false
 
 			continue
@@ -52,7 +52,7 @@ export function subtitlesToTimeline(subtitles: string, removeMarkup = true) {
 		} else if (isWithinCue && timeline.length > 0) {
 			const lastEntry = timeline[timeline.length - 1]
 
-			if (lastEntry.text == '') {
+			if (lastEntry.text === '') {
 				lastEntry.text = line
 			} else {
 				lastEntry.text += ' ' + line
@@ -86,7 +86,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 
 	let config = subtitlesConfig || {}
 
-	if (config.format && config.format == 'webvtt') {
+	if (config.format && config.format === 'webvtt') {
 		config = { ...defaultSubtitlesBaseConfig, ...webVttConfigExtension, ...config }
 	} else {
 		config = { ...defaultSubtitlesBaseConfig, ...srtConfigExtension, ...config }
@@ -97,7 +97,7 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 
 	let outText = ''
 
-	if (config.format == 'webvtt') {
+	if (config.format === 'webvtt') {
 		outText += `WEBVTT${lineBreakString}Kind: captions${lineBreakString}`
 
 		if (config.language) {
@@ -110,11 +110,11 @@ export function timelineToSubtitles(timeline: Timeline, subtitlesConfig?: Subtit
 	// Generate the cues from the given timeline
 	let cues: Cue[]
 
-	if (config.mode == 'segment' || config.mode == 'sentence') {
+	if (config.mode === 'segment' || config.mode === 'sentence') {
 		cues = getCuesFromTimeline_IsolateSegmentSentence(timeline, config)
-	} else if (config.mode == 'word' || config.mode == 'phone' || config.mode == 'word+phone') {
+	} else if (config.mode === 'word' || config.mode === 'phone' || config.mode === 'word+phone') {
 		cues = getCuesFromTimeline_IsolateWordPhone(timeline, config)
-	} else if (config.mode == 'line') {
+	} else if (config.mode === 'line') {
 		cues = getCuesFromTimeline_IsolateLines(timeline, config)
 	} else {
 		throw new Error('Invalid subtitles mode.')
@@ -213,7 +213,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 		for (const wordEntry of wordTimeline) {
 			const wordStartOffset = entryText.indexOf(wordEntry.text, lastWordEndOffset)
 
-			if (wordStartOffset == -1) {
+			if (wordStartOffset === -1) {
 				throw new Error(`Couldn't find word '${wordEntry.text}' in its parent entry text`)
 			}
 
@@ -235,13 +235,13 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 		let lineStartOffset = 0
 
 		for (let wordIndex = 0; wordIndex < wordTimeline.length; wordIndex++) {
-			const isLastWord = wordIndex == wordTimeline.length - 1
+			const isLastWord = wordIndex === wordTimeline.length - 1
 
 			const wordEntry = wordTimeline[wordIndex]
 			const wordEndOffset = wordEntry.endOffsetUtf16!
 
 			function getExtendedEndOffset(offset: number | undefined) {
-				if (offset == undefined) {
+				if (offset === undefined) {
 					return entryText.length
 				}
 
@@ -300,14 +300,14 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 				currentCue.lines.push(lineText)
 
 				// Update cue start and end times
-				if (currentCue.startTime == -1) {
+				if (currentCue.startTime === -1) {
 					currentCue.startTime = lineStartTime
 				}
 
 				currentCue.endTime = lineEndTime
 
 				// Finalize cue if needed
-				if (isLastWord || currentCue.lines.length == config.maxLineCount) {
+				if (isLastWord || currentCue.lines.length === config.maxLineCount) {
 					cues.push(currentCue)
 
 					currentCue = {
@@ -329,7 +329,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 
 // Generates cues from timeline. Isolates words or phones in individual cues.
 function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: SubtitlesConfig) {
-	if (timeline.length == 0) {
+	if (timeline.length === 0) {
 		return []
 	}
 
@@ -338,12 +338,12 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 	const cues: Cue[] = []
 
 	for (const entry of timeline) {
-		const entryIsWord = entry.type == 'word'
-		const entryIsPhone = entry.type == 'phone'
+		const entryIsWord = entry.type === 'word'
+		const entryIsPhone = entry.type === 'phone'
 
 		const shouldIncludeEntry =
-			(entryIsWord && (mode == 'word' || mode == 'word+phone')) ||
-			(entryIsPhone && (mode == 'phone' || mode == 'word+phone'))
+			(entryIsWord && (mode === 'word' || mode === 'word+phone')) ||
+			(entryIsPhone && (mode === 'phone' || mode === 'word+phone'))
 
 		if (shouldIncludeEntry) {
 			cues.push({
@@ -363,7 +363,7 @@ function getCuesFromTimeline_IsolateWordPhone(timeline: Timeline, config: Subtit
 
 // Generates cues from timeline. Isolates lines in individual cues.
 function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesConfig) {
-	if (timeline.length == 0) {
+	if (timeline.length === 0) {
 		return []
 	}
 
@@ -390,7 +390,7 @@ function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesC
 	let currentCueWords: Timeline = []
 
 	function addCueFromCurrentWords() {
-		if (currentCueWords.length == 0) {
+		if (currentCueWords.length === 0) {
 			return
 		}
 
@@ -411,7 +411,7 @@ function getCuesFromTimeline_IsolateLines(timeline: Timeline, config: SubtitlesC
 
 	function addCuesFrom(timeline: Timeline) {
 		for (const entry of timeline) {
-			if (entry.type == 'word') {
+			if (entry.type === 'word') {
 				const currentWordLineNumber = charOffsetToLineNumber[entry.startOffsetUtf16!]
 				const previousWordEntry = currentCueWords[currentCueWords.length - 1]
 
@@ -481,7 +481,7 @@ export function tryParseTimeRangePatternWithoutHours(line: string) {
 }
 
 function cueObjectToText(cue: Cue, cueIndex: number, config: SubtitlesConfig) {
-	if (!cue || !cue.lines || cue.lines.length == 0) {
+	if (!cue || !cue.lines || cue.lines.length === 0) {
 		throw new Error(`Cue is empty`)
 	}
 
@@ -496,7 +496,7 @@ function cueObjectToText(cue: Cue, cueIndex: number, config: SubtitlesConfig) {
 	let formattedStartTime: string
 	let formattedEndTime: string
 
-	if (config.includeHours == true) {
+	if (config.includeHours === true) {
 		formattedStartTime = formatHMS(secondsToHMS(cue.startTime), config.decimalSeparator)
 		formattedEndTime = formatHMS(secondsToHMS(cue.endTime), config.decimalSeparator)
 	} else {

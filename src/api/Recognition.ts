@@ -4,58 +4,61 @@ import * as API from './API.js'
 
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, ensureRawAudio, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { Timeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, parseLangIdentifier } from '../utilities/Locale.js'
-import { loadPackage } from '../utilities/PackageManager.js'
 
-import { type WhisperPartCallback, type WhisperOptions } from '../recognition/WhisperSTT.js'
+import { type WhisperOptions, type WhisperPartCallback, type WhisperTokenCallback } from '../recognition/WhisperSTT.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type OpenAICloudSTTOptions } from '../recognition/OpenAICloudSTT.js'
-import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
-import { type SileroRecognitionOptions } from '../recognition/SileroSTT.js'
+import { type WhisperCppCliOptions } from '../recognition/WhisperCppCliSTT.js'
 import { type DeepgramSTTOptions } from '../recognition/DeepgramSTT.js'
-import { type OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 
-const log = logToStderr
+export async function recognize(input: AudioSourceParam, options: RecognitionOptions, callbacks?: RecognitionCallbacks): Promise<RecognitionResult> {
+	options = extendDeep(defaultRecognitionOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function recognize(input: AudioSourceParam, options: RecognitionOptions, onPart?: WhisperPartCallback): Promise<RecognitionResult> {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
-	options = extendDeep(defaultRecognitionOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	let sourceRawAudio: RawAudio
 	let isolatedRawAudio: RawAudio | undefined
 	let backgroundRawAudio: RawAudio | undefined
 
 	if (options.isolate) {
-		logger.log(``)
-		logger.end();
+		logger.logTitledMessage(`Isolate vocals`, '');
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(
+			inputRawAudio,
+			options.sourceSeparation!,
+			{ ...callbacks, logLevel: logger.logLevel }))
 
 		logger.end()
-		logger.log(``)
 
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1, callbacks)
 	} else {
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 	}
+
+	logger.end()
 
 	let sourceUncropTimeline: Timeline | undefined
 
 	if (options.crop) {
 		logger.start('Crop using voice activity detection');
-		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+
+		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } =
+			await API.detectVoiceActivity(
+				sourceRawAudio,
+				options.vad!,
+				{ ...callbacks, logLevel: 'warning' }))
 
 		logger.end()
 	}
@@ -76,7 +79,10 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(options.language))
 	} else {
 		logger.start('No language specified. Detect speech language')
-		const { detectedLanguage } = await API.detectSpeechLanguage(sourceRawAudio, options.languageDetection!)
+		const { detectedLanguage } = await API.detectSpeechLanguage(
+			sourceRawAudio,
+			options.languageDetection!,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' })
 
 		options.language = detectedLanguage
 
@@ -97,101 +103,63 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 	switch (engine) {
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperOptions = options.whisper!
+			const whisperOptions: WhisperOptions =
+				extendDeep(WhisperSTT.defaultWhisperOptions, options.whisper)
 
-			logger.end()
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperOptions.model,
+				shortLanguageCode,
+				callbacks,
+			)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, shortLanguageCode)
+			const { libPath } = await WhisperSTT.loadLibraryPackages(
+				whisperOptions.enableGPU,
+				callbacks,
+			)
 
 			logger.end();
 
 			({ transcript, timeline } = await WhisperSTT.recognize(
 				sourceRawAudio,
-				modelName,
-				modelDir,
+				modelId,
+				modelPath,
+				libPath,
 				'transcribe',
 				shortLanguageCode,
 				whisperOptions,
-				onPart,
+				callbacks,
 			))
 
 			break
 		}
 
 		case 'whisper.cpp': {
-			const WhisperCppSTT = await import('../recognition/WhisperCppSTT.js')
+			const WhisperCppCliSTT = await import('../recognition/WhisperCppCliSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
 			const whisperCppOptions = options.whisperCpp!
 
 			logger.end()
 
-			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, shortLanguageCode)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperCppOptions.model,
+				shortLanguageCode,
+				callbacks,
+			)
 
 			logger.end();
 
-			({ transcript, timeline } = await WhisperCppSTT.recognize(
+			({ transcript, timeline } = await WhisperCppCliSTT.recognize(
 				sourceRawAudio,
 				'transcribe',
 				shortLanguageCode,
-				modelName,
+				modelId,
 				modelPath,
 				whisperCppOptions,
+				callbacks,
 			))
-
-			break
-		}
-
-		case 'vosk': {
-			const VoskSTT = await import('../recognition/VoskSTT.js')
-
-			try {
-				await import('@echogarden/vosk')
-			} catch (e) {
-				log(e)
-				throw new Error(`The vosk npm package, which is required for Vosk support, was not found, or had an error loading. If missing, you can install it by running 'npm install @echogarden/vosk -g'.`)
-			}
-
-			const voskOptions = options.vosk!
-
-			const modelPath = voskOptions.modelPath
-
-			if (!modelPath) {
-				throw new Error(`Vosk models are not currently auto-downloaded. You'll need to download a model manually and set a model path in 'vosk.modelPath'.`)
-			}
-
-			logger.end();
-
-			({ transcript, timeline } = await VoskSTT.recognize(sourceRawAudio, modelPath, true))
-
-			break
-		}
-
-		case 'silero': {
-			const SileroSTT = await import('../recognition/SileroSTT.js')
-
-			const sileroOptions = options.silero!
-
-			let modelPath = sileroOptions.modelPath
-
-			if (!modelPath) {
-				const packageName = SileroSTT.languageCodeToPackageName[shortLanguageCode]
-
-				if (!packageName) {
-					throw new Error(`Language '${shortLanguageCode}' is not supported by Silero`)
-				}
-
-				modelPath = await loadPackage(packageName)
-			}
-
-			const onnxExecutionProviders: OnnxExecutionProvider[] = sileroOptions.provider ? [sileroOptions.provider] : []
-
-			logger.end();
-
-			({ transcript, timeline } = await SileroSTT.recognize(
-				sourceRawAudio,
-				modelPath,
-				onnxExecutionProviders))
 
 			break
 		}
@@ -207,7 +175,12 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await GoogleCloudSTT.recognize(sourceRawAudio, apiKey, shortLanguageCode))
+			({ transcript, timeline } = await GoogleCloudSTT.recognize(
+				sourceRawAudio,
+				apiKey,
+				shortLanguageCode,
+				callbacks
+			))
 
 			break
 		}
@@ -229,7 +202,14 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await AzureCognitiveServicesSTT.recognize(sourceRawAudio, subscriptionKey, serviceRegion, shortLanguageCode))
+			({ transcript, timeline } = await AzureCognitiveServicesSTT.recognize(
+				sourceRawAudio,
+				subscriptionKey,
+				serviceRegion,
+				shortLanguageCode,
+				undefined,
+				callbacks
+			))
 
 			break
 		}
@@ -257,7 +237,14 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await AmazonTranscribeSTT.recgonize(sourceRawAudio, languageCode, region, accessKeyId, secretAccessKey))
+			({ transcript, timeline } = await AmazonTranscribeSTT.recgonize(
+				sourceRawAudio,
+				languageCode,
+				region,
+				accessKeyId,
+				secretAccessKey,
+				callbacks
+			))
 
 			break
 		}
@@ -273,7 +260,13 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await OpenAICloudSTT.recognize(sourceRawAudio, shortLanguageCode, openAICloudSTTOptions))
+			({ transcript, timeline } = await OpenAICloudSTT.recognize(
+				sourceRawAudio,
+				shortLanguageCode,
+				openAICloudSTTOptions,
+				'transcribe',
+				callbacks
+			))
 
 			break
 		}
@@ -289,7 +282,12 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 
 			logger.end();
 
-			({ transcript, timeline } = await DeepgramSTT.recognize(sourceRawAudio, options.language ? shortLanguageCode : undefined, deepgramOptions))
+			({ transcript, timeline } = await DeepgramSTT.recognize(
+				sourceRawAudio,
+				options.language ? shortLanguageCode : undefined,
+				deepgramOptions,
+				callbacks,
+			))
 
 			break
 		}
@@ -304,7 +302,12 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 		logger.start(`Align audio to transcript`)
 		const alignmentOptions: API.AlignmentOptions = extendDeep(options.alignment, { language: languageCode })
 
-		const { wordTimeline } = await API.align(sourceRawAudio, transcript, alignmentOptions)
+		const { wordTimeline } = await API.align(
+			sourceRawAudio,
+			transcript,
+			alignmentOptions,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' },
+		)
 
 		timeline = wordTimeline
 	}
@@ -321,7 +324,7 @@ export async function recognize(input: AudioSourceParam, options: RecognitionOpt
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(timeline, transcript, languageCode, 'single', 'preserve')
 
 	logger.end()
-	logger.logDuration('\nTotal recognition time', startTimestamp, chalk.magentaBright)
+	logger.logDuration('\nTotal recognition time', startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		transcript,
@@ -350,9 +353,9 @@ export interface RecognitionResult {
 	backgroundRawAudio?: RawAudio
 }
 
-export type RecognitionEngine = 'whisper' | 'whisper.cpp' | 'vosk' | 'silero' | 'google-cloud' | 'microsoft-azure' | 'amazon-transcribe' | 'openai-cloud' | 'deepgram'
+export type RecognitionEngine = 'whisper' | 'whisper.cpp' | 'google-cloud' | 'microsoft-azure' | 'amazon-transcribe' | 'openai-cloud' | 'deepgram'
 
-export interface RecognitionOptions {
+export interface RecognitionOptions extends API.OperationOptions {
 	engine?: RecognitionEngine
 
 	language?: string
@@ -369,19 +372,13 @@ export interface RecognitionOptions {
 
 	subtitles?: SubtitlesConfig
 
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 
 	sourceSeparation?: API.SourceSeparationOptions
 
 	whisper?: WhisperOptions
 
-	whisperCpp?: WhisperCppOptions
-
-	vosk?: {
-		modelPath?: string
-	}
-
-	silero?: SileroRecognitionOptions
+	whisperCpp?: WhisperCppCliOptions
 
 	googleCloud?: {
 		apiKey?: string
@@ -437,13 +434,6 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	whisperCpp: {
 	},
 
-	vosk: {
-		modelPath: undefined
-	},
-
-	silero: {
-	},
-
 	googleCloud: {
 		apiKey: undefined,
 		alternativeLanguageCodes: [],
@@ -470,29 +460,22 @@ export const defaultRecognitionOptions: RecognitionOptions = {
 	}
 }
 
+export interface RecognitionCallbacks extends API.OperationCallbacks {
+	onPart?: WhisperPartCallback
+	onToken?: WhisperTokenCallback
+}
+
 export const recognitionEngines: API.EngineMetadata[] = [
 	{
 		id: 'whisper',
 		name: 'OpenAI Whisper',
-		description: 'A high accuracy transformer-based speech recognition architecture by OpenAI.',
+		description: 'High accuracy transformer-based speech recognition architecture by OpenAI.',
 		type: 'local'
 	},
 	{
 		id: 'whisper.cpp',
-		name: 'OpenAI Whisper (C++ port)',
-		description: 'A C++ port of the Whisper speech recognition architecture.',
-		type: 'local'
-	},
-	{
-		id: 'vosk',
-		name: 'Vosk',
-		description: 'A speech recognition toolkit.',
-		type: 'local'
-	},
-	{
-		id: 'silero',
-		name: 'Silero',
-		description: 'Speech recognition models.',
+		name: 'OpenAI Whisper (C++ port) CLI',
+		description: 'Invokes the CLI version of the whisper.cpp port of OpenAI Whisper.',
 		type: 'local'
 	},
 	{

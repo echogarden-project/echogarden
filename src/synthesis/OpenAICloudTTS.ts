@@ -1,10 +1,10 @@
 import { ensureRawAudio } from '../audio/AudioUtilities.js';
-import { SynthesisVoice } from '../api/Synthesis.js';
+import { SynthesisCallbacks, SynthesisVoice } from '../api/Synthesis.js';
 import { Logger } from '../utilities/Logger.js';
 import { extendDeep } from '../utilities/ObjectUtilities.js';
 
-export async function synthesize(text: string, voice: string, speed: number, options: OpenAICloudTTSOptions) {
-	const logger = new Logger()
+export async function synthesize(text: string, voice: string, speed: number, options: OpenAICloudTTSOptions, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start('Request synthesis from OpenAI Cloud API')
 
@@ -18,7 +18,7 @@ export async function synthesize(text: string, voice: string, speed: number, opt
 
 	const openai = new OpenAI(options)
 
-	const result = await openai.audio.speech.create({
+	const response = await openai.audio.speech.create({
 		input: text,
 		model: options.model!,
 		voice: voice as any,
@@ -29,10 +29,11 @@ export async function synthesize(text: string, voice: string, speed: number, opt
 		maxRetries: 10
 	})
 
-	const resultBuffer = await result.buffer()
+	const responseBodyAsArrayBuffer = await response.arrayBuffer()
+	const responseBodyAsBytes = new Uint8Array(responseBodyAsArrayBuffer)
 
 	logger.start('Decode returned audio')
-	const resultRawAudio = ensureRawAudio(resultBuffer)
+	const resultRawAudio = ensureRawAudio(responseBodyAsBytes, undefined, undefined, callbacks)
 
 	logger.end()
 

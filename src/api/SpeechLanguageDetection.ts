@@ -1,39 +1,41 @@
+import chalk from 'chalk'
+import * as API from './API.js'
+
 import { deepClone, extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevelInPlace, sliceRawAudioByTime, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
-import { logToStderr } from '../utilities/Utilities.js'
 import { type WhisperLanguageDetectionOptions } from '../recognition/WhisperSTT.js'
 import { formatLanguageCodeWithName, languageCodeToName } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
-import chalk from 'chalk'
-import { type WhisperCppOptions } from '../recognition/WhisperCppSTT.js'
+import { type WhisperCppCliOptions } from '../recognition/WhisperCppCliSTT.js'
 import { type SileroLanguageDetectionOptions } from '../speech-language-detection/SileroLanguageDetection.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { LanguageDetectionResults } from './LanguageDetectionCommon.js'
 import { joinPath } from '../utilities/PathUtilities.js'
 
-const log = logToStderr
+export async function detectSpeechLanguage(input: AudioSourceParam, options: SpeechLanguageDetectionOptions, callbacks?: SpeechLanguageDetectionCallbacks): Promise<SpeechLanguageDetectionResult> {
+	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function detectSpeechLanguage(input: AudioSourceParam, options: SpeechLanguageDetectionOptions): Promise<SpeechLanguageDetectionResult> {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTime = logger.getTimestamp()
 
-	options = extendDeep(defaultSpeechLanguageDetectionOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	logger.start(`Resample audio to 16kHz mono`)
-	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+	let sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 	normalizeAudioLevelInPlace(sourceRawAudio)
 	sourceRawAudio.audioChannels[0] = trimAudioEnd(sourceRawAudio.audioChannels[0])
 
 	if (options.crop) {
 		logger.start('Crop using voice activity detection');
-		({ croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+		({ croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(
+			sourceRawAudio,
+			options.vad!,
+			{ ...callbacks, logLevel: 'warning' }))
 
 		logger.end()
 	}
@@ -53,7 +55,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 			const sileroOptions = options.silero!
 
-			const modelDir = await loadPackage('silero-lang-classifier-95')
+			const modelDir = await loadPackage('silero-lang-classifier-95', callbacks)
 
 			const modelPath = joinPath(modelDir, 'lang_classifier_95.onnx')
 			const languageDictionaryPath = joinPath(modelDir, 'lang_dict_95.json')
@@ -65,7 +67,9 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 				modelPath,
 				languageDictionaryPath,
 				languageGroupDictionaryPath,
-				onnxExecutionProviders)
+				onnxExecutionProviders,
+				callbacks,
+			)
 
 			detectedLanguageProbabilities = languageResults
 
@@ -74,34 +78,57 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperOptions = options.whisper!
+			const whisperOptions = extendDeep(WhisperSTT.defaultWhisperLanguageDetectionOptions, options.whisper!)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperOptions.model, undefined)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperOptions.model,
+				undefined,
+				callbacks,
+			)
+
+			const { libPath } = await WhisperSTT.loadLibraryPackages(
+				whisperOptions.enableGPU,
+				callbacks,
+			)
 
 			logger.end()
 
 			detectedLanguageProbabilities = await WhisperSTT.detectLanguage(
 				sourceRawAudio,
-				modelName,
-				modelDir,
-				whisperOptions)
+				modelId,
+				modelPath,
+				libPath,
+				whisperOptions,
+				callbacks,
+			)
 
 			break
 		}
 
 		case 'whisper.cpp': {
-			const WhisperCppSTT = await import('../recognition/WhisperCppSTT.js')
+			const WhisperCppCliSTT = await import('../recognition/WhisperCppCliSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperCppOptions = options.whisperCpp!
+			const whisperCppCliOptions = options.whisperCpp!
 
 			logger.end()
 
-			const { modelName, modelPath } = await WhisperCppSTT.loadModelPackage(whisperCppOptions.model, undefined)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperCppCliOptions.model,
+				undefined,
+				callbacks,
+			)
 
 			logger.end();
 
-			detectedLanguageProbabilities = await WhisperCppSTT.detectLanguage(sourceRawAudio, modelName, modelPath)
+			detectedLanguageProbabilities = await WhisperCppCliSTT.detectLanguage(
+				sourceRawAudio,
+				modelId,
+				modelPath,
+				callbacks,
+			)
 
 			break
 		}
@@ -122,7 +149,7 @@ export async function detectSpeechLanguage(input: AudioSourceParam, options: Spe
 	}
 
 	logger.end()
-	logger.logDuration('\nTotal language detection time', startTime, chalk.magentaBright)
+	logger.logDuration('\nTotal language detection time', startTime, 'info', chalk.magentaBright)
 
 	return {
 		detectedLanguage,
@@ -140,8 +167,9 @@ export interface SpeechLanguageDetectionResult {
 	inputRawAudio: RawAudio
 }
 
-export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, audioPartDuration = 30, hopDuration = 25) {
-	const logger = new Logger()
+export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getResultsForAudioPart: (audioPart: RawAudio) => Promise<LanguageDetectionResults>, maxAudioPartDuration = 30, hopDuration = 25, callbacks?: SpeechLanguageDetectionCallbacks) {
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+	const logger = new Logger(callbacks.logLevel)
 
 	const audioDuration = getRawAudioDuration(sourceRawAudio)
 
@@ -152,12 +180,14 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 	const resultsForParts: LanguageDetectionResults[] = []
 
 	for (let audioTimeOffset = 0; audioTimeOffset < audioDuration; audioTimeOffset += hopDuration) {
-		const startOffset = audioTimeOffset
-		const endOffset = Math.min(audioTimeOffset + audioPartDuration, audioDuration)
-		const audioPartLength = endOffset - startOffset
+		callbacks?.abortSignal?.throwIfAborted()
 
-		logger.logTitledMessage(`\nDetect speech language starting at audio offset`, `${startOffset.toFixed(1)}`, chalk.magentaBright)
-		const audioPart = sliceRawAudioByTime(sourceRawAudio, startOffset, endOffset)
+		const startTimeOffset = audioTimeOffset
+		const endTimeOffset = Math.min(audioTimeOffset + maxAudioPartDuration, audioDuration)
+		const audioPartDuration = endTimeOffset - startTimeOffset
+
+		logger.logTitledMessage(`\nDetect speech language starting at audio offset`, `${startTimeOffset.toFixed(1)}`, 'info', chalk.magentaBright)
+		const audioPart = sliceRawAudioByTime(sourceRawAudio, startTimeOffset, endTimeOffset)
 
 		const resultsForPart = await getResultsForAudioPart(audioPart)
 
@@ -173,7 +203,11 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 
 		logger.logTitledMessage(`Top candidates`, topCandidatesStrings.join(', '))
 
-		if (audioPartLength < audioPartDuration) {
+		if (callbacks?.onPart) {
+			callbacks.onPart(sortedResultsForPart, startTimeOffset, endTimeOffset)
+		}
+
+		if (audioPartDuration < maxAudioPartDuration) {
 			break
 		}
 	}
@@ -196,7 +230,7 @@ export async function detectSpeechLanguageByParts(sourceRawAudio: RawAudio, getR
 
 export type SpeechLanguageDetectionEngine = 'silero' | 'whisper' | 'whisper.cpp'
 
-export interface SpeechLanguageDetectionOptions {
+export interface SpeechLanguageDetectionOptions extends API.OperationOptions {
 	engine?: SpeechLanguageDetectionEngine
 	defaultLanguage?: string,
 	fallbackThresholdProbability?: number
@@ -207,9 +241,9 @@ export interface SpeechLanguageDetectionOptions {
 
 	whisper?: WhisperLanguageDetectionOptions
 
-	whisperCpp?: WhisperCppOptions
+	whisperCpp?: WhisperCppCliOptions
 
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 }
 
 export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptions = {
@@ -236,6 +270,12 @@ export const defaultSpeechLanguageDetectionOptions: SpeechLanguageDetectionOptio
 	}
 }
 
+export interface SpeechLanguageDetectionCallbacks extends API.OperationCallbacks {
+	onPart?: SpeechLanguageDetectionPartCallback
+}
+
+export type SpeechLanguageDetectionPartCallback = (partResults: LanguageDetectionResults, partStartTime: number, partEndTime: number) => Promise<void>
+
 export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 	{
 		id: 'silero',
@@ -251,8 +291,8 @@ export const speechLanguageDetectionEngines: API.EngineMetadata[] = [
 	},
 	{
 		id: 'whisper.cpp',
-		name: 'OpenAI Whisper (C++ port)',
-		description: 'Uses the language tokens produced by Whisper.cpp to classify the spoken langauge.',
+		name: 'OpenAI Whisper (C++ port) CLI',
+		description: 'Uses the language tokens produced by whisper.cpp to classify the spoken langauge.',
 		type: 'local'
 	},
 ]

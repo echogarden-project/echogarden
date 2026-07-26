@@ -6,14 +6,15 @@ import { computeMelSpectrogram } from "../dsp/MelSpectrogram.js";
 import { Logger } from '../utilities/Logger.js';
 import { concatFloat32Arrays, splitFloat32Array } from '../utilities/Utilities.js';
 import { applyEmphasis } from '../dsp/MFCC.js';
+import { OperationCallbacks } from '../api/Common.js';
 
-export function computeEmbeddings(audioSamples: RawAudio, modelFilePath: string, executionProviders: OnnxExecutionProvider[]) {
+export function computeEmbeddings(audioSamples: RawAudio, modelFilePath: string, executionProviders: OnnxExecutionProvider[], callbacks: OperationCallbacks) {
 	const wav2vecBert = new Wav2Vec2BertFeatureEmbeddings(
 		modelFilePath,
 		executionProviders,
 	)
 
-	const result = wav2vecBert.computeEmbeddings(audioSamples)
+	const result = wav2vecBert.computeEmbeddings(audioSamples, callbacks)
 
 	return result
 }
@@ -26,8 +27,8 @@ export class Wav2Vec2BertFeatureEmbeddings {
 		public readonly executionProviders: OnnxExecutionProvider[]) {
 	}
 
-	async computeEmbeddings(rawAudio: RawAudio) {
-		const logger = new Logger()
+	async computeEmbeddings(rawAudio: RawAudio, callbacks: OperationCallbacks) {
+		const logger = new Logger(callbacks.logLevel)
 
 		rawAudio.audioChannels[0] = applyEmphasis(rawAudio.audioChannels[0], 0.97)
 
@@ -39,7 +40,8 @@ export class Wav2Vec2BertFeatureEmbeddings {
 			80,
 			20,
 			8000,
-			'povey')
+			'povey',
+			callbacks)
 
 		// Ensure even length
 		if (melSpectrogram.length % 2 != 0) {

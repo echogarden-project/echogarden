@@ -12,7 +12,7 @@ Here's a detailed reference for all the options accepted by the Echogarden CLI a
 Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
 
 **General**:
-* `engine`: identifier of the synthesis engine to use. Can be `kokoro`, `vits`, `pico`, `flite`, `gnuspeech`, `espeak`, `sam`, `sapi`, `msspeech`, `coqui-server`, `google-cloud`, `microsoft-azure`, `amazon-polly`, `openai-cloud`, `elevenlabs`, `google-translate`, `microsoft-edge` or `streamlabs-polly` (see [the engines documentation page](Engines.md) for more detailed information about each engine). Auto-selected if not set
+* `engine`: identifier of the synthesis engine to use. Can be `kokoro`, `vits`, `pico`, `flite`, `gnuspeech`, `espeak`, `sam`, `sapi`, `msspeech`, `coqui-server`, `google-cloud`, `microsoft-azure`, `amazon-polly`, `openai-cloud`, `elevenlabs`, `google-translate` or `microsoft-edge` (see [the engines documentation page](Engines.md) for more detailed information about each engine). Auto-selected if not set
 * `language`: language code, can be ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`, etc. [ISO 639-3](https://en.wikipedia.org/wiki/ISO_639-3), or a plain language name like `french`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Auto-selected if not set
 * `voiceGender`: gender of the voice to use. Optional
@@ -146,7 +146,7 @@ Also accepted are the following engine-specific options that may be required in 
 Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **General**:
-* `engine`: identifier of the recognition engine to use, can be `whisper`, `whisper.cpp`, `vosk` or `silero` (see [the full engine list](Engines.md) for more detailed information)
+* `engine`: identifier of the recognition engine to use, can be `whisper`, `whisper.cpp`, `google-cloud`, `microsoft-azure`, `amazon-transcribe`, `openai-cloud`, `deepgram` (see [the full engine list](Engines.md) for more detailed information)
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 * `crop`: crop to active parts using voice activity detection before starting recognition. Defaults to `true`
 * `isolate`: apply source separation to isolate voice before starting recognition. Defaults to `false`
@@ -157,7 +157,10 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
-* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en` or `large-v3-turbo`. Defaults to `tiny` or `tiny.en`
+* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`, `large-v3-turbo`. The following quantized models are also supported: `tiny-q5_1`,`tiny-q8_0`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base-q8_0`, `base.en-q5_1`, `base.en-q8_0`,`small-q5_1`, `small.en-q5_1`,  `small.en-q8_0`,`medium-q5_0`, `medium.en-q5_0`, `medium.en-q8_0`, `large-v2-q5_0`, `large-v2-q8_0`, `large-v3-q5_0`, `large-v3-turbo-q5_0`, `large-v3-turbo-q8_0`. Defaults to `base` or `base.en` for English
+* `whisper.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your architecture (currently CUDA 12.4 builds are available for Windows x64 and Linux x64).
+* `whisper.threadCount`: number of threads to use, defaults to `4`
+* `whisper.gpuDeviceIndex`: GPU device index (if GPU is enabled), defaults to `0`
 * `whisper.temperature`: temperature setting for the text decoder. Impacts the amount of randomization for token selection. It is recommended to leave at `0.1` (close to no randomization - almost always chooses the top ranked token) or choose a relatively low value (`0.25` or lower) for best results. Defaults to `0.1`
 * `whisper.prompt`: initial text to give the Whisper model. Can be a vocabulary, or example text of some sort. Note that if the prompt is very similar to the transcript, the model may intentionally avoid producing the transcript tokens as it may assume that they have already been transcribed. Optional
 * `whisper.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
@@ -168,17 +171,15 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.repetitionThreshold`: minimal repetition / compressibility score to cause a part not to be auto-prompted to the next part. Defaults to `2.4`
 * `whisper.decodeTimestampTokens`: enable/disable decoding of timestamp tokens. Setting to `false` can reduce the occurrence of hallucinations and token repetition loops, possibly due to the overall reduction in the number of tokens decoded. This has no impact on the accuracy of timestamps, since they are derived independently using cross-attention weights. However, there are cases where this can cause the model to end a part prematurely, especially in singing and less speech-like voice segments, or when there are multiple speakers. Defaults to `true`
 * `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high` for the `tiny` and `base` models, and `medium` for the larger models
-* `whisper.encoderProvider`: identifier for the ONNX execution provider to use with the encoder model. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). In general, GPU-based encoding should be significantly faster. Defaults to `cpu`, or `dml` if available
-* `whisper.decoderProvider`: identifier for the ONNX execution provider to use with the decoder model. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information).. Using GPU acceleration for the decoder may be faster than CPU, especially for larger models, but that depends on your particular combination of CPU and GPU. Defaults to `cpu`, and on Windows, `dml` if available, for larger models (`small`, `medium`, `large`)
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
-**Whisper.cpp**:
-* `whisperCpp.model`: selects which `whisper.cpp` model to use.  Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`, `large-v3-turbo`. The following quantized models are also supported: `tiny-q5_1`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base.en-q5_1`, `small-q5_1`, `small.en-q5_1`, `medium-q5_0`, `medium.en-q5_0`, `large-v2-q5_0`, `large-v3-q5_0`, `large-v3-turbo-q5_0`. Defaults to `base` or `base.en`
+**Whisper.cpp CLI**:
+* `whisperCpp.model`: selects which `whisper.cpp` model to use. Model identifiers and defaults are identical to those in the `whisper` engine
 * `whisperCpp.executablePath`: a path to a custom `whisper.cpp` `whisper-cli` executable (currently required for macOS)
 * `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set to `cpu`, `cublas-12.4.0` or `custom`. By default, builds are auto-selected and downloaded for Windows x64 and Linux x64 (for both `cpu` and `cublas-12.4.0`). The Linux CUDA build requires a [system-wide installation of CUDA Toolkit 12.4+](https://developer.nvidia.com/cuda-downloads), available on path. Using other builds requires providing a custom `executablePath`, which will automatically set this option to `custom`
+* `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`. If a custom build is used, it will enable or disable GPU for that build
 * `whisperCpp.threadCount`: number of threads to use, defaults to `4`
 * `whisperCpp.splitCount`: number of splits of the audio data to process in parallel (called `--processors` in the `whisper.cpp` CLI). A value greater than `1` can increase memory use significantly, reduce timing accuracy, and slow down execution in some cases. Defaults to `1` (highly recommended)
-* `whisperCpp.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your system. Defaults to `true` when a CUDA-enabled build is selected via `whisperCpp.build`, otherwise `false`. If a custom build is used, it will enable or disable GPU for that build
 * `whisperCpp.topCandidateCount`: the number of top candidate tokens to consider. Defaults to `5`
 * `whisperCpp.beamCount`: the number of decoding paths to use during beam search. Defaults to `5`
 * `whisperCpp.temperature`: set temperature. Defaults to `0.0`
@@ -188,13 +189,6 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.enableDTW`: enable `whisper.cpp`'s own experimental DTW-based token alignment to be used to derive timestamps. Defaults to `false`
 * `whisperCpp.enableFlashAttention`: enable flash attention. Can significantly increase performance for some configurations (**Note**: setting this to `true` will cause `enableDTW` to always be set to `false` since it's not compatible with flash attention). Defaults to `false`
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
-
-**Vosk**:
-* `vosk.modelPath`: path to the Vosk model to be used
-
-**Silero**:
-* `silero.modelPath`: path to a Silero model. Note that latest `en`, `de`, `fr` and `uk` models are automatically installed when needed based on the selected language. This should only be used to manually specify a different model, otherwise specify `language` instead
-* `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Defaults to `cpu`, or `dml` if available
 
 **Google Cloud**:
 * `googleCloud.apiKey`: Google Cloud API key (required)
@@ -258,19 +252,20 @@ Applies to CLI operation: `align`, API method: `align`
 
 Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, use `recognition.whisper` instead.
 
-* `whisper.model`: Whisper model to use. Defaults to `tiny` or `tiny.en`
+* `whisper.model`: Whisper model to use. Defaults to `base` or `base.en`
+* `whisper.enableGPU`: enable whisper GPU build. See details in recognition section above
+* `whisper.threadCount`: number of threads to use, defaults to `4`
+* `whisper.gpuDeviceIndex`: GPU device index (if GPU is enabled), defaults to `0`
 * `whisper.endTokenThreshold`: minimal probability to accept an end token for a recognized part. The probability is measured via the softmax between the end token's logit and the second highest logit. You can try to adjust this threshold in cases the model is ending a part with too few, or many tokens decoded. Defaults to `0.9`. On the last audio part, it is always effectively set to `Infinity`, to ensure the remaining transcript tokens are decoded in full
 * `whisper.maxTokensPerPart`: maximum number of tokens to decode per part. Should help avoid edge cases where the model never reaches an end token for the part, which otherwise may cause the model to decode too many tokens and eventually crash. Defaults to `220` (highest possible)
 * `whisper.timestampAccuracy`: timestamp accuracy. can be `medium` or `high`. `medium` uses a reduced subset of attention heads for alignment, `high` uses all attention heads and is thus more accurate at the word level, but slower for larger models. Defaults to `high` for the `tiny` and `base` models, and `medium` for the larger models. Note: setting `high` for model `large-v3-turbo` reverts to `medium`, due to poor results with the `high` setting for that model (possibly related to the 16-bit quantization).
-* `whisper.encoderProvider`: encoder ONNX provider. See details in recognition section above
-* `whisper.decoderProvider`: decoder ONNX provider. See details in recognition section above
 
 ## Speech-to-text translation
 
 Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 **General**:
-* `engine`: only `whisper` supported
+* `engine`: Can be `whisper`, `whisper.cpp` or `openai-cloud`. Defaults to `whisper`
 * `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
 * `targetLanguage`: the target language code for the output speech. Only `en` (English) supported by the `whisper` engine. Optional
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
@@ -283,9 +278,9 @@ Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 * `whisper`: prefix to provide options for the Whisper model. Same options as detailed in the recognition section above
 
-**Whisper.cpp**:
+**Whisper.cpp CLI**:
 
-* `whisper.cpp`: prefix to provide options for the Whisper.cpp model. Same options as detailed in the recognition section above
+* `whisperCpp`: prefix to provide options for the Whisper.cpp model. Same options as detailed in the recognition section above
 
 **OpenAI Cloud**:
 
@@ -321,10 +316,11 @@ Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
-* `whisper.model`: Whisper model to use. Only multilingual models can be used. Defaults to `tiny`
+* `whisper.model`: Whisper model to use. Only multilingual models can be used. Defaults to `base`
+* `whisper.enableGPU`: enable whisper GPU build. See details in recognition section above
+* `whisper.threadCount`: number of threads to use, defaults to `4`
+* `whisper.gpuDeviceIndex`: GPU device index (if GPU is enabled), defaults to `0`
 * `whisper.endTokenThreshold`: see details in the alignment section above
-* `whisper.encoderProvider`: encoder ONNX execution provider. See details in recognition section above
-* `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
 
 ## Speech-to-transcript-and-translation alignment
 
@@ -371,10 +367,11 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
 
 **Whisper**:
-* `whisper.model`: Whisper model to use. See model list in the recognition section
+* `whisper.model`: Whisper model to use. See model list in the recognition section. Defaults to `tiny`
+* `whisper.enableGPU`: enable whisper GPU build. See details in recognition section above
+* `whisper.threadCount`: number of threads to use, defaults to `4`
+* `whisper.gpuDeviceIndex`: GPU device index (if GPU is enabled), defaults to `0`
 * `whisper.temperature`: impacts the distribution of candidate languages when applying the softmax function to compute language probabilities over the model output. Higher temperature causes the distribution to be more uniform, while lower temperature causes it to be more strongly weighted towards the best scoring candidates. Defaults to `1.0`
-* `whisper.encoderProvider`: encoder ONNX execution provider. See details in recognition section above
-* `whisper.decoderProvider`: decoder ONNX execution provider. See details in recognition section above
 
 **Silero**:
 * `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU may be faster, but the initialization overhead is larger. **Note**: `dml` provider seems to be unstable at the moment for this model. Defaults to `cpu`
@@ -455,9 +452,8 @@ These are shared between text-to-speech, speech-to-text and alignment operations
 On the CLI, global options can be used with any operation. To set global options via the API, use the `setGlobalOption(key, value)` method (see the [API reference](API.md) for more details).
 
 * `ffmpegPath`: sets a custom path for the FFmpeg executable
-* `soxPath`: sets a custom path for the SoX executable
 * `packageBaseURL`: sets a custom base URL for the remote package repository used to download missing packages. Default is `https://huggingface.co/echogarden/echogarden-packages/resolve/main/`. If `huggingface.co` isn't accessible in your location, you can set to use a mirror by changing `huggingface.co` to an alternative domain like `hf-mirror.com`
-* `logLevel`: adjusts the quantity of log messages shown during processing. Possible values: `silent`, `output`, `error`, `warning`, `info`, `trace`. Defaults to `info`
+* `logLevel`: adjusts the default amount of log messages shown during processing. Possible values: `silent`, `output`, `error`, `warning`, `info`, `trace`. Defaults to `info`
 
 
 ## CLI options
@@ -465,10 +461,10 @@ On the CLI, global options can be used with any operation. To set global options
 These options are for the CLI only.
 
 * `--play`, `--no-play`: enable/disable audio playback. Defaults to play if there is no output file specified
-* `--player`: audio player to use. Can be `audio-io` (uses the [`audio-io` package](https://github.com/echogarden-project/audio-io) to directly output to native OS audio buffers) or `sox` (requires `sox` to be available on path on macOS, auto-downloaded on other platforms). Defaults to `audio-io`
+* `--player`: audio player to use. Can only be `audio-io` (uses the [`audio-io` package](https://github.com/echogarden-project/audio-io) to directly output to native OS audio buffers). Defaults to `audio-io`
 * `--overwrite`, `--no-overwrite`: overwrite/keep existing files. Doesn't overwrite by default
 * `--debug`, `--no-debug`: show/hide the full details of JavaScript errors, if they occur. Disabled by default
-* `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json`, if found at the current directory
+* `--config=...`: path to configuration file to use. Defaults to `echogarden.config` or `echogarden.config.json` or `echogarden.config.json5`, if found at the current directory
 
 ## Using a configuration file
 

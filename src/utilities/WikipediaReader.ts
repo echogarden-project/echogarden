@@ -1,11 +1,7 @@
+import { OperationCallbacks } from '../api/Common.js'
 import { splitToParagraphs, wordCharacterRegExp } from '../nlp/Segmentation.js'
-import { Logger } from './Logger.js'
 
-export async function parseWikipediaArticle(articleName: string, language: string) {
-	const logger = new Logger()
-
-	await logger.startAsync('Fetching Wikipedia article')
-
+export async function fetchAndParseWikipediaArticle(articleName: string, language: string, callbacks: OperationCallbacks) {
 	const { default: wtf } = await import('wtf_wikipedia')
 
 	const document = await wtf.fetch(articleName, language)
@@ -34,8 +30,6 @@ export async function parseWikipediaArticle(articleName: string, language: strin
 			}
 		}
 	}
-
-	logger.end()
 
 	return sectionsText
 }

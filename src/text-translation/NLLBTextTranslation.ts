@@ -1,21 +1,17 @@
 import chalk from 'chalk'
-import { TranslationPair } from '../api/TextTranslation.js'
+import { TextTranslationCallbacks, TranslationPair } from '../api/TextTranslation.js'
 import { parseText } from '../nlp/Segmentation.js'
 import { Logger } from '../utilities/Logger.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 
-export async function translateText(sourceText: string, sourceLanguage: string, targetLanguage: string): Promise<TranslationPair[]> {
-	const logger = new Logger()
-
-	//const languageNames = Object.keys(languageNameToNLLBCode)
-
-	//logger.log(languageNames)
+export async function translateText(sourceText: string, sourceLanguage: string, targetLanguage: string, callbacks: TextTranslationCallbacks): Promise<TranslationPair[]> {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start(`Load transformers.js module`)
 	const { AutoTokenizer, M2M100ForConditionalGeneration } = await import('@echogarden/transformers-nodejs-lite')
 
 	logger.start(`Load NLLB package`)
-	const modelPath = await loadPackage(`xenova-nllb-200-distilled-600M-q8`)
+	const modelPath = await loadPackage(`xenova-nllb-200-distilled-600M-q8`, callbacks)
 
 	logger.start(`Load NLLB tokenizer`)
 	const tokenizer = await AutoTokenizer.from_pretrained(modelPath)
@@ -41,7 +37,7 @@ export async function translateText(sourceText: string, sourceLanguage: string, 
 	for (let i = 0; i < sentences.length; i++) {
 		const sentenceText = sentences[i].text
 
-		logger.logTitledMessage(`Translate sentence ${i + 1}/${sentences.length}`, `"${sentenceText.trim()}"`, chalk.magentaBright)
+		logger.logTitledMessage(`Translate sentence ${i + 1}/${sentences.length}`, `"${sentenceText.trim()}"`, 'info', chalk.magentaBright)
 
 		logger.start(`Tokenize sentence`)
 		const inputs = (tokenizer as any)._build_translation_inputs(sentenceText, {

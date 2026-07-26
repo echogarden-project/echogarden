@@ -1,6 +1,5 @@
 import { ComplexNumber } from '../math/VectorMath.js'
 import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
-import { createWasmHeapManager } from 'wasm-heap-manager'
 
 // Compute short-term Fourier transform (real-valued)
 export async function stftr(samples: Float32Array, fftOrder: number, windowSize: number, hopSize: number, windowType: WindowType) {
@@ -38,6 +37,7 @@ export async function createStftrGenerator(samples: Float32Array, fftOrder: numb
 
 	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
 
+	const { createWasmHeapManager } = await import('wasm-heap-manager')
 	const wasmHeap = createWasmHeapManager(
 		() => m.HEAPU8.buffer,
 		m._pffft_aligned_malloc,
@@ -109,6 +109,7 @@ export async function stiftr(binsForFrames: Float32Array[], fftOrder: number, wi
 
 	const m = await getPFFFTInstance(await isPffftSimdSupportedForFFTOrder(fftOrder))
 
+	const { createWasmHeapManager } = await import('wasm-heap-manager')
 	const wasmHeap = createWasmHeapManager(
 		() => m.HEAPU8.buffer,
 		m._pffft_aligned_malloc,

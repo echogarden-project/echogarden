@@ -4,8 +4,8 @@ import * as Segmentation from './Segmentation.js'
 
 const log = logToStderr
 
-export async function phonemizeSentence(sentence: string, espeakVoice: string, substitutionMap?: Map<string, string[]>, useIpa = true) {
-	const ipaString = await EspeakTTS.textToPhonemes(sentence, espeakVoice, useIpa)
+export function phonemizeSentence(sentence: string, espeakVoice: string, substitutionMap?: Map<string, string[]>, useIpa = true) {
+	const ipaString = EspeakTTS.textToPhonemes(sentence, espeakVoice, useIpa)
 
 	const phraseStrings = ipaString.split(' | ')
 

@@ -4,9 +4,11 @@ import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 
 import { readBinaryIncomingMessage } from '../utilities/Utilities.js'
+import { SynthesisCallbacks, VoiceListRequestCallbacks } from '../api/API.js'
 
-export async function synthesize(text: string, language: string | undefined, voice: string, region: string, accessKeyId: string, secretAccessKey: string, engine: 'standard' | 'neural' = 'standard', ssmlEnabled = false, lexiconNames?: string[]) {
-	const logger = new Logger()
+export async function synthesize(text: string, language: string | undefined, voice: string, region: string, accessKeyId: string, secretAccessKey: string, engine: 'standard' | 'neural' = 'standard', ssmlEnabled = false, lexiconNames: string[] | undefined, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Load AWS SDK client module')
 
 	const polly = await import('@aws-sdk/client-polly')
@@ -45,13 +47,18 @@ export async function synthesize(text: string, language: string | undefined, voi
 
 	logger.end()
 
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData as any)
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(
+		audioData as any,
+		undefined,
+		undefined,
+		{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+	)
 
 	return { rawAudio }
 }
 
-export async function getVoiceList(region: string, accessKeyId: string, secretAccessKey: string) {
-	const logger = new Logger()
+export async function getVoiceList(region: string, accessKeyId: string, secretAccessKey: string, callbacks: VoiceListRequestCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Load AWS SDK client module')
 
 	const polly = await import('@aws-sdk/client-polly')

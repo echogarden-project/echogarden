@@ -7,6 +7,7 @@ import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
 import { escapeHtml } from '../encodings/HtmlEscape.js'
+import { SynthesisCallbacks } from '../api/Synthesis.js'
 
 export async function synthesize(
 	text: string,
@@ -16,10 +17,12 @@ export async function synthesize(
 	voice = 'Microsoft Server Speech Text to Speech Voice (en-US, AvaNeural)',
 	ssmlEnabled = false,
 	ssmlPitchString = '+0Hz',
-	ssmlRateString = '+0%') {
+	ssmlRateString = '+0%',
+	callbacks: SynthesisCallbacks) {
 
 	return new Promise<{ rawAudio: RawAudio, timeline: Timeline }>((resolve, reject) => {
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
+
 		logger.start('Request synthesis from Azure Cognitive Services')
 
 		const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion)
@@ -71,7 +74,12 @@ export async function synthesize(
 
 			logger.end()
 
-			const rawAudio = await FFMpegTranscoder.decodeToChannels(encodedAudio, 24000, 1)
+			const rawAudio = await FFMpegTranscoder.decodeToChannels(
+				encodedAudio,
+				24000,
+				1,
+				{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+			)
 
 			logger.start('Convert boundary events to a timeline')
 

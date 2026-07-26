@@ -8,7 +8,6 @@
 * `pico`: [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
 * `gnuspeech`: [GNU GPL v3](https://github.com/mym-br/gnuspeech_sa/blob/master/COPYING.txt)
 * `sam`: [Abandonware / fair-use / unknown](https://github.com/discordier/sam#license)
-* `vosk` [Apache License 2.0](https://github.com/alphacep/vosk-api/blob/master/COPYING)
 * `tinyld` [MIT License](https://github.com/komodojp/tinyld/blob/develop/license)
 * `fasttext`: [MIT License](https://github.com/loretoparisi/fasttext.js/blob/master/LICENSE)
 * `fvad` [BSD-3-Clause](https://github.com/cpuimage/WebRTC_VAD/blob/master/LICENSE)
@@ -31,7 +30,6 @@ All are freely distributable, with varying licenses:
 * Flite voices (`flite-`): [BSD License](https://github.com/festvox/flite/blob/master/COPYING)
 * SVOX Pico resources (`pico-`): [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
 * Silero VAD (`silero-vad`) and Silero language classifier (`silero-lang-classifier-95`): [MIT License](https://github.com/snakers4/silero-vad/blob/master/LICENSE)
-* Silero speech recognition models (`silero-en-`, `silero-de-`, `silero-es-`, `silero-ua-`): [BY-NC-SA](https://github.com/snakers4/silero-models/blob/master/LICENSE)
 * VITS pre-trained models (`vits-`): licensed under various creative commons licenses: [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/), [CC-BY](https://creativecommons.org/licenses/by/4.0/) and [BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/), and few are public domain. You can view the individual license for each model in the model cards on the [Piper samples page](https://rhasspy.github.io/piper-samples/)
 * Whisper pre-trained models (`whisper-`): [MIT License](https://github.com/openai/whisper/blob/main/LICENSE)
 * MDX-NET source separation models (`mdxnet-`): [MIT License](https://github.com/kuielab/mdx-net/blob/main/LICENSE)
@@ -39,5 +37,4 @@ All are freely distributable, with varying licenses:
 
 Tool binary distributions
 * FFmpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
-* SoX: [GPL v2 License](https://github.com/chirlu/sox/blob/master/LICENSE.GPL)
 * whisper.cpp: [MIT License](https://github.com/ggerganov/whisper.cpp/blob/master/LICENSE)

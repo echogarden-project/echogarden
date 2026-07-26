@@ -1,37 +1,39 @@
 import { spawn } from 'node:child_process'
 import { RawAudio, encodeRawAudioToWave, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
-import { type WhisperTask, type WhisperModelName } from './WhisperSTT.js'
+import { type WhisperTask, type WhisperModelId, type WhisperQuantizedModelId } from './WhisperCommon.js'
 import { getRandomHexString } from '../utilities/Utilities.js'
 import { Timeline, TimelineEntryType } from '../utilities/Timeline.js'
 import { tryParseTimeRangePatternWithHours } from '../subtitles/Subtitles.js'
 import { getAppTempDir, joinPath } from '../utilities/PathUtilities.js'
-import { appName } from '../api/Common.js'
+import { appName, OperationCallbacks } from '../api/Common.js'
 import { readAndParseJsonFile, remove } from '../utilities/FileSystem.js'
 import { splitToLines } from '../nlp/Segmentation.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { formatLanguageCodeWithName, getShortLanguageCode } from '../utilities/Locale.js'
-import { loadPackage } from '../utilities/PackageManager.js'
-import { detectSpeechLanguageByParts } from '../api/SpeechLanguageDetection.js'
+import { loadPackage, LoadPackageCallbacks } from '../utilities/PackageManager.js'
+import { detectSpeechLanguageByParts, SpeechLanguageDetectionCallbacks } from '../api/SpeechLanguageDetection.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
 
 export async function recognize(
 	sourceRawAudio: RawAudio,
 	task: WhisperTask,
 	sourceLanguage: string | undefined,
-	modelName: WhisperModelName,
+	modelId: WhisperModelId,
 	modelPath: string,
-	options: WhisperCppOptions) {
+	options: WhisperCppCliOptions,
+	callbacks: RecognitionCallbacks) {
 
 	return new Promise<RecognitionResult>(async (resolve, reject) => {
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
 
 		if (sourceRawAudio.sampleRate != 16000) {
 			throw new Error('Source audio must have a sample rate of 16000 Hz')
 		}
 
-		options = extendDeep(defaultWhisperCppOptions, options)
+		options = extendDeep(defaultWhisperCppCliOptions, options)
 
-		let buildKind: WhisperCppBuild
+		let buildKind: WhisperCppCliBuild
 		let executablePath: string
 
 		if (options.executablePath) {
@@ -48,11 +50,11 @@ export async function recognize(
 
 				if (options.enableGPU == null) {
 					options.enableGPU = buildKind.startsWith('cublas-')
-				} else if (options.enableGPU === true && !buildKind.startsWith('cublas-')) {
+				} else if (process.platform !== 'darwin' && options.enableGPU === true && !buildKind.startsWith('cublas-')) {
 					throw new Error('GPU support is only available for CUDA builds')
 				}
 			} else {
-				if (options.enableGPU) {
+				if (process.platform !== 'darwin' && options.enableGPU) {
 					buildKind = 'cublas-12.4.0'
 				} else {
 					buildKind = 'cpu'
@@ -61,7 +63,7 @@ export async function recognize(
 
 			logger.end()
 
-			executablePath = await loadExecutablePackage(buildKind)
+			executablePath = await loadBinariesPackage(buildKind, callbacks)
 		}
 
 		if (options.enableFlashAttention && options.enableDTW) {
@@ -72,7 +74,7 @@ export async function recognize(
 			throw new Error(`The 'large-v3-turbo' model doesn't support translation tasks.`)
 		}
 
-		logger.start(`Recognize with command-line whisper.cpp (model: ${options.model || modelName}, build: ${buildKind})`)
+		logger.start(`Recognize with command-line whisper.cpp (model: ${options.model || modelId}, build: ${buildKind})`)
 		logger.log('')
 		logger.log('')
 
@@ -135,7 +137,7 @@ export async function recognize(
 				'0',
 
 				'--dtw',
-				modelName.replaceAll('-', '.'),
+				modelId.replaceAll('-', '.'),
 			)
 		} else {
 			args.push(
@@ -148,6 +150,10 @@ export async function recognize(
 			args.push(
 				'--flash-attn'
 			)
+		} else {
+			args.push(
+				'--no-flash-attn'
+			)
 		}
 
 		if (task === 'translate') {
@@ -158,13 +164,18 @@ export async function recognize(
 
 		const argsString = args.join(' ')
 
-		const process = spawn(executablePath, [...args, '-'])
+		const cliProcess = spawn(executablePath, [...args, '-'])
+
+		callbacks.abortSignal?.addEventListener('abort', () => {
+			reject(new DOMException('whisper.cpp CLI process aborted by user.', 'AbortError'))
+			cliProcess.kill()
+		})
 
 		const stdoutLines: string[] = []
 		let stderrOutput = ''
 
-		process.stdout.setEncoding('utf8')
-		process.stdout.on('data', (str: string) => {
+		cliProcess.stdout.setEncoding('utf8')
+		cliProcess.stdout.on('data', (str: string) => {
 			if (task === 'detect-language') {
 				return
 			}
@@ -178,8 +189,8 @@ export async function recognize(
 			stdoutLines.push(...parts)
 		})
 
-		process.stderr.setEncoding('utf8')
-		process.stderr.on('data', (str: string) => {
+		cliProcess.stderr.setEncoding('utf8')
+		cliProcess.stderr.on('data', (str: string) => {
 			if (options.verbose) {
 				logger.log(str)
 			}
@@ -187,23 +198,23 @@ export async function recognize(
 			stderrOutput += str
 		})
 
-		process.on('error', (e) => {
+		cliProcess.on('error', (e) => {
 			reject(e)
 		})
 
-		process.on('close', async (exitCode) => {
+		cliProcess.on('close', async (exitCode) => {
 			logger.end()
 
 			if (exitCode === 0) {
 				const parsedStdOut = parseStdOutLinesToTimeline(stdoutLines, 'word')
 
-				const resultObject: WhisperCppVerboseResult = await readAndParseJsonFile(outJsonFilePath)
+				const resultObject: WhisperCppCliVerboseResult = await readAndParseJsonFile(outJsonFilePath)
 				await remove(outJsonFilePath)
 
 				if (task === 'detect-language') {
 					resolve({ timeline: [], transcript: '', language: resultObject.result.language })
 				} else {
-					const parsedResultObject = await parseResultObject(resultObject, modelName, getRawAudioDuration(sourceRawAudio), options.enableDTW!)
+					const parsedResultObject = await parseResultObject(resultObject, modelId, getRawAudioDuration(sourceRawAudio), options.enableDTW!, callbacks)
 
 					resolve(parsedResultObject)
 				}
@@ -214,12 +225,12 @@ export async function recognize(
 			}
 		})
 
-		//writeToStdinInChunks(process, sourceAsWave, 2 ** 10)
-		process.stdin.end(sourceAsWave)
+		//writeToStdinInChunks(cliProcess, sourceAsWave, 2 ** 10)
+		cliProcess.stdin.end(sourceAsWave)
 	})
 }
 
-export async function detectLanguage(sourceRawAudio: RawAudio, modelName: WhisperModelName, modelPath: string) {
+export async function detectLanguage(sourceRawAudio: RawAudio, modelId: WhisperModelId, modelPath: string, callbacks: SpeechLanguageDetectionCallbacks) {
 	if (sourceRawAudio.sampleRate != 16000) {
 		throw new Error('Source audio must have a sample rate of 16000')
 	}
@@ -229,9 +240,10 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 			partAudio,
 			'detect-language',
 			undefined,
-			modelName,
+			modelId,
 			modelPath,
 			{},
+			{ abortSignal: callbacks.abortSignal, logLevel: callbacks.logLevel }
 		)
 
 		const partResults = [{
@@ -243,18 +255,24 @@ export async function detectLanguage(sourceRawAudio: RawAudio, modelName: Whispe
 		return partResults
 	}
 
-	const results = await detectSpeechLanguageByParts(sourceRawAudio, detectLanguageForPart)
+	const results = await detectSpeechLanguageByParts(
+		sourceRawAudio,
+		detectLanguageForPart,
+		undefined,
+		undefined,
+		callbacks,
+	)
 
 	results.sort((entry1, entry2) => entry2.probability - entry1.probability)
 
 	return results
 }
 
-async function parseResultObject(resultObject: WhisperCppVerboseResult, modelName: WhisperModelName, totalDuration: number, enableDTW: boolean): Promise<RecognitionResult> {
-	const { Whisper } = await import('../recognition/WhisperSTT.js')
+async function parseResultObject(resultObject: WhisperCppCliVerboseResult, modelId: WhisperModelId, totalDuration: number, enableDTW: boolean, callbacks: OperationCallbacks): Promise<RecognitionResult> {
+	const { Whisper } = await import('./WhisperSTT.js')
 
-	const whisper = new Whisper(modelName, '', [], [])
-	await whisper.initializeTokenizerIfNeeded()
+	const whisper = new Whisper(modelId, '', '')
+	await whisper.initializeTokenizerIfNeeded(callbacks)
 
 	const tokenTimeline: Timeline = []
 
@@ -374,38 +392,9 @@ function parseStdOutLinesToTimeline(lines: string[], entryType: TimelineEntryTyp
 	return { transcript, timeline }
 }
 
-export async function loadModelPackage(modelId: WhisperCppModelId | undefined, languageCode: string | undefined) {
-	if (modelId === 'large') {
-		modelId = 'large-v2'
-	}
+export type WhisperCppCliBuild = 'cpu' | 'cublas-12.4.0' | 'custom'
 
-	if (modelId) {
-		const modelName = getModelNameFromModelId(modelId)
-
-		if (languageCode != 'en' && modelName.endsWith('.en')) {
-			throw new Error(`The English-only model '${modelName}' cannot be used with a non-English language '${languageCode}'.`)
-		}
-	} else {
-		if (languageCode) {
-			const shortLanguageCode = getShortLanguageCode(languageCode)
-
-			modelId = shortLanguageCode == 'en' ? 'base.en' : 'base'
-		} else {
-			modelId = 'base'
-		}
-	}
-
-	const packageName = `whisper.cpp-${modelId}`
-	const modelDir = await loadPackage(packageName)
-	const modelPath = joinPath(modelDir, `ggml-${modelId}.bin`)
-	const modelName = getModelNameFromModelId(modelId)
-
-	return { modelName, modelPath }
-}
-
-export type WhisperCppBuild = 'cpu' | 'cublas-12.4.0' | 'custom'
-
-export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
+export async function loadBinariesPackage(buildKind: WhisperCppCliBuild, callbacks: LoadPackageCallbacks) {
 	if (buildKind === 'custom') {
 		throw new Error(`A 'custom' build kind requires providing a custom path to the 'whisper-cli' executable in the 'executablePath' option.`)
 	}
@@ -417,17 +406,25 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 
 	if (buildKind.startsWith('cublas-')) {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}-latest`
+			packageName = `whisper.cpp-binaries-windows-x64-${buildKind}`
 		} else if (platform === 'linux' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-linux-x64-${buildKind}-latest`
+			packageName = `whisper.cpp-binaries-linux-x64-${buildKind}`
 		} else {
 			throw new Error(`whisper.cpp GPU builds (NVIDIA CUDA only) are currently only available as packages for Windows x64 and Linux x64. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
 	} else if (buildKind === 'cpu') {
 		if (platform === 'win32' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-windows-x64-cpu-latest`
+			packageName = `whisper.cpp-binaries-windows-x64-cpu`
+		} else if (platform === 'win32' && arch === 'arm64') {
+			packageName = `whisper.cpp-binaries-windows-arm64-cpu`
+		} else if (platform === 'darwin' && arch === 'x64') {
+			packageName = `whisper.cpp-binaries-macos-universal`
+		} else if (platform === 'darwin' && arch === 'arm64') {
+			packageName = `whisper.cpp-binaries-macos-universal`
 		} else if (platform === 'linux' && arch === 'x64') {
-			packageName = `whisper.cpp-binaries-linux-x64-cpu-latest`
+			packageName = `whisper.cpp-binaries-linux-x64-cpu`
+		} else if (platform === 'linux' && arch === 'arm64') {
+			packageName = `whisper.cpp-binaries-linux-arm64-cpu`
 		} else {
 			throw new Error(`Couldn't find a matching whisper.cpp binary package. Please specify a custom path to a whisper.cpp 'main' binary in the 'executablePath' option.`)
 		}
@@ -435,9 +432,9 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 		throw new Error(`Unsupported build kind '${buildKind}'`)
 	}
 
-	const packagePath = await loadPackage(packageName)
+	const packagePath = await loadPackage(packageName, callbacks)
 
-	let filename = 'whisper-cli' // used to be called 'main' but 'main' is now deprecated
+	let filename = 'whisper-cli'
 
 	if (platform === 'win32') {
 		filename += '.exe'
@@ -446,37 +443,7 @@ export async function loadExecutablePackage(buildKind: WhisperCppBuild) {
 	return joinPath(packagePath, filename)
 }
 
-function getModelNameFromModelId(modelId: WhisperCppModelId): WhisperModelName {
-	if (modelId.startsWith('large-v1')) {
-		return 'large-v1'
-	}
-
-	if (modelId.startsWith('large-v2')) {
-		return 'large-v2'
-	}
-
-	if (modelId.startsWith('large-v3-turbo')) {
-		return 'large-v3-turbo'
-	}
-
-	if (modelId.startsWith('large-v3')) {
-		return 'large-v3'
-	}
-
-	const lastDashIndex = modelId.lastIndexOf('-')
-
-	let modelName: string
-
-	if (lastDashIndex >= 0) {
-		modelName = modelId.substring(0, lastDashIndex) as WhisperModelName
-	} else {
-		modelName = modelId
-	}
-
-	return modelName as WhisperModelName
-}
-
-export interface WhisperCppVerboseResult {
+export interface WhisperCppCliVerboseResult {
 	model: {
 		type: string
 		multilingual: boolean
@@ -535,13 +502,13 @@ interface RecognitionResult {
 	language?: string
 }
 
-export interface WhisperCppOptions {
-	build?: WhisperCppBuild
+export interface WhisperCppCliOptions {
+	build?: WhisperCppCliBuild
 	executablePath?: string
+
+	model?: WhisperQuantizedModelId
+
 	enableGPU?: boolean
-
-	model?: WhisperCppModelId
-
 	threadCount?: number,
 	splitCount?: number,
 
@@ -559,15 +526,15 @@ export interface WhisperCppOptions {
 	verbose?: boolean
 }
 
-export const defaultWhisperCppOptions: WhisperCppOptions = {
+export const defaultWhisperCppCliOptions: WhisperCppCliOptions = {
 	build: undefined,
 	executablePath: undefined,
 
 	model: undefined,
 
+	enableGPU: undefined,
 	threadCount: 4,
 	splitCount: 1,
-	enableGPU: undefined,
 
 	topCandidateCount: 5,
 	beamCount: 5,
@@ -583,30 +550,3 @@ export const defaultWhisperCppOptions: WhisperCppOptions = {
 
 	verbose: false,
 }
-
-export type WhisperCppModelId =
-	'tiny' |
-	'tiny-q5_1' |
-	'tiny.en' |
-	'tiny.en-q5_1' |
-	'tiny.en-q8_0' |
-	'base' |
-	'base-q5_1' |
-	'base.en' |
-	'base.en-q5_1' |
-	'small' |
-	'small-q5_1' |
-	'small.en' |
-	'small.en-q5_1' |
-	'medium' |
-	'medium-q5_0' |
-	'medium.en' |
-	'medium.en-q5_0' |
-	'large' |
-	'large-v1' |
-	'large-v2' |
-	'large-v2-q5_0' |
-	'large-v3' |
-	'large-v3-q5_0' |
-	`large-v3-turbo` |
-	`large-v3-turbo-q5_0`

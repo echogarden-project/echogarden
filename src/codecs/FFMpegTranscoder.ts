@@ -4,10 +4,11 @@ import { encodeRawAudioToWave, decodeWaveToRawAudio, RawAudio } from '../audio/A
 
 import { Logger } from '../utilities/Logger.js'
 import { commandExists, concatUint8Arrays, isUint8Array, logToStderr } from '../utilities/Utilities.js'
-import { loadPackage } from '../utilities/PackageManager.js'
+import { loadPackage, LoadPackageCallbacks } from '../utilities/PackageManager.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
 import { existsSync } from '../utilities/FileSystem.js'
 import { joinPath } from '../utilities/PathUtilities.js'
+import { OperationCallbacks } from '../api/Common.js'
 
 const log = logToStderr
 
@@ -23,11 +24,11 @@ export type FFMpegOutputOptions = {
 	customOptions?: string[]
 }
 
-export async function encodeFromChannels(rawAudio: RawAudio, outputOptions: FFMpegOutputOptions) {
-	return transcode(encodeRawAudioToWave(rawAudio), outputOptions)
+export async function encodeFromChannels(rawAudio: RawAudio, outputOptions: FFMpegOutputOptions, callbacks: OperationCallbacks) {
+	return transcode(encodeRawAudioToWave(rawAudio), outputOptions, callbacks)
 }
 
-export async function decodeToChannels(input: string | Uint8Array, outSampleRate?: number, outChannelCount?: number) {
+export async function decodeToChannels(input: string | Uint8Array, outSampleRate: number | undefined, outChannelCount: number | undefined, callbacks: OperationCallbacks) {
 	const outputOptions: FFMpegOutputOptions = {
 		codec: 'pcm_f32le',
 		format: 'wav',
@@ -36,9 +37,10 @@ export async function decodeToChannels(input: string | Uint8Array, outSampleRate
 		audioOnly: true
 	}
 
-	const waveAudio = await transcode(input, outputOptions)
+	const logger = new Logger(callbacks.logLevel)
 
-	const logger = new Logger()
+	logger.start('Transcode with command-line ffmpeg')
+	const waveAudio = await transcode(input, outputOptions, callbacks)
 
 	logger.start(`Convert wave buffer to raw audio`)
 	const { rawAudio } = decodeWaveToRawAudio(waveAudio)
@@ -47,21 +49,18 @@ export async function decodeToChannels(input: string | Uint8Array, outSampleRate
 	return rawAudio
 }
 
-export async function transcode(input: string | Uint8Array, outputOptions: FFMpegOutputOptions) {
-	const executablePath = await getFFMpegExecutablePath()
+export async function transcode(input: string | Uint8Array, outputOptions: FFMpegOutputOptions, callbacks: OperationCallbacks) {
+	const executablePath = await resolveFFMpegExecutable(callbacks)
 
 	if (!executablePath) {
 		throw new Error(`The ffmpeg utility wasn't found. Please ensure it is available on the system path.`)
 	}
 
-	return transcode_CLI(executablePath, input, outputOptions)
+	return transcode_CLI(executablePath, input, outputOptions, callbacks)
 }
 
-async function transcode_CLI(ffmpegCommand: string, input: string | Uint8Array, outputOptions: FFMpegOutputOptions) {
+async function transcode_CLI(ffmpegCommand: string, input: string | Uint8Array, outputOptions: FFMpegOutputOptions, callbacks: OperationCallbacks) {
 	return new Promise<Uint8Array>((resolve, reject) => {
-		const logger = new Logger()
-		logger.start('Transcode with command-line ffmpeg')
-
 		const args = buildCommandLineArguments(isUint8Array(input) ? '-' : input, outputOptions)
 
 		const process = spawn(ffmpegCommand, args)
@@ -101,8 +100,11 @@ async function transcode_CLI(ffmpegCommand: string, input: string | Uint8Array, 
 				reject(`ffmpeg exited with code ${exitCode}`)
 				log(stderrOutput)
 			}
+		})
 
-			logger.end()
+		callbacks?.abortSignal?.addEventListener('abort', () => {
+			reject(new DOMException('FFMpeg CLI was aborted.', 'AbortError'))
+			process.kill()
 		})
 	})
 }
@@ -159,7 +161,7 @@ function buildCommandLineArguments(inputFilename: string, outputOptions: FFMpegO
 	return args
 }
 
-async function getFFMpegExecutablePath() {
+async function resolveFFMpegExecutable(callbacks: LoadPackageCallbacks) {
 	// If a global option set for the path, use it
 	if (getGlobalOption('ffmpegPath')) {
 		return getGlobalOption('ffmpegPath')
@@ -200,7 +202,7 @@ async function getFFMpegExecutablePath() {
 		return undefined
 	}
 
-	const ffmpegPackagePath = await loadPackage(packageName)
+	const ffmpegPackagePath = await loadPackage(packageName, callbacks)
 
 	let filename = packageName
 

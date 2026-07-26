@@ -4,16 +4,18 @@ import { resampleAudioSpeex } from './SpeexResampler.js'
 import { computeMelSpectrogram } from './MelSpectrogram.js'
 import { RawAudio, powerToDecibels } from '../audio/AudioUtilities.js'
 import { normalizeVectors } from '../math/VectorMath.js'
+import { OperationCallbacks } from '../api/Common.js'
 
-export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {}) {
-	const logger = new Logger()
+export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions, callbacks: OperationCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Initialize options')
 
 	if (monoAudio.audioChannels.length != 1) {
 		throw new Error('Audio must be mono')
 	}
 
-	options = extendDefaultMfccOptions(options)
+	options = extendDefaultMfccOptions(options ?? {})
 
 	const analysisSampleRate = options.analysisSampleRate!
 	const featureCount = options.featureCount!
@@ -42,7 +44,7 @@ export async function computeMFCCs(monoAudio: RawAudio, options: MfccOptions = {
 	}
 
 	logger.start('Compute Mel spectrogram')
-	const { melSpectrogram } = await computeMelSpectrogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz)
+	const { melSpectrogram } = await computeMelSpectrogram(resampledAudio, fftOrder, windowSize, hopLength, filterbankCount, lowerFrequencyHz, upperFrequencyHz, undefined, callbacks)
 
 	logger.start('Extract MFCCs from Mel spectrogram')
 	let mfccs: Float32Array<ArrayBufferLike>[] = melSpectrogramToMFCCs(melSpectrogram, featureCount)
@@ -202,6 +204,6 @@ export const defaultMfccOptions: MfccOptions = {
 	zeroFirstCoefficient: false,
 }
 
-export function extendDefaultMfccOptions(options: MfccOptions) {
+export function extendDefaultMfccOptions(options: MfccOptions): MfccOptions {
 	return extendDeep(defaultMfccOptions, options)
 }

@@ -1,18 +1,17 @@
-import { GaxiosOptions, request } from 'gaxios'
-import { Readable } from 'stream'
 import { getRandomHexString, writeToStderr } from './Utilities.js'
 
 import { Timer } from './Timer.js'
-import { Logger } from './Logger.js'
+import { Logger, LogLevel, logLevelGreaterOrEqualTo } from './Logger.js'
 import { extractTarball } from './Compression.js'
 import { move, remove, readdir, ensureDir } from './FileSystem.js'
 import chalk from 'chalk'
-import { logLevelGreaterOrEqualTo } from '../api/GlobalOptions.js'
 import { FileWriter } from './FileWriter.js'
 import { joinPath } from './PathUtilities.js'
+import { EasierHttpRequestError, EasierHttpRequestConfig, requestHttp } from 'easier-http-request'
+import { OperationCallbacks } from '../api/Common.js'
 
-export async function downloadAndExtractTarball(options: GaxiosOptions, targetDir: string, baseTempPath: string, displayName = 'archive') {
-	const logger = new Logger()
+export async function downloadAndExtractTarball(options: EasierHttpRequestConfig, targetDir: string, baseTempPath: string, displayName = 'archive', callbacks: FileDownloaderCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	const randomID = getRandomHexString(16).toLowerCase()
 	const tempTarballPath = joinPath(baseTempPath, `/${randomID}.tarball`)
@@ -21,7 +20,12 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 
 	logger.end()
 
-	await downloadFile(options, tempTarballPath, `${chalk.cyanBright('Downloading')} ${chalk.greenBright(displayName)}`)
+	await downloadFile(
+		options,
+		tempTarballPath,
+		`${chalk.cyanBright('Downloading')} ${chalk.greenBright(displayName)}`,
+		callbacks
+	)
 
 	logger.end()
 
@@ -43,14 +47,12 @@ export async function downloadAndExtractTarball(options: GaxiosOptions, targetDi
 	logger.end()
 }
 
-export async function downloadFile(options: GaxiosOptions, targetFilePath: string, prompt = 'Downloading') {
-	const write = logLevelGreaterOrEqualTo('info') ? writeToStderr : () => {}
+export async function downloadFile(requestConfig: EasierHttpRequestConfig, targetFilePath: string, prompt = 'Downloading', callbacks: FileDownloaderCallbacks) {
+	const write = logLevelGreaterOrEqualTo(callbacks.logLevel ?? 'warning', 'info') ? writeToStderr : () => { }
 
 	const timer = new Timer()
 
-	options.responseType = 'stream'
-
-	const response = await request<Readable>(options)
+	const response = await requestHttp(requestConfig)
 
 	const ttyOutput = process.stderr.isTTY === true
 
@@ -59,8 +61,8 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	const rateAveragingWindowSeconds = 5.0
 
 	let downloadStarted = false
-	let downloadedBytes = 0
-	let totalBytes: number | undefined = undefined
+	let downloadedByteCount = 0
+	let totalByteCount: number | undefined = undefined
 
 	const statusUpdateInterval = 250
 
@@ -73,8 +75,8 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 			return
 		}
 
-		const totalMBytes = (totalBytes || 0) / 1000 / 1000
-		const downloadedMBytes = downloadedBytes / 1000 / 1000
+		const totalMBytes = (totalByteCount ?? 0) / 1000 / 1000
+		const downloadedMBytes = downloadedByteCount / 1000 / 1000
 
 		const elapsedTime = timer.elapsedTimeSeconds
 		const cumulativeDownloadRate = downloadedMBytes / elapsedTime
@@ -101,7 +103,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		if (ttyOutput) {
 			let newString: string
 
-			if (totalBytes != undefined) {
+			if (totalByteCount != undefined) {
 				const percentage = (downloadedMBytes / totalMBytes) * 100
 
 				newString = `${prompt}.. ${downloadedMbytesStr}MB/${totalMbytesStr}MB (${chalk.blueBright(percentage.toFixed(1) + '%')}, ${timer.elapsedTimeSeconds.toFixed(1)}s, ${downloadRateStr}MB/s)`
@@ -116,11 +118,11 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 
 			lastString = newString
 		} else {
-			if (totalBytes == undefined) {
+			if (totalByteCount == undefined) {
 				return
 			}
 
-			const percent = downloadedBytes / totalBytes
+			const percent = downloadedByteCount / totalByteCount
 			const percentDisplay = `${(Math.floor(percent * 10) * 10).toString()}%`
 
 			if (lastString == prompt) {
@@ -141,8 +143,8 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 		}
 	}
 
-	const contentLengthString = response.headers['content-length']
-	totalBytes = contentLengthString != undefined ? parseInt(contentLengthString) : undefined
+	const contentLengthString = response.headers.get('content-length')
+	totalByteCount = contentLengthString != undefined ? parseInt(contentLengthString) : undefined
 
 	const partialFilePath = `${targetFilePath}.${getRandomHexString(16)}.partial`
 	const fileWriter = new FileWriter(partialFilePath)
@@ -152,12 +154,22 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	}, statusUpdateInterval)
 
 	try {
-		for await (const chunk of response.data) {
+		const responseBodyReader = response.body!.getReader()
+
+		while (true) {
+			const readableStreamResult = await responseBodyReader.read()
+
 			if (downloadStarted === false) {
 				downloadStarted = true
 			}
 
-			downloadedBytes += chunk.length
+			if (readableStreamResult.done) {
+				break
+			}
+
+			const chunk = readableStreamResult.value
+
+			downloadedByteCount += chunk.length
 
 			await fileWriter.write(chunk)
 		}
@@ -177,4 +189,7 @@ export async function downloadFile(options: GaxiosOptions, targetFilePath: strin
 	write('\n')
 
 	await move(partialFilePath, targetFilePath)
+}
+
+export interface FileDownloaderCallbacks extends OperationCallbacks {
 }

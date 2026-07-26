@@ -1,24 +1,26 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { AudioSourceParam, RawAudio, applyGainDecibels, applyGainDecibelsInPlace, attenuateIfClippingInPlace, ensureRawAudio, getSamplePeakDecibels, mixAudio, normalizeAudioLevelInPlace } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import { logToStderr } from '../utilities/Utilities.js'
 import { resampleAudioSpeex } from '../dsp/SpeexResampler.js'
 import { EngineMetadata } from './Common.js'
-import chalk from 'chalk'
 import { defaultNSNet2Options, NSNet2Options } from '../denoising/NSNet2.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 
-const log = logToStderr
+export async function denoise(input: AudioSourceParam, options: DenoisingOptions, callbacks?: DenoisingCallbacks) {
+	options = extendDeep(defaultDenoisingOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function denoise(input: AudioSourceParam, options: DenoisingOptions) {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
+
 	const startTime = logger.getTimestamp()
 
-	options = extendDeep(defaultDenoisingOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	logger.start(`Initialize ${options.engine} module`)
 
@@ -42,9 +44,9 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 				const audioChannelRawAudio: RawAudio = { audioChannels: [audioChannel], sampleRate: processingSampleRate }
 
 				logger.end()
-				logger.logTitledMessage(`Denoise audio channel`, `${channelIndex}`, chalk.magentaBright)
+				logger.logTitledMessage(`Denoise audio channel`, `${channelIndex}`, 'info', chalk.magentaBright)
 
-				const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audioChannelRawAudio)
+				const { denoisedRawAudio, frameVadProbabilities } = await RNNoise.denoiseAudio(audioChannelRawAudio, callbacks)
 
 				logger.end()
 
@@ -78,7 +80,7 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 			}
 
 			if (!nsnet2Options.modelDirectoryPath) {
-				nsnet2Options.modelDirectoryPath = await loadPackage(packageName)
+				nsnet2Options.modelDirectoryPath = await loadPackage(packageName, callbacks)
 			}
 
 			logger.start(`Resample audio to ${processingSampleRate} Hz`)
@@ -93,9 +95,9 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 
 				logger.end()
 
-				logger.logTitledMessage(`Denoise audio channel`, `${channelIndex}`, chalk.magentaBright)
+				logger.logTitledMessage(`Denoise audio channel`, `${channelIndex}`, 'info', chalk.magentaBright)
 
-				const { denoisedAudio } = await NSNet2.denoiseAudio(audioChannelRawAudio, nsnet2Options)
+				const { denoisedAudio } = await NSNet2.denoiseAudio(audioChannelRawAudio, nsnet2Options, callbacks)
 
 				logger.end()
 
@@ -112,11 +114,11 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 		}
 	}
 
-	logger.logTitledMessage(`Postprocess`, ``, chalk.magentaBright)
+	logger.logTitledMessage(`Postprocess`, ``, 'info', chalk.magentaBright)
 
 	logger.start(`Resample denoised audio (${denoisedAudio.sampleRate} Hz) back to original sample rate (${inputRawAudio.sampleRate} Hz)`)
 
-	denoisedAudio = await ensureRawAudio(denoisedAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length)
+	denoisedAudio = await ensureRawAudio(denoisedAudio, inputRawAudio.sampleRate, inputRawAudio.audioChannels.length, callbacks)
 
 	logger.start('Postprocess audio')
 
@@ -141,7 +143,7 @@ export async function denoise(input: AudioSourceParam, options: DenoisingOptions
 	logger.end()
 
 	logger.log('')
-	logger.logDuration('Total denoising time', startTime, chalk.magentaBright)
+	logger.logDuration('Total denoising time', startTime, 'info', chalk.magentaBright)
 
 	return {
 		denoisedAudio,
@@ -156,7 +158,7 @@ export interface DenoisingResult {
 
 export type DenoisingEngine = 'rnnoise' | 'nsnet2'
 
-export interface DenoisingOptions {
+export interface DenoisingOptions extends API.OperationOptions {
 	engine?: DenoisingEngine,
 
 	postProcessing?: {
@@ -181,6 +183,9 @@ export const defaultDenoisingOptions: DenoisingOptions = {
 	},
 
 	nsnet2: defaultNSNet2Options,
+}
+
+export interface DenoisingCallbacks extends API.OperationCallbacks {
 }
 
 export const denoisingEngines: EngineMetadata[] = [

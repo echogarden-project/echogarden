@@ -4,24 +4,33 @@ import { Logger } from '../utilities/Logger.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
-import { splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
+import { includesPunctuation, splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { escapeHtml } from '../encodings/HtmlEscape.js'
+import * as TextSegmentation from '@echogarden/text-segmentation'
+
+import { getGlobalOption, OperationCallbacks, SynthesisCallbacks } from '../api/API.js'
+import { loadPackage } from '../utilities/PackageManager.js'
 
 import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
+import { pathToFileUrl, resolvePath } from '../utilities/PathUtilities.js'
 
 const log = logToStderr
 
 let espeakInstance: any
 let espeakModule: any
 
-export async function preprocessAndSynthesize(text: string, language: string, espeakOptions: EspeakOptions, lexicons: Lexicon[] = []) {
-	const logger = new Logger()
+export async function preprocessAndSynthesize(text: string, language: string, espeakOptions: EspeakOptions, lexicons: Lexicon[] = [], callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
+
+	await logger.startAsync('Load espeak instance')
+
+	await ensureEspeakInstanceInitialized(callbacks)
 
 	await logger.startAsync('Tokenize and analyze text')
 
@@ -59,8 +68,6 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 				wordsWithMerges.push(currentWord)
 			}
 		}
-
-		words = wordsWithMerges
 	}
 
 	// Remove words containing only whitespace
@@ -97,8 +104,8 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 		}
 
 		phonemizedFragmentsSubstitutions.set(fragmentIndex, substitutionPhonemes)
-		const referenceIPA = (await textToPhonemes(fragment, espeakOptions.voice, true)).replaceAll('_', ' ')
-		const referenceKirshenbaum = (await textToPhonemes(fragment, espeakOptions.voice, false)).replaceAll('_', '')
+		const referenceIPA = textToPhonemes(fragment, espeakOptions.voice, true).replaceAll('_', ' ')
+		const referenceKirshenbaum = textToPhonemes(fragment, espeakOptions.voice, false).replaceAll('_', '')
 
 		const kirshenbaumPhonemes = substitutionPhonemes.map(phone => ipaPhoneToKirshenbaum(phone)).join('')
 
@@ -114,42 +121,95 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	logger.start('Synthesize preprocessed fragments with eSpeak')
 
-	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(preprocessedFragments, espeakOptions)
+	const { rawAudio: referenceSynthesizedAudio, timeline: referenceTimeline } = await synthesizeFragments(
+		preprocessedFragments,
+		espeakOptions,
+		{ ...callbacks, logLevel: 'warning' }
+	)
 
 	await logger.startAsync('Build phonemized tokens')
 
-	const phonemizedSentence: string[][][] = []
+	// Build modified clause timeline using word segmentation library instead
+	// of eSpeak's native clauses
+	const clauseTimeline: Timeline = []
 
-	let wordIndex = 0
-	for (const phraseEntry of referenceTimeline) {
-		const phrase: string[][] = []
+	{
+		const fragmentWordSequence = new TextSegmentation.WordSequence()
 
-		for (const wordEntry of phraseEntry.timeline!) {
-			wordEntry.text = fragments[wordIndex]
-
-			if (phonemizedFragmentsSubstitutions.has(wordIndex)) {
-				phrase.push(phonemizedFragmentsSubstitutions.get(wordIndex)!)
-			} else {
-				for (const tokenEntry of wordEntry.timeline!) {
-					const tokenPhonemes: string[] = []
-
-					for (const phoneme of tokenEntry.timeline!) {
-						if (phoneme.text) {
-							tokenPhonemes.push(phoneme.text)
-						}
-					}
-
-					if (tokenPhonemes.length > 0) {
-						phrase.push(tokenPhonemes)
-					}
-				}
-			}
-
-			wordIndex += 1
+		for (let fragment of fragments) {
+			fragmentWordSequence.addWord(fragment, 0, !wordCharacterRegExp.test(fragment))
 		}
 
-		if (phrase.length > 0) {
-			phonemizedSentence.push(phrase)
+		const wordEntries = referenceTimeline.flatMap(phraseEntry => phraseEntry.timeline!)
+		const segmentedWords =
+			await TextSegmentation.segmentWordSequence(fragmentWordSequence, {
+				requireSpaceAfterColonsOrSemicolons: false
+			})
+
+		let phraseStartWordIndex = 0
+
+		for (const sentence of segmentedWords.sentences) {
+			for (const phrase of sentence.phrases) {
+				const phraseEndWordIndex = phraseStartWordIndex + phrase.words.length
+
+				const phraseEntryTimeline: Timeline = []
+
+				for (let wordIndex = phraseStartWordIndex; wordIndex < phraseEndWordIndex; wordIndex++) {
+					phraseEntryTimeline.push(wordEntries[wordIndex])
+				}
+
+				const clauseEntry: TimelineEntry = {
+					type: 'clause',
+					text: phraseEntryTimeline.map(wordEntry => wordEntry.text).join(' '),
+					startTime: phraseEntryTimeline[0].startTime,
+					endTime: phraseEntryTimeline[phraseEntryTimeline.length - 1].endTime,
+					timeline: phraseEntryTimeline,
+				}
+
+				clauseTimeline.push(clauseEntry)
+
+				phraseStartWordIndex = phraseEndWordIndex
+			}
+		}
+	}
+
+	const phonemizedSentence: string[][][] = []
+
+	{
+		let wordIndex = 0
+
+		for (const phraseEntry of clauseTimeline) {
+			const phrase: string[][] = []
+
+			for (const wordEntry of phraseEntry.timeline!) {
+				wordEntry.text = fragments[wordIndex]
+
+				if (phonemizedFragmentsSubstitutions.has(wordIndex)) {
+					phrase.push(phonemizedFragmentsSubstitutions.get(wordIndex)!)
+				} else {
+					for (const tokenEntry of wordEntry.timeline!) {
+						const tokenPhonemes: string[] = []
+
+						for (const phoneme of tokenEntry.timeline!) {
+							if (phoneme.text) {
+								tokenPhonemes.push(phoneme.text)
+							}
+						}
+
+						if (tokenPhonemes.length > 0) {
+							phrase.push(tokenPhonemes)
+						}
+					}
+				}
+
+				wordIndex += 1
+			}
+
+			phraseEntry.text = phraseEntry.timeline!.map(wordEntry => wordEntry.text).join(' ')
+
+			if (phrase.length > 0) {
+				phonemizedSentence.push(phrase)
+			}
 		}
 	}
 
@@ -157,15 +217,15 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	logger.end()
 
-	return { referenceSynthesizedAudio, referenceTimeline, fragments, preprocessedFragments, phonemizedFragmentsSubstitutions, phonemizedSentence }
+	return { referenceSynthesizedAudio, referenceTimeline: clauseTimeline, fragments, preprocessedFragments, phonemizedFragmentsSubstitutions, phonemizedSentence }
 }
 
-export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions) {
+export async function synthesizeFragments(fragments: string[], espeakOptions: EspeakOptions, callbacks: SynthesisCallbacks) {
 	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
 
 	const voice = espeakOptions.voice
 
-	const sampleRate = await getSampleRate()
+	const sampleRate = getSampleRate()
 
 	if (fragments.length === 0) {
 		return {
@@ -210,7 +270,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 	}
 
-	const { rawAudio, events } = await synthesize(textWithMarkers, { ...espeakOptions, ssml: true })
+	const { rawAudio, events } = await synthesize(textWithMarkers, { ...espeakOptions, ssml: true }, callbacks)
 
 	// Add first marker if missing
 	if (fragments.length > 0) {
@@ -352,7 +412,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 			continue
 		}
 
-		const wordReferencePhonemes = (await textToPhonemes(wordEntry.text, espeakOptions.voice, true)).split('_')
+		const wordReferencePhonemes = textToPhonemes(wordEntry.text, espeakOptions.voice, true).split('_')
 
 		const wordReferenceIPA = wordReferencePhonemes.join(' ')
 
@@ -449,8 +509,8 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 	return { rawAudio, timeline: clauseTimeline, events }
 }
 
-export async function synthesize(text: string, espeakOptions: EspeakOptions) {
-	const logger = new Logger()
+export async function synthesize(text: string, espeakOptions: EspeakOptions, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	espeakOptions = extendDeep(defaultEspeakOptions, espeakOptions)
 
@@ -460,7 +520,7 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 		text = escapeHtml(text)
 	}
 
-	const { instance } = await getEspeakInstance()
+	const { instance } = await getEspeakInstance(callbacks)
 
 	const sampleChunks: Float32Array[] = []
 	const allEvents: EspeakEvent[] = []
@@ -468,14 +528,14 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	logger.start('Synthesize with eSpeak')
 
 	if (espeakOptions.useKlatt) {
-		await setVoice(`${espeakOptions.voice}+klatt6`)
+		setVoice(`${espeakOptions.voice}+klatt6`)
 	} else {
-		await setVoice(espeakOptions.voice)
+		setVoice(espeakOptions.voice)
 	}
 
-	await setRate(espeakOptions.rate)
-	await setPitch(espeakOptions.pitch)
-	await setPitchRange(espeakOptions.pitchRange)
+	setRate(espeakOptions.rate)
+	setPitch(espeakOptions.pitch)
+	setPitchRange(espeakOptions.pitchRange)
 
 	instance.synthesize(text, (samples: Int16Array, events: EspeakEvent[]) => {
 		if (samples && samples.length > 0) {
@@ -501,22 +561,24 @@ export async function synthesize(text: string, espeakOptions: EspeakOptions) {
 	return { rawAudio, events: allEvents }
 }
 
-export async function textToIPA(text: string, voice: string) {
-	await setVoice(voice)
+export function textToIPA(text: string, voice: string) {
+	errorIfEspeakInstanceNotLoaded()
 
-	const { instance } = await getEspeakInstance()
-	const ipa: string = (instance.synthesize_ipa(text).ipa as string).trim()
+	setVoice(voice)
+
+	const ipa: string = (espeakInstance.synthesize_ipa(text).ipa as string).trim()
 
 	return ipa
 }
 
-export async function textToPhonemes(text: string, voice: string, useIPA = true) {
-	await setVoice(voice)
+export function textToPhonemes(text: string, voice: string, useIPA = true) {
+	errorIfEspeakInstanceNotLoaded()
 
-	const { instance, module } = await getEspeakInstance()
-	const textPtr = instance.convert_to_phonemes(text, useIPA)
+	setVoice(voice)
 
-	const wasmHeap = wrapEmscriptenModuleHeap(module)
+	const textPtr = espeakInstance.convert_to_phonemes(text, useIPA)
+
+	const wasmHeap = wrapEmscriptenModuleHeap(espeakModule)
 
 	const resultRef = wasmHeap.wrapNullTerminatedUtf8String(textPtr.ptr)
 	const result = resultRef.value
@@ -527,46 +589,46 @@ export async function textToPhonemes(text: string, voice: string, useIPA = true)
 }
 
 let lastVoiceId: string | undefined
-export async function setVoice(voiceId: string) {
-	const { instance } = await getEspeakInstance()
+export function setVoice(voiceId: string) {
+	errorIfEspeakInstanceNotLoaded()
 
 	if (voiceId !== lastVoiceId) {
-		instance.set_voice(voiceId)
+		espeakInstance.set_voice(voiceId)
 
 		lastVoiceId = voiceId
 	}
 }
 
-export async function setVolume(volume: number) {
-	const { instance } = await getEspeakInstance()
+export function setVolume(volume: number) {
+	errorIfEspeakInstanceNotLoaded()
 
-	return instance.setVolume(volume)
+	return espeakInstance.setVolume(volume)
 }
 
 export async function setRate(rate: number) {
-	const { instance } = await getEspeakInstance()
+	errorIfEspeakInstanceNotLoaded()
 
-	return instance.set_rate(rate)
+	return espeakInstance.set_rate(rate)
 }
 
 export async function setPitch(pitch: number) {
-	const { instance } = await getEspeakInstance()
+	errorIfEspeakInstanceNotLoaded()
 
-	return instance.set_pitch(pitch)
+	return espeakInstance.set_pitch(pitch)
 }
 
 export async function setPitchRange(pitchRange: number) {
-	const { instance } = await getEspeakInstance()
+	errorIfEspeakInstanceNotLoaded()
 
-	return instance.set_range(pitchRange)
+	return espeakInstance.set_range(pitchRange)
 }
 
-export async function getSampleRate(): Promise<22050> {
+export function getSampleRate(): 22050 {
 	return 22050
 }
 
-export async function listVoices() {
-	const { instance } = await getEspeakInstance()
+export async function listVoices(callbacks: OperationCallbacks) {
+	const { instance } = await getEspeakInstance(callbacks)
 
 	const voiceList: {
 		identifier: string,
@@ -580,9 +642,19 @@ export async function listVoices() {
 	return voiceList
 }
 
-async function getEspeakInstance() {
+function errorIfEspeakInstanceNotLoaded() {
 	if (!espeakInstance) {
-		const { default: EspeakInitializer } = await import('@echogarden/espeak-ng-emscripten')
+		throw new Error(`Espeak instance has not been initialized.`)
+	}
+}
+
+async function getEspeakInstance(callbacks: OperationCallbacks) {
+	if (!espeakInstance) {
+		const packagePath = await loadPackage('espeak-ng-emscripten', callbacks)
+		const normalizedModulePath = resolvePath(packagePath, 'espeak-ng.js')
+		const modulePathAsFileUrl = pathToFileUrl(normalizedModulePath).href
+
+		const { default: EspeakInitializer } = await import(modulePathAsFileUrl)
 
 		const m = await EspeakInitializer()
 		espeakInstance = await (new m.eSpeakNGWorker())
@@ -590,6 +662,10 @@ async function getEspeakInstance() {
 	}
 
 	return { instance: espeakInstance, module: espeakModule }
+}
+
+export async function ensureEspeakInstanceInitialized(callbacks: OperationCallbacks) {
+	await getEspeakInstance(callbacks)
 }
 
 export type EspeakEventType = 'sentence' | 'word' | 'phoneme' | 'end' | 'mark' | 'play' | 'msg_terminated' | 'list_terminated' | 'samplerate'
@@ -622,8 +698,8 @@ export const defaultEspeakOptions: EspeakOptions = {
 }
 
 export async function testKirshenbaumPhonemization(text: string, language = 'en-us') {
-	const ipaPhonemizedSentence = (await phonemizeSentence(text, language)).flatMap(clause => clause)
-	const kirshenbaumPhonemizedSentence = (await phonemizeSentence(text, language, undefined, false)).flatMap(clause => clause)
+	const ipaPhonemizedSentence = phonemizeSentence(text, language).flatMap(clause => clause)
+	const kirshenbaumPhonemizedSentence = phonemizeSentence(text, language, undefined, false).flatMap(clause => clause)
 
 	const ipaFragments = ipaPhonemizedSentence.map(word => word.join(''))
 

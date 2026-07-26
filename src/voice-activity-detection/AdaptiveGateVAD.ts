@@ -1,14 +1,19 @@
-import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js';
-import { BiquadFilter, createHighpassFilter, createLowpassFilter } from '../dsp/BiquadFilter.js';
-import { DecayingPeakEstimator } from '../dsp/DecayingPeakEstimator.js';
-import { LoudnessEstimator } from '../dsp/LoudnessEstimator.js';
-import { extendDeep } from '../utilities/ObjectUtilities.js';
-import { Timeline } from '../utilities/Timeline.js';
-import { logToStderr } from '../utilities/Utilities.js';
+import { VoiceActivityDetectionCallbacks } from '../api/VoiceActivityDetection.js'
+import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
+import { BiquadFilter, createHighpassFilter, createLowpassFilter } from '../dsp/BiquadFilter.js'
+import { DecayingPeakEstimator } from '../dsp/DecayingPeakEstimator.js'
+import { LoudnessEstimator } from '../dsp/LoudnessEstimator.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { Timeline } from '../utilities/Timeline.js'
+import { logToStderr } from '../utilities/Utilities.js'
 
 const log = logToStderr
 
-export async function detectVoiceActivity(rawAudio: RawAudio, options: AdaptiveGateVADOptions) {
+export async function detectVoiceActivity(
+	rawAudio: RawAudio,
+	options: AdaptiveGateVADOptions,
+	callbacks: VoiceActivityDetectionCallbacks) {
+
 	const channelCount = rawAudio.audioChannels.length
 	const sampleCount = rawAudio.audioChannels[0].length
 	const sampleRate = rawAudio.sampleRate

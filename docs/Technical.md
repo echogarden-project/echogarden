@@ -2,7 +2,7 @@
 
 * Echogarden is written in TypeScript and targets the Node.js platform.
 * It uses ESM modules and latest ECMAScript and TypeScript features.
-* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime, with some exceptions: the CLI does invoke a command line `ffmpeg` tool, auto-downloaded using its internal package system.
+* It does not depend on essential binary executables. Instead, all of its engines either use pure JavaScript, WebAssembly, WASI, or the ONNX runtime, with some exceptions: the CLI does invoke a command line `ffmpeg` tool, auto-downloaded using its internal package system. Since `v3.0.0` it uses a native NAPI binding to `whisper.cpp` in the `whisper` engine
 * It does not depend on essential native node.js modules requiring install-time compilation with `node-gyp`. This greatly simplifies the installation experience for end-users (the ONNX runtime bundles precompiled NAPI modules for all supported platforms - it doesn't require any compilation during its installation).
 
 ## Package system
@@ -12,6 +12,7 @@ Echogarden uses its own package system to download and install various component
 Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/packages/[package-id-string]`. Each package has its own subdirectory.
 
 `[data-folder]` is located at:
+
 * `%AppData%\Local\echogarden` on Windows
 * `Users/User/Library/Application Support/echogarden` on macOS
 * `/home/user/.local/share/echogarden` on Linux
@@ -33,7 +34,6 @@ Currently, the largest contributors to the size are:
 
 * `onnxruntime-node` (core inference runtime, NAPI): 180MB
 * `kuromoji` (Japanese tokenizer, JavaScript) 40MB
-* `espeak-ng-emscripten` (core synthesis and phonemization engine, WASM): 23MB
 * `tiktoken` (tokenizer library, WASM): 22MB
 * `flite-wasi` (synthesis engine, WASI): 20MB
 * `jieba-wasm` (Chinese tokenizer, WASM): 14MB

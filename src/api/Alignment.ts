@@ -1,55 +1,62 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
 import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio, ensureRawAudio, getRawAudioDuration, normalizeAudioLevelInPlace, trimAudioEnd } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
 import { Timeline, addTimeOffsetToTimeline, addWordTextOffsetsToTimelineInPlace, wordTimelineToSegmentSentenceTimeline } from '../utilities/Timeline.js'
 import { formatLanguageCodeWithName, getDefaultDialectForLanguageCodeIfPossible, getShortLanguageCode, parseLangIdentifier } from '../utilities/Locale.js'
 import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
-import chalk from 'chalk'
-import { DtwGranularity, alignUsingDtwWithEmbeddings, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
+import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
 import { isWord } from '../nlp/Segmentation.js'
 
 const log = logToStderr
 
-export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions): Promise<AlignmentResult> {
-	const logger = new Logger()
+export async function align(input: AudioSourceParam, transcript: string, options: AlignmentOptions, callbacks?: AlignmentCallbacks): Promise<AlignmentResult> {
+	options = extendDeep(defaultAlignmentOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
+
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
 
-	options = extendDeep(defaultAlignmentOptions, options)
-
-	const inputRawAudio = await ensureRawAudio(input)
+	const inputRawAudio = await ensureRawAudio(input, undefined, undefined, callbacks)
 
 	let sourceRawAudio: RawAudio
 	let isolatedRawAudio: RawAudio | undefined
 	let backgroundRawAudio: RawAudio | undefined
 
 	if (options.isolate) {
-		logger.log(``)
-		logger.end();
+		logger.logTitledMessage(`Isolate vocals`, '');
 
-		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(inputRawAudio, options.sourceSeparation!))
+		({ isolatedRawAudio, backgroundRawAudio } = await API.isolate(
+			inputRawAudio,
+			options.sourceSeparation!,
+			{ ...callbacks, logLevel: logger.logLevel }))
 
 		logger.end()
-		logger.log(``)
 
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(isolatedRawAudio, 16000, 1, callbacks)
 	} else {
 		logger.start(`Resample audio to 16kHz mono`)
-		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1)
+		sourceRawAudio = await ensureRawAudio(inputRawAudio, 16000, 1, callbacks)
 	}
 
 	let sourceUncropTimeline: Timeline | undefined
 
 	if (options.crop) {
 		logger.start('Crop using voice activity detection');
-		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(sourceRawAudio, options.vad!))
+		({ timeline: sourceUncropTimeline, croppedRawAudio: sourceRawAudio } = await API.detectVoiceActivity(
+			sourceRawAudio,
+			options.vad!,
+			{ ...callbacks, logLevel: 'warning' }))
 
 		logger.end()
 	}
@@ -71,7 +78,10 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		logger.logTitledMessage('Language specified', formatLanguageCodeWithName(language))
 	} else {
 		logger.start('No language specified. Detect language using reference text')
-		const { detectedLanguage } = await API.detectTextLanguage(transcript, options.languageDetection || {})
+		const { detectedLanguage } = await API.detectTextLanguage(
+			transcript,
+			options.languageDetection!,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' })
 
 		language = detectedLanguage
 
@@ -207,16 +217,31 @@ export async function align(input: AudioSourceParam, transcript: string, options
 		case 'dtw': {
 			const { windowDurations, granularities } = getDtwWindowGranularitiesAndDurations()
 
-			logger.end()
+			logger.start('Synthesize alignment reference using eSpeak')
 
 			const {
 				referenceRawAudio,
 				referenceTimeline
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, false)
+			} = await createAlignmentReferenceUsingEspeak(
+				transcript,
+				language,
+				options.plainText!,
+				options.customLexiconPaths!,
+				false,
+				false,
+				{ abortSignal: callbacks.abortSignal, logLevel: 'warning' },
+			)
 
 			logger.end()
 
-			mappedTimeline = await alignUsingDtw(sourceRawAudio, referenceRawAudio, referenceTimeline, granularities, windowDurations)
+			mappedTimeline = await alignUsingDtw(
+				sourceRawAudio,
+				referenceRawAudio,
+				referenceTimeline,
+				granularities,
+				windowDurations,
+				{ abortSignal: callbacks.abortSignal, logLevel: callbacks.logLevel },
+			)
 
 			break
 		}
@@ -230,7 +255,11 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				extendDeep({ crop: options.crop, language }, options.recognition)
 
 			// Recognize source audio
-			let { wordTimeline: recognitionTimeline } = await API.recognize(sourceRawAudio, recognitionOptions)
+			let { wordTimeline: recognitionTimeline } = await API.recognize(
+				sourceRawAudio,
+				recognitionOptions,
+				callbacks
+			)
 
 			logger.log('')
 
@@ -244,7 +273,15 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				referenceRawAudio,
 				referenceTimeline,
 				espeakVoice,
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, false)
+			} = await createAlignmentReferenceUsingEspeak(
+				transcript,
+				language,
+				options.plainText!,
+				options.customLexiconPaths!,
+				false,
+				false,
+				{ ...callbacks, logLevel: 'warning' },
+			)
 
 			logger.end()
 
@@ -268,50 +305,44 @@ export async function align(input: AudioSourceParam, transcript: string, options
 				granularities,
 				windowDurations,
 				espeakOptions,
-				phoneAlignmentMethod)
+				phoneAlignmentMethod,
 
-			break
-		}
-
-		case 'dtw-ea': {
-			const { windowDurations, granularities } = getDtwWindowGranularitiesAndDurations()
-
-			logger.end()
-
-			logger.logTitledMessage(`Warning`, `The dtw-ea alignment engine is just an early experiment and doesn't currently perform as well as, or as efficiently as other alignment engines.`, chalk.yellow, 'warning')
-
-			const {
-				referenceRawAudio,
-				referenceTimeline
-			} = await createAlignmentReferenceUsingEspeak(transcript, language, options.plainText, options.customLexiconPaths, false, true)
-
-			logger.end()
-
-			const shortLanguageCode = getShortLanguageCode(language)
-
-			mappedTimeline = await alignUsingDtwWithEmbeddings(
-				sourceRawAudio,
-				referenceRawAudio,
-				referenceTimeline,
-				shortLanguageCode,
-				granularities,
-				windowDurations)
+				callbacks,
+			)
 
 			break
 		}
 
 		case 'whisper': {
 			const WhisperSTT = await import('../recognition/WhisperSTT.js')
+			const WhisperCommon = await import('../recognition/WhisperCommon.js')
 
-			const whisperAlignmnentOptions = options.whisper!
-
+			const whisperAlignmnentOptions: WhisperAlignmentOptions = extendDeep(WhisperSTT.defaultWhisperAlignmentOptions, options.whisper)
 			const shortLanguageCode = getShortLanguageCode(language)
 
-			const { modelName, modelDir } = await WhisperSTT.loadPackagesAndGetPaths(whisperAlignmnentOptions.model, shortLanguageCode)
+			const { modelId, modelPath } = await WhisperCommon.loadModelPackage(
+				whisperAlignmnentOptions.model,
+				shortLanguageCode,
+				callbacks,
+			)
+
+			const { libPath } = await WhisperSTT.loadLibraryPackages(
+				whisperAlignmnentOptions.enableGPU,
+				callbacks,
+			)
 
 			logger.end()
 
-			mappedTimeline = await WhisperSTT.align(sourceRawAudio, transcript, modelName, modelDir, shortLanguageCode, whisperAlignmnentOptions)
+			mappedTimeline = await WhisperSTT.align(
+				sourceRawAudio,
+				transcript,
+				modelId,
+				modelPath,
+				libPath,
+				shortLanguageCode,
+				whisperAlignmnentOptions,
+				callbacks,
+			)
 
 			break
 		}
@@ -335,7 +366,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	const { segmentTimeline } = await wordTimelineToSegmentSentenceTimeline(mappedTimeline, transcript, language, options.plainText?.paragraphBreaks, options.plainText?.whitespace)
 
 	logger.end()
-	logger.logDuration(`Total alignment time`, startTimestamp, chalk.magentaBright)
+	logger.logDuration(`Total alignment time`, startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		timeline: segmentTimeline,
@@ -350,7 +381,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 	}
 }
 
-export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: Timeline, alignmentOptions: AlignmentOptions) {
+export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: Timeline, alignmentOptions: AlignmentOptions, callbacks?: AlignmentCallbacks) {
 	const timeline: Timeline = []
 
 	for (const segmentEntry of segmentTimeline) {
@@ -368,7 +399,7 @@ export async function alignSegments(sourceRawAudio: RawAudio, segmentTimeline: T
 			sampleRate: sourceRawAudio.sampleRate
 		}
 
-		const { wordTimeline: mappedTimeline } = await align(segmentRawAudio, segmentText, alignmentOptions)
+		const { wordTimeline: mappedTimeline } = await align(segmentRawAudio, segmentText, alignmentOptions, callbacks)
 
 		const segmentTimelineWithOffset = addTimeOffsetToTimeline(mappedTimeline, segmentStartTime)
 
@@ -390,10 +421,10 @@ export interface AlignmentResult {
 	backgroundRawAudio?: RawAudio
 }
 
-export type AlignmentEngine = 'dtw' | 'dtw-ra' | 'dtw-ea' | 'whisper'
+export type AlignmentEngine = 'dtw' | 'dtw-ra' | 'whisper'
 export type PhoneAlignmentMethod = 'interpolation' | 'dtw'
 
-export interface AlignmentOptions {
+export interface AlignmentOptions extends API.OperationOptions {
 	engine?: AlignmentEngine
 
 	language?: string
@@ -406,7 +437,7 @@ export interface AlignmentOptions {
 
 	languageDetection?: API.TextLanguageDetectionOptions
 
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 
 	plainText?: API.PlainTextOptions
 
@@ -434,7 +465,7 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 
 	crop: true,
 
-	customLexiconPaths: undefined,
+	customLexiconPaths: [],
 
 	languageDetection: {
 	},
@@ -466,14 +497,17 @@ export const defaultAlignmentOptions: AlignmentOptions = {
 	},
 
 	vad: {
-		engine: 'adaptive-gate'
+		engine: 'adaptive-gate',
 	},
 
 	sourceSeparation: {
 	},
 
 	whisper: {
-	}
+	},
+}
+
+export interface AlignmentCallbacks extends API.RecognitionCallbacks {
 }
 
 export const alignmentEngines: API.EngineMetadata[] = [

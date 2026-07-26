@@ -1,5 +1,4 @@
 import { RawAudio } from '../audio/AudioUtilities.js'
-import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let sonicInstance: any
 
@@ -10,6 +9,8 @@ export async function stretchTimePitch(rawAudio: RawAudio, speed: number, pitchS
 	const inputSampleCount = rawAudio.audioChannels[0].length
 
 	const m = await getSonicInstance()
+
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const streamPtr = m._sonicCreateStream(sampleRate, channelCount)

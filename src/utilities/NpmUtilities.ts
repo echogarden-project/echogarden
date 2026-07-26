@@ -1,7 +1,7 @@
-import { request } from 'gaxios'
+import { requestHttp } from 'easier-http-request'
 
 export async function getPackageLatestVersion(packageName: string, timeout = 10000) {
-	const response = await request<any>({
+	const response = await requestHttp({
 		method: 'GET',
 
 		url: `https://registry.npmjs.org/${packageName}/latest`,
@@ -12,12 +12,10 @@ export async function getPackageLatestVersion(packageName: string, timeout = 100
 		headers: {
 		},
 
-		responseType: 'json',
-
 		timeout,
 	})
 
-	const result = response.data
+	const responseObject = await response.json()
 
-	return result.version
+	return responseObject.version
 }

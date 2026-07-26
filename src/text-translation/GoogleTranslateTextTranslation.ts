@@ -1,13 +1,13 @@
-import { request } from "gaxios"
-import { Logger } from "../utilities/Logger.js"
-import { Fragment, splitToFragments } from "../nlp/Segmentation.js"
-import { TranslationPair } from "../api/TextTranslation.js"
-import { getChromeOnAndroidHeaders } from "../utilities/BrowserRequestHeaders.js"
-import { logToStderr } from "../utilities/Utilities.js"
-import { getShortLanguageCode } from "../utilities/Locale.js"
-import { PlainTextOptions } from "../api/Common.js"
-import { extendDeep } from "../utilities/ObjectUtilities.js"
-import { splitAndPreserveSeparators } from "../utilities/StringUtilities.js"
+import { Logger } from '../utilities/Logger.js'
+import { Fragment, splitToFragments } from '../nlp/Segmentation.js'
+import { TextTranslationCallbacks, TranslationPair } from '../api/TextTranslation.js'
+import { getChromeOnAndroidHeaders } from '../utilities/BrowserRequestHeaders.js'
+import { logToStderr } from '../utilities/Utilities.js'
+import { getShortLanguageCode } from '../utilities/Locale.js'
+import { PlainTextOptions } from '../api/Common.js'
+import { extendDeep } from '../utilities/ObjectUtilities.js'
+import { splitAndPreserveSeparators } from '../utilities/StringUtilities.js'
+import { requestHttp } from 'easier-http-request'
 
 const log = logToStderr
 
@@ -16,9 +16,10 @@ export async function translateText(
 	sourceLanguage: string,
 	targetLanguage: string,
 	plainTextOptions: PlainTextOptions,
-	options: GoogleTranslateTextTranslationOptions) {
+	options: GoogleTranslateTextTranslationOptions,
+	callbacks: TextTranslationCallbacks) {
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	if (!supportsLanguage(sourceLanguage)) {
 		throw new Error(`Language code ${sourceLanguage} is not supported by the Google Translate engine. Supported language codes are ${supportedLanguageCodes.join(', ')}`)
@@ -78,6 +79,8 @@ export async function translateText(
 	const translatedFragmentsForParagraphs = paragraphs.map(_ => [] as string[])
 
 	for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+		callbacks?.abortSignal?.throwIfAborted()
+
 		const part = parts[partIndex]
 
 		const joinedFragmentsInPart = part.map(x => x.text.replaceAll('|', ' ')).join(`\n|\n`)
@@ -85,12 +88,16 @@ export async function translateText(
 		logger.logTitledMessage(`\nTranslate part ${partIndex + 1} of ${parts.length}`, joinedFragmentsInPart.replaceAll('\n|\n', ''))
 
 		logger.start(`Request translation from Google Translate`)
-		const fragmentTranslationPair = await translateText_MobileWeb(joinedFragmentsInPart, sourceLanguage, targetLanguage, options)
-		logger.end()
+
+		const fragmentTranslationPair = await translateText_MobileWeb(
+			joinedFragmentsInPart,
+			sourceLanguage,
+			targetLanguage,
+			options,
+			{ ...callbacks, logLevel: 'warning' }
+		)
 
 		const translatedTextForPart = fragmentTranslationPair[0].translatedText
-
-		logger.logTitledMessage(`Translated part`, `"${translatedTextForPart.replaceAll(' | ', '\n')}"`)
 
 		const splitTranslation = translatedTextForPart.split(`|`)
 
@@ -102,6 +109,10 @@ export async function translateText(
 
 			translatedFragmentsForParagraphs[paragraphIndex].push(translatedFragment)
 		}
+
+		logger.end()
+
+		logger.logTitledMessage(`Translated part`, `"${translatedTextForPart.replaceAll(' | ', '\n')}"`)
 	}
 
 	const translationPairs: TranslationPair[] = []
@@ -143,15 +154,16 @@ export async function translateText_MobileWeb(
 	text: string,
 	sourceLanguage: string,
 	targetLanguage: string,
-	options: GoogleTranslateTextTranslationOptions) {
+	options: GoogleTranslateTextTranslationOptions,
+	callbacks: TextTranslationCallbacks) {
 
 	const tld = options.tld
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start(`Request translation from Google Translate`)
 
-	const response = await request<string>({
+	const response = await requestHttp({
 		method: 'GET',
 
 		url: `https://translate.google.${tld}/m`,
@@ -171,12 +183,14 @@ export async function translateText_MobileWeb(
 			}),
 		},
 
-		responseType: 'text',
+		abortSignal: callbacks?.abortSignal
 	})
+
+	const responseText = await response.text()
 
 	logger.start('Parse response')
 
-	const html = response.data
+	const html = responseText
 
 	let translatedText: string
 

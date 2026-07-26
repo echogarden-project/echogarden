@@ -1,5 +1,4 @@
-import { GaxiosResponse, request } from 'gaxios'
-import { SynthesisVoice, VoiceGender } from '../api/API.js'
+import { VoiceListRequestCallbacks, SynthesisCallbacks, SynthesisVoice, VoiceGender } from '../api/API.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
@@ -7,19 +6,21 @@ import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { decodeBase64 } from '../encodings/Base64.js'
 import { splitToWords } from '../nlp/Segmentation.js'
 import { Timeline } from '../utilities/Timeline.js'
+import { EasierHttpRequestError, requestHttp } from 'easier-http-request'
 
 const log = logToStderr
 
-export async function synthesize(text: string, voiceId: string, language: string, options: ElevenLabsTTSOptions) {
-	const logger = new Logger()
+export async function synthesize(text: string, voiceId: string, language: string, options: ElevenLabsTTSOptions, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Request synthesis from ElevenLabs')
 
 	options = extendDeep(defaultElevenLabsTTSOptions, options)
 
-	let response: GaxiosResponse<any>
+	let responseObject: any
 
 	try {
-		response = await request<any>({
+		const response = await requestHttp({
 			url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
 
 			method: 'POST',
@@ -33,7 +34,7 @@ export async function synthesize(text: string, voiceId: string, language: string
 				output_format: 'mp3_44100_64',
 			},
 
-			data: {
+			body: {
 				text,
 
 				model_id: options.modelId,
@@ -48,17 +49,17 @@ export async function synthesize(text: string, voiceId: string, language: string
 				seed: options.seed
 			},
 
-			responseType: 'json'
+			abortSignal: callbacks?.abortSignal,
 		})
+
+		responseObject = await response.json()
 	} catch (e: any) {
-		const response = e.response
+		if (e instanceof EasierHttpRequestError) {
+			logger.log(`Request failed with status code ${e.statusCode}: ${e.statusText}.`)
 
-		if (response) {
-			logger.log(`Request failed with status code ${response.status}`)
-
-			if (response.data) {
+			if (e.errorBody) {
 				logger.log(`Server responded with:`)
-				logger.log(response.data)
+				logger.log(e.errorBody)
 			}
 		}
 
@@ -66,14 +67,21 @@ export async function synthesize(text: string, voiceId: string, language: string
 	}
 
 	logger.start('Decode synthesized audio')
-	const audioData = decodeBase64(response.data.audio_base64)
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(audioData)
+
+	const audioData = decodeBase64(responseObject.audio_base64)
+
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(
+		audioData,
+		undefined,
+		undefined,
+		{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+	)
 
 	let timeline: Timeline | undefined
 
-	const characters: string[] = response.data.alignment?.characters
-	const characterStartTimes: number[] = response.data.alignment?.character_start_times_seconds
-	const characterEndTimes: number[] = response.data.alignment?.character_end_times_seconds
+	const characters: string[] = responseObject.alignment?.characters
+	const characterStartTimes: number[] = responseObject.alignment?.character_start_times_seconds
+	const characterEndTimes: number[] = responseObject.alignment?.character_end_times_seconds
 
 	if (characters && characterStartTimes && characterEndTimes) {
 		logger.start('Create timeline from returned character timings')
@@ -106,8 +114,8 @@ export async function synthesize(text: string, voiceId: string, language: string
 	return { rawAudio, timeline }
 }
 
-export async function getVoiceList(apiKey: string) {
-	const response = await request<any>({
+export async function getVoiceList(apiKey: string, callbacks: VoiceListRequestCallbacks) {
+	const response = await requestHttp({
 		method: 'GET',
 
 		url: 'https://api.elevenlabs.io/v1/voices',
@@ -117,10 +125,12 @@ export async function getVoiceList(apiKey: string) {
 			'xi-api-key': apiKey
 		},
 
-		responseType: 'json'
+		abortSignal: callbacks?.abortSignal
 	})
 
-	const elevenLabsVoices: any[] = response.data.voices
+	const responseObject = await response.json()
+
+	const elevenLabsVoices: any[] = responseObject.voices
 
 	const voices: SynthesisVoice[] = elevenLabsVoices.map(elevenLabsVoice => {
 		const gender: VoiceGender = elevenLabsVoice?.labels?.gender ?? 'unknown'

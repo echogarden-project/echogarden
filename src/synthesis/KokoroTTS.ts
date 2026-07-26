@@ -3,11 +3,11 @@ import { Logger } from '../utilities/Logger.js'
 import { readdir, readFileAsBinary } from '../utilities/FileSystem.js'
 import { joinPath } from '../utilities/PathUtilities.js'
 import { getOnnxSessionOptions, OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
-import { SynthesisVoice } from '../api/Synthesis.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/Synthesis.js'
 import { concatAudioSegments, getRawAudioDuration, RawAudio } from '../audio/AudioUtilities.js'
 import { defaultEspeakOptions, EspeakOptions } from '../synthesis/EspeakTTS.js'
 import { Lexicon } from '../nlp/Lexicon.js'
-import { indexOfLastMatchingNumberInRange } from '../utilities/Utilities.js'
+import { indexOfLastMatchingNumberInRange, yieldToEventLoop } from '../utilities/Utilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { substituteStringUsingLookup } from '../utilities/StringUtilities.js'
@@ -21,8 +21,9 @@ export async function synthesizeSentence(
 	lexicons: Lexicon[],
 	modelPath: string,
 	voicesPath: string,
-	executionProviders: OnnxExecutionProvider[]
-) {
+	executionProviders: OnnxExecutionProvider[],
+	callbacks: SynthesisCallbacks) {
+
 	const cacheLookupKey = `${modelPath} ${voicesPath}`
 
 	let kokoroTTS: KokoroTTS | undefined = cachedInstanceLookup.get(cacheLookupKey)
@@ -34,7 +35,13 @@ export async function synthesizeSentence(
 		cachedInstanceLookup.set(cacheLookupKey, kokoroTTS)
 	}
 
-	const result = await kokoroTTS.synthesizeSentence(text, voice, speed, lexicons)
+	const result = await kokoroTTS.synthesizeSentence(
+		text,
+		voice,
+		speed,
+		lexicons,
+		callbacks,
+	)
 
 	return result
 }
@@ -49,10 +56,10 @@ export class KokoroTTS {
 	) {
 	}
 
-	async synthesizeSentence(sentenceText: string, voice: SynthesisVoice, speed: number, lexicons: Lexicon[]) {
-		await this.initializeSessionIfNeeded()
+	async synthesizeSentence(sentenceText: string, voice: SynthesisVoice, speed: number, lexicons: Lexicon[], callbacks: SynthesisCallbacks) {
+		await this.initializeSessionIfNeeded(callbacks)
 
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
 
 		const Onnx = await import('onnxruntime-node')
 
@@ -103,12 +110,16 @@ export class KokoroTTS {
 			useKlatt: false
 		}
 
-		//await logger.startAsync('Phonemize text')
-
 		const {
 			referenceSynthesizedAudio,
 			referenceTimeline,
-		} = await Espeak.preprocessAndSynthesize(sentenceText, voiceLanguage, espeakOptions, lexicons)
+		} = await Espeak.preprocessAndSynthesize(
+			sentenceText,
+			voiceLanguage,
+			espeakOptions,
+			lexicons,
+			{ logLevel: callbacks.logLevel },
+		)
 
 		logger.end()
 
@@ -271,6 +282,8 @@ export class KokoroTTS {
 		const audioParts: Float32Array[][] = []
 
 		for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+			callbacks.abortSignal?.throwIfAborted()
+
 			if (parts.length === 1) {
 				await logger.startAsync(`Synthesize sentence with ONNX model`)
 			} else {
@@ -298,6 +311,8 @@ export class KokoroTTS {
 
 		logger.end()
 
+		callbacks.abortSignal?.throwIfAborted()
+
 		const concatenatedAudioParts = audioParts.length > 0 ? concatAudioSegments(audioParts) : [new Float32Array(0)]
 
 		const synthesizedAudio: RawAudio = { audioChannels: concatenatedAudioParts, sampleRate }
@@ -309,19 +324,27 @@ export class KokoroTTS {
 		const referenceWordTimeline = referenceTimeline.flatMap(phrase => phrase.timeline!)
 
 		const dtwWindowDuration = Math.max(5, Math.ceil(0.2 * getRawAudioDuration(synthesizedAudio)))
-		const mappedTimeline = await alignUsingDtw(synthesizedAudio, referenceSynthesizedAudio, referenceWordTimeline, ['high'], [dtwWindowDuration])
+		const mappedTimeline = await alignUsingDtw(
+			synthesizedAudio,
+			referenceSynthesizedAudio,
+			referenceWordTimeline,
+			['high'],
+			[dtwWindowDuration],
+			{ ...callbacks, logLevel: 'warning' },
+		)
 
 		logger.end()
 
 		return { rawAudio: synthesizedAudio, timeline: mappedTimeline }
 	}
 
-	async initializeSessionIfNeeded() {
+	async initializeSessionIfNeeded(callbacks: SynthesisCallbacks) {
 		if (this.session) {
 			return
 		}
 
-		const logger = new Logger()
+		const logger = new Logger(callbacks.logLevel)
+
 		await logger.startAsync('Initialize Kokoro ONNX synthesis model')
 
 		const filesInModelPath = await readdir(this.modelPath)

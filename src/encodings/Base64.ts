@@ -1,4 +1,4 @@
-import { decodeAscii } from './Ascii.js';
+import { decodeAscii } from './Ascii.js'
 
 export function encodeBase64(inputBytes: Uint8Array,
 	paddingCharacter: string | undefined = '=',

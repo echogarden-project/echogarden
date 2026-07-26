@@ -145,7 +145,7 @@ export async function writeUtf8File(filePath: string, content: string) {
 }
 
 export async function writeJsonFile(filePath: string, content: any, useJson5 = false) {
-	const textContent = await stringifyAndFormatJson(content, useJson5)
+	const textContent = stringifyAndFormatJson(content, useJson5)
 
 	await writeUtf8File(filePath, textContent)
 }

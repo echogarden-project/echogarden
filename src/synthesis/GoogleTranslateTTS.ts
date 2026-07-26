@@ -1,4 +1,3 @@
-import { request } from 'gaxios'
 import { Phrase, splitToFragments } from '../nlp/Segmentation.js'
 import { concatFloat32Arrays, concatUint8Arrays, logToStderr } from '../utilities/Utilities.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
@@ -8,17 +7,18 @@ import { Timeline } from '../utilities/Timeline.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { getChromeOnWindowsHeaders } from '../utilities/BrowserRequestHeaders.js'
 import { decodeBase64 } from '../encodings/Base64.js'
-
-const log = logToStderr
+import { requestHttp } from 'easier-http-request'
+import { SynthesisCallbacks } from '../api/API.js'
 
 const maxTextLengthPerRequest = 200
 
-export async function synthesizeLongText(text: string, languageCode = 'en', tld = 'us', sentenceEndPause = 0.75, segmentEndPause = 1.0) {
+export async function synthesizeLongText(text: string, languageCode = 'en', tld = 'us', sentenceEndPause = 0.75, segmentEndPause = 1.0, callbacks: SynthesisCallbacks) {
 	if (text.length == 0) {
 		throw new Error('Text is empty')
 	}
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
+
 	logger.start('Prepare and split text')
 
 	const fragments = await splitToFragments(text, maxTextLengthPerRequest, languageCode)
@@ -32,13 +32,19 @@ export async function synthesizeLongText(text: string, languageCode = 'en', tld 
 		const fragment = fragments[i]
 
 		logger.start(`Request synthesis for text fragment ${i + 1}/${fragments.length} from Google Translate`)
-		const fragmentMp3Stream = await synthesizeShortText(fragment.text, languageCode, tld)
+		const fragmentMp3Stream = await synthesizeShortText(fragment.text, languageCode, tld, callbacks)
 
 		if (fragmentMp3Stream.length == 0) {
 			continue
 		}
 
-		const rawAudio = await FFMpegTranscoder.decodeToChannels(fragmentMp3Stream, 24000, 1)
+		const rawAudio = await FFMpegTranscoder.decodeToChannels(
+			fragmentMp3Stream,
+			24000,
+			1,
+			{ abortSignal: callbacks.abortSignal, logLevel: 'warning' }
+		)
+
 		fragmentsSampleRate = rawAudio.sampleRate
 
 		let targetEndingSilenceTime: number
@@ -76,7 +82,7 @@ export async function synthesizeLongText(text: string, languageCode = 'en', tld 
 	}
 }
 
-export async function synthesizeShortText(text: string, languageCode = 'en', tld = 'us') {
+export async function synthesizeShortText(text: string, languageCode = 'en', tld = 'us', callbacks: SynthesisCallbacks) {
 	if (text.length > maxTextLengthPerRequest) {
 		throw new Error(`Text is ${text.length} characters, which is longer than the maximum of ${maxTextLengthPerRequest}`)
 	}
@@ -90,7 +96,7 @@ export async function synthesizeShortText(text: string, languageCode = 'en', tld
 	const stringifiedForm = JSON.stringify(requestForm)
 	const requestBody = `f.req=${encodeURIComponent(stringifiedForm)}&`
 
-	const response = await request<string>({
+	const response = await requestHttp({
 		method: 'POST',
 
 		url: `https://translate.google.${tld}/_/TranslateWebserverUi/data/batchexecute`,
@@ -109,14 +115,16 @@ export async function synthesizeShortText(text: string, languageCode = 'en', tld
 
 		body: requestBody,
 
-		responseType: 'text'
+		abortSignal: callbacks?.abortSignal,
 	})
+
+	const responseBody = await response.text()
 
 	//log(response.data)
 
 	const audioChunks: Uint8Array[] = []
 
-	for (const line of response.data.split(/\r?\n/)) {
+	for (const line of responseBody.split(/\r?\n/)) {
 		const match = line.match(/"jQ1olc","\[\\"(.*)\\"]/)
 
 		if (match != null) {

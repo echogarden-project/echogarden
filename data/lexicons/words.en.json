@@ -59,8 +59,8 @@
 		"recommender": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "ɹ ˌiː k ə m ˈɛ n d ɚ",
-					"en-gb-x-rp": "ɹ ˌiː k ə m ˈɛ n d ɐ"
+					"en-us": "ɹ ˌɛ k ə m ˈɛ n d ɚ",
+					"en-gb-x-rp": "ɹ ˌɛ k ə m ˈɛ n d ɐ"
 				}
 			}
 		},
@@ -147,8 +147,8 @@
 		"preprocessing": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "p ɹ ˈi p ɹ ˌɑː s ɛ s ɪ ŋ",
-					"en-gb-x-rp": "p ɹ ˈi p ɹ ˌəʊ s ɛ s ɪ ŋ"
+					"en-us": "p ɹ ˈiː p ɹ ˌɑː s ɛ s ɪ ŋ",
+					"en-gb-x-rp": "p ɹ ˈiː p ɹ ˌəʊ s ɛ s ɪ ŋ"
 				}
 			}
 		},
@@ -456,6 +456,14 @@
 				}
 			}
 		},
+		"ethereum's": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɪ θ ˈɪ ə r ɪ ə m z",
+					"en-gb-x-rp": "ɪ θ ˈɪ ə r ɪ ə m z"
+				}
+			}
+		},
 		"amortize": {
 			"pronunciation": {
 				"espeak": {
@@ -685,6 +693,14 @@
 				"espeak": {
 					"en-us": "k ˈu d ɑː",
 					"en-gb-x-rp": "k ˈu d ɑː"
+				}
+			}
+		},
+		"cuda's": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈu d ɑː z",
+					"en-gb-x-rp": "k ˈu d ɑː z"
 				}
 			}
 		},
@@ -1043,8 +1059,16 @@
 		"pretrained": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "p ɹ ˈi t ɹ ˌeɪ n d",
-					"en-gb-x-rp": "p ɹ ˈi t ɹ ˌeɪ n d"
+					"en-us": "p ɹ ˈiː t ɹ ˌeɪ n d",
+					"en-gb-x-rp": "p ɹ ˈiː t ɹ ˌeɪ n d"
+				}
+			}
+		},
+		"pretraining": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈiː t ɹ ˌeɪ n ɪ ŋ",
+					"en-gb-x-rp": "p ɹ ˈiː t ɹ ˌeɪ n ɪ ŋ"
 				}
 			}
 		},
@@ -1075,8 +1099,8 @@
 		"asynchronous": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "ˈeɪ s ˌɪ ŋ k ɹ ə n ə s",
-					"en-gb-x-rp": "ˈeɪ s ˌɪ ŋ k ɹ ə n ə s"
+					"en-us": "ˌeɪ s ˈɪ ŋ k ɹ ə n ə s",
+					"en-gb-x-rp": "ˌeɪ s ˈɪ ŋ k ɹ ə n ə s"
 				}
 			}
 		},
@@ -1347,16 +1371,16 @@
 		"multiplier": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "m ˈʌ l t i p l ˌaɪɚ",
-					"en-gb-x-rp": "m ˈʌ l t i p l ˌaɪə"
+					"en-us": "m ˈʌ l t ə p l ˌaɪɚ",
+					"en-gb-x-rp": "m ˈʌ l t ə p l ˌaɪə"
 				}
 			}
 		},
 		"multipliers": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "m ˈʌ l t i p l ˌaɪɚ z",
-					"en-gb-x-rp": "m ˈʌ l t i p l ˌaɪə z"
+					"en-us": "m ˈʌ l t ə p l ˌaɪɚ z",
+					"en-gb-x-rp": "m ˈʌ l t ə p l ˌaɪə z"
 				}
 			}
 		},
@@ -1472,14 +1496,6 @@
 				}
 			}
 		},
-		"compact": {
-			"pronunciation": {
-				"espeak": {
-					"en-us": "k ˈə m p æ k t",
-					"en-gb-x-rp": "k ˈə m p æ k t"
-				}
-			}
-		},
 		"subsequence": {
 			"pronunciation": {
 				"espeak": {
@@ -1515,8 +1531,8 @@
 		"reset": {
 			"pronunciation": {
 				"espeak": {
-					"en-us": "ɹ ˈᵻ s ɛ t",
-					"en-gb-x-rp": "ɹ ᵻ s ˈɛ t"
+					"en-us": "ɹ ˈiː s ɛ t",
+					"en-gb-x-rp": "ɹ iː s ˈɛ t"
 				}
 			}
 		},
@@ -1741,6 +1757,694 @@
 				"espeak": {
 					"en-us": "k w ˈɛ n",
 					"en-gb-x-rp": "k w ˈɛ n"
+				}
+			}
+		},
+		"causation": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ɑː z ˈeɪ ʃ ə n",
+					"en-gb-x-rp": "k ɔː z ˈeɪ ʃ ə n"
+				}
+			}
+		},
+		"willpower": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈɪ l p ˌaʊ ɚ",
+					"en-gb-x-rp": "w ˈɪ l p ˌaʊ ɚ"
+				}
+			}
+		},
+		"neuroceptive": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈʊɹ ɹ oʊ s ˌə p t ˌɪ v",
+					"en-gb-x-rp": "n ˈʊɹ ɹ oʊ s ˌə p t ˌɪ v"
+				}
+			}
+		},
+		"hobbies": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "h ˈɑː b i z",
+					"en-gb-x-rp": "h ˈɑː b i z"
+				}
+			}
+		},
+		"deprioritize": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˌi p ɹ aɪ ˈɔː ɹ ɪ t ˌaɪ z",
+					"en-gb-x-rp": "d ˌi p ɹ aɪ ˈɔː ɹ ɪ t ˌaɪ z"
+				}
+			}
+		},
+		"deprioritization": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˌi p ɹ aɪ ˈɔː ɹ ɪ t ˌaɪ z ˈeɪ ʃ ə n",
+					"en-gb-x-rp": "d ˌi p ɹ aɪ ˈɔː ɹ ɪ t ˌaɪ z ˈeɪ ʃ ə n"
+				}
+			}
+		},
+		"cheesy": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "tʃ ˈiː z i",
+					"en-gb-x-rp": "tʃ ˈiː z i"
+				}
+			}
+		},
+		"anecdata": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌæ n ɪ k d ˈeɪ ɾ ə",
+					"en-gb-x-rp": "ˌæ n ɪ k d ˈeɪ t ə"
+				}
+			}
+		},
+		"transitioning": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌt ɹ æ n z ˈɪ ʃ ə n ɪ ŋ",
+					"en-gb-x-rp": "ˌt ɹ æ n z ˈɪ ʃ ə n ɪ ŋ"
+				}
+			}
+		},
+		"subjected": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ʌ b dʒ ˈɛ k t ᵻ d",
+					"en-gb-x-rp": "s ʌ b dʒ ˈɛ k t ᵻ d"
+				}
+			}
+		},
+		"recency": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈiː s ɛ n s i",
+					"en-gb-x-rp": "ɹ ˈiː s ɛ n s i"
+				}
+			}
+		},
+		"resistant": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː z ˈɪ s t ə n t",
+					"en-gb-x-rp": "ɹ iː s ˈɪ s t ə n t"
+				}
+			}
+		},
+		"byproduct": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˌaɪ p ɹ ˈɑː d ə k t",
+					"en-gb-x-rp": "b ˌaɪ p ɹ ˈə d ʌ k t"
+				}
+			}
+		},
+		"excess": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ k s ɛ s",
+					"en-gb-x-rp": "ɛ k s ˈɛ s"
+				}
+			}
+		},
+		"querying": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k w ˈɛ ɹ ɪ ɪ ŋ",
+					"en-gb-x-rp": "k w ˈiə ɹ ɪ ɪ ŋ"
+				}
+			}
+		},
+		"countryside": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈʌ n t ɹ iː s ˌaɪ d",
+					"en-gb-x-rp": "k ˈʌ n t ɹ iː s ˌaɪ d"
+				}
+			}
+		},
+		"transitive": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ɹ ˈæ n z ᵻ ɾ ˌɪ v",
+					"en-gb-x-rp": "t ɹ ˈæ n s ᵻ t ˌɪ v"
+				}
+			}
+		},
+		"endpoint": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ n d p ˌɔɪ n t",
+					"en-gb-x-rp": "ˈɛ n d p ˌɔɪ n t"
+				}
+			}
+		},
+		"endpoints": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ n d p ˌɔɪ n t s",
+					"en-gb-x-rp": "ˈɛ n d p ˌɔɪ n t s"
+				}
+			}
+		},
+		"traversal": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ɹ ə v ˈɜː ɹ s əl",
+					"en-gb-x-rp": "t ɹ ɐ v ˈɜː s əl"
+				}
+			}
+		},
+		"homogeneous": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "h ˌoʊ m ə dʒ ˈiː n iə s",
+					"en-gb-x-rp": "h ˌoʊ m ə dʒ ˈiː n iə s"
+				}
+			}
+		},
+		"homogeneity": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "h ˌoʊ m ə dʒ ᵻ n ˈi ɪ ɾ i",
+					"en-gb-x-rp": "h ˌoʊ m ə dʒ e n ˈi ɪ t i"
+				}
+			}
+		},
+		"intellisense": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɪ n t ˈɛ l i s ə n s",
+					"en-gb-x-rp": "ɪ n t ˈɛ l i s ə n s"
+				}
+			}
+		},
+		"prosaic": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ə z ˈeɪ ɪ k",
+					"en-gb-x-rp": "p ɹ ə z ˈeɪ ɪ k"
+				}
+			}
+		},
+		"pennies": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈɛ n i z",
+					"en-gb-x-rp": "p ˈɛ n i z"
+				}
+			}
+		},
+		"scala": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s k ˈɑː l ɑː",
+					"en-gb-x-rp": "s k ˈɑː l ɑː"
+				}
+			}
+		},
+		"usenet": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "j ˈuː z n ˌɛ t",
+					"en-gb-x-rp": "j ˈuː z n ˌɛ t"
+				}
+			}
+		},
+		"elo": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈiː l ˌoʊ",
+					"en-gb-x-rp": "ˈiː l ˌoʊ"
+				}
+			}
+		},
+		"prefill": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈp ɹ iː f ɪ l",
+					"en-gb-x-rp": "ˈp ɹ iː f ɪ l"
+				}
+			}
+		},
+		"openers": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈoʊ p ə n ɜː ɹ z",
+					"en-gb-x-rp": "ˈoʊ p ə n ɜː z"
+				}
+			}
+		},
+		"transient": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ɹ ˈæ n z iə n t",
+					"en-gb-x-rp": "t ɹ ˈæ n z iə n t"
+				}
+			}
+		},
+		"transients": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ɹ ˈæ n z iə n t s",
+					"en-gb-x-rp": "t ɹ ˈæ n z iə n t s"
+				}
+			}
+		},
+		"prefetch": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˌiː f ˈɛ tʃ",
+					"en-gb-x-rp": "p ɹ ˌiː f ˈɛ tʃ"
+				}
+			}
+		},
+		"prefetched": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˌiː f ˈɛ tʃ t",
+					"en-gb-x-rp": "p ɹ ˌiː f ˈɛ tʃ t"
+				}
+			}
+		},
+		"prefetching": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˌiː f ˈɛ tʃ ɪ ŋ",
+					"en-gb-x-rp": "p ɹ ˌiː f ˈɛ tʃ ɪ ŋ"
+				}
+			}
+		},
+		"bitcoin": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈɪ t k ˌɔɪ n",
+					"en-gb-x-rp": "b ˈɪ t k ˌɔɪ n"
+				}
+			}
+		},
+		"bitcoin's": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈɪ t k ˌɔɪ n z",
+					"en-gb-x-rp": "b ˈɪ t k ˌɔɪ n z"
+				}
+			}
+		},
+		"blockchain": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b l ˈɑː k tʃ ˌeɪ n",
+					"en-gb-x-rp": "b l ˈɑː k tʃ ˌeɪ n"
+				}
+			}
+		},
+		"nonce": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈɒ n s",
+					"en-gb-x-rp": "n ˈɒ n s"
+				}
+			}
+		},
+		"monotonic": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "m ˌɒ n ə t ˈɒ n ɪ k",
+					"en-gb-x-rp": "m ˌɒ n ə t ˈɒ n ɪ k"
+				}
+			}
+		},
+		"monotonically": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "m ˌɒ n ə t ˈɒ n ɪ k l iː",
+					"en-gb-x-rp": "m ˌɒ n ə t ˈɒ n ɪ k l iː"
+				}
+			}
+		},
+		"watchtower": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈɑː tʃ t ˌaʊ ɚ",
+					"en-gb-x-rp": "w ˈɑː tʃ t ˌaʊ ɚ"
+				}
+			}
+		},
+		"watchtowers": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "w ˈɑː tʃ t ˌaʊ ɚ s",
+					"en-gb-x-rp": "w ˈɑː tʃ t ˌaʊ ɚ s"
+				}
+			}
+		},
+		"binance": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈaɪ n æ n s",
+					"en-gb-x-rp": "b ˈaɪ n æ n s"
+				}
+			}
+		},
+		"researched": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈi s ɜː ɹ tʃ t",
+					"en-gb-x-rp": "ɹ ɪ s ˈɜː tʃ t"
+				}
+			}
+		},
+		"outbound": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈaʊ t b ˌaʊ n d",
+					"en-gb-x-rp": "ˈaʊ t b ˌaʊ n d"
+				}
+			}
+		},
+		"inbound": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ n b ˌaʊ n d",
+					"en-gb-x-rp": "ˈɪ n b ˌaʊ n d"
+				}
+			}
+		},
+		"relocate": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː l oʊ k ˈeɪ t",
+					"en-gb-x-rp": "ɹ iː l oʊ k ˈeɪ t"
+				}
+			}
+		},
+		"relocated": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː l oʊ k ˈeɪ ɾ ᵻ d",
+					"en-gb-x-rp": "ɹ iː l oʊ k ˈeɪ t ᵻ d"
+				}
+			}
+		},
+		"relocates": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː l oʊ k ˈeɪ t s",
+					"en-gb-x-rp": "ɹ iː l oʊ k ˈeɪ t s"
+				}
+			}
+		},
+		"definer": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ᵻ f ˈaɪ n ɚ",
+					"en-gb-x-rp": "d ᵻ f ˈaɪ n ɐ"
+				}
+			}
+		},
+		"decorrelate": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d iː k ˈɔ ɹ ɛ l eɪ t",
+					"en-gb-x-rp": "d iː k ˈɔ ɹ ɛ l eɪ t"
+				}
+			}
+		},
+		"decorrelated": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d iː k ˈɔ ɹ ɛ l eɪ ɾ ᵻ d",
+					"en-gb-x-rp": "d iː k ˈɔ ɹ ɛ l eɪ t ᵻ d"
+				}
+			}
+		},
+		"decorrelates": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d iː k ˈɔ ɹ ɛ l eɪ t s",
+					"en-gb-x-rp": "d iː k ˈɔ ɹ ɛ l eɪ t s"
+				}
+			}
+		},
+		"decorrelation": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d iː k ˈɔ ɹ ɛ l eɪ ʃ ə n",
+					"en-gb-x-rp": "d iː k ˈɔ ɹ ɛ l eɪ ʃ ə n"
+				}
+			}
+		},
+		"rerank": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː ɹ ˈæ ŋ k",
+					"en-gb-x-rp": "ɹ iː ɹ ˈæ ŋ k"
+				}
+			}
+		},
+		"reranks": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː ɹ ˈæ ŋ k s",
+					"en-gb-x-rp": "ɹ iː ɹ ˈæ ŋ k s"
+				}
+			}
+		},
+		"reranking": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ iː ɹ ˈæ ŋ k ɪ ŋ",
+					"en-gb-x-rp": "ɹ iː ɹ ˈæ ŋ k ɪ ŋ"
+				}
+			}
+		},
+		"baidu": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ˈɑː ɪ d uː",
+					"en-gb-x-rp": "b ˈɑː ɪ d uː"
+				}
+			}
+		},
+		"ph.d": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈiː ˈeɪ tʃ d ˈi",
+					"en-gb-x-rp": "p ˈiː ˈeɪ tʃ d ˈi"
+				}
+			}
+		},
+		"ph.d.": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈiː ˈeɪ tʃ d ˈi",
+					"en-gb-x-rp": "p ˈiː ˈeɪ tʃ d ˈi"
+				}
+			}
+		},
+		"happiness": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "h ˈæ p iː n ə s",
+					"en-gb-x-rp": "h ˈæ p iː n ə s"
+				}
+			}
+		},
+		"automata": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɔː t ˈɒ m ə t ə",
+					"en-gb-x-rp": "ɔː t ˈɒ m ə t ə"
+				}
+			}
+		},
+		"preprint": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ɹ ˈiː p ɹ ɪ ŋ t",
+					"en-gb-x-rp": "p ɹ ˈiː p ɹ ɪ ŋ t"
+				}
+			}
+		},
+		"inter": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ n t ɜ ɹ",
+					"en-gb-x-rp": "ˈɪ n t ɜː"
+				}
+			}
+		},
+		"asynchronously": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌeɪ s ˈɪ ŋ k ɹ ə n ə s l i",
+					"en-gb-x-rp": "ˌeɪ s ˈɪ ŋ k ɹ ə n ə s l i"
+				}
+			}
+		},
+		"combiner": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə m b ˈaɪ n ɚ",
+					"en-gb-x-rp": "k ə m b ˈaɪ n ɐ"
+				}
+			}
+		},
+		"combiners": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə m b ˈaɪ n ɚ z",
+					"en-gb-x-rp": "k ə m b ˈaɪ n ɐ z"
+				}
+			}
+		},
+		"90's": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "n ˈaɪ n t i z",
+					"en-gb-x-rp": "n ˈaɪ n t i z"
+				}
+			}
+		},
+		"80's": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈeɪ ɾ i z",
+					"en-gb-x-rp": "ˈeɪ ɾ i z"
+				}
+			}
+		},
+		"debussy": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "d ˈɛ b j ʊ s i",
+					"en-gb-x-rp": "d ˈɛ b j ʊ s i"
+				}
+			}
+		},
+		"istanbul": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌɪ s t ɑː n b ˈu l",
+					"en-gb-x-rp": "ˌɪ s t ɑː n b ˈu l"
+				}
+			}
+		},
+		"isnt": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ z ə n t",
+					"en-gb-x-rp": "ˈɪ z ə n t"
+				}
+			}
+		},
+		"convex": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈɑː n v ɛ k s",
+					"en-gb-x-rp": "k ˈɑː n v ɛ k s"
+				}
+			}
+		},
+		"lipschitz": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "l ˈɪ p ʃ ɪ t s",
+					"en-gb-x-rp": "l ˈɪ p ʃ ɪ t s"
+				}
+			}
+		},
+		"a.i.": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌeɪ ˈaɪ",
+					"en-gb-x-rp": "ˌeɪ ˈaɪ"
+				}
+			}
+		},
+		"startups": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s t ˈɑːɹ ɾ ʌ p s",
+					"en-gb-x-rp": "s t ˈɑːɹ ɾ ʌ p s"
+				}
+			}
+		},
+		"recursion": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ᵻ k ˈɜː ɹ ʒ ə n",
+					"en-gb-x-rp": "ɹ ᵻ k ˈɜː ʒ ə n"
+				}
+			}
+		},
+		"recursions": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ᵻ k ˈɜː ɹ ʒ ə n z",
+					"en-gb-x-rp": "ɹ ᵻ k ˈɜː ʒ ə n z"
+				}
+			}
+		},
+		"alibaba": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˌɑː l i b ˈɑː b ɑː",
+					"en-gb-x-rp": "ˌɑ l i b ˈɑː b ɑː"
+				}
+			}
+		},
+		"inverse": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɪ n v ɜː ɹ s",
+					"en-gb-x-rp": "ˈɪ n v ˈɜː s"
+				}
+			}
+		},
+		"jacobian": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "dʒ ə k ˈoʊ b iə n",
+					"en-gb-x-rp": "dʒ ə k ˈoʊ b iə n"
+				}
+			}
+		},
+		"poisson": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p w a s ˈɔ̃",
+					"en-gb-x-rp": "p w a s ˈɔ̃"
+				}
+			}
+		},
+		"erdos": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ r d ə ʃ",
+					"en-gb-x-rp": "ˈɛ r d ə ʃ"
+				}
+			}
+		},
+		"erdős": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɛ r d ə ʃ",
+					"en-gb-x-rp": "ˈɛ r d ə ʃ"
+				}
+			}
+		},
+		"unimodular": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "j ˌuː n ɪ m ˈɑː dʒ uː l ɚ",
+					"en-gb-x-rp": "j ˌuː n ɪ m ˈɒ dj ə l ɐ"
 				}
 			}
 		}

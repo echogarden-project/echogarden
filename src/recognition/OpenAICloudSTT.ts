@@ -5,9 +5,10 @@ import { Logger } from '../utilities/Logger.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { alignSegments } from '../api/Alignment.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
 
-export async function recognize(rawAudio: RawAudio, languageCode: string, options: OpenAICloudSTTOptions, task: Task = 'transcribe') {
-	const logger = new Logger()
+export async function recognize(rawAudio: RawAudio, languageCode: string, options: OpenAICloudSTTOptions, task: Task = 'transcribe', callbacks: RecognitionCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start('Load OpenAI module')
 
@@ -30,7 +31,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 
 	logger.start('Encode audio to send')
 	const ffmpegOptions = FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('mp3')
-	const encodedAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions)
+	const encodedAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, ffmpegOptions, callbacks)
 	const virtualFileStream = createVirtualFileReadStreamForBuffer(encodedAudio, 'audio.mp3')
 
 	logger.start(options.baseURL ? `Send request to ${options.baseURL}` : 'Send request to OpenAI Cloud API')
@@ -57,7 +58,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			response_format: responseFormat,
 			temperature: options.temperature,
 			timestamp_granularities,
-		}) as any as VerboseResponse
+		}, { signal: callbacks.abortSignal }) as any as VerboseResponse
 	} else if (task == 'translate') {
 		response = await openai.audio.translations.create({
 			file: virtualFileStream,
@@ -65,7 +66,7 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 			prompt: options.prompt,
 			response_format: responseFormat,
 			temperature: options.temperature,
-		}) as any as VerboseResponse
+		}, { signal: callbacks.abortSignal }) as any as VerboseResponse
 	} else {
 		throw new Error(`Invalid task`)
 	}
@@ -92,7 +93,12 @@ export async function recognize(rawAudio: RawAudio, languageCode: string, option
 		if (task === 'transcribe') {
 			logger.start('Align segments')
 
-			timeline = await alignSegments(rawAudio, segmentTimeline, { language: languageCode })
+			timeline = await alignSegments(
+				rawAudio,
+				segmentTimeline,
+				{ language: languageCode },
+				{ ...callbacks, logLevel: 'warning' },
+			)
 		} else {
 			timeline = segmentTimeline
 		}

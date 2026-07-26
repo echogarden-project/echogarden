@@ -1,21 +1,22 @@
 import { DtwGranularity, getMfccOptionsForGranularity } from "../alignment/SpeechAlignment.js";
+import { SpeechSearchCallbacks } from "../api/SpeechSearch.js";
 import { RawAudio } from "../audio/AudioUtilities.js";
 import { computeMFCCs, extendDefaultMfccOptions, MfccOptions } from "../dsp/MFCC.js";
 import { euclideanDistance13Dim } from "../math/VectorMath.js";
 import { Logger } from "../utilities/Logger.js";
 
-export async function searchSpeech(sourceRawAudio: RawAudio, queryRawAudio: RawAudio) {
-	const logger = new Logger()
+export async function searchSpeech(sourceRawAudio: RawAudio, queryRawAudio: RawAudio, callbacks: SpeechSearchCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	const granularity: DtwGranularity = 'low'
 
 	const mfccOptions = extendDefaultMfccOptions({ ...getMfccOptionsForGranularity(granularity), zeroFirstCoefficient: true }) as MfccOptions
 
 	logger.start('Compute query MFCC features')
-	const queryMfccs = await computeMFCCs(queryRawAudio, mfccOptions)
+	const queryMfccs = await computeMFCCs(queryRawAudio, mfccOptions, callbacks)
 
 	logger.start('Compute source MFCC features')
-	const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions)
+	const sourceMfccs = await computeMFCCs(sourceRawAudio, mfccOptions, callbacks)
 
 	logger.start('Compute cost matrix')
 
@@ -31,7 +32,7 @@ export async function searchSpeech(sourceRawAudio: RawAudio, queryRawAudio: RawA
 	for (let rowStartOffset = 0; rowStartOffset < rowCount; rowStartOffset++) {
 		const rowEndOffset = Math.min(rowStartOffset + maxSearchWindow, rowCount)
 
-		
+
 	}
 }
 

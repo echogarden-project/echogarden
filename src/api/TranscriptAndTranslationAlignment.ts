@@ -1,22 +1,22 @@
+import chalk from 'chalk'
+
+import * as API from './API.js'
+
 import { extendDeep } from '../utilities/ObjectUtilities.js'
 
-import { logToStderr } from '../utilities/Utilities.js'
 import { AudioSourceParam, RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import * as API from './API.js'
 import { Timeline } from '../utilities/Timeline.js'
-import chalk from 'chalk'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 
-const log = logToStderr
+export async function alignTranscriptAndTranslation(input: AudioSourceParam, transcript: string, translatedTranscript: string, options: TranscriptAndTranslationAlignmentOptions, callbacks?: TranscriptAndTranslationAlignmentCallbacks): Promise<TranscriptAndTranslationAlignmentResult> {
+	options = extendDeep(defaultTranscriptAndTranslationAlignmentOptions, options)
+	callbacks = { logLevel: API.getGlobalLogLevel(), ...callbacks }
 
-export async function alignTranscriptAndTranslation(input: AudioSourceParam, transcript: string, translatedTranscript: string, options: TranscriptAndTranslationAlignmentOptions): Promise<TranscriptAndTranslationAlignmentResult> {
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 
 	const startTimestamp = logger.getTimestamp()
-
-	options = extendDeep(defaultTranscriptAndTranslationAlignmentOptions, options)
 
 	if (options.sourceLanguage && !options.alignment?.language) {
 		options.alignment = extendDeep(options.alignment || {}, { language: options.sourceLanguage })
@@ -31,16 +31,26 @@ export async function alignTranscriptAndTranslation(input: AudioSourceParam, tra
 
 	switch (options.engine) {
 		case 'two-stage': {
-			logger.logTitledMessage(`Start stage 1`, `Align speech to transcript`, chalk.magentaBright)
+			logger.logTitledMessage(`Start stage 1`, `Align speech to transcript`, 'info', chalk.magentaBright)
 			logger.end()
 
-			alignmentResult = await API.align(input, transcript, options.alignment || {})
+			alignmentResult = await API.align(
+				input,
+				transcript,
+				options.alignment!,
+				callbacks
+			)
 
 			logger.log(``)
-			logger.logTitledMessage(`Start stage 2`, `Align timeline to translated transcript`, chalk.magentaBright)
+			logger.logTitledMessage(`Start stage 2`, `Align timeline to translated transcript`, 'info', chalk.magentaBright)
 			logger.end()
 
-			timelineAlignmentResult = await API.alignTimelineTranslation(alignmentResult.timeline, translatedTranscript, options.timelineAlignment || {})
+			timelineAlignmentResult = await API.alignTimelineTranslation(
+				alignmentResult.timeline,
+				translatedTranscript,
+				options.timelineAlignment!,
+				callbacks,
+			)
 
 			break
 		}
@@ -53,7 +63,7 @@ export async function alignTranscriptAndTranslation(input: AudioSourceParam, tra
 	logger.end()
 
 	logger.log(``)
-	logger.logDuration(`Total transcript and translation alignment time`, startTimestamp, chalk.magentaBright)
+	logger.logDuration(`Total transcript and translation alignment time`, startTimestamp, 'info', chalk.magentaBright)
 
 	return {
 		timeline: alignmentResult.timeline,
@@ -94,7 +104,7 @@ export interface TranscriptAndTranslationAlignmentResult {
 
 export type TranscriptAndTranslationAlignmentEngine = 'two-stage'
 
-export interface TranscriptAndTranslationAlignmentOptions {
+export interface TranscriptAndTranslationAlignmentOptions extends API.OperationOptions {
 	engine?: TranscriptAndTranslationAlignmentEngine
 
 	sourceLanguage?: string
@@ -110,7 +120,7 @@ export interface TranscriptAndTranslationAlignmentOptions {
 
 	languageDetection?: API.TextLanguageDetectionOptions
 
-	vad?: API.VADOptions
+	vad?: API.VoiceActivityDetectionOptions
 
 	plainText?: API.PlainTextOptions
 
@@ -152,6 +162,9 @@ export const defaultTranscriptAndTranslationAlignmentOptions: TranscriptAndTrans
 
 	sourceSeparation: {
 	},
+}
+
+export interface TranscriptAndTranslationAlignmentCallbacks extends API.OperationCallbacks {
 }
 
 export const TranscriptAndTranslationAlignmentEngines: API.EngineMetadata[] = [

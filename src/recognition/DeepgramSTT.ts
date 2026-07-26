@@ -1,12 +1,13 @@
-import { GaxiosResponse, request } from 'gaxios'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
+import { TimelineEntry } from '../utilities/Timeline.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
+import { EasierHttpRequestError, requestHttp } from 'easier-http-request'
 
-export async function recognize(rawAudio: RawAudio, languageCode: string | undefined, options: DeepgramSTTOptions) {
-	const logger = new Logger()
+export async function recognize(rawAudio: RawAudio, languageCode: string | undefined, options: DeepgramSTTOptions, callbacks: RecognitionCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
 	logger.start('Initialize Deepgram recognition')
 
@@ -35,15 +36,16 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 
 	const audioData = await FFMpegTranscoder.encodeFromChannels(
 		rawAudio,
-		FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('opus')
+		FFMpegTranscoder.getDefaultFFMpegOptionsForSpeech('opus'),
+		callbacks
 	)
 
 	logger.start('Send request to Deepgram API')
 
-	let response: GaxiosResponse<any>
+	let deepgramResponse: DeepgramResponse
 
 	try {
-		response = await request<any>({
+		const response = await requestHttp({
 			method: 'POST',
 
 			url: 'https://api.deepgram.com/v1/listen',
@@ -58,24 +60,22 @@ export async function recognize(rawAudio: RawAudio, languageCode: string | undef
 
 			body: audioData,
 
-			responseType: 'json',
+			abortSignal: callbacks?.abortSignal,
 		})
+
+		deepgramResponse = await response.json()
 	} catch (e: any) {
-		const response = e.response
+		if (e instanceof EasierHttpRequestError) {
+			logger.log(`Request failed with status code ${e.statusCode}: ${e.statusText}.`)
 
-		if (response) {
-			logger.log(`Request failed with status code ${response.status}`)
-
-			if (response.data) {
+			if (e.errorBody) {
 				logger.log(`Server responded with:`)
-				logger.log(response.data)
+				logger.log(e.errorBody)
 			}
 		}
 
 		throw e
 	}
-
-	const deepgramResponse: DeepgramResponse = response.data
 
 	const firstAlternative = deepgramResponse.results?.channels[0]?.alternatives[0]
 

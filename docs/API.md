@@ -25,14 +25,17 @@ All methods, properties and arguments have TypeScript type information. You can 
 
 ## Text-to-speech
 
-### `synthesize(input, options, onSegment, onSentence)`
+### `synthesize(input, options, callbacks?)`
 
 Synthesizes the given input.
 
 * `input`: text to synthesize, can be a `string`, or a `string[]`. When given an array of strings, the elements of the array would be seen as predefined segments (this is useful if you would like to have more control over how segments are split, or your input has a special format requiring a custom splitting method).
 * `options`: synthesis options object
-* `onSegment`: a callback that is called whenever a segment has been synthesized (optional)
-* `onSentence`: a callback that is called whenever a sentence has been synthesized (optional)
+* `callbacks`: an object containing the optional properties:
+	* `onSegment`: a callback that is called whenever a segment has been synthesized
+	* `onSentence`: a callback that is called whenever a sentence has been synthesized
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -83,11 +86,14 @@ const { audio } = await Echogarden.synthesize("Hello World!", { engine: 'espeak'
 }
 ```
 
-### `requestVoiceList(options)`
+### `requestVoiceList(options, callbacks?)`
 
 Requests a list of voices for a particular engine.
 
 * `options`: voice list request options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -100,12 +106,15 @@ Requests a list of voices for a particular engine.
 
 ## Speech-to-text
 
-### `recognize(input, options)`
+### `recognize(input, options, callbacks?)`
 
 Applies speech recognition to the input.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: recognition options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -126,13 +135,16 @@ Applies speech recognition to the input.
 
 ## Speech-to-transcript alignment
 
-### `align(input, transcript, options)`
+### `align(input, transcript, options, callbacks?)`
 
 Aligns input audio with the given transcript.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `transcript`: the transcript to align to
 * `options`: alignment options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -152,12 +164,15 @@ Aligns input audio with the given transcript.
 
 ## Speech-to-text translation
 
-### `translateSpeech(input, options)`
+### `translateSpeech(input, options, callbacks?)`
 
 Translates speech audio directly to a transcript in a different language (only English is currently supported).
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: speech translation options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -177,12 +192,15 @@ Translates speech audio directly to a transcript in a different language (only E
 
 ## Text-to-text translation
 
-### `translateText(input, options)`
+### `translateText(input, options, callbacks?)`
 
 Translates text to text.
 
 * `input`: string
 * `options`: text translation options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -201,13 +219,16 @@ Translates text to text.
 
 ## Speech-to-translated-transcript alignment
 
-### `alignTranslation(input, translatedTranscript, options)`
+### `alignTranslation(input, translatedTranscript, options, callbacks?)`
 
 Aligns input audio with the given translated transcript.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `translatedTranscript`: the translated transcript to align to
 * `options`: translation alignment options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -226,7 +247,7 @@ Aligns input audio with the given translated transcript.
 }
 ```
 
-### `alignTranscriptAndTranslation(input, transcript, translatedTranscript, options)`
+### `alignTranscriptAndTranslation(input, transcript, translatedTranscript, options, callbacks?)`
 
 Aligns input audio to both the native language transcript a translated one.
 
@@ -234,6 +255,9 @@ Aligns input audio to both the native language transcript a translated one.
 * `transcript`: the transcript to align to, in the native speech language
 * `translatedTranscript`: the translated transcript to align to
 * `options`: transcript and translation alignment options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -257,13 +281,16 @@ Aligns input audio to both the native language transcript a translated one.
 }
 ```
 
-### `alignTimelineTranslation(inputTimeline, translatedTranscript, options)`
+### `alignTimelineTranslation(inputTimeline, translatedTranscript, options, callbacks?)`
 
 Aligns given timeline with its translated transcript.
 
 * `inputTimeline`: input timeline in the native language
 * `translatedTranscript`: the translated transcript to align to
 * `options`: timeline translation alignment options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 
@@ -281,12 +308,15 @@ Aligns given timeline with its translated transcript.
 
 ## Language detection
 
-### `detectSpeechLanguage(input, options)`
+### `detectSpeechLanguage(input, options, callbacks?)`
 
 Detects language of spoken audio.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: speech language detection options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -297,12 +327,15 @@ Detects language of spoken audio.
 }
 ```
 
-### `detectTextLanguage(input, options)`
+### `detectTextLanguage(input, options, callbacks?)`
 
 Detects language of text.
 
 * `input`: input text as `string`
 * `options`: text language detection options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -315,12 +348,15 @@ Detects language of text.
 
 ## Voice activity detection
 
-### `detectVoiceActivity(input, options)`
+### `detectVoiceActivity(input, options, callbacks?)`
 
 Detects voice activity in audio (non-real-time).
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: voice activity detection options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -331,12 +367,15 @@ Detects voice activity in audio (non-real-time).
 
 ## Speech denoising
 
-### `denoise(input, options)`
+### `denoise(input, options, callbacks?)`
 
 Tries to reduce background noise in spoken audio.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: denoising options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -347,12 +386,15 @@ Tries to reduce background noise in spoken audio.
 
 ## Source separation
 
-### `isolate(input, options)`
+### `isolate(input, options, callbacks?)`
 
 Attempts to isolate an individual [audio stem](https://en.wikipedia.org/wiki/Stem_(audio)), like human voice, or one or more musical instruments (depending on model training), from the given waveform.
 
 * `input`: can be an audio file path (`string`), encoded audio (`Buffer` or `Uint8array`) or a raw audio object (`RawAudio`)
 * `options`: source separation options object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns (via promise):
 ```ts
@@ -365,12 +407,15 @@ Attempts to isolate an individual [audio stem](https://en.wikipedia.org/wiki/Ste
 
 ## Subtitles
 
-### `timelineToSubtitles(timeline, options)`
+### `timelineToSubtitles(timeline, options, callbacks?)`
 
 Converts a timeline to subtitles.
 
 * `timeline`: timeline object
 * `options`: subtitles configuration object
+* `callbacks`: an object containing the optional properties:
+	* `abortSignal`: an abort signal (`AbortSignal`)
+	* `logLevel`: log level (`string`)
 
 #### Returns:
 

@@ -18,7 +18,7 @@
 				],
 
 				"notPrecededBy": [
-					"to", "please", "will", "would", "could", "may", "might"
+					"to", "please", "will", "would", "could", "may", "might", "does", "doesn't"
 				],
 
 				"followedBy": [
@@ -105,7 +105,7 @@
 				],
 
 				"followedBy": [
-					"itself", "us", "opportunities", "them", "a", "an", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice"
+					"itself", "us", "opportunities", "them", "a", "an", "his", "her", "our", "my", "its", "this", "no", "some", "another", "different", "various", "several", "many", "few", "other", "unique", "special", "great", "excellent", "nice", "challenges", "significant"
 				],
 
 				"notFollowedBy": [
@@ -139,7 +139,7 @@
 				],
 
 				"precededBy": [
-					"to", "we", "you", "they", "who", "i", "me", "will", "also", "don't", "didn't", "not", "doesn't", "please", "never", "ever", "often", "frequently", "rarely", "commonly", "we'll", "would", "wouldn't", "instead", "probably", "should", "shouldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "can", "could", "couldn't", "actually", "always", "sometimes", "typically", "still", "nobody", "everybody", "everyone", "someone", "somebody", "people", "players", "customers"
+					"to", "we", "you", "they", "who", "i", "me", "will", "also", "don't", "didn't", "not", "doesn't", "please", "never", "ever", "often", "frequently", "rarely", "commonly", "we'll", "would", "wouldn't", "instead", "probably", "should", "shouldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "can", "could", "couldn't", "actually", "always", "sometimes", "typically", "still", "nobody", "everybody", "everyone", "someone", "somebody", "people", "players", "customers", "already"
 				],
 
 				"notPrecededBy": [
@@ -264,7 +264,7 @@
 				],
 
 				"precededBy": [
-					"he", "she", "it", "who", "that", "now", "currently", "still", "everybody", "everyone"
+					"he", "she", "it", "who", "that", "now", "currently", "still", "everybody", "everyone", "already", "actually"
 				],
 
 				"notPrecededBy": [
@@ -272,7 +272,7 @@
 				],
 
 				"followedBy": [
-					"a", "an", "here", "there", "happily", "vigorously", "gracefully", "up"
+					"a", "an", "here", "there", "happily", "vigorously", "gracefully", "up", "inside", "within"
 				],
 
 				"notFollowedBy": [
@@ -1096,7 +1096,7 @@
 				],
 
 				"precededBy": [
-					"he", "she", "it", "who"
+					"he", "she", "it", "who", "that"
 				],
 
 				"notPrecededBy": [
@@ -1426,7 +1426,7 @@
 				],
 
 				"precededBy": [
-					"to", "will", "help", "can", "i", "we", "me", "not", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "directly", "does", "they", "adequately", "you", "really", "actually", "effectively", "can't", "leaders", "properly", "specifically", "still", "please", "did", "potentially", "cannot", "meaningfully", "finally", "fully", "completely", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "itself", "therefore"
+					"to", "will", "help", "can", "i", "we", "me", "not", "would", "wouldn't", "won't", "do", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "directly", "does", "they", "adequately", "you", "really", "actually", "effectively", "can't", "leaders", "properly", "specifically", "still", "please", "did", "potentially", "cannot", "meaningfully", "finally", "fully", "completely", "continually", "it'd", "they'd", "visibly", "ever", "i'll", "itself", "therefore", "also"
 				],
 
 				"notPrecededBy": [
@@ -1508,7 +1508,7 @@
 				],
 
 				"precededBy": [
-					"fresh", "their", "the", "a", "farm", "agricultural", "local", "quality", "grown", "finest", "excess", "quality", "grown", "your", "his", "her", "its", "combined", "organic", "bought", "own", "city's", "amazing", "good", "great", "bad", "worst", "seasonal", "southern", "northern", "homegrown", "damaged", "new", "smoked", "useful", "excellent"
+					"fresh", "their", "the", "a", "farm", "agricultural", "local", "quality", "grown", "finest", "excess", "quality", "grown", "your", "his", "her", "its", "combined", "organic", "bought", "own", "city's", "amazing", "good", "great", "bad", "worst", "seasonal", "southern", "northern", "homegrown", "damaged", "new", "smoked", "useful", "excellent", "at"
 				],
 
 				"notPrecededBy": [
@@ -2170,7 +2170,7 @@
 						"en-gb-x-rp": "ᵻ k s t ɹ ˈa k t"
 					}
 				},
-				"example": "The plant extracts the water."
+				"example": "The plant will extract the water."
 			}
 		],
 		"mismatch": [
@@ -2207,6 +2207,41 @@
 				"example": "It will not mismatch it."
 			}
 		],
+		"compact": [
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ə m p ˈæ k t",
+						"en-gb-x-rp": "k ə m p ˈæ k t"
+					}
+				},
+				"pos": [
+					"VB"
+				],
+				"precededBy": [
+					"to", "i", "they", "we", "should", "will", "would", "wouldn't", "won't", "don't", "doesn't", "should", "shouldn't", "could", "couldn't", "must", "mustn't", "shall", "can", "can't", "may", "might", "did", "didn't", "does", "doesn't", "not"
+				],
+				"notPrecededBy": [
+				],
+				"followedBy": [
+				],
+				"notFollowedBy": [
+				],
+				"example": "I can compact the items."
+			},
+			{
+				"pronunciation": {
+					"espeak": {
+						"en-us": "k ˈɒ m p æ k t",
+						"en-gb-x-rp": "k ˈɒ m p æ k t"
+					}
+				},
+				"example": "Here is a compact item."
+			}
+		],
+
+		"uses": [],
+		"misread": [],
 		"segment": [],
 		"segments": [],
 		"extracts": [],
@@ -2237,7 +2272,6 @@
 		"deserts": [],
 		"transcript": [],
 		"transcripts": [],
-		"compact": [],
 		"impact": [],
 		"impacts": [],
 		"estimate": [],

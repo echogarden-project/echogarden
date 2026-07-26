@@ -7,13 +7,14 @@ import { joinPath } from '../utilities/PathUtilities.js'
 import { stftr, stiftr } from '../dsp/FFT.js'
 import { clip, concatFloat32Arrays } from '../utilities/Utilities.js'
 import { Logger } from '../utilities/Logger.js'
+import { DenoisingCallbacks } from '../api/Denoising.js'
 
-export async function denoiseAudio(rawAudio: RawAudio, options: NSNet2Options) {
+export async function denoiseAudio(rawAudio: RawAudio, options: NSNet2Options, callbacks: DenoisingCallbacks) {
 	const onnxExecutionProviders: OnnxExecutionProvider[] = options.provider ? [options.provider] : []//['dml', 'cpu']
 
 	const denoiser = new NSNet2(options.model!, options.modelDirectoryPath!, onnxExecutionProviders, options.maxAttenuation!)
 
-	const result = await denoiser.denoiseAudio(rawAudio)
+	const result = await denoiser.denoiseAudio(rawAudio, callbacks)
 
 	return result
 }
@@ -28,8 +29,8 @@ export class NSNet2 {
 		public readonly maxAttenuation: number) {
 	}
 
-	async denoiseAudio(rawAudio: RawAudio) {
-		const logger = new Logger()
+	async denoiseAudio(rawAudio: RawAudio, callbacks: DenoisingCallbacks) {
+		const logger = new Logger(callbacks.logLevel)
 
 		logger.start(`Initialize ONNX model ${this.modelName}`)
 		await this.initializeIfNeeded()

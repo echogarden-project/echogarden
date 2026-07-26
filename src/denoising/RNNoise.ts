@@ -1,13 +1,14 @@
 import { float32ToInt16Pcm } from '../audio/AudioBufferConversion.js'
-import { concatFloat32Arrays } from '../utilities/Utilities.js'
-import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
+import { concatFloat32Arrays, throwIfAborted } from '../utilities/Utilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
+import { DenoisingCallbacks } from '../api/Denoising.js'
 
 let rnnoiseInstance: any
 
-export async function denoiseAudio(rawAudio: RawAudio) {
-	const logger = new Logger()
+export async function denoiseAudio(rawAudio: RawAudio, callbacks: DenoisingCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
+
 	if (rawAudio.sampleRate != 48000) {
 		throw new Error(`RNNoise requires a 48000 Hz sample rate (${rawAudio.sampleRate} Hz given)`)
 	}
@@ -24,6 +25,7 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 	const m = await getRnnoiseInstance()
 
 	logger.start('Process with RNNoise')
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const stateSize = m._rnnoise_get_size()
@@ -46,7 +48,14 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 		frameVadProbabilities.push(vadProbability)
 	}
 
+	function destroyState() {
+		m._rnnoise_destroy(denoiseState)
+		wasmHeap.freeAll()
+	}
+
 	for (let readOffset = 0; readOffset < int16Samples.length; readOffset += frameSize) {
+		throwIfAborted(callbacks.abortSignal, destroyState)
+
 		let frame: Float32Array<ArrayBufferLike> = int16SamplesAsFloats.subarray(readOffset, readOffset + frameSize)
 
 		if (frame.length < frameSize) {
@@ -69,8 +78,7 @@ export async function denoiseAudio(rawAudio: RawAudio) {
 	const lastFrameVadProbability = m._rnnoise_process_frame(denoiseState, outputRef.address, inputRef.address)
 	outputNewFrame(outputRef.view.slice(), lastFrameVadProbability)
 
-	m._rnnoise_destroy(denoiseState)
-	wasmHeap.freeAll()
+	destroyState()
 
 	const int16DenoisedSamplesAsFloats = concatFloat32Arrays(processedFrames)
 

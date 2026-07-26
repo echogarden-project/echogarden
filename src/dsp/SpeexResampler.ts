@@ -1,6 +1,5 @@
 import { RawAudio, cloneRawAudio } from '../audio/AudioUtilities.js'
 import { concatFloat32Arrays, isWasmSimdSupported } from '../utilities/Utilities.js'
-import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
 
 let speexResamplerInstance: any
 
@@ -23,6 +22,8 @@ export async function resampleAudioSpeex(rawAudio: RawAudio, outSampleRate: numb
 	}
 
 	const m = await getSpeexResamplerInstance()
+
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	function speexResultCodeToString(resultCode: number) {

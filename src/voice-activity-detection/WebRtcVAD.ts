@@ -1,8 +1,6 @@
 import * as AudioBufferConversion from '../audio/AudioBufferConversion.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 
-import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
-
 export async function detectVoiceActivity(rawAudio: RawAudio, frameDuration: 10 | 20 | 30 = 10, mode: 0 | 1 | 2 | 3 = 0) {
 	if (rawAudio.sampleRate != 16000) {
 		throw new Error('Audio sample rate must be 16KHz')
@@ -16,6 +14,7 @@ export async function detectVoiceActivity(rawAudio: RawAudio, frameDuration: 10 
 export async function fvad(samples: Int16Array, sampleRate: number, frameDuration: 10 | 20 | 30, mode: 0 | 1 | 2 | 3) {
 	const m = await getFvadInstance()
 
+	const { wrapEmscriptenModuleHeap } = await import('wasm-heap-manager')
 	const wasmHeap = wrapEmscriptenModuleHeap(m)
 
 	const fvad_new = m._fvad_new

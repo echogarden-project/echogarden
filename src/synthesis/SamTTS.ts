@@ -1,3 +1,4 @@
+import { SynthesisCallbacks } from '../api/API.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
@@ -7,8 +8,8 @@ import { Logger } from '../utilities/Logger.js'
 //
 // https://habr-com.translate.goog/ru/post/500764/?_x_tr_sl=auto&_x_tr_tl=en
 
-export async function synthesize(text: string, pitch = 64, speed = 72, mouth = 128, throat = 128) {
-	const logger = new Logger()
+export async function synthesize(text: string, pitch = 64, speed = 72, mouth = 128, throat = 128, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Initialize sam module')
 
 	const { default: SamJs } = await import('sam-js')

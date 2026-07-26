@@ -17,7 +17,7 @@ export const emojiSequenceRegExp = /\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\
 export const punctuationRegExp = /[\p{Punctuation}]/u
 
 export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
-export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '¼', '½', '¾']
+export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾']
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Predicates
@@ -42,8 +42,8 @@ export function includesEmoji(str: string) {
 	return emojiSequenceRegExp.test(str?.trim())
 }
 
-export function isWhitespace(str: string) {
-	return str?.trim().length === 0
+export function isAllWhitespace(str: string) {
+	return str && /^\s+$/.test(str)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +58,11 @@ export function splitToParagraphs(text: string, paragraphBreakType: ParagraphBre
 		paragraphs = splitAndPreserveSeparators(text, /(\r?\n)(\r?\n)+/g)
 	} else {
 		throw new Error(`Invalid paragraph break type: '${paragraphBreakType}'`)
+	}
+
+	if (paragraphs.length >= 2 && isAllWhitespace(paragraphs[0])) {
+		paragraphs[1] = paragraphs[0] + paragraphs[1]
+		paragraphs.shift()
 	}
 
 	paragraphs = paragraphs.map(p => applyWhitespaceProcessing(p, whitespaceProcessingMethod))
@@ -108,7 +113,7 @@ export async function splitToWords(text: string, langCode: string): Promise<Text
 
 		return wordSequence
 	} else {
-		return TextSegmentation.splitToWords(text, { language: langCode })
+		return TextSegmentation.splitToWords(text, { language: shortLangCode })
 	}
 }
 

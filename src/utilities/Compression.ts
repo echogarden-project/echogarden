@@ -2,21 +2,22 @@ import { Logger } from './Logger.js'
 import { readdir, stat } from './FileSystem.js'
 import { encodeUtf8 } from '../encodings/Utf8.js'
 import { getBaseName, getDirName } from './PathUtilities.js'
+import { OperationCallbacks } from '../api/Common.js'
 
-export async function createTarball(filePath: string, outputFile: string, prefixPath = '') {
+export async function createTarball(filePath: string, outputFile: string, prefixPath = '', callbacks: OperationCallbacks) {
 	const pathStat = await stat(filePath)
 
 	if (pathStat.isDirectory()) {
-		await createTarballForDir(filePath, outputFile, prefixPath)
+		await createTarballForDir(filePath, outputFile, prefixPath, callbacks)
 	} else {
-		await createTarballForFile(filePath, outputFile, prefixPath)
+		await createTarballForFile(filePath, outputFile, prefixPath, callbacks)
 	}
 }
 
-export async function createTarballForFile(filePath: string, outputFile: string, prefixPath = '') {
-	const logger = new Logger()
+export async function createTarballForFile(filePath: string, outputFile: string, prefixPath = '', callbacks: OperationCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
-	logger.start(`Creating ${prefixPath || getBaseName(outputFile)}`)
+	logger.start(`Create ${prefixPath || getBaseName(outputFile)}`)
 
 	const { create } = await import('tar')
 
@@ -49,10 +50,10 @@ export async function createTarballForFile(filePath: string, outputFile: string,
 	logger.end()
 }
 
-export async function createTarballForDir(inputDir: string, outputFile: string, prefixPath = '') {
-	const logger = new Logger()
+export async function createTarballForDir(inputDir: string, outputFile: string, prefixPath = '', callbacks: OperationCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 
-	logger.start(`Creating ${prefixPath || getBaseName(outputFile)}`)
+	logger.start(`Create ${prefixPath || getBaseName(outputFile)}`)
 
 	const { create } = await import('tar')
 

@@ -1,8 +1,9 @@
-import { request } from 'gaxios'
 import { Logger } from '../utilities/Logger.js'
 import { logToStderr } from '../utilities/Utilities.js'
 import { decodeBase64 } from '../encodings/Base64.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { requestHttp } from 'easier-http-request'
+import { VoiceListRequestCallbacks, SynthesisCallbacks } from '../api/API.js'
 
 const log = logToStderr
 
@@ -16,9 +17,10 @@ export async function synthesize(
 	volumeGainDecibels = 0.0,
 	ssml = false,
 	audioEncoding: AudioEncoding = 'MP3',
-	sampleRate = 24000) {
+	sampleRate = 24000,
+	callbacks: SynthesisCallbacks) {
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Request synthesis from Google Cloud')
 
 	const requestBody = {
@@ -49,7 +51,7 @@ export async function synthesize(
 		requestBody.input.text = text
 	}
 
-	const response = await request<any>({
+	const response = await requestHttp({
 		method: 'POST',
 
 		url: `https://texttospeech.googleapis.com/v1beta1/text:synthesize`,
@@ -62,18 +64,25 @@ export async function synthesize(
 			'User-Agent': ''
 		},
 
-		data: requestBody,
+		body: requestBody,
 
-		responseType: 'json'
+		abortSignal: callbacks?.abortSignal
 	})
+
+	const responseObject = await response.json()
 
 	logger.start('Parse result')
 
-	const result = parseResponseBody(response.data)
+	const result = parseResponseObject(responseObject)
 
 	logger.start('Decode to raw audio')
 
-	const rawAudio = await FFMpegTranscoder.decodeToChannels(result.audioData)
+	const rawAudio = await FFMpegTranscoder.decodeToChannels(
+		result.audioData,
+		undefined,
+		undefined,
+		{ abortSignal: callbacks.abortSignal, logLevel: 'warning' },
+	)
 	const timepoints = result.timepoints
 
 	logger.end()
@@ -81,7 +90,7 @@ export async function synthesize(
 	return { rawAudio, timepoints }
 }
 
-function parseResponseBody(responseBody: any) {
+function parseResponseObject(responseBody: any) {
 	const audioData = decodeBase64(responseBody.audioContent)
 	const timepoints: timePoint[] = responseBody.timepoints
 
@@ -89,10 +98,10 @@ function parseResponseBody(responseBody: any) {
 }
 
 // Voices with audio samples: https://cloud.google.com/text-to-speech/docs/voices
-export async function getVoiceList(apiKey: string) {
+export async function getVoiceList(apiKey: string, callbacks: VoiceListRequestCallbacks) {
 	const requestURL = `https://texttospeech.googleapis.com/v1beta1/voices`
 
-	const response = await request<any>({
+	const response = await requestHttp({
 		method: 'GET',
 
 		url: requestURL,
@@ -105,12 +114,12 @@ export async function getVoiceList(apiKey: string) {
 			'User-Agent': ''
 		},
 
-		responseType: 'json'
+		abortSignal: callbacks?.abortSignal
 	})
 
-	const responseData = response.data
+	const responseObject = await response.json()
 
-	const voices: GoogleCloudVoice[] = responseData.voices
+	const voices: GoogleCloudVoice[] = responseObject.voices
 
 	return voices
 }

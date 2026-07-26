@@ -1,17 +1,17 @@
-import { request } from 'gaxios'
-
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
 import { encodeBase64 } from '../encodings/Base64.js'
+import { RecognitionCallbacks } from '../api/Recognition.js'
+import { requestHttp } from 'easier-http-request'
 
 export type AudioEncoding = 'LINEAR16' | 'FLAC' | 'MULAW' | 'AMR' | 'AMR' | 'AMR_WB' | 'OGG_OPUS' | 'SPEEX_WITH_HEADER_BYTE' | 'MP3' | 'WEBM_OPUS'
 
-export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode = 'en-US') {
-	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 })
+export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode = 'en-US', callbacks: RecognitionCallbacks) {
+	const flac16Khz16bitMonoAudio = await FFMpegTranscoder.encodeFromChannels(rawAudio, { format: 'flac', sampleRate: 16000, sampleFormat: 's16', channelCount: 1 }, callbacks)
 
-	const logger = new Logger()
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Request recognition from Google Cloud')
 
 	const requestBody = {
@@ -35,7 +35,7 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 		}
 	}
 
-	const response = await request<any>({
+	const response = await requestHttp({
 		method: 'POST',
 
 		url: `https://speech.googleapis.com/v1p1beta1/speech:recognize`,
@@ -48,22 +48,24 @@ export async function recognize(rawAudio: RawAudio, apiKey: string, languageCode
 			'User-Agent': ''
 		},
 
-		data: requestBody,
+		body: requestBody,
 
-		responseType: 'json'
+		abortSignal: callbacks.abortSignal,
 	})
+
+	const responseObject = await response.json()
 
 	logger.start('Parse response body')
 
-	const result = parseResponseBody(response.data)
+	const result = parseResponseObject(responseObject)
 
 	logger.end()
 
 	return result
 }
 
-function parseResponseBody(responseBody: any) {
-	const results = responseBody.results
+function parseResponseObject(responseObject: any) {
+	const results = responseObject.results
 
 	let transcript = ''
 	const timeline: Timeline = []
@@ -81,7 +83,7 @@ function parseResponseBody(responseBody: any) {
 			timeline.push({
 				type: 'word',
 				text: wordEvent.word,
-				startTime: parseFloat(wordEvent.startTime.replace('s','')),
+				startTime: parseFloat(wordEvent.startTime.replace('s', '')),
 				endTime: parseFloat(wordEvent.endTime.replace('s', '')),
 				confidence: wordEvent.confidence
 			})

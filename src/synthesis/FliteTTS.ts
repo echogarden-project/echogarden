@@ -1,4 +1,4 @@
-import { SynthesisVoice } from '../api/API.js'
+import { SynthesisCallbacks, SynthesisVoice } from '../api/API.js'
 import { decodeWaveToRawAudio } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 import { getRandomHexString, logToStderr, resolveModuleMainPath } from '../utilities/Utilities.js'
@@ -11,8 +11,8 @@ export type FliteVoiceName = 'kal' | 'kal16' | 'awb' | 'rms' | 'slt' | string
 
 let fliteModuleObject: WebAssembly.Module
 
-export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: string | undefined, rate: number, pitchMeanHz?: number, pitchStdDev?: number) {
-	const logger = new Logger()
+export async function synthesize(text: string, voice: FliteVoiceName, voiceDir: string | undefined, rate: number, pitchMeanHz: number | undefined, pitchStdDev: number | undefined, callbacks: SynthesisCallbacks) {
+	const logger = new Logger(callbacks.logLevel)
 	logger.start('Get Flite WASI instance')
 
 	const randomId = getRandomHexString(16)
