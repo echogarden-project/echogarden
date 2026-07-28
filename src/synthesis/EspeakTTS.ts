@@ -74,7 +74,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 			// Replace vertical bar only words with empty words
 			if (/^[\|│]+$/.test(mergedWord)) {
-				mergedWords[i] = ''
+				mergedWords[i] = ' '.repeat(mergedWord.length)
 			}
 		}
 
