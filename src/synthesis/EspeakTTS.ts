@@ -51,7 +51,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	// Merge repeating non-words to a single word to work around eSpeak bug
 	{
-		const wordsWithMerges: string[] = []
+		const mergedWords: string[] = []
 
 		for (let i = 0; i < words.length; i++) {
 			const currentWord = words[i]
@@ -63,11 +63,22 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 				!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
 				!wordCharacterRegExp.test(currentWord)) {
 
-				wordsWithMerges[wordsWithMerges.length - 1] += currentWord
+				mergedWords[mergedWords.length - 1] += currentWord
 			} else {
-				wordsWithMerges.push(currentWord)
+				mergedWords.push(currentWord)
 			}
 		}
+
+		for (let i = 0; i < mergedWords.length; i++) {
+			const mergedWord = mergedWords[i]
+
+			// Replace vertical bar only words with empty words
+			if (/^[\|│]+$/.test(mergedWord)) {
+				mergedWords[i] = ''
+			}
+		}
+
+		words = mergedWords
 	}
 
 	// Remove words containing only whitespace
