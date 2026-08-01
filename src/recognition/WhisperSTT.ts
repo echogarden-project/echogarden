@@ -79,16 +79,20 @@ export async function recognize(
 		libPath,
 		seed)
 
-	const result = await whisper.recognize(
-		sourceRawAudio,
-		task,
-		sourceLanguage,
-		options,
-		undefined,
-		callbacks,
-	)
+	try {
+		const result = await whisper.recognize(
+			sourceRawAudio,
+			task,
+			sourceLanguage,
+			options,
+			undefined,
+			callbacks,
+		)
 
-	return result
+		return result
+	} finally {
+		whisper.release()
+	}
 }
 
 export async function align(
@@ -122,17 +126,19 @@ export async function align(
 		modelPath,
 		libPath,
 	)
-
-	const timeline = await whisper.align(
-		sourceRawAudio,
-		transcript,
-		sourceLanguage,
-		'transcribe',
-		options,
-		callbacks,
-	)
-
-	return timeline
+	try {
+		const timeline = await whisper.align(
+			sourceRawAudio,
+			transcript,
+			sourceLanguage,
+			'transcribe',
+			options,
+			callbacks,
+		)
+		return timeline
+	} finally {
+		whisper.release()
+	}
 }
 
 export async function alignEnglishTranslation(
@@ -171,16 +177,19 @@ export async function alignEnglishTranslation(
 		libPath
 	)
 
-	const timeline = await whisper.align(
-		sourceRawAudio,
-		translatedTranscript,
-		sourceLanguage,
-		'translate',
-		options,
-		callbacks,
-	)
-
-	return timeline
+	try {
+		const timeline = await whisper.align(
+			sourceRawAudio,
+			translatedTranscript,
+			sourceLanguage,
+			'translate',
+			options,
+			callbacks,
+		)
+		return timeline
+	} finally {
+		whisper.release()
+	}
 }
 
 export async function detectLanguage(
@@ -217,17 +226,21 @@ export async function detectLanguage(
 		return partResults
 	}
 
-	const results = await detectSpeechLanguageByParts(
-		sourceRawAudio,
-		detectLanguageForPart,
-		undefined,
-		undefined,
-		callbacks,
-	)
+	try {
+		const results = await detectSpeechLanguageByParts(
+			sourceRawAudio,
+			detectLanguageForPart,
+			undefined,
+			undefined,
+			callbacks,
+		)
 
-	results.sort((entry1, entry2) => entry2.probability - entry1.probability)
+		results.sort((entry1, entry2) => entry2.probability - entry1.probability)
 
-	return results
+		return results
+	} finally {
+		whisper.release()
+	}
 }
 
 export class Whisper {
@@ -1769,6 +1782,13 @@ export class Whisper {
 		}
 
 		return tokensData
+	}
+
+	release() {
+		if (this.context) {
+			this.context.release()
+			this.context = undefined
+		}
 	}
 }
 
