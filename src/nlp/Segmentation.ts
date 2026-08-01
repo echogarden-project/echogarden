@@ -14,16 +14,21 @@ export const wordCharacterRegExp = /[\p{Letter}\p{Number}]/u
 // See: https://mathiasbynens.be/notes/es-unicode-property-escapes
 export const emojiSequenceRegExp = /\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/u
 
-export const punctuationRegExp = /[\p{Punctuation}]/u
+export const includesPunctuationRegExp = /[\p{Punctuation}]/u
+export const isAllPunctuationRegExp = /^[\p{Punctuation}]+$/u
 
 export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
-export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾']
+export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾', '→', '≤', '≥']
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Predicates
 ///////////////////////////////////////////////////////////////////////////////////////////////
-export function isWordOrSymbolWord(str: string) {
-	return isWord(str) || includesEmoji(str) || symbolWords.includes(str)
+export function isWordOrEmojiOrSymbolWord(str: string) {
+	return isWordOrEmoji(str) || symbolWords.includes(str)
+}
+
+export function isWordOrEmoji(str: string) {
+	return isWord(str) || includesEmoji(str)
 }
 
 export function isSymbolWord(str: string) {
@@ -35,7 +40,11 @@ export function isWord(str: string) {
 }
 
 export function includesPunctuation(str: string) {
-	return punctuationRegExp.test(str?.trim())
+	return includesPunctuationRegExp.test(str?.trim())
+}
+
+export function isAllPunctuation(str: string) {
+	return isAllPunctuationRegExp.test(str?.trim())
 }
 
 export function includesEmoji(str: string) {
@@ -104,7 +113,7 @@ export async function splitToWords(text: string, langCode: string): Promise<Text
 		for (const wordText of wordArray) {
 			const startOffset = offset
 			const endOffset = startOffset + wordText.length
-			const isPunctuation = !isWordOrSymbolWord(wordText)
+			const isPunctuation = !isWordOrEmojiOrSymbolWord(wordText)
 
 			wordSequence.addWord(wordText, startOffset, isPunctuation)
 

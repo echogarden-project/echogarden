@@ -10,7 +10,7 @@ import { clip, sha256AsHex, stringifyAndFormatJson, yieldToEventLoop, runOperati
 import { RawAudio, concatAudioSegments, downmixToMono, encodeRawAudioToWave, getSamplePeakDecibels, getEmptyRawAudio, getRawAudioDuration, trimAudioEnd, trimAudioStart, attenuateIfClippingInPlace, normalizeAudioLevelInPlace } from '../audio/AudioUtilities.js'
 import { Logger } from '../utilities/Logger.js'
 
-import { isWordOrSymbolWord, parseText, splitToParagraphs } from '../nlp/Segmentation.js'
+import { isWordOrEmojiOrSymbolWord, parseText, splitToParagraphs } from '../nlp/Segmentation.js'
 import { type RubberbandOptions } from '../dsp/Rubberband.js'
 import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 
@@ -1165,7 +1165,7 @@ async function synthesizeSegment(text: string, options: SynthesisOptions, callba
 	}
 
 	if (timeline) {
-		timeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+		timeline = timeline.filter(entry => isWordOrEmojiOrSymbolWord(entry.text))
 	}
 
 	logger.end()

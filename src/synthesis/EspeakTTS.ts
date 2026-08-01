@@ -4,7 +4,7 @@ import { Logger } from '../utilities/Logger.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
-import { includesPunctuation, splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
+import { isAllPunctuation, isWord, isWordOrEmoji, splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
@@ -49,10 +49,10 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	let words = (await splitToWords(text, language)).wordArray
 
-	// Merge repeating non-words to a single word to work around eSpeak bug
 	{
 		const mergedWords: string[] = []
 
+		// Merge repeating non-words to a single word to work around eSpeak bugs
 		for (let i = 0; i < words.length; i++) {
 			const currentWord = words[i]
 			const previousWord = words[i - 1]
@@ -61,7 +61,7 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 				i > 0 &&
 				currentWord === previousWord &&
 				!['[', ']'].includes(currentWord) && // Work around eSpeak-NG marker bug with repeating squared brackets
-				!wordCharacterRegExp.test(currentWord)) {
+				!isWordOrEmoji(currentWord)) {
 
 				mergedWords[mergedWords.length - 1] += currentWord
 			} else {
@@ -69,12 +69,15 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 			}
 		}
 
+		// Collapse or convert some types of non-words
 		for (let i = 0; i < mergedWords.length; i++) {
 			const mergedWord = mergedWords[i]
 
-			// Replace vertical bar only words with empty words
-			if (/^[\|│]+$/.test(mergedWord)) {
-				mergedWords[i] = ' '.repeat(mergedWord.length)
+			// Convert isolated groups of vertical bars and em dashes to a comma
+			if (/^[\|│—─–]+$/.test(mergedWord)) {
+				mergedWords[i] = ','
+			} else if (isAllPunctuation(mergedWord)) { // Collapse repeated punctuation
+				mergedWords[i] = mergedWord[0]
 			}
 		}
 

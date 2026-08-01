@@ -1,7 +1,7 @@
 import { htmlToText } from 'html-to-text'
 
 import { secondsToHMS, secondsToMS } from '../utilities/Utilities.js'
-import { isWordOrSymbolWord } from '../nlp/Segmentation.js'
+import { isWordOrEmojiOrSymbolWord } from '../nlp/Segmentation.js'
 import { charactersToWriteAhead } from '../audio/AudioPlayer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { readFileAsUtf8 } from '../utilities/FileSystem.js'
@@ -155,7 +155,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 
 	// If the given timeline is a word timeline, wrap it with a segment and call again
 	if (timeline[0].type === 'word') {
-		const wordTimeline = timeline.filter(entry => isWordOrSymbolWord(entry.text))
+		const wordTimeline = timeline.filter(entry => isWordOrEmojiOrSymbolWord(entry.text))
 
 		const text = wordTimeline.map(entry => entry.text).join(' ')
 
@@ -206,7 +206,7 @@ function getCuesFromTimeline_IsolateSegmentSentence(timeline: Timeline, config: 
 			continue
 		}
 
-		const wordTimeline = entry.timeline!.filter(entry => isWordOrSymbolWord(entry.text))
+		const wordTimeline = entry.timeline!.filter(entry => isWordOrEmojiOrSymbolWord(entry.text))
 
 		// First, add word start and end offsets for all word entries
 		let lastWordEndOffset = 0

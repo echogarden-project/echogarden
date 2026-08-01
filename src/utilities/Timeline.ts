@@ -1,6 +1,6 @@
 import { addMissingPunctuationWordsToWordSequence, segmentWordSequence, WordSequence } from '@echogarden/text-segmentation'
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
-import { applyWhitespaceProcessing, isWord, isWordOrSymbolWord, splitToParagraphs } from '../nlp/Segmentation.js'
+import { applyWhitespaceProcessing, isWord, isWordOrEmojiOrSymbolWord, splitToParagraphs } from '../nlp/Segmentation.js'
 import { deepClone } from './ObjectUtilities.js'
 import { getUTF32Chars } from './StringUtilities.js'
 import { roundToDigits } from './Utilities.js'
@@ -70,7 +70,7 @@ export async function wordTimelineToSegmentSentenceTimeline(wordTimelineWithOffs
 		const wordStartOffset = wordEntry.startOffsetUtf16!
 		const wordEndOffset = wordEntry.endOffsetUtf16!
 
-		const isPunctuation = !isWordOrSymbolWord(wordEntry.text)
+		const isPunctuation = !isWordOrEmojiOrSymbolWord(wordEntry.text)
 
 		wordSequence.addWord(wordEntry.text, wordStartOffset, isPunctuation)
 	}
