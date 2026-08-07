@@ -2447,6 +2447,94 @@
 					"en-gb-x-rp": "j ˌuː n ɪ m ˈɒ dj ə l ɐ"
 				}
 			}
+		},
+		"bruteforce": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ɹ ˈuː t f ˌɔːɹ s",
+					"en-gb-x-rp": "b ɹ ˈuː t f ˌɔː s"
+				}
+			}
+		},
+		"bruteforced": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ɹ ˈuː t f ˌɔːɹ s t",
+					"en-gb-x-rp": "b ɹ ˈuː t f ˌɔː s t"
+				}
+			}
+		},
+		"bruteforcing": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "b ɹ ˈuː t f ˌɔːɹ s ɪ ŋ",
+					"en-gb-x-rp": "b ɹ ˈuː t f ˌɔː s ɪ ŋ"
+				}
+			}
+		},
+		"pentagon": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "p ˈɛ n t ə ɡ ˌɒ n",
+					"en-gb-x-rp": "p ˈɛ n t ə ɡ ˌɒ n"
+				}
+			}
+		},
+		"octagon": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ˈɒ k t ə ɡ ˌɒ n",
+					"en-gb-x-rp": "ˈɒ k t ə ɡ ˌɒ n"
+				}
+			}
+		},
+		"callee": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˌɔː l ˈiː",
+					"en-gb-x-rp": "k ˌɔː l ˈiː"
+				}
+			}
+		},
+		"coprime": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈoʊ p ɹ ˌaɪ m",
+					"en-gb-x-rp": "k ˈəʊ p ɹ ˌaɪ m"
+				}
+			}
+		},
+		"residue": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "ɹ ˈɛ z ɪ d j ˌuː",
+					"en-gb-x-rp": "ɹ ˈɛ z ɪ d j ˌuː"
+				}
+			}
+		},
+		"vampire": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "v ˈæ m p ˌaɪ ɚ",
+					"en-gb-x-rp": "v ˈæ m p ˌaɪ ə"
+				}
+			}
+		},
+		"misrepresent": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "m ˌɪ s ɹ ɛ p ɹ ɪ z ˈɛ n t",
+					"en-gb-x-rp": "m ˌɪ s ɹ ɛ p ɹ ɪ z ˈɛ n t"
+				}
+			}
+		},
+		"triaged": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "t ɹ ˈiː ɑː ʒ d",
+					"en-gb-x-rp": "t ɹ ˈiː ɑː ʒ d"
+				}
+			}
 		}
 	}
 }
