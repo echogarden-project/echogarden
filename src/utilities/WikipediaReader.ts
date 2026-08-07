@@ -1,10 +1,10 @@
 import { OperationCallbacks } from '../api/Common.js'
-import { splitToParagraphs, wordCharacterRegExp } from '../nlp/Segmentation.js'
+import { isWordOrEmojiOrSymbolWord, splitToParagraphs } from '../nlp/Segmentation.js'
 
 export async function fetchAndParseWikipediaArticle(articleName: string, language: string, callbacks: OperationCallbacks) {
-	const { default: wtf } = await import('wtf_wikipedia')
+	const { default: wtfWikipedia } = await import('wtf_wikipedia')
 
-	const document = await wtf.fetch(articleName, language)
+	const document = await wtfWikipedia.fetch(articleName, language)
 
 	if (!document) {
 		throw new Error('Error fetching Wikipedia article')
@@ -16,7 +16,7 @@ export async function fetchAndParseWikipediaArticle(articleName: string, languag
 	for (const section of sections) {
 		const sectionTitle = section.title()
 
-		if (wordCharacterRegExp.test(sectionTitle)) {
+		if (isWordOrEmojiOrSymbolWord(sectionTitle)) {
 			sectionsText.push(sectionTitle)
 		}
 
@@ -25,7 +25,7 @@ export async function fetchAndParseWikipediaArticle(articleName: string, languag
 		for (const paragraph of sectionParagraphs) {
 			const paragraphText = paragraph
 
-			if (wordCharacterRegExp.test(paragraphText)) {
+			if (isWordOrEmojiOrSymbolWord(paragraphText)) {
 				sectionsText.push(paragraphText)
 			}
 		}

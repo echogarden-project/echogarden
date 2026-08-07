@@ -1,6 +1,6 @@
 import { addMissingPunctuationWordsToWordSequence, segmentWordSequence, WordSequence } from '@echogarden/text-segmentation'
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
-import { applyWhitespaceProcessing, isWord, isWordOrEmojiOrSymbolWord, splitToParagraphs } from '../nlp/Segmentation.js'
+import { applyWhitespaceProcessing, includesWordCharacter, isWordOrEmojiOrSymbolWord, splitToParagraphs } from '../nlp/Segmentation.js'
 import { deepClone } from './ObjectUtilities.js'
 import { getUTF32Chars } from './StringUtilities.js'
 import { roundToDigits } from './Utilities.js'
@@ -213,7 +213,7 @@ function replaceSentenceEndersWithinWordsWithMaskingCharacter(transcript: string
 	for (const wordEntry of wordTimeline) {
 		const wordText = wordEntry.text
 
-		if (!isWord(wordText)) {
+		if (!includesWordCharacter(wordText)) {
 			continue
 		}
 

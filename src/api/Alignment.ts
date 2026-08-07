@@ -14,7 +14,7 @@ import { type WhisperAlignmentOptions } from '../recognition/WhisperSTT.js'
 import { DtwGranularity, createAlignmentReferenceUsingEspeak } from '../alignment/SpeechAlignment.js'
 import { type SubtitlesConfig } from '../subtitles/Subtitles.js'
 import { type EspeakOptions, defaultEspeakOptions } from '../synthesis/EspeakTTS.js'
-import { isWord } from '../nlp/Segmentation.js'
+import { includesWordCharacter } from '../nlp/Segmentation.js'
 
 const log = logToStderr
 
@@ -264,7 +264,7 @@ export async function align(input: AudioSourceParam, transcript: string, options
 			logger.log('')
 
 			// Remove non-word entries from recognition timeline
-			recognitionTimeline = recognitionTimeline.filter(entry => isWord(entry.text))
+			recognitionTimeline = recognitionTimeline.filter(entry => includesWordCharacter(entry.text))
 
 			// Synthesize the ground-truth transcript and get its timeline
 			logger.start('Synthesize ground-truth transcript with eSpeak')

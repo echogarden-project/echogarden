@@ -1,6 +1,6 @@
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { substituteCharactersUsingLookup } from '../utilities/StringUtilities.js'
-import { anyOf, buildRegExp, charRange, inputEnd, inputStart, repeated, zeroOrMore } from 'regexp-composer'
+import { anyOf, buildRegExp, charRange, inputEnd, inputStart, oneOrMore, repeated, unicodeProperty, zeroOrMore } from 'regexp-composer'
 
 export function getNormalizedFragmentsForSpeech(
 	words: string[],
@@ -25,14 +25,24 @@ export function getNormalizedFragmentsForSpeech(
 		const nextNonWhitespaceWord = nextNonWhitespaceWords[0]
 
 		const originalWordIndex = nonWhitespaceWordOriginalIndex[wordIndex]
+
 		const isFollowedByWhitespace = words[originalWordIndex + 1]?.trim().length === 0
+		const isSpecialCharacterBeforeYear = ['(', ',', '©'].includes(words[originalWordIndex])
 
-		if (wordsPrecedingAYear.includes(lowerCaseWord) &&
-			isFollowedByWhitespace &&
-			fourDigitYearPatternRegExp.test(nextNonWhitespaceWord)) {
+		//const isWordPrecedingAYear = wordsPrecedingAYear.includes(lowerCaseWord)
+		const isWordPrecedingAYear =
+			isAllLettersRegExp.test(lowerCaseWord) || isSpecialCharacterBeforeYear
 
- 			// Normalize a four digit year pattern, e.g. 'in 1995'.
+		const followedByFourDigitYearPattern = fourDigitYearRegExp.test(nextNonWhitespaceWord)
 
+		const isWordPrecedingADecade = wordsPrecedingADecade.includes(lowerCaseWord)
+		const followedByFourDigitDecadePattern = fourDigitDecadeRegExp.test(nextNonWhitespaceWord)
+
+		if (isWordPrecedingAYear &&
+			(isFollowedByWhitespace || isSpecialCharacterBeforeYear) &&
+			followedByFourDigitYearPattern) {
+
+			// Normalize a four digit year pattern, e.g. 'in 1995'.
 			const normalizedString = normalizeFourDigitYearString(nextNonWhitespaceWord)
 
 			normalizedFragments.push(word)
@@ -43,11 +53,11 @@ export function getNormalizedFragmentsForSpeech(
 
 			wordIndex += 1
 		} else if (
-			wordsPrecedingADecade.includes(lowerCaseWord) &&
+			isWordPrecedingADecade &&
 			isFollowedByWhitespace &&
-			fourDigitDecadePatternRegExp.test(nextNonWhitespaceWord)) {
+			followedByFourDigitDecadePattern) {
 
- 			// Normalize a four digit decade pattern, e.g. 'the 1980s'.
+			// Normalize a four digit decade pattern, e.g. 'the 1980s'.
 
 			const normalizedString = normalizeFourDigitDecadeString(nextNonWhitespaceWord)
 
@@ -58,7 +68,7 @@ export function getNormalizedFragmentsForSpeech(
 			referenceFragments.push(nextNonWhitespaceWord)
 
 			wordIndex += 1
-		} else if (fourDigitYearRangePatternRegExp.test(words.slice(originalWordIndex, originalWordIndex + 3).join(''))) {
+		} else if (fourDigitYearRangeRegExp.test(words.slice(originalWordIndex, originalWordIndex + 3).join(''))) {
 			// Normalize a year range pattern, e.g. '1835-1896', ensure there are no spaces between words
 			normalizedFragments.push(normalizeFourDigitYearString(nonWhitespaceWords[wordIndex]))
 			referenceFragments.push(nonWhitespaceWords[wordIndex])
@@ -92,7 +102,7 @@ export function getNormalizedFragmentsForSpeech(
 				const referenceString = word
 				referenceFragments.push(referenceString)
 			}
-		} else if (followingCurrencyPatternRegExp.test(lowerCaseWord)) {
+		} else if (followingCurrencyRegExp.test(lowerCaseWord)) {
 			const currencyWord = currencySymbolsAsWords[currencySymbols.indexOf(lowerCaseWord[lowerCaseWord.length - 1])]
 
 			const normalizedString = `${word.substring(0, word.length - 1)} ${currencyWord}`
@@ -234,14 +244,14 @@ const wordsFollowingACurrency = [
 
 const arabicNumeralPattern = charRange('0', '9')
 
-const numberPattern = [
+const isNumberPattern = [
 	inputStart,
 	arabicNumeralPattern,
 	zeroOrMore(anyOf(arabicNumeralPattern, ',', '.')),
 	inputEnd
 ]
 
-const numberPatternRegExp = buildRegExp(numberPattern)
+const isNumberRegExp = buildRegExp(isNumberPattern)
 
 const precedingCurrencyPattern = [
 	inputStart,
@@ -261,13 +271,16 @@ const followingCurrencyPattern = [
 	inputEnd
 ]
 
-const followingCurrencyPatternRegExp = buildRegExp(followingCurrencyPattern)
+const followingCurrencyRegExp = buildRegExp(followingCurrencyPattern)
 
 const fourDigitYearPattern = [inputStart, repeated(4, arabicNumeralPattern), inputEnd]
-const fourDigitYearPatternRegExp = buildRegExp(fourDigitYearPattern)
+const fourDigitYearRegExp = buildRegExp(fourDigitYearPattern)
 
 const fourDigitDecadePattern = [inputStart, repeated(3, arabicNumeralPattern), '0s', inputEnd]
-const fourDigitDecadePatternRegExp = buildRegExp(fourDigitDecadePattern)
+const fourDigitDecadeRegExp = buildRegExp(fourDigitDecadePattern)
 
 const fourDigitYearRangePattern = [inputStart, repeated(4, arabicNumeralPattern), anyOf('-', '–'), repeated(4, arabicNumeralPattern), inputEnd]
-const fourDigitYearRangePatternRegExp = buildRegExp(fourDigitYearRangePattern)
+const fourDigitYearRangeRegExp = buildRegExp(fourDigitYearRangePattern)
+
+const isAllLettersPattern = [inputStart, oneOrMore(unicodeProperty('Letter')), inputEnd]
+const isAllLettersRegExp = buildRegExp(isAllLettersPattern)

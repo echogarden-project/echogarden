@@ -1,7 +1,8 @@
 import { sumArray, logToStderr } from '../utilities/Utilities.js'
 import { getShortLanguageCode } from '../utilities/Locale.js'
 import { ParagraphBreakType, WhitespaceProcessing } from '../api/Common.js'
-import { includesAnyOf, splitAndPreserveSeparators } from '../utilities/StringUtilities.js'
+import { splitAndPreserveSeparators } from '../utilities/StringUtilities.js'
+import { anyOf, buildRegExp, unicodeProperty, oneOrMore, possibly, codepoint, inputStart, inputEnd, whitespace } from 'regexp-composer'
 
 import * as TextSegmentation from '@echogarden/text-segmentation'
 import { splitChineseTextToWords_Jieba } from './ChineseSegmentation.js'
@@ -9,50 +10,77 @@ import { splitJapaneseTextToWords_Kuromoji } from './JapaneseSegmentation.js'
 
 const log = logToStderr
 
-export const wordCharacterRegExp = /[\p{Letter}\p{Number}]/u
+const includesWordCharacterPattern = anyOf(unicodeProperty('Letter'), unicodeProperty('Number'))
+const includesWordCharacterRegExp = buildRegExp(includesWordCharacterPattern)
 
 // See: https://mathiasbynens.be/notes/es-unicode-property-escapes
-export const emojiSequenceRegExp = /\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/u
+//export const emojiSequenceRegExp = /\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/u
+const includesEmojiSequencePattern = anyOf(
+	[unicodeProperty('Emoji_Modifier_Base'), possibly(unicodeProperty('Emoji_Modifier'))],
+	unicodeProperty('Emoji_Presentation'),
+	[unicodeProperty('Emoji'), codepoint('FE0F')]
+)
+const includesEmojiSequenceRegExp = buildRegExp(includesEmojiSequencePattern)
 
-export const includesPunctuationRegExp = /[\p{Punctuation}]/u
-export const isAllPunctuationRegExp = /^[\p{Punctuation}]+$/u
+const symbolWordsList = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾', '→', '≤', '≥']
+const includesSymbolWordPattern = anyOf(...symbolWordsList)
+const includesSymbolWordRegExp = buildRegExp(includesSymbolWordPattern)
 
-export const phraseSeparators = [',', '、', '，', '،', ';', '；', ':', '：', '—']
-export const symbolWords = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾', '→', '≤', '≥']
+const isAllSymbolWordsPattern = [inputStart, oneOrMore(includesSymbolWordPattern), inputEnd]
+const isAllSymbolWordsRegExp = buildRegExp(isAllSymbolWordsPattern)
+
+const includesWordCharacterOrEmojiPattern = anyOf(includesWordCharacterPattern, includesEmojiSequencePattern)
+const includesWordCharacterOrEmojiRegExp = buildRegExp(includesWordCharacterOrEmojiPattern)
+
+const includesWordCharacterOrEmojiOrIsAllSymbolWordPattern = anyOf(includesWordCharacterPattern, includesEmojiSequencePattern, isAllSymbolWordsPattern)
+const includesWordCharacterOrEmojiOrIsAllSymbolWordRegExp = buildRegExp(includesWordCharacterOrEmojiOrIsAllSymbolWordPattern)
+
+const includesPunctuationPattern = unicodeProperty('Punctuation')
+const includesPunctuationRegExp = buildRegExp(includesPunctuationPattern)
+
+const isAllPunctuationPattern = [inputStart, oneOrMore(includesPunctuationPattern), inputEnd]
+const isAllPunctuationRegExp = buildRegExp(isAllPunctuationPattern)
+
+const phraseSeparatorsList = [',', '、', '，', '،', ';', '；', ':', '：', '—']
+const includesPhraseSeparatorsPattern = anyOf(...phraseSeparatorsList)
+const includesPhraseSeparatorsRegExp = buildRegExp(includesPhraseSeparatorsPattern)
+
+const isAllWhitespacePattern = [inputStart, oneOrMore(whitespace), inputEnd]
+const isAllWhitespaceRegExp = buildRegExp(isAllWhitespacePattern)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Predicates
 ///////////////////////////////////////////////////////////////////////////////////////////////
 export function isWordOrEmojiOrSymbolWord(str: string) {
-	return isWordOrEmoji(str) || symbolWords.includes(str)
+	return includesWordCharacterOrEmojiOrIsAllSymbolWordRegExp.test(str.trim())
 }
 
 export function isWordOrEmoji(str: string) {
-	return isWord(str) || includesEmoji(str)
+	return includesWordCharacterOrEmojiRegExp.test(str.trim())
 }
 
 export function isSymbolWord(str: string) {
-	return symbolWords.includes(str?.trim())
+	return isAllSymbolWordsRegExp.test(str.trim())
 }
 
-export function isWord(str: string) {
-	return wordCharacterRegExp.test(str?.trim())
+export function includesWordCharacter(str: string) {
+	return includesWordCharacterRegExp.test(str.trim())
 }
 
 export function includesPunctuation(str: string) {
-	return includesPunctuationRegExp.test(str?.trim())
+	return includesPunctuationRegExp.test(str.trim())
 }
 
 export function isAllPunctuation(str: string) {
-	return isAllPunctuationRegExp.test(str?.trim())
+	return isAllPunctuationRegExp.test(str.trim())
 }
 
 export function includesEmoji(str: string) {
-	return emojiSequenceRegExp.test(str?.trim())
+	return includesEmojiSequenceRegExp.test(str.trim())
 }
 
 export function isAllWhitespace(str: string) {
-	return str && /^\s+$/.test(str)
+	return isAllWhitespaceRegExp.test(str)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -280,11 +308,13 @@ export class Word {
 		this.isSentenceFinalizer = isSentenceFinalizer
 	}
 
-	get containsOnlyPunctuation() { return !wordCharacterRegExp.test(this.text) && !this.isSymbolWord }
+	get containsOnlyPunctuation() { return !isWordOrEmojiOrSymbolWord(this.text) }
 
-	get isSymbolWord() { return symbolWords.includes(this.text) }
+	get isSymbolWord() { return isSymbolWord(this.text) }
 
-	get isPhraseSeperator() { return this.containsOnlyPunctuation && includesAnyOf(this.text, phraseSeparators) }
+	get isPhraseSeperator() {
+		return this.containsOnlyPunctuation && includesPhraseSeparatorsRegExp.test(this.text)
+	}
 
 	get length() { return this.text.length }
 }

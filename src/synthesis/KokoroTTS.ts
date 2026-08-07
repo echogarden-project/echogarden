@@ -72,12 +72,6 @@ export class KokoroTTS {
 		const voicePrimaryLanguage = voice.languages[0]
 		const voicePrimaryLanguageShort = getShortLanguageCode(voicePrimaryLanguage)
 
-		sentenceText = //simplifyPunctuationCharacters(sentence.trim())
-			sentenceText
-				.replaceAll('(', ', ')
-				.replaceAll(')', ', ')
-				.replaceAll('—', ', ')
-
 		const simplifiedSentenceText = simplifyPunctuationCharacters(sentenceText.trim())
 
 		const voiceLanguage = voiceEntry.languages[0]

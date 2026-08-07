@@ -3,7 +3,7 @@ import { Logger } from '../utilities/Logger.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { alignDTWWindowed } from './DTWSequenceAlignmentWindowed.js'
 import { cosineDistance } from '../math/VectorMath.js'
-import { includesPunctuation, isWord, parseText } from '../nlp/Segmentation.js'
+import { includesPunctuation, includesWordCharacter, parseText } from '../nlp/Segmentation.js'
 import { Timeline, extractEntries } from '../utilities/Timeline.js'
 import { TimelineTranslationAlignmentCallbacks } from '../api/TimelineTranslationAlignment.js'
 import { OperationCallbacks } from '../api/Common.js'
@@ -20,7 +20,7 @@ export async function alignTimelineToTextSemantically(timeline: Timeline, text: 
 
 	for (const sentenceEntry of timelineSentenceEntries) {
 		const wordEntryGroup = sentenceEntry.timeline!
-			.filter(wordEntry => isWord(wordEntry.text))
+			.filter(wordEntry => includesWordCharacter(wordEntry.text))
 
 		timelineWordEntryGroups.push(wordEntryGroup)
 		timelineWordGroups.push(wordEntryGroup.map(wordEntry => wordEntry.text))

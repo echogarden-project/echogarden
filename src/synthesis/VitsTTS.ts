@@ -72,12 +72,6 @@ export class VitsTTS {
 
 		lengthScale *= baseLengthScale
 
-		sentence = //simplifyPunctuationCharacters(sentence.trim())
-			sentence
-				.replaceAll('(', ', ')
-				.replaceAll(')', ', ')
-				.replaceAll('—', ', ')
-
 		const Espeak = await import('../synthesis/EspeakTTS.js')
 
 		logger.end()

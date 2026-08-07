@@ -4,7 +4,7 @@ import { Logger } from '../utilities/Logger.js'
 import { RawAudio, getEmptyRawAudio } from '../audio/AudioUtilities.js'
 import { getNormalizedFragmentsForSpeech, simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { ipaPhoneToKirshenbaum } from '../nlp/PhoneConversion.js'
-import { isAllPunctuation, isWord, isWordOrEmoji, splitToWords, wordCharacterRegExp } from '../nlp/Segmentation.js'
+import { isAllPunctuation, isWordOrEmoji, splitToWords, isWordOrEmojiOrSymbolWord } from '../nlp/Segmentation.js'
 import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
@@ -12,7 +12,7 @@ import { extendDeep } from '../utilities/ObjectUtilities.js'
 import { escapeHtml } from '../encodings/HtmlEscape.js'
 import * as TextSegmentation from '@echogarden/text-segmentation'
 
-import { getGlobalOption, OperationCallbacks, SynthesisCallbacks } from '../api/API.js'
+import { OperationCallbacks, SynthesisCallbacks } from '../api/API.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 
 import { wrapEmscriptenModuleHeap } from 'wasm-heap-manager'
@@ -73,11 +73,14 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 		for (let i = 0; i < mergedWords.length; i++) {
 			const mergedWord = mergedWords[i]
 
-			// Convert isolated groups of vertical bars and em dashes to a comma
 			if (/^[\|│—─–]+$/.test(mergedWord)) {
+				// Convert isolated groups of vertical bars or em dashes to a comma
 				mergedWords[i] = ','
-			} else if (isAllPunctuation(mergedWord)) { // Collapse repeated punctuation
-				mergedWords[i] = mergedWord[0]
+			} else if (isAllPunctuation(mergedWord)) {
+				// Collapse repeated punctuation to up to 3 repetitions,
+				// Since otherwise eSpeak may go crazy.
+
+				mergedWords[i] = mergedWord.substring(0, Math.min(3, mergedWord.length))
 			}
 		}
 
@@ -102,7 +105,12 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 
 	const { normalizedFragments, referenceFragments } = getNormalizedFragmentsForSpeech(words, nonWhitespaceWords, nonWhitespaceWordsOriginalIndex, language)
 
-	const simplifiedFragments = normalizedFragments.map(word => simplifyPunctuationCharacters(word).toLocaleLowerCase())
+	const simplifiedFragments = normalizedFragments.map(word => {
+		return simplifyPunctuationCharacters(word)
+			.toLocaleLowerCase()
+			.replaceAll('(', ',')
+			.replaceAll(')', ',')
+	})
 
 	if ([`'`].includes(simplifiedFragments[0])) {
 		normalizedFragments[0] = `()`
@@ -150,8 +158,8 @@ export async function preprocessAndSynthesize(text: string, language: string, es
 	{
 		const fragmentWordSequence = new TextSegmentation.WordSequence()
 
-		for (let fragment of fragments) {
-			fragmentWordSequence.addWord(fragment, 0, !wordCharacterRegExp.test(fragment))
+		for (let fragment of simplifiedFragments) {
+			fragmentWordSequence.addWord(fragment, 0, !isWordOrEmojiOrSymbolWord(fragment))
 		}
 
 		const wordEntries = referenceTimeline.flatMap(phraseEntry => phraseEntry.timeline!)

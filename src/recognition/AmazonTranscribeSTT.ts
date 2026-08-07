@@ -1,6 +1,6 @@
-import { Item, LanguageCode, StartStreamTranscriptionCommandInput } from '@aws-sdk/client-transcribe-streaming'
-import { wordCharacterRegExp } from '../nlp/Segmentation.js'
 import * as FFMpegTranscoder from '../codecs/FFMpegTranscoder.js'
+import { Item, LanguageCode, StartStreamTranscriptionCommandInput } from '@aws-sdk/client-transcribe-streaming'
+import { isWordOrEmojiOrSymbolWord } from '../nlp/Segmentation.js'
 import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio } from '../audio/AudioUtilities.js'
@@ -103,7 +103,7 @@ export async function recgonize(rawAudio: RawAudio, languageCode: string, region
 	for (const event of events) {
 		const text = event.Content!
 
-		if (!wordCharacterRegExp.test(text)) {
+		if (!isWordOrEmojiOrSymbolWord(text)) {
 			continue
 		}
 
