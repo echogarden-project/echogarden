@@ -1,11 +1,12 @@
 export function extendDeep(base: any, extension: any): any {
 	const baseClone = deepClone(base)
 
-	if (isPlainObject(base) && extension === undefined) {
+	if (extension === undefined) {
 		return baseClone
 	}
 
 	const extensionClone = deepClone(extension)
+
 	if (!isPlainObject(base) || !isPlainObject(extension)) {
 		return extensionClone
 	}
@@ -21,15 +22,15 @@ export function extendDeep(base: any, extension: any): any {
 	return baseClone
 }
 
-export function shallowClone<T>(val: T) {
-	return clone(val, false)
+export function shallowClone<T>(val: T): T {
+	return clone(val, false, new Set())
 }
 
-export function deepClone<T>(val: T) {
-	return clone(val, true)
+export function deepClone<T>(val: T): T {
+	return clone(val, true, new Set())
 }
 
-function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
+function clone<T>(val: T, deep = true, seenObjects: Set<any>): T {
 	if (val === undefined || val === null || typeof val !== 'object') {
 		return val
 	}
@@ -39,11 +40,11 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 
 	switch (prototypeIdentifier) {
 		case '[object Array]': {
-			if (seenObjects.includes(obj)) {
+			if (seenObjects.has(obj)) {
 				throw new Error('deepClone: encountered a cyclic object')
 			}
 
-			seenObjects.push(obj)
+			seenObjects.add(obj)
 
 			const clonedArray = new Array(obj.length)
 
@@ -55,7 +56,7 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 				}
 			}
 
-			seenObjects.pop()
+			seenObjects.delete(obj)
 
 			return clonedArray as any
 		}
@@ -149,7 +150,10 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 		}
 
 		case '[object RegExp]': {
-			return obj
+			const clonedRegExp = new RegExp(obj.source, obj.flags)
+			clonedRegExp.lastIndex = obj.lastIndex
+
+			return clonedRegExp as any
 		}
 
 		case '[object Function]': {
@@ -157,11 +161,11 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 		}
 
 		case '[object Object]': {
-			if (seenObjects.includes(obj)) {
-				throw new Error('deepClone: encountered a cyclic object')
+			if (seenObjects.has(obj)) {
+				throw new Error('deepClone: encountered a cyclic object.')
 			}
 
-			seenObjects.push(obj)
+			seenObjects.add(obj)
 
 			const clonedObj: any = {}
 
@@ -177,13 +181,13 @@ function clone<T>(val: T, deep = true, seenObjects: any[] = []): T {
 				}
 			}
 
-			seenObjects.pop()
+			seenObjects.delete(obj)
 
 			return clonedObj
 		}
 
 		default: {
-			throw new Error(`Cloning of type ${prototypeIdentifier} is not supported`)
+			throw new Error(`Cloning of type ${prototypeIdentifier} is not supported.`)
 		}
 	}
 }
