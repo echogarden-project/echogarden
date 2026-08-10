@@ -22,7 +22,11 @@ const includesEmojiSequencePattern = anyOf(
 )
 const includesEmojiSequenceRegExp = buildRegExp(includesEmojiSequencePattern)
 
-const symbolWordsList = ['$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷', '/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾', '→', '≤', '≥']
+const symbolWordsList = [
+	'$', '€', '¢', '£', '¥', '©', '®', '™', '%', '&', '#', '~', '@', '+', '±', '÷',
+	'/', '\\', '^', '*', '×', '=', '≈', '¼', '½', '¾', '→', '≤', '≥', '∞'
+]
+
 const includesSymbolWordPattern = anyOf(...symbolWordsList)
 const includesSymbolWordRegExp = buildRegExp(includesSymbolWordPattern)
 
