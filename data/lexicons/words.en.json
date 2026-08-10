@@ -2535,6 +2535,38 @@
 					"en-gb-x-rp": "t ɹ ˈiː ɑː ʒ d"
 				}
 			}
+		},
+		"subarea": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "s ˈʌ b ˌɛ ɹ i ə",
+					"en-gb-x-rp": "s ˈʌ b ˌɛə ɹ i ə"
+				}
+			}
+		},
+		"contrarian": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ə n t ɹ ˈɛ ɹ i ə n",
+					"en-gb-x-rp": "k ə n t ɹ ˈɛə ɹ i ə n"
+				}
+			}
+		},
+		"covid": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "k ˈoʊ v ɪ d",
+					"en-gb-x-rp": "k ˈəʊ v ɪ d"
+				}
+			}
+		},
+		"geometrist": {
+			"pronunciation": {
+				"espeak": {
+					"en-us": "dʒ ˌiː ˈɒ m ɛ t ɹ ɪ s t",
+					"en-gb-x-rp": "dʒ ˌiː ˈɒ m ɛ t ɹ ɪ s t"
+				}
+			}
 		}
 	}
 }
