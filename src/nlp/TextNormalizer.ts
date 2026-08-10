@@ -31,7 +31,7 @@ export function getNormalizedFragmentsForSpeech(
 
 		//const isWordPrecedingAYear = wordsPrecedingAYear.includes(lowerCaseWord)
 		const isWordPrecedingAYear =
-			isAllLettersRegExp.test(lowerCaseWord) || isSpecialCharacterBeforeYear
+			isAllLettersOrApostropheRegExp.test(lowerCaseWord) || isSpecialCharacterBeforeYear
 
 		const followedByFourDigitYearPattern = fourDigitYearRegExp.test(nextNonWhitespaceWord)
 
@@ -284,3 +284,14 @@ const fourDigitYearRangeRegExp = buildRegExp(fourDigitYearRangePattern)
 
 const isAllLettersPattern = [inputStart, oneOrMore(unicodeProperty('Letter')), inputEnd]
 const isAllLettersRegExp = buildRegExp(isAllLettersPattern)
+
+const isAllLettersOrApostrophePattern = [
+	inputStart,
+
+	unicodeProperty('Letter'),
+	zeroOrMore(anyOf(unicodeProperty('Letter'), `'`)),
+
+	inputEnd,
+]
+
+const isAllLettersOrApostropheRegExp = buildRegExp(isAllLettersOrApostrophePattern)
