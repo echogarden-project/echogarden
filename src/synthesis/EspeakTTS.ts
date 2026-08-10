@@ -9,7 +9,7 @@ import { Lexicon, tryGetFirstLexiconSubstitution } from '../nlp/Lexicon.js'
 import { phonemizeSentence } from '../nlp/EspeakPhonemizer.js'
 import { Timeline, TimelineEntry } from '../utilities/Timeline.js'
 import { extendDeep } from '../utilities/ObjectUtilities.js'
-import { escapeHtml } from '../encodings/HtmlEscape.js'
+import { escapeHtml } from 'standard-html-escaper'
 import * as TextSegmentation from '@echogarden/text-segmentation'
 
 import { OperationCallbacks, SynthesisCallbacks } from '../api/API.js'

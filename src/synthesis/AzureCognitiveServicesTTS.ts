@@ -6,7 +6,7 @@ import { Logger } from '../utilities/Logger.js'
 import { Timeline } from '../utilities/Timeline.js'
 import { RawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { concatUint8Arrays } from '../utilities/Utilities.js'
-import { escapeHtml } from '../encodings/HtmlEscape.js'
+import { escapeHtml } from 'standard-html-escaper'
 import { SynthesisCallbacks } from '../api/Synthesis.js'
 
 export async function synthesize(

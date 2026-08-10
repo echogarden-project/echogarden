@@ -1,7 +1,7 @@
 import { downloadAndExtractTarball, FileDownloaderCallbacks } from './FileDownloader.js'
-import { getAppDataDir, ensureDir, existsSync, remove } from './FileSystem.js'
+import { ensureDir, existsSync, remove } from './FileSystem.js'
 import { appName } from '../api/Common.js'
-import { getAppTempDir, joinPath } from './PathUtilities.js'
+import { getAppDataDir, getAppTempDir, joinPath } from './PathUtilities.js'
 import { getGlobalOption } from '../api/GlobalOptions.js'
 import { EasierHttpRequestConfig } from 'easier-http-request'
 

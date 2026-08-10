@@ -41,6 +41,25 @@ export function getAppTempDir(appName: string) {
 	return tempDir
 }
 
+export function getAppDataDir(appName: string) {
+	let dataDir: string
+
+	const platform = process.platform
+	const homeDir = os.homedir()
+
+	if (platform == 'win32') {
+		dataDir = joinPath(homeDir, 'AppData', 'Local', appName)
+	} else if (platform == 'darwin') {
+		dataDir = joinPath(homeDir, 'Library', 'Application Support', appName)
+	} else if (platform == 'linux') {
+		dataDir = joinPath(homeDir, '.local', 'share', appName)
+	} else {
+		throw new Error(`Unsupport platform ${platform}`)
+	}
+
+	return dataDir
+}
+
 export function joinPath(...paths: string[]) {
 	return NodePath.join(...paths)
 }

@@ -15,7 +15,7 @@ import { type RubberbandOptions } from '../dsp/Rubberband.js'
 import { loadLexiconsForLanguage } from '../nlp/Lexicon.js'
 
 import { Timeline, TimelineEntry, addTimeOffsetToTimeline, multiplyTimelineByFactor } from '../utilities/Timeline.js'
-import { getAppDataDir, ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
+import { ensureDir, existsSync, isFileIsUpToDate, readAndParseJsonFile, writeFileSafe } from '../utilities/FileSystem.js'
 import { formatLanguageCodeWithName, getShortLanguageCode, normalizeLanguageCode, defaultDialectForLanguageCode, normalizeIdentifierToLanguageCode } from '../utilities/Locale.js'
 import { loadPackage } from '../utilities/PackageManager.js'
 import { EngineMetadata, appName } from './Common.js'
@@ -27,7 +27,7 @@ import { type DeepgramTTSOptions } from '../synthesis/DeepgramTTS.js'
 import { OnnxExecutionProvider } from '../utilities/OnnxUtilities.js'
 import { simplifyPunctuationCharacters } from '../nlp/TextNormalizer.js'
 import { convertHtmlToText } from '../utilities/StringUtilities.js'
-import { joinPath, resolvePath } from '../utilities/PathUtilities.js'
+import { getAppDataDir, joinPath, resolvePath } from '../utilities/PathUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 
 /////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,4 +1,4 @@
-import { write, open, close } from "./FileSystem.js"
+import { write, open, close, fsync } from './FileSystem.js'
 
 export class FileWriter {
 	private fileHandle?: number
@@ -43,6 +43,16 @@ export class FileWriter {
 		}
 
 		this.fileHandle = await open(this.filePath, 'w')
+	}
+
+	async fsync() {
+		if (this.isDisposed) {
+			throw new Error(`FileWriter has been disposed`)
+		}
+
+		await this.openIfNeeded()
+
+		await fsync(this.fileHandle!)
 	}
 
 	async dispose() {

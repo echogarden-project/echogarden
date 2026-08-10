@@ -8,7 +8,7 @@ import { concatUint8Arrays, getRandomHexString, logToStderr, sha256AsHex } from 
 import { RawAudio, getEmptyRawAudio, getRawAudioDuration } from '../audio/AudioUtilities.js'
 import { Timer } from '../utilities/Timer.js'
 import { decodeUtf8, encodeUtf8 } from '../encodings/Utf8.js'
-import { escapeHtml } from '../encodings/HtmlEscape.js'
+import { escapeHtml } from 'standard-html-escaper'
 import { requestHttp } from 'easier-http-request'
 import { VoiceListRequestCallbacks, SynthesisCallbacks } from '../api/API.js'
 

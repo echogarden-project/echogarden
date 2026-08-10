@@ -1,5 +1,8 @@
-import { decodeAscii } from "./Ascii.js"
+import { decodeAscii } from './Ascii.js'
 
+//////////////////////////////////////////////////////////////////////////////
+// Hexadecimal encoding
+//////////////////////////////////////////////////////////////////////////////
 export function encodeHex(buffer: Uint8Array) {
 	const asciiBuffer = encodeHexAsAsciiBuffer(buffer)
 
@@ -27,11 +30,14 @@ export function encodeHexAsAsciiBuffer(buffer: Uint8Array) {
 	return charCodes
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Hexadecimal decoding
+//////////////////////////////////////////////////////////////////////////////
 export function decodeHex(hexString: string) {
 	const hexLength = hexString.length
 
 	if (hexLength % 2 !== 0) {
-		throw new Error(`Hexadecimal string doesn't have an even number of characters`)
+		throw new Error(`Hexadecimal string doesn't have an even number of characters.`)
 	}
 
 	const buffer = new Uint8Array(hexLength / 2)
@@ -63,5 +69,8 @@ function hexCharCodeToValue(hexCharCode: number) {
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Lookup tables
+//////////////////////////////////////////////////////////////////////////////
 const hexCharLookup: string[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']
 const hexCharCodeLookup = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102])

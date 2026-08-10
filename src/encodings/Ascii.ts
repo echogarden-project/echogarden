@@ -1,5 +1,8 @@
 import { EncodeIntoResult } from './TextEncodingsCommon.js'
 
+//////////////////////////////////////////////////////////////////////////////
+// ASCII encoding
+//////////////////////////////////////////////////////////////////////////////
 export function encodeAscii(asciiString: string) {
 	const charCount = asciiString.length
 
@@ -30,31 +33,32 @@ export function encodeAsciiInto(asciiString: string, resultBuffer: Uint8Array): 
 	return { read: len, written: len }
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// ASCII decoding
+//////////////////////////////////////////////////////////////////////////////
 export function decodeAscii(encodedString: Uint8Array) {
 	const maxChunkLength = 2 ** 24
 
-	const decoder = new ChunkedAsciiDecoder()
+	const chunkedAsciiDecoder = new ChunkedAsciiDecoder()
+
+	let resultString = ''
 
 	for (let offset = 0; offset < encodedString.length; offset += maxChunkLength) {
-		const chunk = encodedString.subarray(offset, offset + maxChunkLength)
+		const asciiChunk = encodedString.subarray(offset, offset + maxChunkLength)
+		const stringChunk = chunkedAsciiDecoder.writeChunk(asciiChunk)
 
-		decoder.writeChunk(chunk)
+		resultString += stringChunk
 	}
 
-	return decoder.toString()
+	return resultString
 }
 
 export class ChunkedAsciiDecoder {
-	private str = ''
 	private readonly textDecoder = new TextDecoder('windows-1252')
 
 	writeChunk(chunk: Uint8Array) {
 		const decodedChunk = this.textDecoder.decode(chunk, { stream: true })
 
-		this.str += decodedChunk
-	}
-
-	toString() {
-		return this.str
+		return decodedChunk
 	}
 }
