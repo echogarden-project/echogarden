@@ -1,79 +1,99 @@
-import { logToStderr, roundToDigits } from './Utilities.js'
+import { logToStderr } from './Utilities.js'
 
 export class Timer {
-	startTime = 0
+	private readonly logger: TimerLogger
 
-	constructor() {
+	private startTime = 0
+
+	constructor(logger?: TimerLogger) {
+		if (logger) {
+			this.logger = logger
+		} else {
+			this.logger = logToStderr
+		}
+
 		this.restart()
 	}
 
-	restart() {
+	// Resets the timer to the current time.
+	restart(): void {
 		this.startTime = Timer.currentTime
 	}
 
+	// Elapsed time in milliseconds (monotonic where supported).
 	get elapsedTime(): number {
-		// Elapsed time (milliseconds)
 		return Timer.currentTime - this.startTime
 	}
 
+	// Elapsed time in seconds.
 	get elapsedTimeSeconds(): number {
-		// Elapsed time (seconds)
 		return this.elapsedTime / 1000
 	}
 
+	// Returns elapsed ms and restarts the timer.
 	getElapsedTimeAndRestart(): number {
-		const elapsedTime = this.elapsedTime
+		const elapsed = this.elapsedTime
 		this.restart()
 
-		return elapsedTime
+		return elapsed
 	}
 
+	// Logs elapsed time (in ms) and restarts the timer.
 	logAndRestart(title: string, timePrecision = 3): number {
-		const elapsedTime = this.elapsedTime
-
-		//
-		const message = `${title}: ${roundToDigits(elapsedTime, timePrecision)}ms`
-
-		logToStderr(message)
-		//
-
+		const elapsedMs = this.elapsedTime
+		this.logger(`${title}: ${roundToDigits(elapsedMs, timePrecision)}ms`)
 		this.restart()
 
-		return elapsedTime
+		return elapsedMs
 	}
 
+	// Current high-resolution timestamp in milliseconds since Unix epoch.
 	static get currentTime(): number {
-		if (!this.getTimestamp) {
-			this.createTimestampFunction()
-		}
-
-		return this.getTimestamp()
+		return this.timestampFunc()
 	}
 
+	// Current timestamp in microseconds (integer).
 	static get microsecondTimestamp(): number {
 		return Math.floor(Timer.currentTime * 1000)
 	}
 
-	private static createTimestampFunction() {
-		if (typeof process === 'object' && typeof process.hrtime === 'function') {
-			let baseTimestamp = 0
+	// Clock setup
+	private static timestampFunc: () => number = Timer.createTimestampFunction()
 
-			this.getTimestamp = () => {
-				const nodeTimeNanoSeconds = process.hrtime.bigint()
-				const nodeTimeMilliseconds = Number(nodeTimeNanoSeconds) / 1_000_000
+	private static createTimestampFunction(): () => number {
+		const g = globalThis as any
 
-				return baseTimestamp + nodeTimeMilliseconds
-			}
+		// 1. Modern standard: performance.now() (Browsers & Node 16+)
+		if (typeof g.performance === 'object' && typeof g.performance.now === 'function') {
+			const timeOrigin =
+				g.performance.timeOrigin ?? (Date.now() - g.performance.now())
 
-			baseTimestamp = Date.now() - this.getTimestamp()
-		} else if (typeof performance === 'object' && performance.now) {
-			const baseTimestamp = Date.now() - performance.now()
-
-			this.getTimestamp = () => baseTimestamp + performance.now()
-		} else {
-			this.getTimestamp = () => Date.now()
+			return () => timeOrigin + g.performance.now()
 		}
-	}
 
-	private static getTimestamp: () => number
+		// 2. Node.js high resolution timer (BigInt variant, Node 10.4+)
+		if (typeof g.process === 'object' && typeof g.process.hrtime === 'function') {
+			const startNs = g.process.hrtime.bigint()
+
+			const epochBaseMs = Date.now() - (Number(startNs) / 1e6)
+
+			return () =>
+				epochBaseMs + Number(g.process.hrtime.bigint()) / 1e6
+		}
+
+		// 3. Last-resort fallback (non-monotonic)
+		if (typeof Date.now === 'function') {
+			return () => Date.now()
+		}
+
+		return () => new Date().getTime()
+	}
 }
+
+export function roundToDigits(value: number, digits: number): number {
+	const factor = 10 ** digits
+
+	return Math.round(value * factor) / factor
+}
+
+type TimerLogger = (msg: string) => void
