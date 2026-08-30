@@ -257,12 +257,29 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 	}
 
-	const canInsertSeparators = !['roa/an', 'art/eo', 'trk/ky', 'zlw/pl', 'zle/uk'].includes(voice)
+	const separatorString = ` | `
+
+	const canInsertSeparators = ![
+		'roa/an',
+		'an',
+		'art/eo',
+		'eo',
+		'trk/ky',
+		'ky',
+		'zlw/pl',
+		'pl',
+		'zle/uk',
+		'uk',
+		'gmw/nl',
+		'nl'
+	].includes(voice)
 
 	let textWithMarkers: string
 
-	if (canInsertSeparators) {
-		textWithMarkers = `() | `
+	// Added `espeakOptions.insertSeparators` here because I'm not sure if adding the separator
+	// here is completely necessary, and it is causing issues with some languages.
+	if (espeakOptions.insertSeparators && canInsertSeparators) {
+		textWithMarkers = `()${separatorString}`
 	} else {
 		textWithMarkers = `() `
 	}
@@ -280,9 +297,7 @@ export async function synthesizeFragments(fragments: string[], espeakOptions: Es
 		}
 
 		if (espeakOptions.insertSeparators && canInsertSeparators) {
-			const separator = ` | `
-
-			textWithMarkers += `<mark name="s-${i}"/>${separator}${fragment}${separator}<mark name="e-${i}"/>`
+			textWithMarkers += `<mark name="s-${i}"/>${separatorString}${fragment}${separatorString}<mark name="e-${i}"/>`
 		} else {
 			if (fragment.endsWith('.')) {
 				fragment += ' ()'
