@@ -289,8 +289,7 @@ const isAllLettersOrApostrophePattern = [
 	inputStart,
 
 	unicodeProperty('Letter'),
-	zeroOrMore(anyOf(unicodeProperty('Letter'), `'`)),
-
+	zeroOrMore(anyOf(unicodeProperty('Letter'), `'`, `’`)),
 	inputEnd,
 ]
 
