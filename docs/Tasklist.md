@@ -11,10 +11,12 @@
 * Option to disable single sentence per cue
 
 ### Browser extension
+
 * Investigate why WebSpeech events sometimes completely stop working in the middle of an utterance for no apparent reason. Sometimes this is permanent, until the extension is restarted. Is this a browser issue?
 * If a request is made and the server takes too much time to respond, the service worker may sleep and the request never canceled
 
 ### Browser extension / content script
+
 * Highlighting sometimes does not appear when mouse is pressed over handle while speech of element starts
 
 ### External bugs
@@ -31,6 +33,7 @@
 ## Features and enhancements
 
 ### CLI
+
 * Show names of files written to disk. This is useful for cases where a file is auto-renamed to prevent overwriting existing data
 * Restrict input media file extensions to ensure that invalid files are not passed to FFmpeg
 * Show a message when a new version is available
@@ -46,28 +49,35 @@
 * Mode to print IPA words when speaking
 
 ### CLI / playback
+
 * Option to set audio output device for playback
 * Option to set playback volume
 * Maybe find a way not to pre-normalize if the audio is silent (to prevent a 30dB increase of possible noise)
 * Add phone playback support
 
 ### CLI / `speak`
+
 * Add support for sentence templates, like `echogarden speak-file text.txt /parts/[sentence].wav`
 
 ### CLI / `speak-wikipedia`
+
 * Correctly detect language when a Wikipedia URL is passed instead of an article name
 * Add option to set language edition separately from language, since Wikipedia language editions has its own code system that is slightly different from the standard one, in some cases
 
 ### CLI / `speak-url`
+
 * Use the Wikipedia reader when the URL is detected to be from `wikipedia.org`
 
 ### CLI / `list-voices`
+
 * When given a configuration file, see if you can fall back to take options from `speak` options, for example, to take API keys that are required for both the synthesis request and voice list request and
 
 ### CLI / `list-packages`
+
 * Support filters
 
 ### CLI / New commands
+
 * `play-with-subtitles`: Preview subtitles in terminal
 * `play-with-timeline`: Preview timeline in terminal
 * `subtitles-to-text`, `subtitles-to-timeline`, `srt-to-vtt`, `vtt-to-srt`
@@ -78,21 +88,25 @@
 * `speak-youtube-subtitles`: To speak the subtitles of a YouTube video
 
 ### API
+
 * Allow callers from API to cancel a task via `AbortController` and `AbortSignal`
 * Validate timelines to ensure timestamps are always increasing: no undefined timestamps, no negative timestamps, out-of-order timestamps, or timestamps over the duration of the audio. No sentences without words, etc. Missing or incorrect word offsets, etc.
 * Add support for phrases in timelines
 * Accept voice list caching options in `SynthesisOptions`
 
 ### Package manager
+
 * Better error message when a package is not found remotely. Currently, it just gives a `404 not found` without any other information
 * Retry on network failure
 
 ### Speech language detection
 
 ### Text language detection
+
 * Deploy and add the new n-gram based text language detection model
 
 ### Subtitles
+
 * Split long words if needed
 * Decide how many punctuation characters to allow before breaking to a new line (currently it's infinite)
 * If a subtitle is too short and at the end of the audio, try to extend it back if possible (for example, if the previous subtitle is already extended, take back from it)
@@ -101,6 +115,7 @@
 * Parse VTT's language
 
 ### Synthesis
+
 * Option to disable alignment (only for some engines). Alternative: use a low granularity DTW setting that is very fast to compute
 * Find places to add commas (",") to improve speech fluency. VITS voices don't normally add speech breaks if there is no punctuation
 * An isolated dash " - " can maybe be converted to a " , " to ensure there's a break in the speech
@@ -117,6 +132,7 @@
 * When `splitToSentences` is set to `false`, the timeline doesn't include proper sentences. Find a way to pass larger sections to the TTS, but still have proper sentences in the timeline
 
 ### Synthesis / preprocessing
+
 * Full date normalization (e.g. `21 August 2023`, `21 Aug 2023`, `August 21, 2023`)
 * Add support for capitalized-only rules, and possibly also all uppercase / all lowercase rules
 * Add support for multiple consecutive words in `precededBy` and `followedBy` conditions
@@ -130,6 +146,7 @@
 * `≈` symbol as a word character
 
 ### Synthesis / VITS
+
 * Consider adding `⦁︎` (when surrounded by whitespace) as phrase separator
 * Allow limiting how many models are cached in memory.
 * Ensure that caching behaves correctly when the same model is used with different execution providers
@@ -138,49 +155,60 @@
 * Add speaker names to voice list somehow
 
 ### Synthesis / Kokoro
+
 * Consider adding `⦁︎` (when surrounded by whitespace) as phrase separator
 * Ensure that caching behaves correctly when the same model is used with different execution providers
 
 ### Synthesis / Azure Cognitive Services
+
 * Currently, when input is set to be SSML, it is wrapped in a `<speak>` tag. Handle the case where the user made their own SSML document wrapped with a `<speak>` tag as well. Currently, it may send invalid input to Azure
 
 ### Recognition
+
 * Add token UTF-8 bytes in token entries on timeline. Some tokens are only a part of a codepoint, so this will allow to know exactly what they contain - the string representation is would be a Unicode error symbol in that case
 * Show alternatives when playing in the CLI. Clear current line and rewrite already printed text for alternatives during the speech recognition process
 
 ### Recognition / Whisper
+
 * Whisper's Chinese and Japanese output can be split into words in a more accurate way. Consider using a dedicated segmentation library to perform the segmentation in character sequences that have no punctuation characters to aid on guessing word boundaries
-* Cache last model (if enough memory is available). Ensure that caching works when switching between  different execution providers
+* Cache last model (if enough memory is available). Ensure that caching works when switching between different execution providers
 * Whisper timestamp tokens can be used to split into segments, otherwise it is possible to try to guess using pause lengths or voice activity detection
 * Bring back the option to use eSpeak DTW based alignment on segments, as an alternative approach
 
 ### Alignment
 
 ### Alignment / DTW
+
 * For the `granularity` option, add more granularities like `xxx-low` and `xxxx-low` (should the naming be changed? Maybe transition to a new naming scheme?)
 * Add and test official support for more than 6 hours of audio
 
 ### Alignment / DTW-RA
 
 ### Alignment / Whisper
+
 * Show same token stats as recognition now does on `trace` mode
 
 ### Source separation / MDX-NET
+
 * Option to customize overlap
 
 ### Server
+
 * Option to allow or disallow local file paths as arguments to API methods (as a security safeguard)
 
 ### Worker
+
 * Add cancellation checks in more operations
 * Support more operations
 
 ### Browser extension
+
 * Options UI
 * Add supported engines and voices to WebSpeech voice list
 * Pause and resume support
 
 ### Browser extension / content script
+
 * Autoscroll should work even if the scrollbar relevant to the target element is not the viewport's scrollbar
 * Find a way to show handles even for elements that start with a link
 * Add detection for line breaks in `pre` blocks
@@ -216,6 +244,7 @@
 ## Future features and enhancements
 
 ### CLI
+
 * Auto-generate options file, with comments, based on default options of the API
 * Have the CLI launch a background worker (in a thread) to enable better parallelism
 * Playback result audio while synthesis or recognition is still processing in the background
@@ -225,23 +254,29 @@
 * Markdown file as text input?
 
 ### OpenAI compatible local server
+
 * `echogarden serve` would serve a OpenAI-compatible server for all speech recognition, speech translation and speech synthesis engines
 
 ### Web
+
 * Web based frontend UI to the server
 * Adapt some WASM modules to also run on the web
 * Investigate running in WebContainer
 
 ### API
+
 * Auto-install npm modules when needed using an approach similar to like `npm-programmatic`
 
 ### Text enhancement
+
 * Add capitalization and punctuation to recognized outputs if needed (Silero has a model for it for `en`, `de`, `ru`, `es`, but in `.pt` format only)
 
 ### Synthesis
+
 * Synthesize the given subtitle file and try to preserve the existing timing of cues, or even align to existing speech
 
 ### Recognition
+
 * Low latency, streaming recognition mode. Make the partial transcription available as fast as possible
 * Live input / microphone recognition
 * Implement beam search for Whisper decoder
@@ -249,6 +284,7 @@
 * Investigate exporting Whisper models to 16-bit quantized ONNX or a mix of 16-bit and 32-bit
 
 ### Alignment
+
 * Method to align audio file to audio file
 * Allow `dtw` mode work with more speech synthesizers to produce its reference
 * Predict timing for individual letters (graphemes) based on phoneme timestamps (especially useful for Chinese and Japanese)

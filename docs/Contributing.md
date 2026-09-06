@@ -11,6 +11,7 @@ First, check the issue tracker, as well as the [task list](Tasklist.md) to see i
 If you find the issue you're encountering in the task list, you can still open an issue to discuss it. This allows me to know that someone cares about a particular issue, and I may give it higher priority.
 
 There might be some obvious errors that have gone unreported. Especially if:
+
 * You're using the macOS architecture: I don't have access to a macOS machine, so personally, I did not and cannot perform testing on that platform.
 * You're using cloud services: There may be changes in the service that will require updating the code. I don't often test they work correctly, since my trial periods in Google, Microsoft and Amazon have all expired, thus testing requires me to use paid requests.
 
@@ -31,7 +32,6 @@ If the problem is serious, you can report it, and we'll see what we can do.
 ## Fork and make changes to the codebase
 
 See the guide for [setting up a development environment](Development.md).
-
 
 ## Notes about licensing
 

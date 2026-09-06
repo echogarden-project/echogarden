@@ -18,6 +18,7 @@ Packages are downloaded as `.tar.gz` files, and are extracted to `[data-folder]/
 * `/home/user/.local/share/echogarden` on Linux
 
 `[package-id-string]` is formatted as:
+
 ```
 [engine name]-[package id]-[date as yyyymmdd]
 ```

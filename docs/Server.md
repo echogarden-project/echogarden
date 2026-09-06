@@ -27,19 +27,22 @@ For Node.js clients, a simple client class allows to wrap communications with th
 Currently, the client is embedded in the main codebase. This means you have to import the `echogarden` package to use it:
 
 ```ts
-import { WebSocket } from 'ws'
 import { Client } from 'echogarden'
+import { WebSocket } from 'ws'
 
 const ws = new WebSocket('ws://localhost:45054')
 
-ws.on("open", async () => {
+ws.on('open', async () => {
 	const client = new Client(ws)
 
-	const { audio } = await client.synthesize("Hello World", { engine: 'espeak' })
+	const { audio } = await client.synthesize('Hello World', {
+		engine: 'espeak',
+	})
 })
 ```
 
 **TODO**:
+
 * Separate the client to an independent, lightweight, Node.js package, with browser compatibility
 * Add support for cancellation signals
 * Document how to use with a background worker
@@ -72,6 +75,7 @@ The `messageType` property is a string representing the operation to perform. Th
 When sending a message, `requestId` should contain a long random string that uniquely identifies your request, like `cb7e0f3ec835a213b005c4424c8d5775`.
 
 For example, this message requests synthesis:
+
 ```ts
 {
 	messageType: 'SynthesisRequest',
@@ -130,16 +134,21 @@ To cancel an existing request, the client can send a `CancellationRequest` messa
 ## Starting the server programmatically
 
 You can use the `startServer` method to start a new server.
+
 ```ts
-async function startServer(serverOptions: ServerOptions, onStarted: (options: ServerOptions) => void)
+async function startServer(
+	serverOptions: ServerOptions,
+	onStarted: (options: ServerOptions) => void,
+)
 ```
 
 Example:
+
 ```ts
 import { startServer } from 'echogarden'
 
 await startServer({ port: 1234 }, () => {
-	console.log("Server is started!")
+	console.log('Server is started!')
 })
 ```
 

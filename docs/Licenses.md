@@ -26,6 +26,7 @@
 A large variety of voices, models and binaries are served from the repository.
 
 All are freely distributable, with varying licenses:
+
 * Kokoro model and voices (`kokoro-`) [Apache License 2.0](https://huggingface.co/hexgrad/Kokoro-82M)
 * Flite voices (`flite-`): [BSD License](https://github.com/festvox/flite/blob/master/COPYING)
 * SVOX Pico resources (`pico-`): [Apache License 2.0](https://github.com/gmn/nanotts/blob/master/LICENSE)
@@ -36,5 +37,6 @@ All are freely distributable, with varying licenses:
 * NSNet2: [Attribution 4.0 International](https://github.com/NeonGeckoCom/nsnet2-denoiser/blob/main/LICENSE)
 
 Tool binary distributions
+
 * FFmpeg: [LGPL, GPL v2 and GPL v3 Licenses](https://github.com/FFmpeg/FFmpeg)
 * whisper.cpp: [MIT License](https://github.com/ggerganov/whisper.cpp/blob/master/LICENSE)

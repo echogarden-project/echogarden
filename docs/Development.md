@@ -3,6 +3,7 @@
 Here's a quick guide on how to set up a development environment for making and testing changes to the Echogarden codebase.
 
 **Related pages**:
+
 * [How to help](Contributing.md)
 * [Technical overview](Technical.md)
 * [Node.js API reference](API.md)
@@ -20,33 +21,32 @@ Here's a quick guide on how to set up a development environment for making and t
 Create the `.vscode` subdirectory at the project base directory
 
 Add a `.vscode/tasks.json` file to run the TypeScript compiler in watch mode:
+
 ```json
 {
 	"version": "2.0.0",
-	"command": "tsc.cmd",
-	"args": [
-		"-w",
-		"-p",
-		"."
-	],
-	"problemMatcher": "$tsc-watch",
-	"isBackground": true,
 	"tasks": [
 		{
-			"label": "node",
-			"type": "shell",
-			"command": "tsc",
-			"args": [
-				"-w",
-				"-p",
-				"."
+			"label": "tsc: watch",
+			"type": "typescript",
+			"tsconfig": "tsconfig.json",
+			"option": "watch",
+			"problemMatcher": [
+				"$tsc-watch"
 			],
-			"isBackground": true,
-			"problemMatcher": "$tsc-watch",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
+			"runOptions": {
+				"runOn": "folderOpen",
+				"instanceLimit": 1,
+				"instancePolicy": "silent"
+			},
+			"presentation": {
+				"reveal": "never",
+				"focus": false
+			}
 		}
 	]
 }
@@ -82,7 +82,11 @@ Add a `.vscode/launch.json` file to launch the CLI in debug mode:
 			"program": "${workspaceFolder}/dist/cli/CLIStarter.js",
 			"outputCapture": "std",
 			"console": "integratedTerminal",
-			"runtimeArgs": ["--experimental-wasi-unstable-preview1", "--no-warnings", "--trace-uncaught"],
+			"runtimeArgs": [
+				"--experimental-wasi-unstable-preview1",
+				"--no-warnings",
+				"--trace-uncaught"
+			],
 
 			"args": ["speak", "Hello World!", "--debug"]
 		}

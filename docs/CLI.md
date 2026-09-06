@@ -9,10 +9,12 @@ echogarden [operation] [one or more inputs..] [one or more outputs...] [options.
 Each operation can accept one or more options, in the form `--[optionName]=[value]` (The `=` is required).
 
 **Keyboard shortcuts**:
+
 * While the program is running, you can press `esc` to exit immediately
 * When audio is playing, you can press `enter` to skip it, `space` to pause/resume, `right` to skip 1 second forward, and `left` to skip 1 second backwards
 
 ### Related pages
+
 * [Options reference](Options.md)
 * [List of all supported engines](Engines.md)
 
@@ -21,41 +23,49 @@ Each operation can accept one or more options, in the form `--[optionName]=[valu
 **Task**: Given a text file, synthesize spoken audio for it.
 
 This would synthesize "Hello World" and play the result in the terminal:
+
 ```bash
 echogarden speak "Hello world!"
 ```
 
 If no language is specified, it would attempt to detect it. This usually works better for longer texts, and may misidentify shorter ones. To ensure the right language is selected, you can specify the language explicitly:
+
 ```bash
 echogarden speak "Hello world!" --language=en
 ```
 
 This would save the resulting audio to `result.mp3`:
+
 ```bash
 echogarden speak "Hello world!" result.mp3 --language=en
 ```
 
 `speak-file` synthesizes text loaded from a textual file, which can have the extensions `txt`, `html`, `xml`, `ssml`, `srt`, `vtt`:
+
 ```bash
 echogarden speak-file text.txt result.mp3 --language=en
 ```
 
 You can specify an engine using the `--engine` option (a full list of engines can be found [here](Engines.md)). This would set the synthesis engine to `pico` (SVOX Pico):
- ```bash
- echogarden speak-file text.txt result.mp3 --language=en --engine=pico
- ```
+
+```bash
+echogarden speak-file text.txt result.mp3 --language=en --engine=pico
+```
 
 The CLI supports multiple output files. This would synthesize a text file, and save the resulting audio in both `result.mp3` and `result.wav`, as well as subtitles in `result.srt`:
+
 ```bash
 echogarden speak-file text.txt result.mp3 result.wav result.srt --engine=kokoro --speed=1.1
 ```
 
 Synthesize a web page (it will try to extract its main article parts and omit the rest):
+
 ```bash
 echogarden speak-url https://example.com/hola
 ```
 
 Synthesize a Wikipedia article, in any of its language editions:
+
 ```bash
 echogarden speak-wikipedia "Psychologie" --language=fr
 ```
@@ -65,11 +75,13 @@ echogarden speak-wikipedia "Psychologie" --language=fr
 **Task**: Given an audio recording containing speech, find a textual transcription that best matches it.
 
 This would transcribe the audio file `speech.mp3`, and then play the audio, along with the recognized text, in the terminal:
+
 ```bash
 echogarden transcribe speech.mp3
 ```
 
 This would transcribe the audio file `speech.mp3` and store the resulting transcription in `result.txt`, subtitles in `result.srt`, and a full timeline tree in `result.json`:
+
 ```bash
 echogarden transcribe speech.mp3 result.txt result.srt result.json
 ```
@@ -79,11 +91,13 @@ echogarden transcribe speech.mp3 result.txt result.srt result.json
 **Task**: Given an audio file and its transcript, try to approximate the timing of the start and end of each spoken word (and its subparts).
 
 This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and would play the synchronized result in the terminal:
+
 ```bash
 echogarden align speech.mp3 transcript.txt
 ```
 
 This would align the audio file `speech.mp3` with the transcript provided in `transcript.txt`, and store the resulting subtitles in `result.srt`, and a full timeline tree in `result.json`:
+
 ```bash
 echogarden align speech.mp3 transcript.txt result.srt result.json
 ```
@@ -93,11 +107,13 @@ echogarden align speech.mp3 transcript.txt result.srt result.json
 **Task**: Given an audio file containing speech in one language, transcribe it to a second language. The translated transcript should be generated directly from the speech itself, without an intermediate textual translation step.
 
 This will detect the spoken language, apply speech translation to English, and play the original audio, synced with the translated transcript:
+
 ```bash
 echogarden translate-speech speech.mp3
 ```
 
 To specify the source and target languages explicitly, use the `sourceLanguage` and `targetLanguage` options:
+
 ```bash
 echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --targetLanguage=en
 ```
@@ -107,19 +123,23 @@ echogarden translate-speech speech.mp3 translation.txt --sourceLanguage=es --tar
 ## Speech-to-translated-transcript alignment
 
 ### Direct alignment (English target only)
+
 **Task**: Given a spoken audio file and its English translated transcript, try to approximate the timing of the start and end of each translated word.
 
 This would align the audio file `dutch-speech.mp3` with the translated transcript provided in `english-translation.txt`, and would play the synchronized result in the terminal:
+
 ```bash
 echogarden align-translation dutch-speech.mp3 english-translation.txt
 ```
 
 This would align the audio file `dutch-speech.mp3` with the translated transcript provided in `english-translation.txt`, and store the resulting subtitles in `result.srt`, and a full timeline tree in `result.json`:
+
 ```bash
 echogarden align-translation dutch-speech.mp3 english-translation.txt result.srt result.json
 ```
 
 ### Two-stage alignment (any of 96 source and target languages, combined stages)
+
 **Task**: Given a spoken audio file, its transcript, and its translated transcript, try to approximate the timing of the start and end of each translated word.
 
 This would align the audio file `dutch-speech.mp3` with the Dutch (native language) transcript provided in `dutch-transcript.txt` and the translated transcript provided in `russian-translation.txt`, and would play the synchronized result in the terminal:
@@ -153,6 +173,7 @@ This manual two-step approach allows to reuse the already-aligned transcript in 
 **Stage 1**:
 
 Align the audio with its native language transcript, to produce a timeline in the native language:
+
 ```bash
 echogarden align dutch-speech.mp3 dutch-transcript.txt dutch-timeline.json
 ```
@@ -167,22 +188,24 @@ echogarden align-timeline-translation dutch-timeline.json russian-transcript.txt
 
 (`--audio` is only used for previewing the result in the terminal. Otherwise, it is not necessary)
 
-
 ## Language detection
 
 **Task**: Given audio or textual input, try to identify which language it is spoken or written in.
 
 Try to identify the language of an audio file containing speech, and print the probabilities to the terminal:
+
 ```bash
 echogarden detect-speech-language speech.mp3
 ```
 
 Try to identify the language of a text file, and print the probabilities to the terminal:
+
 ```bash
 echogarden detect-text-language story.txt
 ```
 
 Try to identify the language of a text file, and store the detailed probabilities in a JSON file:
+
 ```bash
 echogarden detect-text-language story.txt detection-results.json
 ```
@@ -192,11 +215,13 @@ echogarden detect-text-language story.txt detection-results.json
 **Task**: Given an audio file, try to classify which parts of the audio contain speech, and which don't.
 
 This would apply VAD and play the audio, synchronized with `speech` and `nonspeech` indicators, printed to the terminal.
+
 ```bash
 echogarden detect-voice-activity speech.mp3
 ```
 
 This would apply VAD and store the results in a timeline JSON file.
+
 ```bash
 echogarden detect-voice-activity speech.mp3 timeline.json
 ```
@@ -206,11 +231,13 @@ echogarden detect-voice-activity speech.mp3 timeline.json
 **Task**: Attempt to reduce the amount of background noise in a spoken recording.
 
 This would apply denoising and play the denoised audio:
+
 ```bash
 echogarden denoise speech.mp3
 ```
 
 This would apply denoising, and save the denoised audio to a file:
+
 ```bash
 echogarden denoise speech.mp3 denoised-speech.mp3
 ```
@@ -220,16 +247,19 @@ echogarden denoise speech.mp3 denoised-speech.mp3
 **Task**: Try to isolate a vocal track (or other type of track, depending on model used), from the audio.
 
 This would apply source separation and play the isolated audio:
+
 ```bash
 echogarden isolate voice-with-music.mp3
 ```
 
 This would apply source separation, and save both the isolated and background audio:
+
 ```bash
 echogarden isolate voice-with-music.mp3 voice-isolated.mp3
 ```
 
 Written files would be:
+
 ```
 voice-isolated.mp3
 voice-isolated.background.mp3
@@ -256,12 +286,15 @@ echogarden align speech.mp3 transcript.txt parts/[segment].m4a parts/[segment].s
 Splitting based on sentences, using a `[sentence]` placeholder, is currently on the to-do list. Please let me know if you find this feature important, and I'll prioritize it.
 
 ## Audio playback
+
 By default, audio isn't played in the terminal when an output file is specified, you can override this behavior by adding `--play`:
+
 ```bash
 echogarden speak-file text.txt result.mp3 --play
 ```
 
 Or similarly prevent playback using `--no-play`:
+
 ```bash
 echogarden transcribe speech.mp3 --no-play
 ```
@@ -281,6 +314,7 @@ When a file named `echogarden.config` is found at the current directory, it will
 The configuration file format is simple and has a dedicated section for each command (all `speak-` commands are grouped together under `speak`), `global` section for global API options, and `cli` for common CLI options. `#` is used as a comment character.
 
 Example:
+
 ```conf
 [global]
 
@@ -324,6 +358,7 @@ whisper.temperature = 0.15
 You can also use a JSON configuration file format instead, if preferred.
 
 Name your file `echogarden.config.json`:
+
 ```json
 {
 	"speak": {
@@ -342,6 +377,7 @@ Name your file `echogarden.config.json`:
 ```
 
 Flattened property names are also accepted:
+
 ```json
 {
 	"transcribe": {
@@ -350,7 +386,6 @@ Flattened property names are also accepted:
 	}
 }
 ```
-
 
 ## Information and lists
 
@@ -371,6 +406,7 @@ echogarden list-voices google-cloud
 ```
 
 Saves the voice list in a JSON file:
+
 ```bash
 echogarden list-voices google-cloud google-cloud-voices.json
 ```
@@ -390,4 +426,3 @@ Uninstall one or more packages
 ### `list-packages`
 
 Show a list of installed packages
-

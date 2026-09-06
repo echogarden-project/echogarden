@@ -33,6 +33,7 @@ Echogarden is an easy-to-use speech toolset that includes a variety of speech pr
 Ensure you have [Node.js](https://nodejs.org/) `v18` or later installed (`v22` or later is recommended).
 
 then:
+
 ```bash
 npm install -g echogarden@latest
 ```
@@ -40,15 +41,18 @@ npm install -g echogarden@latest
 ## Update
 
 Simple, but may not always update to the very latest major version:
+
 ```
 npm update -g echogarden
 ```
 
 You can also use [`npm-check-updates`](https://www.npmjs.com/package/npm-check-updates) to check for a newer version:
+
 ```bash
 npm install -g npm-check-updates
 ncu -g echogarden
 ```
+
 Then, if an updated version is available, use the command line `ncu` provides to make the update.
 
 ## NPM v12+ and `postinstall` scripts
@@ -60,6 +64,7 @@ The `postinstall` script used by `onnxruntime-node` in particular, is used to do
 ## Using the command-line interface
 
 A small sample of command lines:
+
 ```bash
 echogarden speak "Hello World!"
 echogarden speak-file story.txt --engine=kokoro

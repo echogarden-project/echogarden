@@ -3,6 +3,7 @@
 Here's a detailed reference for all the options accepted by the Echogarden CLI and API.
 
 **Related pages**:
+
 * [List of all supported engines](Engines.md)
 * [Quick guide to the command line interface](CLI.md)
 * [Node.js API reference](API.md)
@@ -12,6 +13,7 @@ Here's a detailed reference for all the options accepted by the Echogarden CLI a
 Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`, API method: `synthesize`
 
 **General**:
+
 * `engine`: identifier of the synthesis engine to use. Can be `kokoro`, `vits`, `pico`, `flite`, `gnuspeech`, `espeak`, `sam`, `sapi`, `msspeech`, `coqui-server`, `google-cloud`, `microsoft-azure`, `amazon-polly`, `openai-cloud`, `elevenlabs`, `google-translate` or `microsoft-edge` (see [the engines documentation page](Engines.md) for more detailed information about each engine). Auto-selected if not set
 * `language`: language code, can be ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`, etc. [ISO 639-3](https://en.wikipedia.org/wiki/ISO_639-3), or a plain language name like `french`. Auto-detected if not set
 * `voice`: name of the voice to use. Can be a search string. Auto-selected if not set
@@ -29,10 +31,12 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `languageDetection`: prefix to provide options for text language detection. Options detailed in section for text language detection
 
 **Plain text processing**:
+
 * `plainText.paragraphBreaks`: split to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
 * `plainText.whitespace`: determines how to process whitespace within paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `preserve`
 
 **Post-processing**:
+
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `true`
 * `postProcessing.targetPeak`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxGainIncrease`: max gain increase (decibels) when performing normalization. Defaults to `30`
@@ -42,55 +46,67 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `postProcessing.rubberband`: prefix for RubberBand options (TODO: document options)
 
 **Output audio format**:
+
 * `outputAudioFormat.codec`: Codec identifier (**Note**: API only. CLI uses file extensions instead), can be `wav`, `mp3`, `opus`, `m4a`, `ogg`, `flac`. Leaving as `undefined` would return a raw audio structure (see more information at the [API documentation](API.md]). Optional
-* `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to  `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
+* `outputAudioFormat.bitrate`: Custom bitrate for encoding, applies only to `mp3`, `opus`, `m4a`, `ogg`. By default, bitrates are selected between 48Kbps and 64Kbps, to provide a good speech quality while minimizing file size. Optional
 
 **Kokoro**:
+
 * `kokoro.model`: model variant to use. Can be `82m-v1.0-fp32` or `82m-v1.0-quantized`. **Note**: the quantized model, while having lower memory usage, is significantly slower than the non-quantized (FP32) one. Defaults to `v1.0-fp32`
 * `kokoro.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). **Note**: `dml` provider (DirectML) seems to currently fail on inference. The cause for this error is [still under investigation](https://github.com/echogarden-project/echogarden/issues/94). Defaults to `cpu`
 
 **VITS**:
+
 * `vits.speakerId`: speaker ID, for VITS models that support multiple speakers. Defaults to `0`
 * `vits.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU acceleration for VITS may or may not be faster than CPU, depending on your hardware. Defaults to `cpu`
 
 **eSpeak**:
+
 * `espeak.rate`: speech rate, in eSpeak units. Overrides `speed` when set
 * `espeak.pitch`: pitch, in eSpeak units. Overrides `pitch` when set
 * `espeak.pitchRange`: pitch range, in eSpeak units. Overrides `pitchVariation` when set
 * `espeak.useKlatt`: use the Klatt synthesis method. Defaults to `false`
 
 **SAM**:
+
 * `sam.pitch`: pitch value, between `0`..`255`. Overrides `pitch` when set
 * `sam.speed`: speed value, between `0`..`255`. Overrides `speed` when set
 * `sam.mouth`: mouth value, between `0`..`255` (defaults to `128`)
 * `sam.throat`: throat value, between `0`..`255` (defaults to `128`)
 
 **Gnuspeech**
+
 * `gnuspeech.tempo`: controls speech rate. Defaults to the value of the general `speed` option (`1.0` by default)
 * `gnuspeech.controlRate`: control rate. Defaults to `250.0`
 
 **SAPI**:
+
 * `sapi.rate`: SAPI speech rate, in its native units. An integer number between `-10` and `10`. Setting `speed` would apply time stretching instead. The two options can be used together
 
 **Microsoft Speech Platform**:
+
 * `msspeech.rate`: same units and effects as the SAPI speech rate
 
 **Coqui Server**:
+
 * `coquiServer.serverUrl`: server URL
 * `coquiServer.speakerId`: speaker ID (if applicable)
 
 **Google Cloud**:
+
 * `googleCloud.apiKey`: API key (required)
 * `googleCloud.pitchDeltaSemitones`: pitch delta in semitones. Overrides `pitch` when set
 * `googleCloud.customVoice.model`: name of custom voice
 * `googleCloud.customVoice.reportedUsage`: reported usage of custom voice
 
 **Azure Cognitive Services**:
+
 * `microsoftAzure.subscriptionKey`: subscription key (required)
 * `microsoftAzure.serviceRegion`: service region (required)
 * `microsoftAzure.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
 **Amazon Polly**:
+
 * `amazonPolly.region`: region (required)
 * `amazonPolly.accessKeyId`: access key ID (required)
 * `amazonPolly.secretAccessKey`: secret access key (required)
@@ -98,6 +114,7 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `amazonPolly.lexiconNames`: an array of lexicon names. Optional
 
 **OpenAI Cloud**:
+
 * `openAICloud.apiKey`: API key (required)
 * `openAICloud.organization`: organization identifier. Optional
 * `openAICloud.baseURL`: override the default base URL for the API. Optional
@@ -107,6 +124,7 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `openAICloud.maxRetries`: maximum retries on failure. Defaults to 10
 
 **Elevenlabs**:
+
 * `elevenLabs.apiKey`: API key (required)
 * `elevenLabs.modelId`: model ID. See [this page](https://elevenlabs.io/docs/models) for an up-to-date list of available models. Defaults to `eleven_multilingual_v2`
 * `elevenLabs.stability`: stability. Defaults to `0.5`
@@ -116,12 +134,15 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 * `elevenLabs.seed`: seed for generation. Integer value that can make the generation predictable. Optional
 
 **Deepgram**:
+
 * `deepgram.apiKey`: API key (required)
 
 **Google Translate**:
+
 * `googleTranslate.tld`: top level domain to connect to. Can change the dialect for a small number of voices. For example `us` gives American English for `en`, while `com` gives British English for `en`. Defaults to `us`
 
 **Microsoft Edge**:
+
 * `microsoftEdge.trustedClientToken`: trusted client token (required). A special token required to use the service
 * `microsoftEdge.pitchDeltaHz`: pitch delta in Hz. Overrides `pitch` when set
 
@@ -130,11 +151,13 @@ Applies to CLI operations: `speak`, `speak-file`, `speak-url`, `speak-wikipedia`
 Applies to CLI operation: `list-voices`, API method: `requestVoiceList`
 
 **General**:
+
 * `language`: language code to filter by. Optional
 * `voice`: name or name pattern to filter by. Optional
 * `voiceGender`: gender to filter by. Optional
 
 Also accepted are the following engine-specific options that may be required in order to retrieve the voice list:
+
 * `googleCloud.apiKey`
 * `microsoftAzure.subscriptionKey`, `microsoftAzure.serviceRegion`
 * `amazonPolly.region`, `amazonPolly.accessKeyId`, `amazonPolly.secretAccessKey`
@@ -146,6 +169,7 @@ Also accepted are the following engine-specific options that may be required in 
 Applies to CLI operation: `transcribe`, API method: `recognize`
 
 **General**:
+
 * `engine`: identifier of the recognition engine to use, can be `whisper`, `whisper.cpp`, `google-cloud`, `microsoft-azure`, `amazon-transcribe`, `openai-cloud`, `deepgram` (see [the full engine list](Engines.md) for more detailed information)
 * `language`: language code ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) for the audio, like `en`, `fr`, `de`. Auto-detected if not set
 * `crop`: crop to active parts using voice activity detection before starting recognition. Defaults to `true`
@@ -157,7 +181,8 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
-* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`, `large-v3-turbo`. The following quantized models are also supported: `tiny-q5_1`,`tiny-q8_0`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base-q8_0`, `base.en-q5_1`, `base.en-q8_0`,`small-q5_1`, `small.en-q5_1`,  `small.en-q8_0`,`medium-q5_0`, `medium.en-q5_0`, `medium.en-q8_0`, `large-v2-q5_0`, `large-v2-q8_0`, `large-v3-q5_0`, `large-v3-turbo-q5_0`, `large-v3-turbo-q8_0`. Defaults to `base` or `base.en` for English
+
+* `whisper.model`: selects which Whisper model to use. Can be `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large` (same as `large-v2`), `large-v1`, `large-v2`, `large-v3`, `large-v3-turbo`. The following quantized models are also supported: `tiny-q5_1`,`tiny-q8_0`, `tiny.en-q5_1`, `tiny.en-q8_0`,`base-q5_1`, `base-q8_0`, `base.en-q5_1`, `base.en-q8_0`,`small-q5_1`, `small.en-q5_1`, `small.en-q8_0`,`medium-q5_0`, `medium.en-q5_0`, `medium.en-q8_0`, `large-v2-q5_0`, `large-v2-q8_0`, `large-v3-q5_0`, `large-v3-turbo-q5_0`, `large-v3-turbo-q8_0`. Defaults to `base` or `base.en` for English
 * `whisper.enableGPU`: enable GPU processing. Setting to `true` will try to use a CUDA build, if available for your architecture (currently CUDA 12.4 builds are available for Windows x64 and Linux x64).
 * `whisper.threadCount`: number of threads to use, defaults to `4`
 * `whisper.gpuDeviceIndex`: GPU device index (if GPU is enabled), defaults to `0`
@@ -174,6 +199,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisper.seed`: provide a custom random seed for token selection when temperature is greater than 0. Uses a constant seed by default to ensure reproducibility
 
 **Whisper.cpp CLI**:
+
 * `whisperCpp.model`: selects which `whisper.cpp` model to use. Model identifiers and defaults are identical to those in the `whisper` engine
 * `whisperCpp.executablePath`: a path to a custom `whisper.cpp` `whisper-cli` executable (currently required for macOS)
 * `whisperCpp.build`: type of `whisper.cpp` build to use. Can be set to `cpu`, `cublas-12.4.0` or `custom`. By default, builds are auto-selected and downloaded for Windows x64 and Linux x64 (for both `cpu` and `cublas-12.4.0`). The Linux CUDA build requires a [system-wide installation of CUDA Toolkit 12.4+](https://developer.nvidia.com/cuda-downloads), available on path. Using other builds requires providing a custom `executablePath`, which will automatically set this option to `custom`
@@ -191,6 +217,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `whisperCpp.verbose`: show all CLI messages during execution. Defaults to `false`
 
 **Google Cloud**:
+
 * `googleCloud.apiKey`: Google Cloud API key (required)
 * `googleCloud.alternativeLanguageCodes`: An array of alternative language codes. Optional
 * `googleCloud.profanityFilter`: censor profanity. Defaults to `false`
@@ -198,15 +225,18 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `googleCloud.useEnhancedModel`: use enhanced model. Defaults to `true`
 
 **Azure Cognitive Services**:
+
 * `microsoftAzure.subscriptionKey`: subscription key (required)
 * `microsoftAzure.serviceRegion`: service region (required)
 
 **Amazon Transcribe**:
+
 * `amazonTranscribe.region`: region (required)
 * `amazonTranscribe.accessKeyId`: access key ID (required)
 * `amazonTranscribe.secretAccessKey`: secret access key (required)
 
 **OpenAI Cloud**:
+
 * `openAICloud.apiKey`: API key (required)
 * `openAICloud.model`: model to use. When using the default provider (OpenAI), can be `whisper-1`, `gpt-4o-mini-transcribe` or `gpt-4o-transcribe`. For a custom provider, like Groq, see its documentation
 * `openAICloud.organization`: organization identifier. Optional
@@ -218,6 +248,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 * `openAICloud.requestWordTimestamps`: request word timestamps from the server. Defaults to `true` for the default OpenAI endpoint, and `false` if a custom one is set using `baseURL`
 
 **Deepgram**:
+
 * `deepgram.apiKey`: API key (required)
 * `deepgram.model`: model to use. Can be any model the server supports, like `nova-3`, `nova-2`, `nova`, `enhanced`, `base` or `whisper` (see model list [here](https://developers.deepgram.com/docs/model)). Defaults to `nova-3`
 * `deepgram.punctuate`: request to add punctuation and capitalization to the resulting transcript. Defaults to `true`
@@ -227,6 +258,7 @@ Applies to CLI operation: `transcribe`, API method: `recognize`
 Applies to CLI operation: `align`, API method: `align`
 
 **General**:
+
 * `engine`: alignment algorithm to use, can be `dtw`, `dtw-ra` or `whisper`. Defaults to `dtw`
 * `language`: language code for the audio and transcript ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `en-US`, `pt-BR`. Auto-detected from transcript if not set
 * `crop`: crop to active parts using voice activity detection before starting. Defaults to `true`
@@ -237,14 +269,17 @@ Applies to CLI operation: `align`, API method: `align`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Plain text processing**:
+
 * `plainText.paragraphBreaks`: split transcript to paragraphs based on single (`single`), or double (`double`) line breaks. Defaults to `double`
 * `plainText.whitespace`: determines how to process whitespace within transcript paragraphs. Can be `preserve` (leave as is), `removeLineBreaks` (convert line breaks to spaces) or `collapse` (convert runs of whitespace characters, including line breaks, to a single space character). Defaults to `preserve`
 
 **DTW**:
+
 * `dtw.granularity`: adjusts the MFCC frame width and hop size based on the profile selected. Can be set to either `xx-low` (400ms width, 160ms hop), `x-low` (200ms width, 80ms hop), `low` (100ms width, 40ms hop), `medium` (50ms width, 20ms hop), `high` (25ms width, 10ms hop), `x-high` (20ms width, 5ms hop). For multi-pass processing, multiple granularities can be provided, like `dtw.granularity=['xx-low','medium']`. Auto-selected by default.
-* `dtw.windowDuration`: sets the maximum duration of the Sakoe-Chiba window when performing DTW alignment. The value can be specified in seconds, like `240`, or as  an integer percentage (formatted like `15%`), relative to the total duration of the source audio. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided (which can mix absolute and relative values), like `dtw.windowDuration=['15%',20]`. Auto-selected by default
+* `dtw.windowDuration`: sets the maximum duration of the Sakoe-Chiba window when performing DTW alignment. The value can be specified in seconds, like `240`, or as an integer percentage (formatted like `15%`), relative to the total duration of the source audio. The estimated memory requirement is shown in the log before alignment starts. Recommended to be set to at least 10% - 20% of total audio duration. For multi-pass processing, multiple durations can be provided (which can mix absolute and relative values), like `dtw.windowDuration=['15%',20]`. Auto-selected by default
 
 **DTW-RA**:
+
 * `recognition`: prefix to provide recognition options when using `dtw-ra` method, for example: setting `recognition.engine = whisper` and `recognition.whisper.model = base.en`
 * `dtw.phoneAlignmentMethod`: algorithm to use when aligning phones: can either be set to `dtw` or `interpolation`. Defaults to `dtw`
 
@@ -265,6 +300,7 @@ Applies to the `whisper` engine only. To provide Whisper options for `dtw-ra`, u
 Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 
 **General**:
+
 * `engine`: Can be `whisper`, `whisper.cpp` or `openai-cloud`. Defaults to `whisper`
 * `sourceLanguage`: the source language code for the input speech. Auto-detected if not set
 * `targetLanguage`: the target language code for the output speech. Only `en` (English) supported by the `whisper` engine. Optional
@@ -291,6 +327,7 @@ Applies to CLI operation: `translate-speech`, API method: `translateSpeech`
 Applies to CLI operation: `translate-text`, API method: `translateText`
 
 **General**:
+
 * `engine`: only `google-translate` supported
 * `sourceLanguage`: the source language code for the input text. Auto-detected if not set
 * `targetLanguage`: the target language code for the output text. Required
@@ -298,6 +335,7 @@ Applies to CLI operation: `translate-text`, API method: `translateText`
 * `plainText`: plain text processing options. Optional
 
 **Google Translate**:
+
 * `googleTranslate.tld`: top-level domain to request from. Defaults to `com`
 * `googleTranslate.maxCharactersPerPart`: maximum number of characters in each part requested from the server. Defaults to 2000
 
@@ -306,6 +344,7 @@ Applies to CLI operation: `translate-text`, API method: `translateText`
 Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 
 **General**:
+
 * `engine`: alignment algorithm to use, can only be `whisper`. Defaults to `whisper`
 * `sourceLanguage`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
 * `targetLanguage`: language code for the translated transcript. Can only be `en` for now. Defaults to `en`
@@ -316,6 +355,7 @@ Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 * `sourceSeparation`: prefix to provide options for source separation when `isolate` is set to `true`. Options detailed in section for source separation
 
 **Whisper**:
+
 * `whisper.model`: Whisper model to use. Only multilingual models can be used. Defaults to `base`
 * `whisper.enableGPU`: enable whisper GPU build. See details in recognition section above
 * `whisper.threadCount`: number of threads to use, defaults to `4`
@@ -327,6 +367,7 @@ Applies to CLI operation: `align-translation`, API method: `alignTranslation`
 Applies to CLI operation: `align-transcript-and-translation`, API method: `alignTranscriptAndTranslation`
 
 **General**:
+
 * `engine`: can only be `two-stage`. Defaults to `two-stage`
 * `sourceLanguage`: language code for the source audio ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)), like `en`, `fr`, `zh`, etc. Auto-detected from audio if not set
 * `targetLanguage`: language code for the translated transcript. Can only be `en` for now. Defaults to `en`
@@ -343,6 +384,7 @@ Applies to CLI operation: `align-transcript-and-translation`, API method: `align
 Applies to CLI operation: `align-timeline-translation`, API method: `alignTimelineTranslation`
 
 **General**:
+
 * `engine`: alignment engine to use. Can only be `e5`. Defaults to `e5`
 * `sourceLanguage`: language code for the source timeline. Auto-detected from timeline if not set
 * `targetLanguage`: language code for the translated transcript. Auto-detected if not set
@@ -351,6 +393,7 @@ Applies to CLI operation: `align-timeline-translation`, API method: `alignTimeli
 * `subtitles`: prefix to provide options for subtitles. Options detailed in section for subtitles
 
 **E5**:
+
 * `e5.model`: E5 model to use. Defaults to `e5-small-fp16` (support for additional models will be added in the future)
 
 ## Language detection
@@ -360,6 +403,7 @@ Applies to CLI operation: `align-timeline-translation`, API method: `alignTimeli
 Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLangauge`
 
 **General**:
+
 * `engine`: `whisper` or `silero`. Defaults to `whisper`
 * `defaultLanguage`: language to fallback to when confidence for top candidate of is low. Defaults to `en`
 * `fallbackThresholdProbability`: confidence threshold to cause fallback. Defaults to `0.05`
@@ -367,6 +411,7 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 * `vad`: prefix to provide options for voice activity detection when `crop` is set to `true`. Options detailed in section for voice activity detection
 
 **Whisper**:
+
 * `whisper.model`: Whisper model to use. See model list in the recognition section. Defaults to `tiny`
 * `whisper.enableGPU`: enable whisper GPU build. See details in recognition section above
 * `whisper.threadCount`: number of threads to use, defaults to `4`
@@ -374,6 +419,7 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 * `whisper.temperature`: impacts the distribution of candidate languages when applying the softmax function to compute language probabilities over the model output. Higher temperature causes the distribution to be more uniform, while lower temperature causes it to be more strongly weighted towards the best scoring candidates. Defaults to `1.0`
 
 **Silero**:
+
 * `silero.provider`: ONNX execution provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU may be faster, but the initialization overhead is larger. **Note**: `dml` provider seems to be unstable at the moment for this model. Defaults to `cpu`
 
 ### Text language detection
@@ -381,6 +427,7 @@ Applies to CLI operation: `detect-speech-langauge`, API method: `detectSpeechLan
 Applies to CLI operation: `detect-text-langauge`, API method: `detectTextLangauge`
 
 **General**:
+
 * `engine`: `tinyld` or `fasttext`. Defaults to `tinyld`
 * `defaultLanguage`: language to fallback to when confidence for top candidate is low. Defaults to `en`
 * `fallbackThresholdProbability`: confidence threshold to cause fallback. Defaults to `0.05`
@@ -390,14 +437,17 @@ Applies to CLI operation: `detect-text-langauge`, API method: `detectTextLangaug
 Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActivity`
 
 **General**:
+
 * `engine`: VAD engine to use. Can be `webrtc`, `silero`, `rnnoise`, or `adaptive-gate`. Defaults to `silero`
 * `activityThreshold`: minimum predicted probability for determining a frame as having speech activity. Defaults to `0.5`
 
 **WebRTC**:
+
 * `webrtc.frameDuration`: WebRTC frame duration (ms). Can be `10`, `20` or `30`. Defaults to `30`
 * `webrtc.mode`: WebRTC mode (aggressiveness). Can be `0`, `1`, `2` or `3`. Defaults to `1`
 
 **Silero**:
+
 * `silero.frameDuration`: Silero frame duration (ms). Can be `30`, `60` or `90`. Defaults to `90`
 * `silero.provider`: ONNX provider to use. Can be `cpu`, `dml` (Windows only, uses [DirectML](https://microsoft.github.io/DirectML/)-based GPU acceleration), or `cuda` (Linux only, requires system-wide installation of CUDA and cuDNN SDKs, see [this guide](./CUDA.md) for more detailed information). Using GPU is likely to be slower than CPU due to inference being independently executed on each audio frame. Defaults to `cpu` (recommended)
 
@@ -406,15 +456,18 @@ Applies to CLI operation: `detect-voice-activity`, API method: `detectVoiceActiv
 Applies to CLI operation: `denoise`, API method: `denoise`
 
 **General**:
+
 * `engine`: `rnnoise` or `nsnet2`. Defaults to `rnnoise`
 
 **Post-processing**:
+
 * `postProcessing.normalizeAudio`: should normalize output audio. Defaults to `false`
 * `postProcessing.targetPeak`: target peak (decibels) for normalization. Defaults to `-3`
 * `postProcessing.maxGainIncrease`: max gain increase (decibels) when performing normalization. Defaults to `30`
 * `postProcessing.dryMixGain`: gain (decibels) of dry (original) signal to mix back to the denoised (wet) signal. Defaults to `-100`
 
 **NSNet2**:
+
 * `nsnet2.model`: can be `baseline-16khz` or `baseline-48khz`. Defaults to `baseline-48khz`
 * `nsnet2.provider`: ONNX execution provider. Can be `cpu`, `dml` or `cuda` (**Note**: `dml` provider seems to fail with these models). Defaults to `cpu`
 * `maxAttenuation`: maximum amount of attenuation, in decibels, applied to an FFT bin when filtering the audio frames. Defaults to `30`
@@ -454,7 +507,6 @@ On the CLI, global options can be used with any operation. To set global options
 * `ffmpegPath`: sets a custom path for the FFmpeg executable
 * `packageBaseURL`: sets a custom base URL for the remote package repository used to download missing packages. Default is `https://huggingface.co/echogarden/echogarden-packages/resolve/main/`. If `huggingface.co` isn't accessible in your location, you can set to use a mirror by changing `huggingface.co` to an alternative domain like `hf-mirror.com`
 * `logLevel`: adjusts the default amount of log messages shown during processing. Possible values: `silent`, `output`, `error`, `warning`, `info`, `trace`. Defaults to `info`
-
 
 ## CLI options
 
