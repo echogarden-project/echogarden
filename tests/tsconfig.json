@@ -1,0 +1,15 @@
+{
+	// Type-checks the test files only, without emitting anything.
+	// Test code is run by vitest (which transpiles on the fly) — the tests
+	// are dev-only and must never end up in ./dist or the published package.
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		// The tests import the library sources directly from ../src.
+		"allowImportingTsExtensions": true,
+		"rootDir": ".."
+	},
+	"include": [
+		"**/*.ts"
+	]
+}
