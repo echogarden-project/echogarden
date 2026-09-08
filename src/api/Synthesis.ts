@@ -353,7 +353,11 @@ async function synthesizeSegment(text: string, options: SynthesisOptions, callba
 	let language: string
 
 	if (options.language) {
-		language = await normalizeIdentifierToLanguageCode(options.language)
+		try {
+			language = await normalizeIdentifierToLanguageCode(options.language)
+		} catch {
+			language = selectedVoice.languages[0]
+		}
 	} else {
 		language = selectedVoice.languages[0]
 	}
@@ -1814,24 +1818,7 @@ export async function requestVoiceList(options: VoiceListRequestOptions, callbac
 		voiceList = await loadVoiceList()
 	}
 
-	const languageCode = await normalizeIdentifierToLanguageCode(options.language || '')
-
-	if (languageCode) {
-		let filteredVoiceList = voiceList.filter(voice => voice.languages.includes(languageCode))
-
-		if (filteredVoiceList.length == 0 && languageCode.includes('-')) {
-			const shortLanguageCode = getShortLanguageCode(languageCode)
-
-			filteredVoiceList = voiceList.filter(voice => voice.languages.includes(shortLanguageCode))
-		}
-
-		voiceList = filteredVoiceList
-	}
-
-	if (options.voiceGender) {
-		const genderLowercase = options.voiceGender.toLowerCase()
-		voiceList = voiceList.filter(voice => voice.gender == genderLowercase || voice.gender == 'unknown')
-	}
+	let bestMatchingVoice: SynthesisVoice
 
 	if (options.voice) {
 		const namePatternLowerCase = options.voice.toLocaleLowerCase()
@@ -1853,17 +1840,42 @@ export async function requestVoiceList(options: VoiceListRequestOptions, callbac
 				return false
 			})
 		}
-	}
 
-	let bestMatchingVoice = voiceList[0]
+		bestMatchingVoice = voiceList[0]
+	} else {
+		let languageCode = ''
 
-	if (bestMatchingVoice && voiceList.length > 1 && defaultDialectForLanguageCode[languageCode]) {
-		const expandedLanguageCode = defaultDialectForLanguageCode[languageCode]
+		if (options.language) {
+			languageCode = await normalizeIdentifierToLanguageCode(options.language || '')
 
-		for (const voice of voiceList) {
-			if (voice.languages.includes(expandedLanguageCode)) {
-				bestMatchingVoice = voice
-				break
+			let filteredVoiceList = voiceList.filter(voice => voice.languages.includes(languageCode))
+
+			if (filteredVoiceList.length == 0 && languageCode.includes('-')) {
+				const shortLanguageCode = getShortLanguageCode(languageCode)
+
+				filteredVoiceList = voiceList.filter(voice => voice.languages.includes(shortLanguageCode))
+			}
+
+			voiceList = filteredVoiceList
+		}
+
+		if (options.voiceGender) {
+			const genderLowercase = options.voiceGender.toLowerCase()
+
+			voiceList = voiceList.filter(voice => voice.gender == genderLowercase || voice.gender == 'unknown')
+		}
+
+		bestMatchingVoice = voiceList[0]
+
+		if (bestMatchingVoice && voiceList.length > 1 && defaultDialectForLanguageCode[languageCode]) {
+			const expandedLanguageCode = defaultDialectForLanguageCode[languageCode]
+
+			for (const voice of voiceList) {
+				if (voice.languages.includes(expandedLanguageCode)) {
+					bestMatchingVoice = voice
+
+					break
+				}
 			}
 		}
 	}
